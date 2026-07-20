@@ -80,14 +80,14 @@ Enable AI-assisted, high-efficiency, and verifiable infrastructure governance to
 
 ## References (APA 7th Edition)
 
-1. Abadi, M., Agarwal, A., Barham, P., Brevdo, E., Chen, Z., Citro, C., … Zheng, X. (2020). *TensorFlow Lite: Machine learning on mobile and edge devices*. TensorFlow. [https://www.tensorflow.org/lite](https://www.tensorflow.org/lite)
+1. Abadi, M., Agarwal, A., Barham, P., Brevdo, E., Chen, Z., Citro, C., … Zheng, X. (2020). *TensorFlow Lite: Machine learning on mobile and edge devices*. TensorFlow. https://www.tensorflow.org/lite
 
-2. Buterin, V. (2014). *Ethereum whitepaper: A next-generation smart contract and decentralized application platform*. Ethereum. [https://ethereum.org/en/whitepaper/](https://ethereum.org/en/whitepaper/)
+2. Abu Awwad, Y., Rana, O., & Perera, C. (2024). Anomaly detection on the edge using smart cameras under low-light conditions. *Sensors*, *24*(3), Article 772. https://doi.org/10.3390/s24030772
 
-3. Wood, G. (2016). *Polkadot: Vision for a heterogeneous multi-chain framework*. Polkadot Network. [https://polkadot.network/PolkaDotPaper.pdf](https://polkadot.network/PolkaDotPaper.pdf)
+3. Bai, T., Fu, S., & Yang, Q. (2022). Privacy-preserving object detection with secure convolutional neural networks for vehicular edge computing. *Future Internet*, *14*(11), Article 316. https://doi.org/10.3390/fi14110316
 
-4. Protocol Labs. (2023). *IPFS: InterPlanetary File System documentation*. Protocol Labs. [https://docs.ipfs.io/](https://docs.ipfs.io/)
+4. Mutambik, I. (2024). Assessing urban vulnerability to emergencies: A spatiotemporal approach using K-means clustering. *Land*, *13*(11), Article 1744. https://doi.org/10.3390/land13111744
 
-5. Wang, Z., & Bovik, A. C. (2004). Image quality assessment: From error visibility to structural similarity. *IEEE Transactions on Image Processing, 13*(4), 600–612. [https://ieeexplore.ieee.org/document/1284395](https://ieeexplore.ieee.org/document/1284395)
+5. Wang, Z., & Bovik, A. C. (2004). Image quality assessment: From error visibility to structural similarity. *IEEE Transactions on Image Processing*, *13*(4), 600–612. https://doi.org/10.1109/TIP.2004.838387
 
-6. Republic of the Philippines. (2012). *Data Privacy Act of 2012 (RA 10173)*. Official Gazette. [https://www.privacy.gov.ph/data-privacy-act/](https://www.privacy.gov.ph/data-privacy-act/)
+6. Republic of the Philippines. (2012). *Data Privacy Act of 2012 (RA 10173)*. Official Gazette. https://www.privacy.gov.ph/data-privacy-act/
