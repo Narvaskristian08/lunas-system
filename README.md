@@ -1,7 +1,7 @@
 # LUNAS  
 ### Automated Urban Infrastructure Maintenance and Monitoring System
 
-**LUNAS** is a decentralized platform for **urban infrastructure monitoring and maintenance**. It integrates **Edge AI, blockchain smart contracts, and decentralized storage** to automate detection, verification, and SLA-based escalation of infrastructure incidents. LUNAS enables **citizens, repair crews, and government agencies** to collaboratively maintain urban infrastructure efficiently and transparently.
+**LUNAS** is an automated cloud-native platform for urban infrastructure monitoring and maintenance. It integrates Edge AI, secure web-native workflows, and encrypted object storage to automate the detection, verification, and SLA-based escalation of infrastructure incidents. LUNAS enables citizens, repair crews, and government agencies to collaboratively maintain urban infrastructure efficiently and transparently.
 
 ---
 
@@ -9,9 +9,9 @@
 
 - **Edge AI Monitoring:** On-device **TensorFlow Lite (TFLite)** models perform real-time anomaly detection (≥90% confidence), identifying hazards such as utility risks, road damage, drainage failure, and structural decay.  
 - **Privacy by Design:** Automatic **PII redaction** (faces, license plates) ensures compliance with the **Philippines Data Privacy Act of 2012**.  
-- **Smart Contract Governance:** **Polygon smart contracts** enforce jurisdiction-based SLAs with automated escalation for unresolved incidents.  
+- **Automated SLA Governance:** A centralized serverless orchestration engine enforces jurisdiction-based SLAs with automated, time-triggered escalation for unresolved incidents.
 - **Operational Efficiency:** **Spatiotemporal clustering** aggregates duplicate reports into single **Incident IDs**, optimizing resources.  
-- **Immutable Ledger:** Device-attested blockchain records ensure **tamper-proof reporting** and support **reputation monitoring**.  
+- **Tamper-Evident Audit Ledger:** Cryptographically signed logs ensure immutable activity tracking to support transparent performance and reputation monitoring.
 
 ---
 
@@ -20,26 +20,23 @@
 ### Mobile Client (Flutter)
 - On-device AI inference and **real-time anomaly detection**  
 - Hardware-backed **geolocation verification**  
-- Tamper-resistant report submissions  
+- Tamper-resistant report submissions
 
-### Smart Contracts (Solidity)
-- SLA enforcement on **Polygon blockchain**  
-- **Meta-transactions (EIP-2771)** for gasless reporting  
-- **Emergency pause** mechanism during disasters  
+### Mobile Client (Flutter)
+- **RESTful API / WebSockets** for low-latency incident routing and dashboard updates
+- **Serverless Cron Jobs / Workers** for continuous SLA monitoring and automated escalation triggers
+- Asymmetric cryptography (e.g., Ed25519) to manage and validate user/agency identities
 
-### Hybrid Storage
-| Layer | Purpose |
-|-------|---------|
-| Polygon Blockchain | Smart contract execution, SLA state changes |
-| IPFS | Encrypted media storage, decentralized evidence |
+### Secure Storage Layer
+| Layer | Purpose | Technology |
+|-------|---------|------------|
+| Relational Database | Core system state, incident tracking, metadata | PostgreSQL (with Append-Only Audit Triggers) |
+| Cloud Object Storage | Encrypted media storage, pre and post-repair evidence | AWS S3 / Google Cloud Storage (via Pre-signed URLs) |
 
-### Command Center & Oracle (Web)
-- Administrative dashboard acts as a **trusted oracle**  
-- Incident closure requires **2-of-3 digital signatures**: Repair Crew + AI + Official  
-
-### Verification Loop
-- Uses **Structural Similarity Index (SSIM)** to validate repairs  
-- Confirms pre- and post-repair states before final task settlement  
+### Command Center & Verification Loop 
+- Administrative dashboard acting as the centralized authority hub.
+- Incident closure requires a **2-of-3 digital signature loop:** Repair Crew Signature + AI Computer Vision Verification + Government Official Sign-off.
+- Uses **Structural Similarity Index (SSIM)** to compare pre and post-repair states before a task is officially marked as settled
 
 ---
 
@@ -47,8 +44,8 @@
 
 | Level | Response Time | Scope |
 |-------|---------------|------|
-| City | 24–48 hours | Major infrastructure, arterial roads |
-| Barangay | 7 days | Local maintenance, community assets |
+| City | 24–48 hours | Major infrastructure, arterial roads, high-risk hazards |
+| Barangay | 7 days | Local maintenance, community assets, minor repairs |
 
 - Breached Barangay SLAs automatically escalate unresolved incidents to **City dashboards**.  
 
@@ -58,26 +55,26 @@
 
 | Component | Technology |
 |-----------|-----------|
-| Mobile | Flutter |
-| Edge AI | TensorFlow Lite |
-| Blockchain | Polygon |
-| Smart Contracts | Solidity |
-| Storage | IPFS |
-| Verification | Structural Similarity Index (SSIM) |
+| Mobile | Flutter, Dio HTTP Client |
+| Edge AI | TensorFlow Lite (TFLite) |
+| Backend & API | Node.js / Go / Python (FastAPI) |
+| Database & Ledger | PostgreSQL (with transactional audit logs) |
+| Storage | Cloud Object Storage (S3 / GCS) |
+| Verification | Structural Similarity Index (SSIM), Asymmetric Cryptography (Ed25519) |
 
 ---
 
 ## SDG Alignment
 
-- **SDG 11 – Sustainable Cities and Communities:** Enhances urban infrastructure resilience through automated monitoring.  
-- **SDG 16 – Peace, Justice, and Strong Institutions:** Promotes accountability with immutable SLA records.  
-- **SDG 9 – Industry, Innovation, and Infrastructure:** Modernizes governance using **AI** and decentralized technologies.  
+- **SDG 11 – Sustainable Cities and Communities:** Enhances urban infrastructure resilience through automated, real-time monitoring. 
+- **SDG 16 – Peace, Justice, and Strong Institutions:** Promotes institutional accountability through transparent, tamper-evident SLA tracking. 
+- **SDG 9 – Industry, Innovation, and Infrastructure:** Modernizes local governance frameworks using scalable AI and web-native architectures.
 
 ---
 
 ## Vision
 
-Enable **AI-assisted, decentralized, and verifiable infrastructure governance** to improve **response efficiency, operational transparency, and urban resilience**.
+Enable AI-assisted, high-efficiency, and verifiable infrastructure governance to vastly improve response times, operational transparency, and urban resilience across local government units..
 
 ---
 
