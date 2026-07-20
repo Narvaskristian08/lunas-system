@@ -22,7 +22,7 @@
 - Hardware-backed **geolocation verification**  
 - Tamper-resistant report submissions
 
-### Mobile Client (Flutter)
+### Centralized Backend & Orchestration
 - **RESTful API / WebSockets** for low-latency incident routing and dashboard updates
 - **Serverless Cron Jobs / Workers** for continuous SLA monitoring and automated escalation triggers
 - Asymmetric cryptography (e.g., Ed25519) to manage and validate user/agency identities
