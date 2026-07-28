@@ -1,91 +1,405 @@
-# LUNAS  
-### Automated Urban Infrastructure Maintenance and Monitoring System
 
-**LUNAS** is an automated cloud-native platform for urban infrastructure monitoring and maintenance. It integrates Edge AI, secure web-native workflows, and encrypted object storage to automate the detection, verification, and SLA-based escalation of infrastructure incidents. LUNAS enables citizens, repair crews, and government agencies to collaboratively maintain urban infrastructure efficiently and transparently.
 
----
 
-## Core Features
 
-- **Edge AI Monitoring:** On-device **TensorFlow Lite (TFLite)** models perform real-time anomaly detection (≥90% confidence), identifying hazards such as utility risks, road damage, drainage failure, and structural decay.  
-- **Privacy by Design:** Automatic **PII redaction** (faces, license plates) ensures compliance with the **Philippines Data Privacy Act of 2012**.  
-- **Automated SLA Governance:** A centralized serverless orchestration engine enforces jurisdiction-based SLAs with automated, time-triggered escalation for unresolved incidents.
-- **Operational Efficiency:** **Spatiotemporal clustering** aggregates duplicate reports into single **Incident IDs**, optimizing resources.  
-- **Tamper-Evident Audit Ledger:** Cryptographically signed logs ensure immutable activity tracking to support transparent performance and reputation monitoring.
+````md
+# 🌙 LUNAS
+### AI-Assisted Urban Infrastructure Maintenance and Monitoring System with Automated SLA Management
+
+LUNAS is a cloud-based infrastructure reporting and maintenance platform designed to improve how urban infrastructure issues are reported, managed, assigned, monitored, and resolved.
+
+The system empowers **citizens**, **repair personnel**, and **government officials** through a unified platform that combines AI-assisted image analysis, automated Service Level Agreement (SLA) monitoring, and transparent maintenance workflows. It aims to provide a faster, more accountable, and data-driven approach to infrastructure maintenance in **Dagupan City, Philippines**. fileciteturn0file0
 
 ---
 
-## Platform Architecture
+# 📖 Overview
 
-### Mobile Client (Flutter)
-- On-device AI inference and **real-time anomaly detection**  
-- Hardware-backed **geolocation verification**  
-- Tamper-resistant report submissions
+Urban infrastructure issues such as potholes, damaged roads, utility leaks, drainage problems, and other public hazards often experience delayed reporting, poor monitoring, and lack of accountability.
 
-### Centralized Backend & Orchestration
-- **RESTful API / WebSockets** for low-latency incident routing and dashboard updates
-- **Serverless Cron Jobs / Workers** for continuous SLA monitoring and automated escalation triggers
-- Asymmetric cryptography (e.g., Ed25519) to manage and validate user/agency identities
+LUNAS addresses these challenges by providing:
 
-### Secure Storage Layer
-| Layer | Purpose | Technology |
-|-------|---------|------------|
-| Relational Database | Core system state, incident tracking, metadata | PostgreSQL (with Append-Only Audit Triggers) |
-| Cloud Object Storage | Encrypted media storage, pre and post-repair evidence | AWS S3 / Google Cloud Storage (via Pre-signed URLs) |
+- AI-assisted incident reporting
+- Role-based mobile application
+- Web-based administrative command center
+- Automated work order management
+- SLA monitoring and escalation
+- Repair verification
+- Privacy-preserving image processing
+- Complete audit logging
 
-### Command Center & Verification Loop 
-- Administrative dashboard acting as the centralized authority hub.
-- Incident closure requires a **2-of-3 digital signature loop:** Repair Crew Signature + AI Computer Vision Verification + Government Official Sign-off.
-- Uses **Structural Similarity Index (SSIM)** to compare pre and post-repair states before a task is officially marked as settled
+The system follows a complete **Report → Validation → Assignment → Repair → Verification → Closure** workflow. fileciteturn0file0
 
 ---
 
-## Service Level Agreements (SLAs)
+# 🎯 Objectives
 
-| Level | Response Time | Scope |
-|-------|---------------|------|
-| City | 24–48 hours | Major infrastructure, arterial roads, high-risk hazards |
-| Barangay | 7 days | Local maintenance, community assets, minor repairs |
+The project aims to:
 
-- Breached Barangay SLAs automatically escalate unresolved incidents to **City dashboards**.  
+- Develop a role-based mobile application for different users.
+- Build a web-based command center for incident management.
+- Implement AI-assisted hazard detection and image privacy protection.
+- Automate incident routing, work order creation, and SLA monitoring.
+- Improve transparency using repair verification and audit logs. fileciteturn0file0
 
 ---
 
-## Technology Stack
+# 👥 User Roles
+
+## 👤 Citizen
+
+- Report infrastructure incidents
+- Capture and upload evidence
+- AI-assisted hazard detection
+- Automatic privacy masking
+- Track report progress
+- Receive notifications
+- View completed repairs
+
+---
+
+## 👷 Repair Personnel
+
+- Receive assigned work orders
+- View incident information
+- Navigate to incident location
+- Update repair progress
+- Upload repair evidence
+- Digitally submit completed work
+
+---
+
+## 🏛️ Barangay Officials
+
+- Validate submitted reports
+- Verify incident details
+- Assign local maintenance tasks
+- Review repair evidence
+- Approve or reject repairs
+- Monitor SLA compliance
+
+---
+
+## 🏢 City Engineering Office
+
+- Manage city-wide infrastructure
+- Assign work orders
+- Monitor incident status
+- Review analytics
+- Verify completed repairs
+- Monitor SLA performance
+
+---
+
+## 🔧 Utility Providers
+
+- Receive utility-related incidents
+- Perform repairs
+- Submit repair completion
+- Coordinate with LGU
+
+---
+
+## 👨‍💼 System Administrator
+
+- Manage users and permissions
+- Configure SLA rules
+- System configuration
+- Monitor audit logs
+- Manage categories
+- Generate reports
+
+---
+
+# 🚀 Key Features
+
+## 📍 Smart Incident Reporting
+
+- GPS location capture
+- Photo upload
+- AI-assisted hazard recognition
+- Automatic hazard categorization
+- Duplicate report detection
+- Image quality checking
+
+---
+
+## 🤖 AI-Assisted Image Processing
+
+- TensorFlow Lite hazard detection
+- On-device image analysis
+- Privacy-preserving processing
+- Automatic face detection
+- Automatic license plate detection
+- Automatic image redaction
+
+---
+
+## 🗺️ Incident Mapping
+
+- Google Maps integration
+- Incident visualization
+- Location confirmation
+- Jurisdiction identification
+
+---
+
+## 📋 Work Order Management
+
+- Automatic assignment workflow
+- Personnel assignment
+- Status updates
+- Repair progress tracking
+- Completion records
+
+---
+
+## ⏰ Automated SLA Monitoring
+
+- Configurable SLA rules
+- Deadline tracking
+- Automatic reminders
+- Escalation system
+- Resolution monitoring
+
+---
+
+## ✅ Repair Verification
+
+- Before vs After comparison
+- Image alignment
+- Structural Similarity Index (SSIM)
+- Human-supervised approval
+- Repair recommendation
+
+---
+
+## 🔔 Notifications
+
+- Work order notifications
+- Status updates
+- SLA reminders
+- Approval notifications
+- Resolution updates
+
+---
+
+## 🔒 Security
+
+- JWT Authentication
+- Role-based authorization
+- Audit logs
+- Ed25519 digital signatures
+- Secure cloud storage
+- Tamper-evident records
+
+---
+
+# 🔄 System Workflow
+
+```text
+Citizen Reports Incident
+          │
+          ▼
+AI Image Analysis
+(Hazard Detection + Privacy Masking)
+          │
+          ▼
+Submit Report
+          │
+          ▼
+Incident Validation
+          │
+          ▼
+Duplicate Check
+          │
+          ▼
+Jurisdiction Identification
+          │
+          ▼
+Work Order Creation
+          │
+          ▼
+Personnel Assignment
+          │
+          ▼
+Repair Progress
+          │
+          ▼
+Repair Evidence Upload
+          │
+          ▼
+AI Repair Verification
+          │
+          ▼
+Official Review
+          │
+          ▼
+Approve / Reject
+          │
+          ▼
+Incident Closed
+```
+
+---
+
+# 📱 Platforms
+
+## Mobile Application
+
+Used by:
+
+- Citizens
+- Repair Personnel
+- Authorized Officials
+
+Functions:
+
+- Report incidents
+- Perform repairs
+- Track reports
+- Receive notifications
+- Verify repairs
+
+---
+
+## Web Command Center
+
+Used by:
+
+- Barangay Officials
+- City Engineering Office
+- Utility Providers
+- Administrators
+
+Functions:
+
+- Incident validation
+- Assignment management
+- SLA monitoring
+- Analytics
+- Reporting
+- Verification
+- Administration
+
+---
+
+# 🛠 Technology Stack
 
 | Component | Technology |
-|-----------|-----------|
-| Mobile | Flutter, Dio HTTP Client |
-| Edge AI | TensorFlow Lite (TFLite) |
-| Backend & API | Node.js / Go / Python (FastAPI) |
-| Database & Ledger | PostgreSQL (with transactional audit logs) |
-| Storage | Cloud Object Storage (S3 / GCS) |
-| Verification | Structural Similarity Index (SSIM), Asymmetric Cryptography (Ed25519) |
+|------------|------------|
+| Mobile | Flutter (Dart) |
+| Web | Next.js (React) |
+| Backend | FastAPI (Python) |
+| Database | PostgreSQL |
+| Cloud Storage | Amazon S3 |
+| AI Framework | TensorFlow Lite |
+| Computer Vision | OpenCV |
+| Image Similarity | SSIM |
+| Authentication | JWT |
+| Digital Signature | Ed25519 |
+| Maps | Google Maps API |
+| Notifications | Firebase Cloud Messaging |
+| Version Control | GitHub |
 
 ---
 
-## SDG Alignment
+# 📊 SLA Levels
 
-- **SDG 11 – Sustainable Cities and Communities:** Enhances urban infrastructure resilience through automated, real-time monitoring. 
-- **SDG 16 – Peace, Justice, and Strong Institutions:** Promotes institutional accountability through transparent, tamper-evident SLA tracking. 
-- **SDG 9 – Industry, Innovation, and Infrastructure:** Modernizes local governance frameworks using scalable AI and web-native architectures.
-
----
-
-## Vision
-
-Enable AI-assisted, high-efficiency, and verifiable infrastructure governance to vastly improve response times, operational transparency, and urban resilience across local government units..
+| Priority | Example Incidents | Target Resolution |
+|-----------|------------------|-------------------|
+| 🔴 Critical | Road collapse, electrical hazards, major flooding | 24–48 Hours |
+| 🟠 High | Large potholes, major water leaks | 3 Days |
+| 🟡 Medium | Road cracks, drainage blockage | 7 Days |
+| 🟢 Low | Minor maintenance issues, faded road markings | 14 Days |
 
 ---
 
-## References (APA 7th Edition)
+# 🏗 System Architecture
 
-1. Abadi, M., Agarwal, A., Barham, P., Brevdo, E., Chen, Z., Citro, C., … Zheng, X. (2020). *TensorFlow Lite: Machine learning on mobile and edge devices*. TensorFlow. https://www.tensorflow.org/lite
+```text
+                Mobile Application
+      (Citizen • Repair • Officials)
+                     │
+                     ▼
+                FastAPI Backend
+                     │
+      ┌──────────────┼──────────────┐
+      ▼              ▼              ▼
+ PostgreSQL      Amazon S3      AI Services
+  Database      Image Storage   (TensorFlow Lite,
+                                OpenCV, SSIM)
+                     │
+                     ▼
+          Web Command Center
+ (Barangay • Engineering • Admin)
+```
 
-2. Abu Awwad, Y., Rana, O., & Perera, C. (2024). Anomaly detection on the edge using smart cameras under low-light conditions. *Sensors*, *24*(3), Article 772. [(https://www.mdpi.com/1424-8220/24/3/772)](https://www.mdpi.com/1424-8220/24/3/772)
+---
 
-3. Yasaswini, S., Sai, K. B., Prabhakar, P. V. S., Karthik, Y., & Murthy, G. S. N. (2026). Smart city vision: A geo-tagged AI system of automated road damage detection and civic workflow management. *International Journal of Science and Research Archive*, *18*(2), 903–909. [https://doi.org/10.30574/ijsra.2026.18.2.0365](https://ijsra.net/content/smart-city-vision-geo-tagged-ai-system-automated-road-damage-detection-and-civic-workflow)
+# 🎯 Expected Outcomes
 
-4. Mutambik, I. (2024). Assessing urban vulnerability to emergencies: A spatiotemporal approach using K-means clustering. *Land*, *13*(11), Article 1744. [(https://www.mdpi.com/3010868)](https://www.mdpi.com/2073-445X/13/11/1744)
+LUNAS is expected to deliver:
 
-5. Republic of the Philippines. (2012). *Data Privacy Act of 2012 (RA 10173)*. Official Gazette. https://www.privacy.gov.ph/data-privacy-act/
+- A unified infrastructure reporting platform
+- Faster incident response and resolution
+- Automated SLA monitoring
+- AI-assisted report validation
+- Transparent maintenance records
+- Better accountability through audit logs
+- Increased citizen participation
+- Improved decision-making through centralized data management fileciteturn0file0
+
+---
+
+# 👥 Beneficiaries
+
+- Citizens
+- Repair Personnel
+- Barangay Officials
+- City Engineering Office
+- Utility Providers
+- Local Government Unit (LGU) fileciteturn0file0
+
+---
+
+# 👨‍💻 Development Team
+
+| Name | Role |
+|------|------|
+| Mark Khean M. Viari | Project Manager • System Integrator |
+| Terrence Lappay | System Analyst • UI/UX |
+| Mark Anthony Lafuente | System Analyst • Frontend |
+| Kristian Dave Narvas | System Integrator |
+| John Miller Ungos | System Integrator |
+
+---
+
+# 📄 Research Information
+
+**Title**
+
+> **LUNAS: An AI-Assisted Urban Infrastructure Maintenance and Monitoring System with Automated SLA Management**
+
+**Institution**
+
+PHINMA University of Pangasinan  
+College of Information Technology
+
+**Project Duration**
+
+March 2026 – July 2026
+
+**Location**
+
+Dagupan City, Philippines fileciteturn0file0
+
+---
+
+# 📜 License
+
+This project is developed as a Capstone Research Project for academic purposes under the College of Information Technology, PHINMA University of Pangasinan.
+
+---
+
+> **LUNAS** — *Building smarter, faster, and more transparent urban infrastructure maintenance through AI and automation.*
+````
