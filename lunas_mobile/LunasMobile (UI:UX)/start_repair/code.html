@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Start Repair - #WO-2023-892</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<!-- Tailwind CSS & Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#005db7",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "on-secondary-fixed-variant": "#005312",
+                        "background": "#f9f9ff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-primary-container": "#dae5ff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d8e3fb",
+                        "outline-variant": "#c2c6d4",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-tertiary-fixed": "#2a1800",
+                        "primary-container": "#1565c0",
+                        "on-secondary-fixed": "#002204",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#a3f69c",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "tertiary-container": "#8e5b00",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "on-primary-fixed": "#001b3d",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "inverse-surface": "#263143",
+                        "tertiary": "#6d4500",
+                        "error": "#ba1a1a",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "surface-container": "#e7eeff",
+                        "secondary-fixed-dim": "#88d982",
+                        "surface-dim": "#cfdaf2",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "outline": "#727783",
+                        "surface-container-low": "#f0f3ff",
+                        "on-background": "#111c2d",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-highest": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "container_padding": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter", "sans-serif"],
+                        "caption": ["Inter", "sans-serif"],
+                        "heading": ["Inter", "sans-serif"],
+                        "button": ["Inter", "sans-serif"],
+                        "subtitle": ["Inter", "sans-serif"],
+                        "title": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-bright text-on-surface min-h-screen flex flex-col font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar (Shared Component) -->
+<!-- Applying style_ instructions from JSON exactly as provided -->
+<header class="bg-surface dark:bg-surface-container-high shadow-sm fixed docked full-width top-0 z-50 flex justify-between items-center px-container_padding h-16 w-full">
+<div class="flex items-center gap-md">
+<button class="text-primary dark:text-primary-fixed-dim hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 p-2 -ml-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-display text-display font-bold text-primary dark:text-primary-fixed-dim tracking-tight truncate">LUNAS Repair</h1>
+</div>
+<div>
+<!-- Avatar representation (trailing_type: avatar, leading_avatar: Repair Personnel Profile) -->
+<button class="hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 p-1 rounded-full flex items-center justify-center">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-button text-button">
+                    RP
+                </div>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas (Navigation Shell Suppressed due to task focus) -->
+<main class="flex-grow pt-24 px-container_padding pb-32 max-w-2xl mx-auto w-full flex flex-col gap-lg">
+<!-- Header Section -->
+<section class="flex flex-col gap-xs">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">assignment</span>
+<span class="font-subtitle text-subtitle">Work Order Readiness</span>
+</div>
+<h2 class="font-display text-display text-on-surface">#WO-2023-892</h2>
+</section>
+<!-- Live Status / Timer Card (Glassmorphism inspired, soft elevation) -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-lg flex flex-col items-center justify-center gap-md relative overflow-hidden">
+<!-- Subtle background accent -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 to-transparent opacity-50 pointer-events-none"></div>
+<div class="z-10 flex flex-col items-center text-center">
+<span class="font-caption text-caption text-on-surface-variant mb-1 uppercase tracking-wider">Scheduled Start</span>
+<div class="font-display text-[48px] leading-[56px] font-bold text-primary tracking-tighter" id="live-time">
+                    08:45 <span class="text-[24px]">AM</span>
+</div>
+</div>
+<div class="z-10 inline-flex items-center gap-xs bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full font-button text-caption">
+<span class="material-symbols-outlined text-[16px] icon-fill">verified</span>
+                Current GPS Location: Verified
+            </div>
+</section>
+<!-- Incident Summary Card (Bento-style detail) -->
+<section class="bg-surface rounded-xl shadow-sm border-l-4 border-error p-md flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<h3 class="font-title text-title text-on-surface">Incident Summary</h3>
+<span class="bg-error-container text-on-error-container font-caption text-caption px-2 py-1 rounded-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">warning</span> High Priority
+                </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Location Info -->
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Location</span>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary mt-0.5 text-[20px]">location_on</span>
+<p class="font-body text-body text-on-surface">
+                            Sector 7G, Industrial District<br/>
+                            Sub-level Valve Station Alpha
+                        </p>
+</div>
+<!-- Map Thumbnail -->
+<div class="mt-2 w-full h-24 rounded-lg overflow-hidden border border-outline-variant/50 relative">
+<img class="w-full h-full object-cover" data-alt="A modern, high-contrast digital map interface in light mode, showing a specific urban sector with precise infrastructure lines in deep blue and a glowing red hazard marker at a junction. The map style is clean, utilitarian, and government-grade." data-location="Industrial District" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSBpADyDfr_bnHy9OaAxf1nBfp5dlb-ZWB25H9aFKXPgIE_4b8-NTph-Mr8rQe_x_G3ijEsptTSgpWEObRakuQD_b_aymprREWoF9Mv_0AQrqAGItmbeZXb-uJnlFai9lmca8WGKM7_gMwwTRpg6mwL0WfY4MaH-7mBagD2tHCfS_Crqdd2o5uzz8rCOTvZFfIPK8vX1pi128qNdb9T8MEXvi2BJAj_zKWFZNyS_jujSqFQ4rdIDSNXNokdzDB9LVdi_9BzzBIp0fy"/>
+</div>
+</div>
+<!-- Hazard Info -->
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Hazard Type</span>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-error mt-0.5 text-[20px]">water_damage</span>
+<p class="font-body text-body text-on-surface">
+                            Class 3 Pressurized Leak. Potential structural undermining. Avoid main conduit.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-bright/95 backdrop-blur-md border-t border-outline-variant/20 p-container_padding z-40 pb-safe">
+<div class="max-w-2xl mx-auto flex flex-col gap-sm">
+<button class="w-full bg-primary text-on-primary font-button text-button py-4 rounded-[14px] shadow-sm hover:bg-surface-tint active:scale-[0.98] transition-all flex justify-center items-center gap-sm">
+<span class="material-symbols-outlined icon-fill">play_circle</span>
+                Confirm Arrival &amp; Start Repair
+            </button>
+<button class="w-full bg-surface-variant text-primary font-button text-button py-4 rounded-[14px] hover:bg-surface-container-highest active:scale-[0.98] transition-all">
+                Cancel
+            </button>
+</div>
+</div>
+<!-- Script for Live Timer (Visual flair) -->
+<script>
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            
+            const timeString = hours + ':' + minutes + ' <span class="text-[24px]">' + ampm + '</span>';
+            const timeEl = document.getElementById('live-time');
+            if(timeEl) {
+                timeEl.innerHTML = timeString;
+            }
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime(); // initial call
+    </script>
+</body></html>

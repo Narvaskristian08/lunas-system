@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create System Announcement - LUNAS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "background": "#f9f9ff",
+                        "on-secondary-container": "#217128",
+                        "on-background": "#111c2d",
+                        "on-secondary-fixed": "#002204",
+                        "on-primary-fixed": "#001b3d",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#a3f69c",
+                        "outline": "#727783",
+                        "surface-variant": "#d8e3fb",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "primary-container": "#1565c0",
+                        "inverse-surface": "#263143",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#dae5ff",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-primary-fixed-variant": "#00468c",
+                        "outline-variant": "#c2c6d4",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "primary-fixed": "#d6e3ff",
+                        "surface-container-highest": "#d8e3fb",
+                        "surface-container": "#e7eeff",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-surface": "#111c2d",
+                        "surface-dim": "#cfdaf2",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#005db7",
+                        "secondary": "#1b6d24",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-container-high": "#dee8ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#8e5b00",
+                        "tertiary": "#6d4500",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-tertiary-fixed": "#2a1800",
+                        "inverse-primary": "#a9c7ff",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container_padding": "16px",
+                        "base": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Inter"],
+                        "heading": ["Inter"],
+                        "body": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"],
+                        "button": ["Inter"],
+                        "subtitle": ["Inter"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body antialiased min-h-screen pb-20 md:pb-0 pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface dark:bg-on-background flex justify-between items-center px-container_padding h-16 z-50 bg-surface-container dark:bg-surface-container-highest shadow-sm">
+<div class="flex items-center gap-4">
+<button class="text-primary dark:text-primary-fixed hover:bg-surface-variant/50 p-2 rounded-full transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-title text-title font-bold text-primary dark:text-primary-fixed">Create System Announcement</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-subtitle overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of an administrative user in a brightly lit modern office setting. The person is wearing smart casual business attire, smiling subtly. High key lighting, clean corporate aesthetic, soft shadows, 4k resolution, photorealistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc0uGnBhi3Xar_e6dtRylHmskw_SwPUgdIMMvWaScgKFtJtY3SFXlnJRyEFENlbNyFMSnM61HMCgR_G2DOyQmDfHsLa1U6uB-lB9qhRMWoqa0ISq1fLwgpIz5ShYzD5A2GtcvMM6RpkWMMrfkXnfksx1oJffMq8fgfiS19HLMPn442LQciuhG-OX4wUM436Mg5TNh65-ZfJaySP7nSKx4gI7kWkiJ_B0XNIMi0fsN9qxNbiKb2jy_X-rHSr71COkLTs9sWLsZh74HO"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-4xl mx-auto p-container_padding pt-lg md:pt-xl space-y-lg">
+<form class="space-y-lg">
+<!-- Announcement Details Card -->
+<div class="bg-surface rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.05)] border border-outline-variant/30 p-md md:p-lg space-y-md">
+<h2 class="font-subtitle text-subtitle text-on-surface">Message Details</h2>
+<div class="space-y-sm">
+<label class="font-caption text-caption text-on-surface-variant" for="title">Title</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="title">title</span>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 rounded-t-[14px] pl-10 py-3 font-body text-body text-on-surface placeholder-on-surface-variant/50 transition-colors" id="title" placeholder="Enter announcement title" type="text"/>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-caption text-caption text-on-surface-variant" for="message">Message Body</label>
+<textarea class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 rounded-t-[14px] p-3 font-body text-body text-on-surface placeholder-on-surface-variant/50 transition-colors resize-y" id="message" placeholder="Type the detailed announcement message here..." rows="5"></textarea>
+</div>
+</div>
+<!-- Audience & Priority Card -->
+<div class="bg-surface rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.05)] border border-outline-variant/30 p-md md:p-lg space-y-md">
+<h2 class="font-subtitle text-subtitle text-on-surface">Targeting &amp; Priority</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="space-y-sm">
+<label class="font-caption text-caption text-on-surface-variant" for="audience">Target Audience</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="groups">groups</span>
+<select class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 rounded-t-[14px] pl-10 py-3 font-body text-body text-on-surface appearance-none transition-colors" id="audience">
+<option value="all">All Users</option>
+<option value="field_techs">Field Technicians</option>
+<option value="planners">City Planners</option>
+<option value="admin">Administrators</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="arrow_drop_down">arrow_drop_down</span>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-caption text-caption text-on-surface-variant">Priority Level</label>
+<div class="flex gap-2">
+<label class="flex-1 cursor-pointer">
+<input checked="" class="peer sr-only" name="priority" type="radio" value="normal"/>
+<div class="text-center py-2 px-3 rounded-lg border border-outline-variant peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-primary-container transition-all font-body text-body">
+                                    Normal
+                                </div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="peer sr-only" name="priority" type="radio" value="important"/>
+<div class="text-center py-2 px-3 rounded-lg border border-outline-variant peer-checked:bg-secondary-container peer-checked:text-on-secondary-container peer-checked:border-secondary-container transition-all font-body text-body">
+                                    Important
+                                </div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="peer sr-only" name="priority" type="radio" value="urgent"/>
+<div class="text-center py-2 px-3 rounded-lg border border-outline-variant peer-checked:bg-error-container peer-checked:text-on-error-container peer-checked:border-error-container transition-all font-body text-body">
+                                    Urgent
+                                </div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Settings Card -->
+<div class="bg-surface rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.05)] border border-outline-variant/30 p-md md:p-lg space-y-md">
+<h2 class="font-subtitle text-subtitle text-on-surface">Settings</h2>
+<div class="space-y-4">
+<label class="flex items-center justify-between cursor-pointer group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="notifications_active">notifications_active</span>
+<div>
+<span class="font-body text-body text-on-surface block">Push Notification</span>
+<span class="font-caption text-caption text-on-surface-variant">Send an immediate push alert to selected audience.</span>
+</div>
+</div>
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+<label class="flex items-center justify-between cursor-pointer group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="schedule">schedule</span>
+<div>
+<span class="font-body text-body text-on-surface block">Schedule Publication</span>
+<span class="font-caption text-caption text-on-surface-variant">Set a specific time for this announcement to go live.</span>
+</div>
+</div>
+<div class="relative">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</label>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col md:flex-row gap-4 justify-end pt-sm">
+<button class="px-6 py-3 rounded-full font-button text-button text-primary bg-primary/10 hover:bg-primary/20 transition-colors order-2 md:order-1 flex items-center justify-center gap-2 min-h-[48px]" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="draft">draft</span>
+                    Save as Draft
+                </button>
+<button class="px-6 py-3 rounded-[14px] font-button text-button text-on-primary bg-primary hover:bg-primary/90 shadow-[0_4px_8px_rgba(0,0,0,0.1)] transition-all active:scale-95 order-1 md:order-2 flex items-center justify-center gap-2 min-h-[48px]" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="send">send</span>
+                    Publish Now
+                </button>
+</div>
+</form>
+</main>
+</body></html>

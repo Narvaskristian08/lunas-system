@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Repair Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error": "#ba1a1a",
+                      "tertiary-fixed": "#ffddb5",
+                      "surface-container-low": "#f0f3ff",
+                      "on-error": "#ffffff",
+                      "on-primary-fixed-variant": "#00468c",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#d8e3fb",
+                      "primary-container": "#1565c0",
+                      "background": "#f9f9ff",
+                      "surface-container-high": "#dee8ff",
+                      "on-surface": "#111c2d",
+                      "inverse-surface": "#263143",
+                      "surface-container": "#e7eeff",
+                      "on-background": "#111c2d",
+                      "on-secondary-container": "#217128",
+                      "surface": "#f9f9ff",
+                      "surface-dim": "#cfdaf2",
+                      "tertiary-container": "#8e5b00",
+                      "outline-variant": "#c2c6d4",
+                      "on-surface-variant": "#424752",
+                      "on-secondary-fixed-variant": "#005312",
+                      "on-secondary-fixed": "#002204",
+                      "outline": "#727783",
+                      "inverse-on-surface": "#ecf1ff",
+                      "on-tertiary-fixed": "#2a1800",
+                      "on-primary-fixed": "#001b3d",
+                      "surface-bright": "#f9f9ff",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "primary": "#004d99",
+                      "surface-container-highest": "#d8e3fb",
+                      "secondary-fixed-dim": "#88d982",
+                      "secondary": "#1b6d24",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed": "#a3f69c",
+                      "primary-fixed": "#d6e3ff",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "on-primary-container": "#dae5ff",
+                      "tertiary": "#6d4500",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-tint": "#005db7",
+                      "on-primary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "inverse-primary": "#a9c7ff",
+                      "secondary-container": "#a0f399",
+                      "on-tertiary-container": "#ffe0bb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "container_padding": "16px",
+                      "xs": "4px",
+                      "gutter": "12px",
+                      "xl": "32px",
+                      "base": "8px"
+              },
+              "fontFamily": {
+                      "subtitle": ["Inter"],
+                      "caption": ["Inter"],
+                      "display": ["Inter"],
+                      "body": ["Inter"],
+                      "title": ["Inter"],
+                      "button": ["Inter"],
+                      "heading": ["Inter"]
+              },
+              "fontSize": {
+                      "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom range styling to be completely invisible over the slider */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 32px;
+            height: 100%;
+            background: transparent;
+            cursor: ew-resize;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-[100px]">
+<!-- Task-Focused Header (Suppressed Global Nav Shell) -->
+<header class="bg-surface sticky top-0 z-50 shadow-sm px-md py-sm flex items-center gap-sm">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-heading text-heading text-on-surface">Verify Repair</h1>
+</header>
+<main class="p-container_padding max-w-2xl mx-auto flex flex-col gap-lg mt-sm">
+<!-- Context Area -->
+<section class="flex flex-col gap-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-title text-title text-primary">#WO-2023-892</h2>
+<span class="px-sm py-xs bg-surface-container-highest text-on-surface font-caption text-caption rounded-full">Pending Review</span>
+</div>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">engineering</span>
+<span class="font-body text-body">Personnel: Engr. Santos</span>
+</div>
+</section>
+<!-- Image Comparison Slider -->
+<section class="flex flex-col gap-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-subtitle text-subtitle text-on-surface">Site Visuals</h3>
+<span class="font-caption text-caption text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">swipe</span> Slider
+                </span>
+</div>
+<div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest border border-outline-variant/30 select-none group">
+<!-- After Image (Base Layer) -->
+<div class="absolute inset-0 w-full h-full bg-cover bg-center" data-alt="A close-up view of a recently repaired asphalt road in a barangay setting during daytime. The new patch is smooth and dark, contrasting beautifully with the older, weathered gray asphalt around it. The lighting is bright natural sunlight, creating a realistic, documentary-style aesthetic suitable for a high-quality civic infrastructure report." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBKBNcNCn7otHC2cFKgoPc_lLgYBRb61rSQzEbRLB8yA5kHR1li9oqeCpM0ct1FBS6mWWHyC_sqrDETsgnyTAjqviXkxlf4ZcVfm69AK-7GMZbLpxzlN-q1K0BEYNkoJiRq2XRjp_q-iHBcJYEhviOWaWeEb2p-ZKjL-4xUw-rMCTEPQ2kdiWUHViN50etlnySYdSGV-jtSKqwt3hZf1JrmT5_lTgQCYh19yXq2qyg5ap60ZjyQhfzdcUeNIkOQVXqFvwKZeCN8Km1S')"></div>
+<!-- Before Image (Clipped Layer) -->
+<div class="absolute inset-0 w-full h-full bg-cover bg-center" data-alt="A close-up view of a damaged asphalt road with a significant pothole in a barangay setting during daytime. The edges of the hole are jagged, exposing rough gravel and dirt beneath. The lighting is bright natural sunlight, creating a realistic, documentary-style aesthetic suitable for a civic infrastructure report. High resolution, clear textures." id="before-image" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCOWVohzkfJz9P3pE15H_JnTs8HQQxcHR3w16SX7oAyyrprhvQhvr-wDBwrd53AP_20txjr6sFj82OC-n-OhLN6jxpD6dvQOFn93XmMZAM5Eiv6AlcfWejzMK_e93ZB-jkFL3DmIRdixsiXRXTRVz9wikUSvxuNy8qC6dPM_c90LiG9JvWSx_gY0hGEppY1Sqf95mFo8PwsaA1jXq4nFS9qP6ApW9BAhgkB2_iDhjO1wZukqhKGny-ZSq6kUg924agdtnzjmRsg17Oj'); clip-path: inset(0 50% 0 0);"></div>
+<!-- Labels -->
+<div class="absolute top-sm left-sm bg-inverse-surface/70 text-inverse-on-surface font-caption text-caption px-2 py-1 rounded-md backdrop-blur-sm pointer-events-none z-0">Before</div>
+<div class="absolute top-sm right-sm bg-inverse-surface/70 text-inverse-on-surface font-caption text-caption px-2 py-1 rounded-md backdrop-blur-sm pointer-events-none z-0">After</div>
+<!-- Slider UI Handle -->
+<div class="absolute top-0 bottom-0 left-1/2 w-1 bg-surface-container-lowest flex items-center justify-center transform -translate-x-1/2 shadow-md pointer-events-none" id="slider-handle">
+<div class="w-8 h-8 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.15)] text-primary">
+<span class="material-symbols-outlined text-[20px]">code</span>
+</div>
+</div>
+<!-- Invisible Range Input for Control -->
+<input class="absolute inset-0 w-full h-full opacity-0 z-10 m-0" id="image-slider" max="100" min="0" type="range" value="50"/>
+</div>
+</section>
+<!-- AI Recommendation Card -->
+<section class="bg-secondary-container/30 border border-secondary-container rounded-xl p-md flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined icon-fill">auto_awesome</span>
+</div>
+<div class="flex flex-col gap-xs">
+<div class="font-subtitle text-subtitle text-on-secondary-container">AI Verification Result</div>
+<div class="font-title text-title text-secondary">Quality Matches Specs</div>
+<p class="font-body text-body text-on-surface-variant mt-xs">Analysis indicates a 98% structural match with target repair guidelines for Grade-B asphalt patching.</p>
+</div>
+</section>
+<!-- Personnel Notes -->
+<section class="flex flex-col gap-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface">Repair Notes</h3>
+<div class="bg-surface-container-low p-md rounded-xl shadow-sm text-on-surface font-body text-body border border-outline-variant/20">
+                "Cleared debris from primary cavity. Applied bonding agent and filled with hot-mix asphalt to 5cm depth. Compacted surface mechanically to ensure flush alignment with existing road grade. Area secured during cooling period."
+            </div>
+</section>
+</main>
+<!-- Sticky Bottom Action Bar -->
+<div class="fixed bottom-0 w-full bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 p-md pb-[env(safe-area-inset-bottom,16px)] z-40">
+<div class="max-w-2xl mx-auto flex gap-md">
+<button class="flex-1 py-sm px-lg rounded-[14px] font-button text-button border border-error text-error hover:bg-error-container/50 transition-colors">
+                Request Rework
+            </button>
+<button class="flex-[2] py-sm px-lg rounded-[14px] bg-primary text-on-primary font-button text-button hover:bg-primary/90 transition-colors shadow-sm">
+                Approve Repair
+            </button>
+</div>
+</div>
+<script>
+        // Image Comparison Slider Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const slider = document.getElementById('image-slider');
+            const beforeImage = document.getElementById('before-image');
+            const sliderHandle = document.getElementById('slider-handle');
+
+            if (slider && beforeImage && sliderHandle) {
+                slider.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    // Update clip-path for before image
+                    beforeImage.style.clipPath = `inset(0 ${100 - value}% 0 0)`;
+                    // Update handle position
+                    sliderHandle.style.left = `${value}%`;
+                });
+            }
+        });
+    </script>
+</body></html>

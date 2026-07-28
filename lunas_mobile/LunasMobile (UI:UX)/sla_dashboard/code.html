@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SLA Dashboard - LUNAS Engineering</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-background": "#111c2d",
+                      "secondary-fixed": "#a3f69c",
+                      "primary": "#004d99",
+                      "surface-bright": "#f9f9ff",
+                      "on-secondary-fixed": "#002204",
+                      "primary-container": "#1565c0",
+                      "on-secondary-container": "#217128",
+                      "on-primary-container": "#dae5ff",
+                      "secondary": "#1b6d24",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d8e3fb",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#ffddb5",
+                      "secondary-container": "#a0f399",
+                      "on-secondary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#00468c",
+                      "inverse-on-surface": "#ecf1ff",
+                      "surface-container": "#e7eeff",
+                      "surface-dim": "#cfdaf2",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "secondary-fixed-dim": "#88d982",
+                      "tertiary": "#6d4500",
+                      "surface": "#f9f9ff",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#424752",
+                      "surface-variant": "#d8e3fb",
+                      "on-tertiary-fixed": "#2a1800",
+                      "inverse-primary": "#a9c7ff",
+                      "surface-container-high": "#dee8ff",
+                      "on-secondary-fixed-variant": "#005312",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "inverse-surface": "#263143",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#001b3d",
+                      "outline-variant": "#c2c6d4",
+                      "outline": "#727783",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-low": "#f0f3ff",
+                      "on-tertiary-container": "#ffe0bb",
+                      "background": "#f9f9ff",
+                      "on-surface": "#111c2d",
+                      "tertiary-container": "#8e5b00",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "primary-fixed": "#d6e3ff",
+                      "surface-tint": "#005db7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "container_padding": "16px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "gutter": "12px",
+                      "base": "8px",
+                      "xl": "32px",
+                      "xs": "4px"
+              },
+              "fontFamily": {
+                      "body": [
+                              "Inter"
+                      ],
+                      "subtitle": [
+                              "Inter"
+                      ],
+                      "title": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "heading": [
+                              "Inter"
+                      ],
+                      "caption": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "subtitle": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "title": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "15px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "heading": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "caption": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body text-body pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim docked full-width top-0 shadow-sm dark:shadow-none flex justify-between items-center px-container_padding py-sm w-full sticky z-50">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center">
+<img alt="City Engineer Profile" class="w-full h-full object-cover" data-alt="A highly detailed portrait photo of a professional city engineer in their late 30s, wearing smart casual business attire. The lighting is soft and natural, suggesting a bright office environment. The style is a high-end corporate headshot with a clean, light-mode aesthetic, utilizing deep blacks and pristine whites with subtle blue accents. The mood is confident and reliable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8OriA2DhIo-7d3vJY9DWgmtTk5kaceSOticqCFPyAgBEZ2FRrZ-st8siPo5Dwfk968vwvAayIIfJGVIbwhHubKMuj3WKGv1u2_45gShmD5F1zQZgVUW_7V-06TIOHA3XjYScxHnOSpnAhfQ8HW01EsrHy91hAHAoc8EKL6FXsCshl0r51OBaL-Pj-bdswL6zOBSK8RA1in7KdWjIjh7aXuOlhWGzQ5FJiLHpAqfKX8YCruZhYeu-64QhWaF_S5406bpYsu2fgj2uy"/>
+</div>
+<h1 class="font-display text-display text-primary dark:text-primary-fixed-dim tracking-tight">LUNAS Engineering</h1>
+</div>
+<!-- Desktop Navigation (Hidden on mobile) -->
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant dark:text-outline hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out px-sm py-xs rounded-lg flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-button text-button">Dashboard</span>
+</a>
+<a class="text-on-surface-variant dark:text-outline hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out px-sm py-xs rounded-lg flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-button text-button">Incidents</span>
+</a>
+<a class="text-primary dark:text-primary-fixed-dim font-bold hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out px-sm py-xs rounded-lg flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined icon-fill">analytics</span>
+<span class="font-button text-button">SLA</span>
+</a>
+<a class="text-on-surface-variant dark:text-outline hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out px-sm py-xs rounded-lg flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-button text-button">Profile</span>
+</a>
+</nav>
+<button class="text-primary dark:text-primary-fixed-dim hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out p-xs rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-container_padding py-lg flex flex-col gap-lg">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row justify-between items-start md:items-end gap-sm">
+<div>
+<h2 class="font-heading text-heading text-on-surface mb-xs">Service Level Agreements</h2>
+<p class="font-body text-body text-on-surface-variant">Real-time performance monitoring across all utility sectors.</p>
+</div>
+<div class="flex gap-sm w-full md:w-auto">
+<button class="flex-1 md:flex-none bg-surface-container-highest text-primary font-button text-button py-sm px-md rounded-lg flex items-center justify-center gap-xs shadow-sm">
+<span class="material-symbols-outlined">filter_list</span> Filter
+                </button>
+<button class="flex-1 md:flex-none bg-primary text-on-primary font-button text-button py-sm px-md rounded-lg flex items-center justify-center gap-xs shadow-sm">
+<span class="material-symbols-outlined">download</span> Export
+                </button>
+</div>
+</section>
+<!-- Summary Cards (Bento Grid) -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md md:gap-lg">
+<!-- Total Active SLA -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-outline-variant/30 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Active SLAs</h3>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-size: 18px;">receipt_long</span>
+</div>
+</div>
+<div class="flex items-end gap-xs">
+<span class="font-display text-display text-on-surface">142</span>
+<span class="font-caption text-caption text-secondary flex items-center mb-1"><span class="material-symbols-outlined" style="font-size: 14px;">arrow_upward</span> 12%</span>
+</div>
+</div>
+<!-- Near Deadline -->
+<div class="bg-surface rounded-xl p-md shadow-sm border-l-4 border-l-tertiary-fixed-dim border-y border-r border-outline-variant/30 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Near Deadline</h3>
+<div class="w-8 h-8 rounded-full bg-tertiary-container/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-size: 18px;">timer</span>
+</div>
+</div>
+<div class="flex items-end gap-xs">
+<span class="font-display text-display text-on-surface">12</span>
+<span class="font-caption text-caption text-on-surface-variant mb-1">Within 4hrs</span>
+</div>
+</div>
+<!-- Overdue -->
+<div class="bg-surface rounded-xl p-md shadow-sm border-l-4 border-l-error border-y border-r border-outline-variant/30 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Overdue</h3>
+<div class="w-8 h-8 rounded-full bg-error-container/30 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-size: 18px;">warning</span>
+</div>
+</div>
+<div class="flex items-end gap-xs">
+<span class="font-display text-display text-error">7</span>
+<span class="font-caption text-caption text-error flex items-center mb-1"><span class="material-symbols-outlined" style="font-size: 14px;">arrow_upward</span> 2</span>
+</div>
+</div>
+<!-- SLA Compliance Rate -->
+<div class="bg-surface rounded-xl p-md shadow-sm border-l-4 border-l-secondary border-y border-r border-outline-variant/30 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Compliance Rate</h3>
+<div class="w-8 h-8 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-size: 18px;">verified</span>
+</div>
+</div>
+<div class="flex items-end gap-xs">
+<span class="font-display text-display text-secondary">94%</span>
+<span class="font-caption text-caption text-on-surface-variant mb-1">Target: 98%</span>
+</div>
+</div>
+</section>
+<!-- Charts Section -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+<!-- Compliance Trend -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-outline-variant/30 h-80 flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title text-title text-on-surface">Monthly Compliance Trend</h3>
+<button class="text-on-surface-variant hover:bg-surface-container px-2 py-1 rounded text-sm"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="flex-grow bg-surface-container-lowest rounded flex items-center justify-center relative overflow-hidden">
+<!-- Faux Line Chart Visualization -->
+<div class="absolute inset-0 flex items-end px-4 pb-8 pt-4 gap-2">
+<div class="w-full flex justify-between h-full relative">
+<!-- Grid lines -->
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[0%]"></div>
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[25%]"></div>
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[50%]"></div>
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[75%]"></div>
+<!-- Fake SVG Line -->
+<svg class="absolute inset-0 w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,80 L20,70 L40,85 L60,50 L80,30 L100,10" fill="none" stroke="theme('colors.primary')" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="M0,80 L20,70 L40,85 L60,50 L80,30 L100,10 L100,100 L0,100 Z" fill="theme('colors.primary-container')" fill-opacity="0.1" stroke="none"></path>
+</svg>
+</div>
+</div>
+<div class="absolute bottom-2 w-full flex justify-between px-4 text-xs text-on-surface-variant">
+<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+</div>
+</div>
+</div>
+<!-- Resolution Time Trend -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-outline-variant/30 h-80 flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title text-title text-on-surface">Avg Resolution Time (Hrs)</h3>
+<button class="text-on-surface-variant hover:bg-surface-container px-2 py-1 rounded text-sm"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="flex-grow bg-surface-container-lowest rounded flex items-end justify-between px-4 pb-8 pt-4 gap-4 relative">
+<!-- Faux Bar Chart -->
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[20%] left-0"></div>
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[50%] left-0"></div>
+<div class="absolute w-full border-t border-outline-variant/20 bottom-[80%] left-0"></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[40%] z-10 hover:bg-secondary transition-colors relative group"><div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">4.2</div></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[35%] z-10 hover:bg-secondary transition-colors relative group"><div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">3.8</div></div>
+<div class="w-1/6 bg-tertiary-container/60 rounded-t-sm h-[60%] z-10 hover:bg-tertiary transition-colors relative group"><div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">6.1</div></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[45%] z-10 hover:bg-secondary transition-colors relative group"><div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">4.8</div></div>
+<div class="w-1/6 bg-error-container rounded-t-sm h-[90%] z-10 hover:bg-error transition-colors relative group"><div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">8.5</div></div>
+<div class="w-1/6 bg-secondary-container rounded-t-sm h-[30%] z-10 hover:bg-secondary transition-colors relative group"><div class="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">3.2</div></div>
+<div class="absolute bottom-2 w-full flex justify-between px-2 text-xs text-on-surface-variant left-0">
+<span class="w-1/6 text-center">W1</span><span class="w-1/6 text-center">W2</span><span class="w-1/6 text-center">W3</span><span class="w-1/6 text-center">W4</span><span class="w-1/6 text-center">W5</span><span class="w-1/6 text-center">W6</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Detailed Incident List -->
+<section class="bg-surface rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+<div class="p-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
+<h3 class="font-title text-title text-on-surface">Critical Active Incidents</h3>
+<div class="flex gap-2">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="pl-8 pr-3 py-1.5 bg-surface rounded-lg border border-outline-variant text-sm focus:ring-1 focus:ring-primary focus:border-primary w-48" placeholder="Search SLA..." type="text"/>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest border-b border-outline-variant/30 text-on-surface-variant font-subtitle text-sm">
+<th class="p-md font-medium">ID</th>
+<th class="p-md font-medium">Issue</th>
+<th class="p-md font-medium">Department</th>
+<th class="p-md font-medium">Priority</th>
+<th class="p-md font-medium">Remaining Time</th>
+<th class="p-md font-medium text-right">Action</th>
+</tr>
+</thead>
+<tbody class="text-body font-body">
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-lowest transition-colors">
+<td class="p-md text-on-surface font-medium">#WO-8921</td>
+<td class="p-md">Water Main Break - 5th Ave</td>
+<td class="p-md">
+<span class="px-2 py-1 rounded-full bg-surface-container text-on-surface text-xs flex items-center w-fit gap-1"><span class="material-symbols-outlined text-[14px]">water_drop</span> Utilities</span>
+</td>
+<td class="p-md"><span class="text-error font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">priority_high</span> Critical</span></td>
+<td class="p-md font-medium text-error">00:45:00</td>
+<td class="p-md text-right"><button class="text-primary hover:bg-primary/10 p-1.5 rounded"><span class="material-symbols-outlined">chevron_right</span></button></td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-lowest transition-colors">
+<td class="p-md text-on-surface font-medium">#WO-8933</td>
+<td class="p-md">Traffic Light Sync Failure</td>
+<td class="p-md">
+<span class="px-2 py-1 rounded-full bg-surface-container text-on-surface text-xs flex items-center w-fit gap-1"><span class="material-symbols-outlined text-[14px]">traffic</span> Transit</span>
+</td>
+<td class="p-md"><span class="text-tertiary-fixed-dim font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span> High</span></td>
+<td class="p-md font-medium text-tertiary-fixed-dim">02:15:30</td>
+<td class="p-md text-right"><button class="text-primary hover:bg-primary/10 p-1.5 rounded"><span class="material-symbols-outlined">chevron_right</span></button></td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-lowest transition-colors">
+<td class="p-md text-on-surface font-medium">#WO-8945</td>
+<td class="p-md">Pothole Repair - Main St</td>
+<td class="p-md">
+<span class="px-2 py-1 rounded-full bg-surface-container text-on-surface text-xs flex items-center w-fit gap-1"><span class="material-symbols-outlined text-[14px]">add_road</span> Public Works</span>
+</td>
+<td class="p-md"><span class="text-on-surface-variant font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">low_priority</span> Normal</span></td>
+<td class="p-md font-medium text-on-surface">14:20:00</td>
+<td class="p-md text-right"><button class="text-primary hover:bg-primary/10 p-1.5 rounded"><span class="material-symbols-outlined">chevron_right</span></button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden bg-surface-container dark:bg-surface-container-low docked full-width bottom-0 rounded-t-xl shadow-lg dark:shadow-none fixed bottom-0 w-full z-50 flex justify-around items-center px-md pb-md pt-sm">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all active:scale-90 duration-200 group rounded-xl" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1">dashboard</span>
+<span class="font-caption text-caption-mobile md:text-caption">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all active:scale-90 duration-200 group rounded-xl" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1">list_alt</span>
+<span class="font-caption text-caption-mobile md:text-caption">Incidents</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-on-primary-container rounded-full px-5 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined icon-fill mb-1">analytics</span>
+<span class="font-caption text-caption-mobile md:text-caption font-medium">SLA</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all active:scale-90 duration-200 group rounded-xl" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1">account_circle</span>
+<span class="font-caption text-caption-mobile md:text-caption">Profile</span>
+</a>
+</nav>
+</body></html>

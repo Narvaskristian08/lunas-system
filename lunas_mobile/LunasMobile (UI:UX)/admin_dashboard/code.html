@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUNAS Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "background": "#f9f9ff",
+                        "on-secondary-container": "#217128",
+                        "on-background": "#111c2d",
+                        "on-secondary-fixed": "#002204",
+                        "on-primary-fixed": "#001b3d",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#a3f69c",
+                        "outline": "#727783",
+                        "surface-variant": "#d8e3fb",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "primary-container": "#1565c0",
+                        "inverse-surface": "#263143",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#dae5ff",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-primary-fixed-variant": "#00468c",
+                        "outline-variant": "#c2c6d4",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "primary-fixed": "#d6e3ff",
+                        "surface-container-highest": "#d8e3fb",
+                        "surface-container": "#e7eeff",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-surface": "#111c2d",
+                        "surface-dim": "#cfdaf2",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#005db7",
+                        "secondary": "#1b6d24",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-container-high": "#dee8ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#8e5b00",
+                        "tertiary": "#6d4500",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-tertiary-fixed": "#2a1800",
+                        "inverse-primary": "#a9c7ff",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container_padding": "16px",
+                        "base": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Inter"],
+                        "heading": ["Inter"],
+                        "body": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"],
+                        "button": ["Inter"],
+                        "subtitle": ["Inter"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        /* Hide scrollbar for clean UI but allow scrolling */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen flex flex-col pt-16 pb-20">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-on-background text-primary dark:text-primary-fixed font-title text-title fixed top-0 w-full bg-surface-container dark:bg-surface-container-highest shadow-sm flex justify-between items-center px-container_padding h-16 w-full z-50">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+<span class="font-title text-title font-bold text-primary dark:text-primary-fixed">System Admin</span>
+</div>
+<div class="flex items-center">
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A close up, professional portrait of a system administrator in a brightly lit modern office setting. The lighting is soft and corporate, matching a light-mode UI style with clean whites and subtle blue tones. High quality, sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCr8xasccpkYgP0vJTBvd3P2jR3Fucy7kjXZw277Oxy6zo803h09vqxkKg5HyYsQRmKoulUci70ImWTdo_r1dKuXpoKg_tVXw9GxyzyzxJXmOR3uiw0Yk288I4VdzqtTJ063AZMP6hWlqUVuIXguFovPLzq-_NzX5eRXgvMSHpjQW23cEZB1bMu-jjwBCGz6wAyuq1_VhPkH3GDJEEdGwQ_ZxkPv4KLYTjPMnprNX-dP16CY7ejThrQ3yvClnloIyNYdl8X4q9R7Iq"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-container_padding py-lg overflow-y-auto space-y-lg">
+<!-- Header Section -->
+<section class="flex flex-col gap-xs md:flex-row md:items-end md:justify-between">
+<div>
+<h1 class="font-display text-display text-on-background">Good Morning, Admin</h1>
+<p class="font-body text-body text-on-surface-variant mt-xs" id="current-date">October 24, 2023</p>
+</div>
+<div class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-secondary-container text-on-secondary-container self-start md:self-auto mt-sm md:mt-0 shadow-sm border border-secondary-fixed">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-caption text-caption font-medium">System Healthy</span>
+</div>
+</section>
+<!-- Bento Grid Summary Cards -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Card 1 -->
+<div class="bg-surface rounded-xl p-md shadow-[0_4px_8px_rgba(0,0,0,0.05)] border-l-4 border-primary flex flex-col gap-sm relative overflow-hidden group hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-primary-container rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex items-center justify-between">
+<span class="font-body text-body text-on-surface-variant">Total Users</span>
+<span class="material-symbols-outlined text-primary">group</span>
+</div>
+<div class="font-heading text-heading text-on-surface">1,248</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface rounded-xl p-md shadow-[0_4px_8px_rgba(0,0,0,0.05)] border-l-4 border-secondary flex flex-col gap-sm relative overflow-hidden group hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-secondary-container rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex items-center justify-between">
+<span class="font-body text-body text-on-surface-variant">Active Users</span>
+<span class="material-symbols-outlined text-secondary">how_to_reg</span>
+</div>
+<div class="font-heading text-heading text-on-surface">842</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface rounded-xl p-md shadow-[0_4px_8px_rgba(0,0,0,0.05)] border-l-4 border-tertiary flex flex-col gap-sm relative overflow-hidden group hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-tertiary-container rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex items-center justify-between">
+<span class="font-body text-body text-on-surface-variant">Pending</span>
+<span class="material-symbols-outlined text-tertiary">hourglass_empty</span>
+</div>
+<div class="font-heading text-heading text-on-surface">12</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface rounded-xl p-md shadow-[0_4px_8px_rgba(0,0,0,0.05)] border-l-4 border-error flex flex-col gap-sm relative overflow-hidden group hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-error-container rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
+<div class="flex items-center justify-between">
+<span class="font-body text-body text-on-surface-variant">Alerts</span>
+<span class="material-symbols-outlined text-error">warning</span>
+</div>
+<div class="font-heading text-heading text-on-surface">3</div>
+</div>
+</section>
+<!-- Quick Actions -->
+<section class="space-y-md">
+<h2 class="font-title text-title text-on-background">Quick Actions</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<button class="bg-primary text-on-primary font-button text-button rounded-xl py-md px-md flex items-center justify-center gap-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.15)] hover:bg-surface-tint transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">manage_accounts</span>
+                    Manage Users
+                </button>
+<button class="bg-surface-container-high text-primary font-button text-button rounded-xl py-md px-md flex items-center justify-center gap-sm shadow-sm border border-outline-variant hover:bg-surface-variant transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">receipt_long</span>
+                    Audit Logs
+                </button>
+<button class="bg-surface-container-high text-primary font-button text-button rounded-xl py-md px-md flex items-center justify-center gap-sm shadow-sm border border-outline-variant hover:bg-surface-variant transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">campaign</span>
+                    Create Announcement
+                </button>
+</div>
+</section>
+<!-- Recent Activity (Generated Component to fill space in a dash layout) -->
+<section class="bg-surface rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.05)] border border-outline-variant overflow-hidden mt-lg">
+<div class="p-md border-b border-surface-container-highest flex justify-between items-center bg-surface-container-low">
+<h3 class="font-subtitle text-subtitle text-on-surface">Recent System Activity</h3>
+<button class="text-primary font-button text-button hover:underline text-sm">View All</button>
+</div>
+<div class="divide-y divide-surface-container-highest">
+<div class="p-md flex items-start gap-md hover:bg-surface-container-lowest transition-colors">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+</div>
+<div class="flex-1">
+<p class="font-body text-body text-on-surface"><span class="font-medium">Admin User</span> approved verification for 3 new technicians.</p>
+<p class="font-caption text-caption text-on-surface-variant mt-xs">10 mins ago</p>
+</div>
+</div>
+<div class="p-md flex items-start gap-md hover:bg-surface-container-lowest transition-colors">
+<div class="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">security</span>
+</div>
+<div class="flex-1">
+<p class="font-body text-body text-on-surface"><span class="font-medium">System Automated</span> flagged a potential intrusion attempt on Sector 4 API.</p>
+<p class="font-caption text-caption text-on-surface-variant mt-xs">45 mins ago</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface dark:bg-on-background text-primary dark:text-primary-fixed font-caption text-caption font-title text-title text-primary fixed bottom-0 w-full z-50 bg-surface-container-low dark:bg-surface-container-highest shadow-[0_-1px_3px_0_rgba(0,0,0,0.1)] active:scale-95 transition-transform fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-2 pb-2 md:hidden">
+<!-- Dashboard (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 hover:bg-surface-variant" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="mt-xs">Dashboard</span>
+</a>
+<!-- Users -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="mt-xs">Users</span>
+</a>
+<!-- Audit -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="mt-xs">Audit</span>
+</a>
+<!-- Alerts -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="mt-xs">Alerts</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="mt-xs">Profile</span>
+</a>
+</nav>
+<script>
+        // Set current date
+        const dateElement = document.getElementById('current-date');
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateElement.textContent = new Date().toLocaleDateString('en-US', options);
+    </script>
+</body></html>

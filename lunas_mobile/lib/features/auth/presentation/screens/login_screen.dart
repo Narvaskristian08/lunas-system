@@ -145,7 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/register'),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/registration/type'),
                   child: const Text('Register'),
                 ),
               ],

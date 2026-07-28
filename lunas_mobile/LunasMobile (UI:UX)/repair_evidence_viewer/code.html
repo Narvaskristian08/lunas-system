@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Repair Evidence Viewer - UrbanGuard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#f0f3ff",
+                      "on-primary-fixed": "#001b3d",
+                      "on-surface": "#111c2d",
+                      "surface": "#f9f9ff",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#f9f9ff",
+                      "primary-container": "#1565c0",
+                      "background": "#f9f9ff",
+                      "outline-variant": "#c2c6d4",
+                      "secondary-fixed": "#a3f69c",
+                      "inverse-surface": "#263143",
+                      "inverse-on-surface": "#ecf1ff",
+                      "secondary-container": "#a0f399",
+                      "on-primary-container": "#dae5ff",
+                      "on-secondary-fixed-variant": "#005312",
+                      "on-tertiary-fixed": "#2a1800",
+                      "on-error-container": "#93000a",
+                      "tertiary-container": "#8e5b00",
+                      "surface-tint": "#005db7",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "error-container": "#ffdad6",
+                      "on-secondary-container": "#217128",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#00468c",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "secondary-fixed-dim": "#88d982",
+                      "outline": "#727783",
+                      "on-secondary-fixed": "#002204",
+                      "on-primary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "primary": "#004d99",
+                      "tertiary-fixed": "#ffddb5",
+                      "surface-container": "#e7eeff",
+                      "surface-dim": "#cfdaf2",
+                      "tertiary": "#6d4500",
+                      "surface-container-high": "#dee8ff",
+                      "on-tertiary-container": "#ffe0bb",
+                      "surface-variant": "#d8e3fb",
+                      "primary-fixed": "#d6e3ff",
+                      "on-surface-variant": "#424752",
+                      "secondary": "#1b6d24",
+                      "surface-container-highest": "#d8e3fb",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#a9c7ff",
+                      "on-background": "#111c2d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "md": "16px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "container_padding": "16px",
+                      "gutter": "12px",
+                      "base": "8px"
+              },
+              "fontFamily": {
+                      "body": [
+                              "Inter"
+                      ],
+                      "title": [
+                              "Inter"
+                      ],
+                      "subtitle": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "heading": [
+                              "Inter"
+                      ],
+                      "caption": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "subtitle": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "heading": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "caption": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "button": [
+                              "15px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body text-body antialiased min-h-screen flex flex-col pt-16 pb-20 md:pb-0">
+<!-- TopAppBar Semantic Shell -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-md h-16 transition-colors">
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100 flex items-center justify-center text-on-surface-variant md:hidden">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden hidden md:block">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a city infrastructure engineer, smiling slightly, wearing a high-visibility vest over a collared shirt. The background is a blurred bright outdoor urban setting. Modern corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOdw1Kc6-4zmjs54wVVxKVcGEQVqnTNe_Elvs5N4wDId6faX1xLQsiMn_kdtJpCUHw_Ad2OsVFtJvDTlkBcFLJGrKIoRCLxeRwEB3VFEQ9h6qc5rymBTGYeddqvBbTb-qsmpGgHGuuW_xlcqL-njGqvUoVmdr_wTflxUfSvoiA_TWBpzvpua73ifzGYDfe_HJ09NW-M30hi-Vdv1rYxuRcEnyg8wSLr43ZnFPpuQLbA-Yn88Hmt-yj43WfCrsmu1VPBzOkmpxs5ez9"/>
+</div>
+<h1 class="font-heading text-heading text-primary dark:text-primary-fixed-dim tracking-tight">UrbanGuard</h1>
+</div>
+<!-- Desktop Nav Cluster -->
+<nav class="hidden md:flex items-center gap-md">
+<a class="px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Home</a>
+<a class="px-3 py-2 rounded-lg text-primary font-bold hover:bg-surface-container-high transition-colors font-button text-button" href="#">Reports</a>
+<a class="px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Map</a>
+<a class="px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Alerts</a>
+</nav>
+<button class="p-2 rounded-full hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-95 duration-100 flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</header>
+<main class="flex-grow w-full max-w-7xl mx-auto px-md md:px-lg py-lg space-y-lg">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-md">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<a class="text-primary hover:underline font-subtitle text-subtitle flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-sm">arrow_back</span> Back to Reports
+                    </a>
+</div>
+<h2 class="font-display text-display text-on-surface tracking-tight">Repair Evidence Viewer</h2>
+<p class="font-body text-body text-on-surface-variant mt-sm">Work Order #WO-2023-892A • Resolved Pothole</p>
+</div>
+<div class="flex items-center gap-sm">
+<div class="inline-flex items-center gap-xs px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-subtitle text-subtitle shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    Verified
+                </div>
+<button class="px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-primary font-button text-button hover:bg-surface-container-high transition-colors flex items-center gap-xs shadow-sm">
+<span class="material-symbols-outlined">download</span>
+                    Export PDF
+                </button>
+</div>
+</div>
+<!-- Evidence Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Media Comparison Area (Span 2) -->
+<div class="lg:col-span-2 space-y-md">
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-surface-container-high overflow-hidden">
+<div class="p-4 border-b border-surface-container-high flex justify-between items-center bg-surface-container-low">
+<h3 class="font-title text-title text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">compare</span>
+                            Visual Comparison
+                        </h3>
+<div class="flex bg-surface-container rounded-lg p-1">
+<button class="px-3 py-1 rounded-md bg-surface text-primary shadow-sm font-button text-button text-sm">Side-by-Side</button>
+<button class="px-3 py-1 rounded-md text-on-surface-variant hover:text-on-surface font-button text-button text-sm">Slider</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-outline-variant">
+<!-- Before -->
+<div class="bg-surface-container-lowest relative group">
+<div class="absolute top-4 left-4 bg-error text-on-error px-2 py-1 rounded shadow-sm font-button text-button text-xs z-10 uppercase tracking-wide">Before</div>
+<img alt="Before Repair" class="w-full aspect-[4/3] object-cover" data-alt="A close-up photograph of a severe, deep pothole in an urban asphalt road. The edges are jagged and loose gravel is visible inside. The lighting is harsh daytime sunlight, emphasizing the depth and hazard. The aesthetic is gritty and realistic urban infrastructure." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkSVGKvVl9o8k5krh7tpc3CJ65WptC4n-VOg4Lm905NTwe0WLNjDkWUe6C5Bnw34e2Ykl_bf3mAPGvPopn0r1OS78cFGLM0zrb2Q8CJQBVG0zpCb739tSSwwAu7dDcQ8abiebFAFFTsXS9czCjeh4_xXZBYs0pMakdetI8fg21mU36HmjYMZho7GgrLodJMQbQnO1ytD9FHqKIKUKLpZXHzND7ZT2Jqls2x6C_0BAE1_vaLJYDjAHHdbgvyuKGJfu1RAaa8BzJ8wKD"/>
+<div class="absolute bottom-0 w-full bg-gradient-to-t from-inverse-surface/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+<p class="text-on-primary font-caption text-caption flex items-center gap-xs"><span class="material-symbols-outlined text-sm">schedule</span> Oct 12, 09:45 AM</p>
+</div>
+</div>
+<!-- After -->
+<div class="bg-surface-container-lowest relative group">
+<div class="absolute top-4 left-4 bg-secondary text-on-secondary px-2 py-1 rounded shadow-sm font-button text-button text-xs z-10 uppercase tracking-wide">After</div>
+<img alt="After Repair" class="w-full aspect-[4/3] object-cover" data-alt="A close-up photograph of a freshly repaired section of asphalt road where a pothole used to be. The new asphalt is smooth, dark, and perfectly leveled with the surrounding older road surface. Clean edges. Bright daytime lighting. Modern urban utility aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuNTGr9z5MluqGd0LXHBXzNt4WXTdLEBketcR0cOuY8bfxqQVzw1V_BuHsiW-OH2W-8Ax1VGaxBZF-C2jh1pARyKvbrtIrMm7AJmVu_dbtwCFQbP60ePYh1IKvEMOCCPpeaptlsTu3jUkMMKScaMmIl3C-RoTLokn1Kj0dviXs10QyeHUoDy1jK5M8d_7C62h-DdKlVe9BZjkwAJAi4SUchKBjuMGKLvgFk9Fb3E7aXENSiSvfnlMyVRKAv56ePgBNkf31jzyvW0h6"/>
+<div class="absolute bottom-0 w-full bg-gradient-to-t from-inverse-surface/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+<p class="text-on-primary font-caption text-caption flex items-center gap-xs"><span class="material-symbols-outlined text-sm">schedule</span> Oct 14, 14:30 PM</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Location Map Snippet -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-surface-container-high overflow-hidden flex flex-col md:flex-row h-auto md:h-32">
+<div class="w-full md:w-1/3 h-32 md:h-full bg-surface-variant relative">
+<div class="bg-cover bg-center w-full h-full" data-alt="A high-contrast, modern stylized map view showing a specific street corner intersection. The map is clean, primarily using whites, light grays, and subtle blues, typical of a professional utility tracking dashboard. A prominent blue marker pinpoints a location." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAJnPy_ukuku2d57XzjdYO0PBo8wCYitCSsDqgG1OoLl2KmiSDCaizjAwyevqlXc91UOZ7SHWKDbNpefy5flWDNtuSBzK_cuLahMo-g2oHMP7-y2-AZR96xS7-EMp6N_UK4O0Tfroe0Q6A-BlpEhbrEjGOhmcO_XzryTqG42XrcYUvi2vjF9oxE25vzhsxRZ9Eh2srRtfwuiVmfyAcj07QTmXPfZY9kLVGTDFCIxbStKPv0hBZjnJdmM3Y4IhmFHHTktwsoufTEoj5V')"></div>
+<div class="absolute inset-0 bg-primary/10"></div>
+<span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" style="font-variation-settings: 'FILL' 1; font-size: 32px;">location_on</span>
+</div>
+<div class="p-md flex flex-col justify-center w-full md:w-2/3">
+<h4 class="font-subtitle text-subtitle text-on-surface">Location Details</h4>
+<p class="font-body text-body text-on-surface-variant">Intersection of 4th Ave &amp; Main St, Downtown Sector.</p>
+<p class="font-caption text-caption text-outline mt-xs font-mono">Lat: 34.0522, Lng: -118.2437</p>
+</div>
+</div>
+</div>
+<!-- Details Sidebar (Span 1) -->
+<div class="space-y-md">
+<!-- Repair Notes Card -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] border-l-4 border-l-primary relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 text-outline-variant">
+<span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.2;">note_alt</span>
+</div>
+<h3 class="font-title text-title text-on-surface mb-sm flex items-center gap-xs relative z-10">
+                        Repair Notes
+                    </h3>
+<div class="bg-surface-container p-sm rounded-lg relative z-10">
+<p class="font-body text-body text-on-surface italic">"Asphalt resurfaced and leveled. Base layer compacted according to city standard specs. Cleaned debris from surrounding storm drain."</p>
+</div>
+</div>
+<!-- Personnel & Verification Card -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-surface-container-high">
+<h3 class="font-title text-title text-on-surface mb-md">Execution Details</h3>
+<ul class="space-y-lg">
+<li class="flex items-start gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">engineering</span>
+</div>
+<div>
+<p class="font-caption text-caption text-outline-variant uppercase tracking-wider">Field Personnel</p>
+<p class="font-subtitle text-subtitle text-on-surface">Engr. Reyes</p>
+<p class="font-body text-body text-on-surface-variant text-sm">Paving Unit - Alpha Squad</p>
+</div>
+</li>
+<li class="flex items-start gap-sm">
+<div class="w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<p class="font-caption text-caption text-outline-variant uppercase tracking-wider">Verified By</p>
+<p class="font-subtitle text-subtitle text-on-surface">City Engineering Dept.</p>
+<p class="font-body text-body text-on-surface-variant text-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-secondary">check</span> Approved on Oct 15
+                                </p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Action Area -->
+<div class="bg-surface-container-low p-md rounded-xl border border-outline-variant/30 flex flex-col gap-sm">
+<button class="w-full py-3 rounded-lg bg-primary text-on-primary font-button text-button shadow-sm hover:bg-primary-fixed-variant transition-colors flex justify-center items-center gap-sm">
+<span class="material-symbols-outlined">edit_note</span>
+                         Add Supplemental Note
+                     </button>
+<button class="w-full py-3 rounded-lg bg-transparent text-primary border border-primary font-button text-button hover:bg-surface-container transition-colors flex justify-center items-center gap-sm">
+<span class="material-symbols-outlined">share</span>
+                         Share Evidence Link
+                     </button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Semantic Shell (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest dark:bg-surface-container-low shadow-[0_-2px_8px_rgba(0,0,0,0.08)] flex justify-around items-center h-20 pb-safe px-sm transition-colors">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-caption text-caption">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="font-caption text-caption font-medium">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">map</span>
+<span class="font-caption text-caption">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">notifications</span>
+<span class="font-caption text-caption">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-caption text-caption">Profile</span>
+</a>
+</nav>
+</body></html>

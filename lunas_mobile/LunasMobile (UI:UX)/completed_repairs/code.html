@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Completed Repairs - LUNAS Repair</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#005db7",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "on-secondary-fixed-variant": "#005312",
+                        "background": "#f9f9ff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-primary-container": "#dae5ff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d8e3fb",
+                        "outline-variant": "#c2c6d4",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-tertiary-fixed": "#2a1800",
+                        "primary-container": "#1565c0",
+                        "on-secondary-fixed": "#002204",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#a3f69c",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "tertiary-container": "#8e5b00",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "on-primary-fixed": "#001b3d",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "inverse-surface": "#263143",
+                        "tertiary": "#6d4500",
+                        "error": "#ba1a1a",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "surface-container": "#e7eeff",
+                        "secondary-fixed-dim": "#88d982",
+                        "surface-dim": "#cfdaf2",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "outline": "#727783",
+                        "surface-container-low": "#f0f3ff",
+                        "on-background": "#111c2d",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-highest": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "container_padding": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter"],
+                        "caption": ["Inter"],
+                        "heading": ["Inter"],
+                        "button": ["Inter"],
+                        "subtitle": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill-1 {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col pt-16 pb-[80px] md:pb-0 md:pt-[64px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-container-high shadow-sm flex justify-between items-center px-container_padding h-16 w-full hidden md:flex">
+<div class="flex items-center gap-md hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 rounded-full p-2 cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant text-title" data-icon="menu">menu</span>
+</div>
+<div class="font-display text-display font-bold text-primary dark:text-primary-fixed-dim absolute left-1/2 -translate-x-1/2">
+            LUNAS Repair
+        </div>
+<div class="flex items-center gap-sm cursor-pointer hover:bg-surface-variant/50 transition-colors rounded-full p-1 active:scale-95 duration-150">
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden flex items-center justify-center">
+<img class="object-cover w-full h-full" data-alt="A close up professional headshot of an urban infrastructure technician. The technician is wearing a clean, modern safety vest over a blue collared shirt. The lighting is bright and even, suggesting daytime outdoors or well-lit office. The background is a soft, out of focus cityscape. The style is hyper-realistic and corporate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxge41qim6AqMvzv6u6QJF20SAT0z5EvlYjMVx7732PBRfPZw7lvBHfH7I2N6QA2srh1F8qETm6-BJqnnU0PdodZhzuDPa9xo6Q1TYU5ZOlSSHZnohgrvx-lOsvfpg_XWgda3MXHxzbahkileWr9zE5AdbKHLpNM6N2kfcZGqgz4Xh1kVBRUjqLN1Xhlc-zPYLGAlRryzQQJj_eLTZBaOimTwdY1bItVdwT9RZ19vL3GeMFm3LMU-nnuO7Wuxv-lWf-Vj4z9llIz7b"/>
+</div>
+</div>
+</header>
+<!-- Mobile Header Fallback (when TopAppBar hidden) -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-container_padding h-16 md:hidden">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="arrow_back">arrow_back</span>
+<h1 class="font-title text-title text-primary font-bold">History</h1>
+<div class="w-6"></div>
+</header>
+<main class="flex-grow w-full max-w-3xl mx-auto px-container_padding py-lg flex flex-col gap-lg">
+<!-- Search & Filter Area -->
+<section class="flex flex-col gap-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant z-10" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-b-2 border-outline-variant focus:border-primary text-body pl-[48px] pr-md py-md rounded-t-[14px] outline-none transition-colors" placeholder="Search Work Orders..." type="text"/>
+</div>
+<div class="flex gap-sm overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-container_padding px-container_padding">
+<button class="whitespace-nowrap px-md py-sm rounded-full bg-primary-container text-on-primary-container font-button text-button shadow-sm active:scale-95 transition-transform shrink-0">All</button>
+<button class="whitespace-nowrap px-md py-sm rounded-full bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors border border-outline-variant font-button text-button active:scale-95 shrink-0">Verified</button>
+<button class="whitespace-nowrap px-md py-sm rounded-full bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors border border-outline-variant font-button text-button active:scale-95 shrink-0">Pending</button>
+<button class="whitespace-nowrap px-md py-sm rounded-full bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors border border-outline-variant font-button text-button active:scale-95 shrink-0">Rework Required</button>
+</div>
+</section>
+<!-- Work Orders List -->
+<section class="flex flex-col gap-md">
+<!-- Card 1: Verified -->
+<article class="bg-surface rounded-xl shadow-sm border-l-4 border-secondary p-md flex flex-col gap-md active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-title text-title text-on-surface">Water Leak</h2>
+<p class="font-caption text-caption text-on-surface-variant mt-xs">#WO-2023-840</p>
+</div>
+<span class="px-sm py-xs bg-secondary/10 text-secondary rounded-full font-caption text-caption font-bold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] icon-fill-1" data-icon="check_circle">check_circle</span>
+                        Verified
+                    </span>
+</div>
+<div class="flex justify-between items-end mt-sm pt-sm border-t border-surface-variant">
+<div class="flex items-center gap-xs text-on-surface-variant font-caption text-caption">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span>Oct 20, 2023</span>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</div>
+</article>
+<!-- Card 2: Rework Required -->
+<article class="bg-surface rounded-xl shadow-sm border-l-4 border-error p-md flex flex-col gap-md active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-title text-title text-on-surface">Pothole</h2>
+<p class="font-caption text-caption text-on-surface-variant mt-xs">#WO-2023-835</p>
+</div>
+<span class="px-sm py-xs bg-error/10 text-error rounded-full font-caption text-caption font-bold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="error">error</span>
+                        Rework Required
+                    </span>
+</div>
+<div class="flex justify-between items-end mt-sm pt-sm border-t border-surface-variant">
+<div class="flex items-center gap-xs text-on-surface-variant font-caption text-caption">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span>Oct 18, 2023</span>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</div>
+</article>
+<!-- Card 3: Pending -->
+<article class="bg-surface rounded-xl shadow-sm border-l-4 border-tertiary-fixed-dim p-md flex flex-col gap-md active:scale-[0.98] transition-transform cursor-pointer hover:shadow-md">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-title text-title text-on-surface">Streetlight Outage</h2>
+<p class="font-caption text-caption text-on-surface-variant mt-xs">#WO-2023-830</p>
+</div>
+<span class="px-sm py-xs bg-tertiary-fixed-dim/20 text-tertiary-container rounded-full font-caption text-caption font-bold flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="pending">pending</span>
+                        Pending
+                    </span>
+</div>
+<div class="flex justify-between items-end mt-sm pt-sm border-t border-surface-variant">
+<div class="flex items-center gap-xs text-on-surface-variant font-caption text-caption">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span>Oct 15, 2023</span>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</div>
+</article>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-xs py-sm max-w-full bg-surface dark:bg-surface-container-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.08)] rounded-t-xl md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-caption text-caption mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined icon-fill-1" data-icon="assignment">assignment</span>
+<span class="font-caption text-caption mt-1 font-bold">Tasks</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-caption text-caption mt-1">Map</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="font-caption text-caption mt-1">Alerts</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-caption text-caption mt-1">Profile</span>
+</div>
+</nav>
+<style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

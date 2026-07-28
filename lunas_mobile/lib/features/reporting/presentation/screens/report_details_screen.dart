@@ -12,7 +12,7 @@ class ReportDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final reportId =
-        ModalRoute.of(context)?.settings.arguments as String? ?? 'LNS-9920-X';
+        ModalRoute.of(context)?.settings.arguments as String? ?? 'RPT-2026-0142';
     return Scaffold(
       appBar: const LunasAppBar(
         title: 'Report Details',
@@ -36,28 +36,28 @@ class ReportDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   LunasCard(
-                    color: theme.colorScheme.errorContainer,
+                    color: theme.colorScheme.primaryContainer,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const ReportStatusChip(
-                          label: 'Critical',
-                          isCritical: true,
+                          label: 'Under review',
+                          icon: Icons.rate_review_outlined,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Structural Fissure',
+                          'Road surface damage',
                           style: theme.textTheme.headlineLarge,
                         ),
                         Text(
                           reportId,
                           style: AppTextStyles.technicalHash.copyWith(
-                            color: theme.colorScheme.onErrorContainer,
+                            color: theme.colorScheme.onPrimaryContainer,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'Grid Sector 7G • Canary Wharf, E14',
+                          'Mabini Street, Barangay 8, Dagupan City',
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],
@@ -67,24 +67,24 @@ class ReportDetailsScreen extends StatelessWidget {
                   const ReportMetadataGrid(
                     items: [
                       (
-                        label: 'Confidence',
-                        value: '98.2%',
-                        icon: Icons.verified_outlined,
+                        label: 'AI triage',
+                        value: 'High priority',
+                        icon: Icons.auto_awesome_outlined,
                       ),
                       (
-                        label: 'Response ETA',
-                        value: '00:14:52',
+                        label: 'Submitted',
+                        value: 'Today, 9:42 AM',
                         icon: Icons.timer_outlined,
                       ),
                       (
-                        label: 'IPFS Node',
-                        value: 'QmXoyp...',
-                        icon: Icons.cloud_done_outlined,
+                        label: 'Assignment',
+                        value: 'Awaiting review',
+                        icon: Icons.groups_outlined,
                       ),
                       (
-                        label: 'Protocol',
-                        value: 'Polygon',
-                        icon: Icons.hub_outlined,
+                        label: 'Target response',
+                        value: 'Within 8 hours',
+                        icon: Icons.schedule_outlined,
                       ),
                     ],
                   ),
@@ -93,14 +93,11 @@ class ReportDetailsScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   const LunasCard(
                     child: Text(
-                      'Deep structural cracking is visible along the primary support surface. The area requires immediate engineering inspection.',
+                      'A deep pothole is affecting the right lane near the intersection. The road surface is uneven and may be unsafe for motorcycles and pedestrians.',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxl),
-                  const ReportSectionTitle(
-                    'Audit Timeline',
-                    trailing: ReportStatusChip(label: 'Polygon Live'),
-                  ),
+                  const ReportSectionTitle('Report Timeline'),
                   const SizedBox(height: AppSpacing.md),
                   const AuditTimeline(),
                   const SizedBox(height: AppSpacing.xxl),

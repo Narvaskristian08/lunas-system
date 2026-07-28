@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Engineering Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-background": "#111c2d",
+                      "secondary-fixed": "#a3f69c",
+                      "primary": "#004d99",
+                      "surface-bright": "#f9f9ff",
+                      "on-secondary-fixed": "#002204",
+                      "primary-container": "#1565c0",
+                      "on-secondary-container": "#217128",
+                      "on-primary-container": "#dae5ff",
+                      "secondary": "#1b6d24",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d8e3fb",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#ffddb5",
+                      "secondary-container": "#a0f399",
+                      "on-secondary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#00468c",
+                      "inverse-on-surface": "#ecf1ff",
+                      "surface-container": "#e7eeff",
+                      "surface-dim": "#cfdaf2",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "secondary-fixed-dim": "#88d982",
+                      "tertiary": "#6d4500",
+                      "surface": "#f9f9ff",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#424752",
+                      "surface-variant": "#d8e3fb",
+                      "on-tertiary-fixed": "#2a1800",
+                      "inverse-primary": "#a9c7ff",
+                      "surface-container-high": "#dee8ff",
+                      "on-secondary-fixed-variant": "#005312",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "inverse-surface": "#263143",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#001b3d",
+                      "outline-variant": "#c2c6d4",
+                      "outline": "#727783",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-low": "#f0f3ff",
+                      "on-tertiary-container": "#ffe0bb",
+                      "background": "#f9f9ff",
+                      "on-surface": "#111c2d",
+                      "tertiary-container": "#8e5b00",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "primary-fixed": "#d6e3ff",
+                      "surface-tint": "#005db7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "container_padding": "16px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "gutter": "12px",
+                      "base": "8px",
+                      "xl": "32px",
+                      "xs": "4px"
+              },
+              "fontFamily": {
+                      "body": ["Inter"],
+                      "subtitle": ["Inter"],
+                      "title": ["Inter"],
+                      "display": ["Inter"],
+                      "button": ["Inter"],
+                      "heading": ["Inter"],
+                      "caption": ["Inter"]
+              },
+              "fontSize": {
+                      "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .elevation-0 { box-shadow: none; }
+        .elevation-1 { box-shadow: 0 0px 4px 0 rgba(0, 0, 0, 0.05); }
+        .elevation-2 { box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08); }
+        .elevation-3 { box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.12); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+      </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body text-body antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none bg-surface-container-low dark:bg-surface-container-lowest flex justify-between items-center px-container_padding py-sm w-full sticky top-0 z-50">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-outline-variant bg-surface-variant flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Professional headshot of a City Engineer. Modern light mode UI style. 50-100 words." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzocXdY8E1uS6TLlkx1d5wzZDtVQEyxPmDhZtHYP3bAkdlfvHzGmcxfxDHFq1aj53HEsimLiwkC3tjLd_gPTSY3Qu1ZaGo4UyIJoBq_EgQEG1Lf-jMGiF4A-eI6oO3lu7XyoPqT3KgVTgsKWzmnlvlMKPY2ZERieO8P97qm98c0zXl-gmCXJidVQKZRSsQUc8BUcWTkdhDzAkVYdsP3arPN-dCOYst-p12fT9E7OQgyOoH6-p4tJX7DkbRnaCnHPoVUikbp8GwTHpp"/>
+</div>
+<h1 class="font-display text-display text-primary dark:text-primary-fixed-dim tracking-tight">LUNAS Engineering</h1>
+</div>
+<div class="flex items-center">
+<button class="w-12 h-12 rounded-full flex items-center justify-center hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out text-primary dark:text-primary-fixed-dim">
+<span class="material-symbols-outlined" data-icon="notifications" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto w-full px-container_padding py-lg space-y-lg">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-md border-b border-surface-container-high pb-md">
+<div>
+<h2 class="font-display text-display text-on-surface">Engineering Dashboard</h2>
+<p class="font-subtitle text-subtitle text-on-surface-variant mt-xs">City-wide incident and SLA overview.</p>
+</div>
+<button class="bg-primary text-on-primary font-button text-button rounded-full px-lg py-sm flex items-center gap-sm elevation-1 hover:bg-primary-container active:scale-95 transition-all self-start md:self-auto shrink-0 w-full md:w-auto justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+                Create Work Order
+            </button>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Left Column: Metrics & Incidents -->
+<div class="lg:col-span-8 space-y-lg">
+<!-- Bento Grid for Metrics -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-sm md:gap-md">
+<!-- Active Card -->
+<div class="bg-surface-bright rounded-xl p-md elevation-1 border-l-[4px] border-l-primary flex flex-col justify-between h-[120px]">
+<div class="flex items-start justify-between">
+<span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider">Active</span>
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<span class="font-display text-display text-on-surface">142</span>
+</div>
+<!-- Critical Card -->
+<div class="bg-error-container rounded-xl p-md elevation-1 border-l-[4px] border-l-error flex flex-col justify-between h-[120px]">
+<div class="flex items-start justify-between">
+<span class="font-caption text-caption text-on-error-container uppercase tracking-wider">Critical</span>
+<span class="material-symbols-outlined text-error text-[20px]" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<span class="font-display text-display text-on-error-container">18</span>
+</div>
+<!-- Overdue Card -->
+<div class="bg-surface-bright rounded-xl p-md elevation-1 border-l-[4px] border-l-tertiary flex flex-col justify-between h-[120px]">
+<div class="flex items-start justify-between">
+<span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider">Overdue</span>
+<span class="material-symbols-outlined text-tertiary text-[20px]" style="font-variation-settings: 'FILL' 1;">schedule</span>
+</div>
+<span class="font-display text-display text-on-surface">7</span>
+</div>
+<!-- Completed Card -->
+<div class="bg-surface-bright rounded-xl p-md elevation-1 border-l-[4px] border-l-secondary flex flex-col justify-between h-[120px]">
+<div class="flex items-start justify-between">
+<span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider">Completed Today</span>
+<span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-display text-display text-on-surface">24</span>
+</div>
+</div>
+<!-- High Priority Incidents List -->
+<section class="bg-surface-bright rounded-xl elevation-1 border border-outline-variant/30 overflow-hidden">
+<div class="p-md border-b border-surface-container-high flex justify-between items-center bg-surface-container-low/50">
+<h3 class="font-title text-title text-on-surface">High Priority Incidents</h3>
+<button class="font-button text-button text-primary hover:text-primary-container transition-colors">View All</button>
+</div>
+<div class="divide-y divide-surface-container-high">
+<!-- Incident Item 1 -->
+<div class="p-md hover:bg-surface-container-lowest/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-md cursor-pointer group">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<h4 class="font-subtitle text-subtitle text-on-surface group-hover:text-primary transition-colors">Main Line Rupture - Sector 7G</h4>
+<p class="font-body text-body text-on-surface-variant mt-xs line-clamp-1">Water pressure dropping rapidly. Immediate dispatch required.</p>
+<div class="flex flex-wrap items-center gap-sm mt-sm">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container/50 text-error font-caption text-caption">Critical</span>
+<span class="font-caption text-caption text-outline flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">schedule</span> 15m ago</span>
+<span class="font-caption text-caption text-outline flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">location_on</span> 1424 Elm St</span>
+</div>
+</div>
+</div>
+<button class="bg-surface-container hover:bg-surface-container-highest text-on-surface font-button text-button rounded-full px-md py-sm transition-colors whitespace-nowrap self-start sm:self-auto">Assign</button>
+</div>
+<!-- Incident Item 2 -->
+<div class="p-md hover:bg-surface-container-lowest/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-md cursor-pointer group">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/30 text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">power_off</span>
+</div>
+<div>
+<h4 class="font-subtitle text-subtitle text-on-surface group-hover:text-primary transition-colors">Substation 4 Offline</h4>
+<p class="font-body text-body text-on-surface-variant mt-xs line-clamp-1">Reported outage affecting residential blocks C and D.</p>
+<div class="flex flex-wrap items-center gap-sm mt-sm">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary-container font-caption text-caption">High</span>
+<span class="font-caption text-caption text-outline flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">schedule</span> 42m ago</span>
+<span class="font-caption text-caption text-outline flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">location_on</span> Grid 4A</span>
+</div>
+</div>
+</div>
+<button class="bg-surface-container hover:bg-surface-container-highest text-on-surface font-button text-button rounded-full px-md py-sm transition-colors whitespace-nowrap self-start sm:self-auto">Assign</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: SLA & Quick Actions -->
+<div class="lg:col-span-4 space-y-lg">
+<!-- SLA Compliance Card -->
+<div class="bg-surface-bright rounded-xl p-md elevation-1 border border-outline-variant/30 flex flex-col justify-between relative overflow-hidden">
+<div class="z-10 relative">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-title text-title text-on-surface">SLA Compliance</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="flex items-baseline gap-xs">
+<span class="font-display text-display text-primary">94%</span>
+<span class="font-body text-body text-secondary flex items-center"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> 2.1%</span>
+</div>
+<p class="font-caption text-caption text-on-surface-variant mt-xs">Overall compliance past 30 days</p>
+</div>
+<!-- Fake Sparkline using CSS borders -->
+<div class="h-24 mt-md w-full relative z-0 flex items-end opacity-60">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 30">
+<path d="M0,30 L0,15 C10,12 20,20 30,10 C40,0 50,15 60,8 C70,1 80,18 90,5 L100,2 L100,30 Z" fill="url(#grad1)" opacity="0.3"></path>
+<path d="M0,15 C10,12 20,20 30,10 C40,0 50,15 60,8 C70,1 80,18 90,5 L100,2" fill="none" stroke="#004d99" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<defs>
+<lineargradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#004d99;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#f9f9ff;stop-opacity:0"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+</div>
+<!-- Quick Actions Bento -->
+<div class="bg-surface-bright rounded-xl p-md elevation-1 border border-outline-variant/30">
+<h3 class="font-title text-title text-on-surface mb-md">Quick Actions</h3>
+<div class="grid grid-cols-2 gap-sm">
+<!-- Action 1 -->
+<button class="bg-surface-container hover:bg-surface-container-highest rounded-lg p-sm flex flex-col items-center justify-center gap-sm transition-colors text-center aspect-square group">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">list_alt</span>
+</div>
+<span class="font-button text-button text-on-surface text-sm">View Incidents</span>
+</button>
+<!-- Action 2 -->
+<button class="bg-surface-container hover:bg-surface-container-highest rounded-lg p-sm flex flex-col items-center justify-center gap-sm transition-colors text-center aspect-square group">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">engineering</span>
+</div>
+<span class="font-button text-button text-on-surface text-sm">Assign Provider</span>
+</button>
+<!-- Action 3 -->
+<button class="bg-surface-container hover:bg-surface-container-highest rounded-lg p-sm flex flex-col items-center justify-center gap-sm transition-colors text-center aspect-square group">
+<div class="w-12 h-12 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<span class="font-button text-button text-on-surface text-sm">SLA Dashboard</span>
+</button>
+<!-- Action 4 -->
+<button class="bg-surface-container hover:bg-surface-container-highest rounded-lg p-sm flex flex-col items-center justify-center gap-sm transition-colors text-center aspect-square group">
+<div class="w-12 h-12 rounded-full bg-surface-variant text-on-surface flex items-center justify-center group-hover:scale-110 transition-transform border border-outline-variant/50">
+<span class="material-symbols-outlined">build_circle</span>
+</div>
+<span class="font-button text-button text-on-surface text-sm">Verify Repairs</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container dark:bg-surface-container-low text-primary dark:text-primary-fixed-dim font-caption text-caption-mobile md:text-caption font-display text-display text-primary dark:text-primary-fixed-dim docked full-width bottom-0 rounded-t-xl bg-surface-container dark:bg-surface-container-low shadow-lg dark:shadow-none fixed bottom-0 w-full z-50 flex justify-around items-center px-md pb-md pt-sm">
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-on-primary-container rounded-full px-5 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="mt-xs">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt" style="font-variation-settings: 'FILL' 0;">list_alt</span>
+<span class="mt-xs">Incidents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="mt-xs">SLA</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle" style="font-variation-settings: 'FILL' 0;">account_circle</span>
+<span class="mt-xs">Profile</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SLA Monitoring</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-low": "#f0f3ff",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d8e3fb",
+                        "primary-container": "#1565c0",
+                        "background": "#f9f9ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-surface": "#111c2d",
+                        "inverse-surface": "#263143",
+                        "surface-container": "#e7eeff",
+                        "on-background": "#111c2d",
+                        "on-secondary-container": "#217128",
+                        "surface": "#f9f9ff",
+                        "surface-dim": "#cfdaf2",
+                        "tertiary-container": "#8e5b00",
+                        "outline-variant": "#c2c6d4",
+                        "on-surface-variant": "#424752",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-secondary-fixed": "#002204",
+                        "outline": "#727783",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-tertiary-fixed": "#2a1800",
+                        "on-primary-fixed": "#001b3d",
+                        "surface-bright": "#f9f9ff",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "primary": "#004d99",
+                        "surface-container-highest": "#d8e3fb",
+                        "secondary-fixed-dim": "#88d982",
+                        "secondary": "#1b6d24",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#a3f69c",
+                        "primary-fixed": "#d6e3ff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "on-primary-container": "#dae5ff",
+                        "tertiary": "#6d4500",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#005db7",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "secondary-container": "#a0f399",
+                        "on-tertiary-container": "#ffe0bb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "container_padding": "16px",
+                        "xs": "4px",
+                        "gutter": "12px",
+                        "xl": "32px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "subtitle": ["Inter"],
+                        "caption": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "title": ["Inter"],
+                        "button": ["Inter"],
+                        "heading": ["Inter"]
+                    },
+                    "fontSize": {
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body text-body min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-container-low shadow-sm z-40">
+<div class="flex justify-between items-center px-md py-sm w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim text-heading">grid_view</span>
+<span class="font-display text-display text-primary dark:text-primary-fixed-dim tracking-tight font-extrabold">LUNAS</span>
+</div>
+<!-- Desktop Navigation Cluster -->
+<nav class="hidden md:flex gap-sm items-center">
+<a class="px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Map</a>
+<a class="px-md py-sm rounded-lg text-primary font-bold hover:bg-surface-container-high transition-colors font-button text-button" href="#">Incidents</a>
+<a class="px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Report</a>
+<a class="px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Insights</a>
+<a class="px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-button text-button" href="#">Profile</a>
+</nav>
+<div class="flex items-center">
+<img alt="User profile" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of an urban utility technician in a modern, light-filled command center. The lighting is crisp and bright, reflecting a high-tech corporate environment. The technician looks focused and reliable, wearing a dark navy uniform jacket with subtle reflective accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBChq_2p3LuZrjZ_uv-BLoKgUtf6dVC7EYBlcI9zDw4bZj79EFJHlYKp-bG4jqK-Um_gqn1Jd6NZDulrzcAyFaqk9NPW-EbkIn1Aik41L28Mi3twG-MyDtlNMjduz0hWktPHYJhRyw8LwbY1aRcuqfYiKr7hb7eDGZHUp3AjMB_QYJvAC-gZ9XI9Jb0vwNwmcmUBpuaiOnFVyHwQ_CnjkFhOKbCs1PzOwFn5QGpvss7jQObh6q0XWClZFUAUhEtxQFtgz-_6cOOGdQO"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-md lg:px-lg py-lg max-w-7xl mx-auto w-full pb-32 md:pb-lg">
+<div class="flex justify-between items-end mb-lg">
+<div>
+<h1 class="font-heading text-heading text-on-surface">SLA Monitoring</h1>
+<p class="font-subtitle text-subtitle text-on-surface-variant mt-xs">Real-time tracking of infrastructure response targets.</p>
+</div>
+<button class="hidden md:flex items-center gap-xs px-md py-sm bg-surface-container-high text-on-surface rounded-lg font-button text-button hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                Filter
+            </button>
+</div>
+<!-- Summary Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md mb-xl">
+<!-- Within SLA -->
+<div class="bg-surface-container-low rounded-xl p-md shadow-sm border-l-4 border-secondary flex flex-col justify-between min-h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-subtitle text-subtitle text-on-surface-variant">Within SLA</span>
+<span class="material-symbols-outlined text-secondary">check_circle</span>
+</div>
+<div class="font-display text-display text-on-surface mt-sm">10</div>
+</div>
+<!-- Near Deadline -->
+<div class="bg-surface-container-low rounded-xl p-md shadow-sm border-l-4 border-tertiary-fixed flex flex-col justify-between min-h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-subtitle text-subtitle text-on-surface-variant">Near Deadline</span>
+<span class="material-symbols-outlined text-tertiary">schedule</span>
+</div>
+<div class="font-display text-display text-on-surface mt-sm">3</div>
+</div>
+<!-- Overdue (Highlighted) -->
+<div class="bg-error-container rounded-xl p-md shadow-sm border-l-4 border-error flex flex-col justify-between min-h-[120px]">
+<div class="flex justify-between items-start">
+<span class="font-subtitle text-subtitle text-on-error-container font-semibold">Overdue</span>
+<span class="material-symbols-outlined text-error fill">warning</span>
+</div>
+<div class="font-display text-display text-on-error-container mt-sm">2</div>
+</div>
+</div>
+<!-- Incidents Table / List -->
+<h2 class="font-title text-title text-on-surface mb-md">Active Incidents</h2>
+<!-- Desktop Table View -->
+<div class="hidden md:block bg-surface-container-low rounded-xl shadow-sm overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/50 bg-surface-container-high/50">
+<th class="p-md font-button text-button text-on-surface-variant">ID</th>
+<th class="p-md font-button text-button text-on-surface-variant">Stage</th>
+<th class="p-md font-button text-button text-on-surface-variant">Personnel</th>
+<th class="p-md font-button text-button text-on-surface-variant">Priority</th>
+<th class="p-md font-button text-button text-on-surface-variant text-right">Remaining</th>
+</tr>
+</thead>
+<tbody class="font-body text-body">
+<!-- Standard Row -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high transition-colors">
+<td class="p-md font-medium text-primary">#INC-8942</td>
+<td class="p-md">
+<span class="inline-flex items-center gap-xs px-2 py-1 bg-surface-variant text-on-surface-variant rounded-full font-caption text-caption">
+                                In Progress
+                            </span>
+</td>
+<td class="p-md flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full bg-surface-variant object-cover" data-alt="A small circular avatar portrait of an urban field technician named Reyes. Modern corporate style, bright lighting, professional setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFLYN4xYPCmsSUcE0A5heO-fp_HWMj0lsnpfko_eMiW-dAQl35arTX5L6cQ0peWlHtiVYmxN0Fr0NekcQ0AUrZmOblg5bv7AJULO7WXK2wnH1gySQ55Gtk6oCwC_JPwCToJ0S4TAybPE64fumPy_tYGyLAanmEE9iSUjY4lusrpn1O04wIkhbADBgZ4_lX7Ove5Hr0GDtTCsVing7fHEGl3q56HoJCia1V_WvGfqdKUPleSTFlBhamyF7m2U_Y1dXnTxYnb5sxZcOp"/>
+                            Reyes
+                        </td>
+<td class="p-md">High</td>
+<td class="p-md text-right font-medium text-secondary">2h 15m</td>
+</tr>
+<!-- Overdue Row (Highlighted) -->
+<tr class="border-b border-outline-variant/30 bg-error-container/20 hover:bg-error-container/30 transition-colors">
+<td class="p-md font-medium text-on-error-container">#INC-8938</td>
+<td class="p-md">
+<span class="inline-flex items-center gap-xs px-2 py-1 bg-error-container text-on-error-container rounded-full font-caption text-caption border border-error/20">
+                                Dispatched
+                            </span>
+</td>
+<td class="p-md flex items-center gap-sm text-on-surface">
+<img class="w-8 h-8 rounded-full bg-surface-variant object-cover" data-alt="A small circular avatar portrait of an urban field technician named Chen. Modern corporate style, bright lighting, professional setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYOtzpMDbu0YvQmE9FXSLqIS9URpSVp0aNTfo7M8FbEcn3o06c2684zP4pv3s9IDE9okmpOw-JWJnDBA3-PPvIKl1Ht5xUD-YGkeu_1mbKOIP7lA_pd5AQjHvJ_5HVwk1vhZeRgcJSWu7kM4xNeJKdXSN8K1VX9L5QJ05TKgYgrEWHMPsH68FJo5bs_vPGC1seUI7m9qbaZ5bUXU-L35_jSfWLP43CboDbGa7xl6ySpmBG_6aXY_yBBca8vBhmm7z4liqeFS9LUQ10"/>
+                            Chen
+                        </td>
+<td class="p-md text-on-surface">Critical</td>
+<td class="p-md text-right font-bold text-error flex justify-end items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">error</span>
+                            -45m
+                        </td>
+</tr>
+<!-- Near Deadline Row -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-high transition-colors">
+<td class="p-md font-medium text-primary">#INC-8945</td>
+<td class="p-md">
+<span class="inline-flex items-center gap-xs px-2 py-1 bg-surface-variant text-on-surface-variant rounded-full font-caption text-caption">
+                                Assessing
+                            </span>
+</td>
+<td class="p-md flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center font-bold text-caption">MS</div>
+                            Smith
+                        </td>
+<td class="p-md">Medium</td>
+<td class="p-md text-right font-medium text-tertiary">0h 20m</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Mobile Card List View -->
+<div class="md:hidden flex flex-col gap-sm">
+<!-- Standard Card -->
+<div class="bg-surface-container-low rounded-xl p-md shadow-sm border border-outline-variant/30">
+<div class="flex justify-between items-center mb-sm">
+<span class="font-title text-title text-primary">#INC-8942</span>
+<span class="inline-flex items-center px-2 py-1 bg-surface-variant text-on-surface-variant rounded-full font-caption text-caption">In Progress</span>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Personnel: Reyes</span>
+<span class="font-caption text-caption text-on-surface-variant">Priority: High</span>
+</div>
+<div class="text-right">
+<span class="block font-caption text-caption text-on-surface-variant">Remaining</span>
+<span class="font-button text-button text-secondary">2h 15m</span>
+</div>
+</div>
+</div>
+<!-- Overdue Card (Highlighted) -->
+<div class="bg-error-container rounded-xl p-md shadow-sm border border-error/50">
+<div class="flex justify-between items-center mb-sm">
+<span class="font-title text-title text-on-error-container">#INC-8938</span>
+<span class="inline-flex items-center px-2 py-1 bg-error/10 text-on-error-container rounded-full font-caption text-caption border border-error/20">Dispatched</span>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-error-container/80">Personnel: Chen</span>
+<span class="font-caption text-caption text-on-error-container/80">Priority: Critical</span>
+</div>
+<div class="text-right">
+<span class="block font-caption text-caption text-on-error-container/80">Remaining</span>
+<span class="font-button text-button text-error flex items-center justify-end gap-xs">
+<span class="material-symbols-outlined text-[16px]">error</span>
+                            -45m
+                        </span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container dark:bg-surface-container-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.08)] flex justify-around items-center h-20 px-2 pb-safe md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16" href="#">
+<span class="material-symbols-outlined mb-xs">map</span>
+<span class="font-label-sm text-caption">Map</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined fill mb-xs">assignment</span>
+<span class="font-label-sm text-caption font-bold">Incidents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16" href="#">
+<span class="material-symbols-outlined mb-xs">add_circle</span>
+<span class="font-label-sm text-caption">Report</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16" href="#">
+<span class="material-symbols-outlined mb-xs">analytics</span>
+<span class="font-label-sm text-caption">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16" href="#">
+<span class="material-symbols-outlined mb-xs">person</span>
+<span class="font-label-sm text-caption">Profile</span>
+</a>
+</nav>
+</body></html>

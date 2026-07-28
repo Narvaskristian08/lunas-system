@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Incoming Reports - LUNAS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "error": "#ba1a1a",
+                            "tertiary-fixed": "#ffddb5",
+                            "surface-container-low": "#f0f3ff",
+                            "on-error": "#ffffff",
+                            "on-primary-fixed-variant": "#00468c",
+                            "on-error-container": "#93000a",
+                            "surface-variant": "#d8e3fb",
+                            "primary-container": "#1565c0",
+                            "background": "#f9f9ff",
+                            "surface-container-high": "#dee8ff",
+                            "on-surface": "#111c2d",
+                            "inverse-surface": "#263143",
+                            "surface-container": "#e7eeff",
+                            "on-background": "#111c2d",
+                            "on-secondary-container": "#217128",
+                            "surface": "#f9f9ff",
+                            "surface-dim": "#cfdaf2",
+                            "tertiary-container": "#8e5b00",
+                            "outline-variant": "#c2c6d4",
+                            "on-surface-variant": "#424752",
+                            "on-secondary-fixed-variant": "#005312",
+                            "on-secondary-fixed": "#002204",
+                            "outline": "#727783",
+                            "inverse-on-surface": "#ecf1ff",
+                            "on-tertiary-fixed": "#2a1800",
+                            "on-primary-fixed": "#001b3d",
+                            "surface-bright": "#f9f9ff",
+                            "primary-fixed-dim": "#a9c7ff",
+                            "primary": "#004d99",
+                            "surface-container-highest": "#d8e3fb",
+                            "secondary-fixed-dim": "#88d982",
+                            "secondary": "#1b6d24",
+                            "error-container": "#ffdad6",
+                            "secondary-fixed": "#a3f69c",
+                            "primary-fixed": "#d6e3ff",
+                            "on-secondary": "#ffffff",
+                            "on-tertiary-fixed-variant": "#643f00",
+                            "tertiary-fixed-dim": "#ffb957",
+                            "on-primary-container": "#dae5ff",
+                            "tertiary": "#6d4500",
+                            "surface-container-lowest": "#ffffff",
+                            "surface-tint": "#005db7",
+                            "on-primary": "#ffffff",
+                            "on-tertiary": "#ffffff",
+                            "inverse-primary": "#a9c7ff",
+                            "secondary-container": "#a0f399",
+                            "on-tertiary-container": "#ffe0bb"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "sm": "8px",
+                            "lg": "24px",
+                            "md": "16px",
+                            "container_padding": "16px",
+                            "xs": "4px",
+                            "gutter": "12px",
+                            "xl": "32px",
+                            "base": "8px"
+                    },
+                    "fontFamily": {
+                            "subtitle": ["Inter"],
+                            "caption": ["Inter"],
+                            "display": ["Inter"],
+                            "body": ["Inter"],
+                            "title": ["Inter"],
+                            "button": ["Inter"],
+                            "heading": ["Inter"]
+                    },
+                    "fontSize": {
+                            "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                            "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                            "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                            "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                            "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                            "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c2c6d4;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #727783;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col font-body">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface shadow-sm">
+<div class="flex justify-between items-center px-md py-sm w-full">
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100 text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">grid_view</span>
+</button>
+<h1 class="font-display text-display text-primary tracking-tight">LUNAS</h1>
+</div>
+<div class="hidden md:flex items-center gap-lg">
+<nav class="flex gap-md">
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors px-3 py-2 rounded-lg font-subtitle text-subtitle flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">map</span>
+                        Map
+                    </a>
+<a class="text-primary font-bold hover:bg-surface-container-high transition-colors px-3 py-2 rounded-lg font-subtitle text-subtitle flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px] fill">assignment</span>
+                        Incidents
+                    </a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors px-3 py-2 rounded-lg font-subtitle text-subtitle flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+                        Report
+                    </a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors px-3 py-2 rounded-lg font-subtitle text-subtitle flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+                        Insights
+                    </a>
+</nav>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden hover:opacity-90 active:scale-95 transition-all">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A professional headshot of a barangay official in a well-lit office setting. The official is wearing a formal blue polo shirt with a subtle government insignia. Lighting is soft, high-key white, creating a modern, clean, and trustworthy aesthetic. The background is a slightly blurred office environment with a plant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkPnJaEw_0fHPNuNn-Oa2O0JYednab-7CrqytHSIM-nd_g7FOtVuPIufo9UIgd5YSHaQzsnr_9Eyw3WOwB7kbffNcLLMJf2jLZvS-OD0p0Kn9e9HqYm1e7V-OaBWA2uAgcaMPojQSsieG6PzfagppAmPVmKVKD4avgZm8ROtps5bODDAEZJO7tuvdsv8w09LMNmCToJlIkMayqbyixHqevHFbhFciQe0EMdYuclxdelqeH37UmBH_sNtF9WtJyycvi60RRgN516B_K"/>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-7xl mx-auto px-container_padding py-lg pb-[100px] md:pb-lg flex flex-col gap-lg">
+<!-- Header & Search/Filter Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-md">
+<div>
+<h2 class="font-heading text-heading text-on-surface mb-xs">Incoming Reports</h2>
+<p class="font-body text-body text-on-surface-variant">Review and validate citizen incident submissions.</p>
+</div>
+<div class="flex flex-col sm:flex-row gap-sm w-full md:w-auto">
+<div class="relative w-full sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-t-[14px] rounded-b-DEFAULT pl-10 pr-4 py-2 font-body text-body text-on-surface focus:outline-none focus:border-b-2 focus:border-b-primary focus:border-x-outline-variant focus:border-t-outline-variant transition-colors" placeholder="Search incidents..." type="text"/>
+</div>
+<div class="flex gap-sm w-full sm:w-auto">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-xs px-4 py-2 bg-surface-container rounded-lg border border-outline-variant hover:bg-surface-container-high active:scale-95 transition-all font-button text-button text-on-surface">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                        Filter
+                    </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-xs px-4 py-2 bg-surface-container rounded-lg border border-outline-variant hover:bg-surface-container-high active:scale-95 transition-all font-button text-button text-on-surface">
+<span class="material-symbols-outlined text-[20px]">sort</span>
+                        Sort
+                    </button>
+</div>
+</div>
+</div>
+<!-- Metric Summary Chips -->
+<div class="flex gap-sm overflow-x-auto pb-xs scrollbar-hide -mx-container_padding px-container_padding md:mx-0 md:px-0">
+<div class="flex items-center gap-sm bg-primary-container text-on-primary-container px-3 py-1.5 rounded-full whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-on-primary-container"></span>
+<span class="font-subtitle text-subtitle text-sm">34 Pending</span>
+</div>
+<div class="flex items-center gap-sm bg-error-container text-on-error-container px-3 py-1.5 rounded-full whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-subtitle text-subtitle text-sm">5 Critical</span>
+</div>
+<div class="flex items-center gap-sm bg-surface-variant text-on-surface-variant px-3 py-1.5 rounded-full whitespace-nowrap border border-outline-variant">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-subtitle text-subtitle text-sm">12 Validated Today</span>
+</div>
+</div>
+<!-- Grid of Incident Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Card 1 (Requested in prompt) -->
+<article class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant shadow-[0_4px_16px_rgba(0,0,0,0.05)] border-l-4 border-l-tertiary-fixed-dim hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all flex flex-col gap-sm relative group cursor-pointer">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-caption text-caption text-on-surface-variant">#INC-9042 • 2h ago</span>
+<h3 class="font-title text-title text-on-surface mt-xs">Deep Pothole on Main St.</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">more_vert</span>
+</div>
+<div class="w-full h-32 rounded-lg bg-surface-variant overflow-hidden relative">
+<img alt="Incident photo" class="w-full h-full object-cover" data-alt="A close-up photograph of a deep, jagged pothole in the middle of an asphalt road during daylight. The lighting is harsh, highlighting the depth and danger of the pothole. The overall tone is realistic and documentary, fitting for a civic reporting tool. Subtle high-key lighting creates a modern, clean aesthetic despite the subject matter." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzewPg1gT2cgoyNBSu12Zs_LCLdzXAO5bXmX6Fzj3atjBQnN7CN5I80n6PgmxpdtOnZNEnQdCuV_dou_UAwfU4GAbr1_BvL4hcATT-5DgtgS1r4i1mj6ZuhYKxtJaMq7vf_mWKKkxePYPusmpDCm1-lb3CmzqalPtfcMkbBdIMWj_0QkZ8BrS0dLMIbNb3Iqq0lIXLkNvdochAoqQVelYyiRjOVHm7WLYlFtGVcs5SZeBivOtB3Jli98dbE_In-TiKweeeuuW5ERZA"/>
+<div class="absolute bottom-2 right-2 bg-inverse-surface/80 text-inverse-on-surface px-2 py-1 rounded-lg backdrop-blur-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+<span class="font-caption text-caption font-bold">98% Confident</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-xs mt-xs">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed px-2 py-1 rounded-full font-caption text-caption">Medium Priority</span>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-full font-caption text-caption border border-outline-variant">Pending Validation</span>
+</div>
+<div class="mt-auto pt-sm border-t border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="font-caption text-caption font-medium">SLA: 46h left</span>
+</div>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-lg font-button text-button hover:opacity-90 active:scale-95 transition-all text-sm">Validate</button>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant shadow-[0_4px_16px_rgba(0,0,0,0.05)] border-l-4 border-l-error hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all flex flex-col gap-sm relative group cursor-pointer">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-caption text-caption text-on-surface-variant">#INC-9043 • 15m ago</span>
+<h3 class="font-title text-title text-on-surface mt-xs">Fallen Tree Blocking Road</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">more_vert</span>
+</div>
+<div class="w-full h-32 rounded-lg bg-surface-variant overflow-hidden relative">
+<img alt="Incident photo" class="w-full h-full object-cover" data-alt="A medium shot of a large fallen tree completely blocking a two-lane urban street. The scene is overcast, with soft, diffused light typical of a post-storm environment. The image feels urgent and documentary, styled with a modern, high-contrast look suitable for a government dashboard. Muted colors with bright accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq-mSzAuFQ4hrEOmuuEaNrbhgsY4A8EwVmt5sOaKz_Kdbtha59_LEps-f4iUElA2mAvCLHXyeaoaO0d4GddPyINTgtyxrJQSgPJpfd0HjqmfYvAkUKonoARe7vl3G9Yqor5DiloTQr9vNCNaKIyVuJL-dim-CnS3GutxoUiOwHqNJWp8BAs3MMRH08uaFpajTbKXEW7M-X06OAzozBRHm_Q9dYQYDrSoIVHiXyfhT5l4Jy79JuZ3kCWZrX-kwAvFIUS7BOhoawf7Vk"/>
+<div class="absolute bottom-2 right-2 bg-inverse-surface/80 text-inverse-on-surface px-2 py-1 rounded-lg backdrop-blur-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+<span class="font-caption text-caption font-bold">92% Confident</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-xs mt-xs">
+<span class="bg-error-container text-on-error-container px-2 py-1 rounded-full font-caption text-caption">High Priority</span>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-full font-caption text-caption border border-outline-variant">Pending Validation</span>
+</div>
+<div class="mt-auto pt-sm border-t border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-xs text-error">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span class="font-caption text-caption font-medium">SLA: 2h left</span>
+</div>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-lg font-button text-button hover:opacity-90 active:scale-95 transition-all text-sm">Validate</button>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant shadow-[0_4px_16px_rgba(0,0,0,0.05)] border-l-4 border-l-secondary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all flex flex-col gap-sm relative group cursor-pointer">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-caption text-caption text-on-surface-variant">#INC-9041 • 5h ago</span>
+<h3 class="font-title text-title text-on-surface mt-xs">Broken Streetlight</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">more_vert</span>
+</div>
+<div class="w-full h-32 rounded-lg bg-surface-variant overflow-hidden relative">
+<img alt="Incident photo" class="w-full h-full object-cover" data-alt="A photograph of a broken streetlight leaning slightly, taken during the early evening. The sky is a deep twilight blue, contrasting with the dark silhouette of the unlit lamp. The image has a clean, functional aesthetic with subtle color grading that leans towards a cool, modern palette typical of enterprise software." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu1nV_OmyXn2owVTIdqsEGfxX2jRSYfj4IzkN1mjrcO3jNaeSl4N2G1KSxussGa2M_s5a2duq92PHFusIqplbjnH9Pv6CRt0LFkQMbViPdcbI_2QzQksYGtLPDyMFtfT3X4EpB3fI2fMbF3I4x-QKT6QmQ-QCI-fxmmKsJN7yJzR7tXqzkQvIhUJcvm0Ppm9hn5tDFpKJzt55fvYuWB4IX37whstZSsZo_cZmDE4vzFjtfWnSyPQZF9zYBzDSiTrIEwJApRjzQMP8E"/>
+<div class="absolute bottom-2 right-2 bg-inverse-surface/80 text-inverse-on-surface px-2 py-1 rounded-lg backdrop-blur-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+<span class="font-caption text-caption font-bold">85% Confident</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-xs mt-xs">
+<span class="bg-secondary-container text-on-secondary-container px-2 py-1 rounded-full font-caption text-caption">Low Priority</span>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-full font-caption text-caption border border-outline-variant">Pending Validation</span>
+</div>
+<div class="mt-auto pt-sm border-t border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="font-caption text-caption font-medium">SLA: 67h left</span>
+</div>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-lg font-button text-button hover:opacity-90 active:scale-95 transition-all text-sm">Validate</button>
+</div>
+</article>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
+<div class="flex justify-around items-center h-20 px-2 w-full pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16 h-14 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">map</span>
+<span class="font-label-sm text-[11px] leading-tight font-medium">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 transition-transform duration-200 active:scale-90 min-w-16 h-14" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1 fill">assignment</span>
+<span class="font-label-sm text-[11px] leading-tight font-medium">Incidents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16 h-14 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">add_circle</span>
+<span class="font-label-sm text-[11px] leading-tight font-medium">Report</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16 h-14 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">analytics</span>
+<span class="font-label-sm text-[11px] leading-tight font-medium">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90 w-16 h-14 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">person</span>
+<span class="font-label-sm text-[11px] leading-tight font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

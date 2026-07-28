@@ -49,7 +49,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     if (result != null && mounted) setState(() => _category = result);
   }
 
-  Future<void> _submit() async {
+  Future<void> _reviewAiSuggestion() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoReference == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -61,7 +61,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 450));
     if (!mounted) return;
     setState(() => _isSubmitting = false);
-    Navigator.pushReplacementNamed(context, '/reports/status');
+    Navigator.pushNamed(context, '/reports/ai-suggestion');
   }
 
   @override
@@ -193,16 +193,14 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
             ),
             const SizedBox(height: AppSpacing.xl),
             LunasButton(
-              label: 'Submit Report',
+              label: 'Review AI Suggestion',
               icon: Icons.send_rounded,
               isLoading: _isSubmitting,
-              onPressed: _submit,
+              onPressed: _reviewAiSuggestion,
             ),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Report saved as draft.')),
-              ),
+              onPressed: () => Navigator.pushNamed(context, '/reports/drafts'),
               child: const Text('Save as Draft'),
             ),
           ],

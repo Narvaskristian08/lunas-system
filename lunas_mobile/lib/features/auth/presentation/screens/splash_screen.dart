@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     _timer = Timer(const Duration(milliseconds: 1800), () {
-      if (mounted) Navigator.pushReplacementNamed(context, '/onboarding');
+      if (mounted) Navigator.pushReplacementNamed(context, '/welcome');
     });
   }
 

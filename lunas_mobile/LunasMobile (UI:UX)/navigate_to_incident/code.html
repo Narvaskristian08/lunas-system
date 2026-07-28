@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUNAS Repair - Incident Navigation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#005db7",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "on-secondary-fixed-variant": "#005312",
+                        "background": "#f9f9ff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-primary-container": "#dae5ff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d8e3fb",
+                        "outline-variant": "#c2c6d4",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-tertiary-fixed": "#2a1800",
+                        "primary-container": "#1565c0",
+                        "on-secondary-fixed": "#002204",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#a3f69c",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "tertiary-container": "#8e5b00",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "on-primary-fixed": "#001b3d",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "inverse-surface": "#263143",
+                        "tertiary": "#6d4500",
+                        "error": "#ba1a1a",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "surface-container": "#e7eeff",
+                        "secondary-fixed-dim": "#88d982",
+                        "surface-dim": "#cfdaf2",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "outline": "#727783",
+                        "surface-container-low": "#f0f3ff",
+                        "on-background": "#111c2d",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-highest": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "container_padding": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter"],
+                        "caption": ["Inter"],
+                        "heading": ["Inter"],
+                        "button": ["Inter"],
+                        "subtitle": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom route dash animation */
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+        .route-line {
+            stroke-dasharray: 6, 6;
+            animation: dash 1s linear infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body text-body flex flex-col h-screen overflow-hidden antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<nav class="docked full-width top-0 z-50 bg-surface dark:bg-surface-container-high shadow-sm flex justify-between items-center px-container_padding h-16 w-full text-primary dark:text-primary-fixed-dim">
+<button class="hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 p-2 -ml-2 rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-display text-display font-bold text-primary dark:text-primary-fixed-dim font-title text-title truncate tracking-tight">
+            LUNAS Repair
+        </h1>
+<div class="w-9 h-9 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden border border-outline-variant/30 flex-shrink-0">
+<img class="object-cover w-full h-full" data-alt="A professional headshot of a female repair technician wearing a dark blue utility uniform. Bright, clean lighting against a neutral grey background. Modern corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPZAT498bPX58HSXAUqrofJivn-FecD1w8jfF2QBupvBBfVJTKbR7H5yeXa3uss7Pfuu0ANrn-zCkZjtW6Vngf7e_T7GLScymbr19jlaDqLSl0ACfihD4RLKx5YrT18Zh6Ms6pYn-LPyNC48EAv-4TRZqzX0Xa1gIKi7Yq5hMs6aoJihMcg9NCa2INhl3ol0ElsUlhgAJFXbykLbzR1_3ipmHLR_rlEkkrZ0dxxoHdeWlNMcaX4d2nde2Rvr6ISyABIfz7Xi8kNyyY"/>
+</div>
+</nav>
+<!-- Main Map Content Canvas -->
+<main class="flex-1 relative w-full h-full bg-surface-container-low flex flex-col pb-[72px]">
+<!-- Full Screen Map Background -->
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A clean, high-contrast digital map interface showing an urban city grid. The style is modern, slightly desaturated, using subtle grays, soft blues, and whites, resembling a sophisticated government-grade utility management system. Viewed from a top-down, slightly angled perspective with clear street delineations." data-location="San Francisco, 890 Market Street" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuArz76_I4_TYZCF85RPDN_cnGAsh45CdaTa2332CP6ztGumMKGmp2tIba8mROXsJRwgGAaejOMQRh7TNU0lPE2f7LMULEFMGq7bfTuX3R3w13SOQzSYiwTu3VCGUxgEHSmuG3q7TcX3Ap7XvUrwM-_gxOMJPyM9EyAMXqlQ7G1z8r69iiDqVijrEBrh9oiYeKazAT4RpgmaTLD2eeuGHuegMEq90BTafXPgcXH9N37pwuCmVHefIRKoVJpHTKgaq6eyb8QktQ8__4Mb')"></div>
+<!-- Interactive Map Overlay Elements (Route & Pins) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-10" preserveaspectratio="none" viewbox="0 0 100 100">
+<!-- Route Shadow -->
+<path d="M 25 75 Q 40 50, 60 45 T 75 25" fill="none" stroke="rgba(0,77,153,0.15)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<!-- Active Route Line -->
+<path class="route-line" d="M 25 75 Q 40 50, 60 45 T 75 25" fill="none" stroke="#004d99" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" style="filter: drop-shadow(0px 2px 4px rgba(0,77,153,0.3));"></path>
+<!-- Current Location Marker -->
+<circle class="animate-ping origin-center" cx="25" cy="75" fill="rgba(0, 77, 153, 0.2)" r="3" style="animation-duration: 2s;"></circle>
+<circle cx="25" cy="75" fill="#ffffff" r="1.5" stroke="#004d99" stroke-width="0.75"></circle>
+<!-- Incident Pin Marker -->
+<g transform="translate(75, 25)">
+<path d="M 0 -3 C 2 -3, 3 -1.5, 3 0 C 3 2, 0 5, 0 5 C 0 5, -3 2, -3 0 C -3 -1.5, -2 -3, 0 -3 Z" fill="#ba1a1a" style="filter: drop-shadow(0px 2px 4px rgba(186,26,26,0.4));"></path>
+<circle cx="0" cy="-0.5" fill="#ffffff" r="1"></circle>
+</g>
+</svg>
+<!-- Incident Details Overlay Card -->
+<div class="absolute bottom-6 left-4 right-4 z-40 bg-surface rounded-[20px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] p-container_padding flex flex-col gap-md border border-outline-variant/40 backdrop-blur-sm bg-surface/95 transition-transform duration-300 transform translate-y-0">
+<!-- Header -->
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<h2 class="font-title text-title text-on-surface">890 Market Street</h2>
+<p class="font-body text-body text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-error inline-block"></span>
+                        Water Main Break - Priority
+                    </p>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<!-- ETA & Distance -->
+<div class="bg-surface-container-low rounded-xl p-md flex items-center gap-md border border-outline-variant/20">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">directions_car</span>
+</div>
+<div class="flex flex-col flex-1">
+<span class="font-subtitle text-subtitle text-on-surface">Estimated Arrival: 12 mins</span>
+<span class="font-caption text-caption text-on-surface-variant mt-0.5">4.2 km away • Light traffic</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row gap-sm mt-xs">
+<button class="flex-1 bg-primary text-on-primary py-3.5 rounded-full font-button text-button flex items-center justify-center gap-2 hover:bg-primary/90 hover:shadow-md active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">navigation</span>
+                    Start Navigation
+                </button>
+<button class="flex-1 bg-surface-container-high text-on-surface py-3.5 rounded-full font-button text-button flex items-center justify-center gap-2 hover:bg-surface-variant active:scale-[0.98] transition-all border border-outline-variant/30">
+<span class="material-symbols-outlined">map</span>
+                    Open in Google Maps
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-xs py-sm max-w-full bg-surface dark:bg-surface-container-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.08)] rounded-t-xl h-[72px]">
+<!-- Home -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 flex-1 h-full rounded-xl">
+<span class="material-symbols-outlined">home</span>
+<span class="font-caption text-caption mt-1">Home</span>
+</button>
+<!-- Tasks -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 flex-1 h-full rounded-xl">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-caption text-caption mt-1">Tasks</span>
+</button>
+<!-- Map (ACTIVE) -->
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-5 py-1.5 hover:bg-surface-container-high transition-all active:scale-90 duration-200 flex-1 mx-1 shadow-sm border border-secondary-container/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-caption text-caption mt-1 font-bold">Map</span>
+</button>
+<!-- Alerts -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 flex-1 h-full rounded-xl relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-1/4 w-2 h-2 rounded-full bg-error border border-surface"></span>
+<span class="font-caption text-caption mt-1">Alerts</span>
+</button>
+<!-- Profile -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-90 duration-200 flex-1 h-full rounded-xl">
+<span class="material-symbols-outlined">person</span>
+<span class="font-caption text-caption mt-1">Profile</span>
+</button>
+</nav>
+</body></html>

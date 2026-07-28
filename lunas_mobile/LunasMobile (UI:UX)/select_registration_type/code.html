@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Registration Type - LUNAS Engineering</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .role-card-active {
+            border-color: #004d99;
+            background-color: #f0f3ff;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .animated-bg {
+            background: linear-gradient(-45deg, #f9f9ff, #e7eeff, #f0f3ff, #ffffff);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#a3f69c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-tertiary-fixed": "#2a1800",
+                        "on-primary-container": "#dae5ff",
+                        "on-primary-fixed-variant": "#00468c",
+                        "error": "#ba1a1a",
+                        "surface-container": "#e7eeff",
+                        "inverse-surface": "#263143",
+                        "tertiary": "#6d4500",
+                        "surface-bright": "#f9f9ff",
+                        "surface-dim": "#cfdaf2",
+                        "on-error": "#ffffff",
+                        "background": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "on-secondary-fixed": "#002204",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c2c6d4",
+                        "on-primary-fixed": "#001b3d",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-variant": "#d8e3fb",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "surface": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "tertiary-fixed": "#ffddb5",
+                        "primary": "#004d99",
+                        "on-tertiary-container": "#ffe0bb",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-secondary-container": "#217128",
+                        "on-surface": "#111c2d",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "surface-container-low": "#f0f3ff",
+                        "primary-fixed": "#d6e3ff",
+                        "on-background": "#111c2d",
+                        "outline": "#727783",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "primary-container": "#1565c0",
+                        "tertiary-container": "#8e5b00",
+                        "surface-tint": "#005db7",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-surface-variant": "#424752"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "container_padding": "16px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "gutter": "12px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "subtitle": ["Inter"],
+                        "body": ["Inter"],
+                        "display": ["Inter"],
+                        "title": ["Inter"],
+                        "heading": ["Inter"],
+                        "button": ["Inter"],
+                        "caption": ["Inter"]
+                    },
+                    "fontSize": {
+                        "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen flex flex-col animated-bg">
+<!-- Top Navigation Placeholder (Hidden based on "Transactional" rule, but TopAppBar component logic included as per hierarchy instructions for identity) -->
+<header class="flex justify-between items-center px-container_padding py-sm w-full sticky top-0 z-50 bg-surface/80 backdrop-blur-md">
+<div class="flex items-center gap-sm">
+<span class="font-display text-heading text-primary tracking-tight">LUNAS Engineering</span>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-container_padding py-xl">
+<div class="max-w-4xl w-full">
+<!-- Header Section -->
+<div class="text-center mb-xl">
+<h1 class="font-heading text-display text-on-surface mb-sm">Create Your LUNAS Account</h1>
+<p class="font-subtitle text-subtitle text-on-surface-variant max-w-lg mx-auto">
+                    Empowering city growth through reliable infrastructure management and citizen-led reporting.
+                </p>
+</div>
+<!-- Registration Type Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg mb-lg">
+<!-- Citizen Card -->
+<button class="glass-card flex flex-col items-start text-left p-lg rounded-xl transition-all duration-300 hover:role-card-active active:scale-95 group" id="card-citizen" onclick="selectRole('citizen')">
+<div class="w-12 h-12 bg-primary-container text-on-primary-container rounded-lg flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px]" data-icon="person">person</span>
+</div>
+<h2 class="font-title text-title text-primary mb-xs">Citizen</h2>
+<p class="font-body text-body text-on-surface-variant leading-relaxed">
+                        Report infrastructure concerns and track the progress of your reports in real-time.
+                    </p>
+<div class="mt-lg flex items-center text-primary font-button text-button group-hover:gap-sm transition-all">
+                        Select Citizen Account
+                        <span class="material-symbols-outlined ml-xs group-hover:ml-sm transition-all" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</button>
+<!-- Authorized Personnel Card -->
+<button class="glass-card flex flex-col items-start text-left p-lg rounded-xl transition-all duration-300 hover:role-card-active active:scale-95 group" id="card-personnel" onclick="selectRole('personnel')">
+<div class="w-12 h-12 bg-secondary-container text-on-secondary-container rounded-lg flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px]" data-icon="badge">badge</span>
+</div>
+<h2 class="font-title text-title text-primary mb-xs">Authorized Personnel</h2>
+<p class="font-body text-body text-on-surface-variant leading-relaxed">
+                        For repair personnel, barangay officials, City Engineering staff, and utility-provider personnel.
+                    </p>
+<div class="mt-lg flex items-center text-primary font-button text-button group-hover:gap-sm transition-all">
+                        Select Personnel Account
+                        <span class="material-symbols-outlined ml-xs group-hover:ml-sm transition-all" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</button>
+</div>
+<!-- Verification Note -->
+<div class="bg-surface-container-high rounded-lg p-md flex items-start gap-md mb-xl max-w-2xl mx-auto border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary" data-icon="info" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-caption text-body text-on-surface-variant italic">
+<strong class="text-on-surface not-italic">Verification Required:</strong> To maintain government-grade reliability, all Authorized Personnel accounts undergo a manual verification process with your department's administration.
+                </p>
+</div>
+<!-- Login Redirect -->
+<div class="text-center">
+<p class="font-body text-body text-on-surface-variant">
+                    Already have an account? 
+                    <a class="text-primary font-button hover:underline underline-offset-4" href="#">Log in to your workspace</a>
+</p>
+</div>
+</div>
+</main>
+<!-- Footer Content for Contextual Depth -->
+<footer class="py-lg px-container_padding text-center">
+<div class="flex flex-wrap justify-center gap-md opacity-60 font-caption text-caption mb-sm">
+<a class="hover:text-primary" href="#">Privacy Policy</a>
+<span class="text-outline-variant">•</span>
+<a class="hover:text-primary" href="#">Terms of Service</a>
+<span class="text-outline-variant">•</span>
+<a class="hover:text-primary" href="#">Accessibility</a>
+</div>
+<p class="font-caption text-caption text-on-surface-variant opacity-50">© 2024 LUNAS Engineering. Integrated Urban Utility Management.</p>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-1/3 h-1/3 blur-[120px] bg-primary/5 rounded-full translate-x-1/2 -translate-y-1/2"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-1/4 h-1/4 blur-[100px] bg-secondary-container/10 rounded-full -translate-x-1/4 translate-y-1/4"></div>
+<script>
+        function selectRole(role) {
+            // Visual feedback for selection
+            const cards = ['citizen', 'personnel'];
+            cards.forEach(id => {
+                const el = document.getElementById(`card-${id}`);
+                el.classList.remove('role-card-active', 'ring-2', 'ring-primary');
+            });
+
+            const activeCard = document.getElementById(`card-${role}`);
+            activeCard.classList.add('role-card-active', 'ring-2', 'ring-primary');
+
+            // Simulate navigation delay
+            console.log(`Role selected: ${role}. Proceeding to onboarding...`);
+            
+            // Interaction feedback
+            const btn = activeCard.querySelector('.font-button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `Loading ${role} portal... <span class="material-symbols-outlined animate-spin" data-icon="refresh">refresh</span>`;
+            
+            setTimeout(() => {
+                alert(`Redirecting to the ${role} registration workflow.`);
+                btn.innerHTML = originalText;
+            }, 800);
+        }
+    </script>
+</body></html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Report Closed - UrbanGuard</title>
+<!-- Tailwind Setup -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f9f9ff",
+                        "primary-container": "#1565c0",
+                        "background": "#f9f9ff",
+                        "outline-variant": "#c2c6d4",
+                        "secondary-fixed": "#a3f69c",
+                        "inverse-surface": "#263143",
+                        "inverse-on-surface": "#ecf1ff",
+                        "secondary-container": "#a0f399",
+                        "on-primary-container": "#dae5ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-tertiary-fixed": "#2a1800",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#8e5b00",
+                        "surface-tint": "#005db7",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#00468c",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "secondary-fixed-dim": "#88d982",
+                        "outline": "#727783",
+                        "on-secondary-fixed": "#002204",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "primary": "#004d99",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container": "#e7eeff",
+                        "surface-dim": "#cfdaf2",
+                        "tertiary": "#6d4500",
+                        "surface-container-high": "#dee8ff",
+                        "on-tertiary-container": "#ffe0bb",
+                        "surface-variant": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "on-surface-variant": "#424752",
+                        "secondary": "#1b6d24",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-background": "#111c2d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "container_padding": "16px",
+                        "gutter": "12px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter", "sans-serif"],
+                        "title": ["Inter", "sans-serif"],
+                        "subtitle": ["Inter", "sans-serif"],
+                        "display": ["Inter", "sans-serif"],
+                        "heading": ["Inter", "sans-serif"],
+                        "caption": ["Inter", "sans-serif"],
+                        "button": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Subtle entry animation */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* Confetti effect placeholder for pure CSS background pattern */
+        .bg-pattern-success {
+            background-image: radial-gradient(circle at 50% 0%, var(--tw-colors-secondary-container) 0%, transparent 70%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-low min-h-screen flex flex-col items-center justify-center p-md md:p-xl relative overflow-hidden text-on-surface">
+<!-- Top decorative gradient -->
+<div class="absolute top-0 inset-x-0 h-64 bg-pattern-success opacity-50 pointer-events-none -z-10"></div>
+<!-- Main Content Canvas (Navigation explicitly suppressed for transactional success screen) -->
+<main class="w-full max-w-2xl flex flex-col items-center animate-fade-up">
+<!-- Hero Section -->
+<div class="flex flex-col items-center text-center mb-xl">
+<div class="w-24 h-24 rounded-full bg-secondary-container flex items-center justify-center mb-md shadow-sm">
+<span class="material-symbols-outlined fill text-[48px] text-on-secondary-container" data-icon="check_circle">check_circle</span>
+</div>
+<h1 class="font-display text-display text-on-surface mb-xs">Report Resolved</h1>
+<p class="font-subtitle text-subtitle text-on-surface-variant">Incident INC-8490 has been closed successfully.</p>
+</div>
+<!-- Bento Layout for Details -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md w-full mb-xl">
+<!-- Duration Card -->
+<div class="bg-surface rounded-xl p-lg shadow-sm border border-outline-variant/30 flex flex-col justify-center items-center col-span-1 md:col-span-2 relative overflow-hidden group">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-surface-variant rounded-full opacity-50 blur-xl group-hover:scale-110 transition-transform"></div>
+<span class="material-symbols-outlined text-outline mb-sm" data-icon="timelapse">timelapse</span>
+<span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider mb-xs">Total Duration</span>
+<span class="font-heading text-heading text-primary">3 Days</span>
+</div>
+<!-- Before/After Images Card -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-outline-variant/30 col-span-1 md:col-span-2">
+<div class="flex items-center justify-between mb-sm px-xs">
+<span class="font-subtitle text-subtitle text-on-surface">Resolution Documentation</span>
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="photo_library">photo_library</span>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<div class="relative rounded-lg overflow-hidden aspect-video bg-surface-variant group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A photograph showing a broken urban sidewalk with deep cracks and uneven concrete sections. The setting is a typical city street during daylight. The style is documentary and objective, consistent with a government utility reporting app, featuring natural lighting and clear focus on the infrastructure damage. The overall mood is utilitarian and factual." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYuoo9RO9ar0Jjy7cgygryisag-vaecaNbuahUEMS0f7zizmLR3DbIKrTW3Yfmxt9sER_wXa0V28naBGKqrCq-0Km-hJXnN5ok7J-8dUWcolC-ggCNZdwvh75Q19zM4nX1H1kQtaBgLEEOKxH-4JcQx8muyF0z9RTnMP4CC4kq5ppopU7Ophrayf_IuNTBADOOVLKvTwkX3JbmcYFPWb2urlFpjVUCuF0J6yMY01SAyeyH2S1gxTPQv-BqRDKUw6nRfqeFNcLkcNv3"/>
+<div class="absolute bottom-sm left-sm bg-inverse-surface/80 backdrop-blur-sm px-2 py-1 rounded text-inverse-on-surface font-caption text-caption">Before</div>
+</div>
+<div class="relative rounded-lg overflow-hidden aspect-video bg-surface-variant group">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A photograph showing the same urban sidewalk section, now completely repaired with fresh, smooth concrete. The setting is a typical city street during bright daylight. The style is documentary and objective, showcasing a successful infrastructure fix in a government utility app context. The lighting highlights the clean, level surface, conveying a sense of order and resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvMfjJCArk3A-RiijdMHoJDbl6iENP1k6YBw5F97QyGNJC1YwxCRTA2fF4TDKrBRVoFmz21IYUw3HDZNUXFoV0CSTsprTDpqLsZHcLpUniFGODRggRAcQ4zfTmqExvpb57lsX8UBMZxsQpvDjzDy2LahEj176u0YPhwWSPePFPiWq0dlWXlVnFTqImF41SQUHV70Yy-ggttzFrfJEdm0j2JgLmZIXwDwTsrxLDGZ0_bQEhwwygB77G104-TzJzBeXwe-xdeTirwBIE"/>
+<div class="absolute bottom-sm left-sm bg-secondary/90 backdrop-blur-sm px-2 py-1 rounded text-on-secondary font-caption text-caption flex items-center gap-1">
+<span class="material-symbols-outlined fill text-[12px]">verified</span> After
+                        </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Satisfaction & Actions Section -->
+<div class="w-full bg-surface-container rounded-[20px] p-xl flex flex-col items-center text-center shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+<h3 class="font-title text-title text-on-surface mb-sm">Citizen Satisfaction</h3>
+<p class="font-body text-body text-on-surface-variant mb-md max-w-sm">How would you rate the resolution of this incident?</p>
+<!-- Interactive-looking Star Rating -->
+<div class="flex gap-sm mb-lg">
+<button class="hover:scale-110 transition-transform focus:outline-none"><span class="material-symbols-outlined fill text-[32px] text-tertiary-fixed-dim">star</span></button>
+<button class="hover:scale-110 transition-transform focus:outline-none"><span class="material-symbols-outlined fill text-[32px] text-tertiary-fixed-dim">star</span></button>
+<button class="hover:scale-110 transition-transform focus:outline-none"><span class="material-symbols-outlined fill text-[32px] text-tertiary-fixed-dim">star</span></button>
+<button class="hover:scale-110 transition-transform focus:outline-none"><span class="material-symbols-outlined fill text-[32px] text-tertiary-fixed-dim">star</span></button>
+<button class="hover:scale-110 transition-transform focus:outline-none"><span class="material-symbols-outlined fill text-[32px] text-tertiary-fixed-dim">star</span></button>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-md w-full md:w-auto">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-xs bg-surface text-primary border border-outline-variant/50 rounded-[14px] px-lg py-[12px] font-button text-button transition-all hover:bg-surface-variant active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="rate_review">rate_review</span>
+                    Leave Feedback
+                </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-xs bg-primary text-on-primary rounded-[14px] px-xl py-[12px] font-button text-button transition-all hover:bg-on-primary-fixed-variant active:scale-95 shadow-md">
+                    Return Home
+                    <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

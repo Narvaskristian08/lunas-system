@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUNAS Utility - Identity Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .progress-shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#a3f69c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-tertiary-fixed": "#2a1800",
+                        "on-primary-container": "#dae5ff",
+                        "on-primary-fixed-variant": "#00468c",
+                        "error": "#ba1a1a",
+                        "surface-container": "#e7eeff",
+                        "inverse-surface": "#263143",
+                        "tertiary": "#6d4500",
+                        "surface-bright": "#f9f9ff",
+                        "surface-dim": "#cfdaf2",
+                        "on-error": "#ffffff",
+                        "background": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "on-secondary-fixed": "#002204",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c2c6d4",
+                        "on-primary-fixed": "#001b3d",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-variant": "#d8e3fb",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "surface": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "tertiary-fixed": "#ffddb5",
+                        "primary": "#004d99",
+                        "on-tertiary-container": "#ffe0bb",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-secondary-container": "#217128",
+                        "on-surface": "#111c2d",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "surface-container-low": "#f0f3ff",
+                        "primary-fixed": "#d6e3ff",
+                        "on-background": "#111c2d",
+                        "outline": "#727783",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "primary-container": "#1565c0",
+                        "tertiary-container": "#8e5b00",
+                        "surface-tint": "#005db7",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-surface-variant": "#424752"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "container_padding": "16px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "gutter": "12px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "subtitle": ["Inter"],
+                        "body": ["Inter"],
+                        "display": ["Inter"],
+                        "title": ["Inter"],
+                        "heading": ["Inter"],
+                        "button": ["Inter"],
+                        "caption": ["Inter"]
+                    },
+                    "fontSize": {
+                        "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface min-h-screen flex flex-col">
+<!-- Top Navigation Shell (Suppressed per task context, but keeping LUNAS branding for identity) -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center w-full px-container_padding h-16 sticky top-0 z-50">
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-variant/50 transition-colors rounded-full">arrow_back</button>
+<span class="font-title text-title font-bold text-primary">LUNAS Utility</span>
+</div>
+<div class="h-10 w-10 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
+</div>
+</header>
+<main class="flex-grow max-w-4xl mx-auto w-full px-md py-lg">
+<!-- Progress Stepper -->
+<div class="mb-lg px-xs">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<p class="font-caption text-primary font-semibold">STEP 4 OF 6</p>
+<h1 class="font-heading text-heading">Identity Documents</h1>
+</div>
+<p class="font-caption text-on-surface-variant">60% Complete</p>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[60%] transition-all duration-500"></div>
+</div>
+</div>
+<!-- Guidance Alert -->
+<div class="bg-primary-container/20 border-l-4 border-primary p-md rounded-lg flex gap-md mb-lg">
+<span class="material-symbols-outlined text-primary">info</span>
+<div>
+<p class="font-subtitle text-subtitle text-primary mb-1">Upload Guidance</p>
+<p class="font-body text-on-surface-variant">Ensure documents are placed on a flat, well-lit surface. All four corners must be visible. Avoid glare from overhead lighting for clear OCR verification.</p>
+</div>
+</div>
+<!-- Upload Sections Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg mb-xl">
+<!-- Government ID Section -->
+<section class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-2 rounded-lg">badge</span>
+<h3 class="font-subtitle text-subtitle">Government-issued ID</h3>
+</div>
+<span class="material-symbols-outlined text-secondary hidden" id="id-complete">check_circle</span>
+</div>
+<div class="relative h-40 w-full bg-surface-container rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center group hover:border-primary transition-colors cursor-pointer overflow-hidden" id="dropzone-id">
+<div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity bg-cover bg-center" data-alt="A professional flat-lay photograph of a generic biometric passport or national identity card on a neutral grey architectural surface. The lighting is soft and directional, typical of a high-end corporate office environment. The scene feels secure, formal, and technologically sophisticated, adhering to a modern utility management aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDwdaFW95WKislat47ZZTBNr-PSVQHisRtb5HMSzBZhJ1cWp2DjKS7OmznPb3BaoQQt0-KBUOeQFgtyjvxrRVymQVBSerV_G5hECavrSYl0ndVsnTX6ArqKEsQh6O2m2A2WLwO0gzpfUDduLd1N7QZDPnf0NbbnCxx1MCgkgM8fqu4mYqnpNPH198jk0OBPYYqpc1MF2IdP-CnJllfxnVbAdj6kPyf2Q2jG-J4m4MxaGC46MxKUfZhhSLuBznuO5N3vfCqUdWyTG-Ml')"></div>
+<div class="flex flex-col items-center gap-xs z-10 pointer-events-none">
+<span class="material-symbols-outlined text-outline text-3xl">cloud_upload</span>
+<p class="font-caption text-on-surface-variant">Drag and drop or click to upload</p>
+</div>
+</div>
+<div class="flex gap-sm">
+<button class="flex-1 flex items-center justify-center gap-sm bg-primary text-on-primary py-sm rounded-lg font-button shadow-sm hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+                        Take Photo
+                    </button>
+<button class="flex-1 flex items-center justify-center gap-sm bg-surface-container-high text-primary py-sm rounded-lg font-button hover:bg-surface-container-highest active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+                        Upload
+                    </button>
+</div>
+<!-- Progress State (Example: Active) -->
+<div class="mt-sm">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-caption font-medium">uploading_id_front.jpg</span>
+<span class="font-caption text-primary">85%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary progress-shimmer w-[85%]"></div>
+</div>
+</div>
+</section>
+<!-- Employee ID Section -->
+<section class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant flex flex-col gap-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-2 rounded-lg">corporate_fare</span>
+<h3 class="font-subtitle text-subtitle">Employee/Official ID</h3>
+</div>
+<div class="relative h-40 w-full bg-surface-container rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center group hover:border-primary transition-colors cursor-pointer overflow-hidden">
+<div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity bg-cover bg-center" data-alt="A macro shot of a sleek, modern corporate access badge with an integrated RFID chip, lying on a clean white desk. The lighting highlights the fine textures of the card material. The color palette is composed of cool blues and greys, reflecting a professional utility and infrastructure management brand identity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCrTr77x-r7lY_pHE_vgvDDqRrquxRDg5vCRKxc1R4UyTuroLM7MJO8gD1covOn9ABU7lKSejuW2lcPcnMQKF7vx7Rs8uq9RJgwHOBGpySaiE8z3f1Tz13TyWrTIHHHtnHJPWGGvPLuIS3Uh7fSOJL_EfqMC4JfibipljBZKDAzIqm1X02K5zdA6N97K9pNBTYST8-Ys497brTqyn11f9wenMvv53THqPwsz9LU2uEbmpmt436np1ZlgGoB9-68N-D1ZDmtJloK4Nok')"></div>
+<div class="flex flex-col items-center gap-xs z-10 pointer-events-none">
+<span class="material-symbols-outlined text-outline text-3xl">cloud_upload</span>
+<p class="font-caption text-on-surface-variant">Front side of Employee Card</p>
+</div>
+</div>
+<div class="flex gap-sm">
+<button class="flex-1 flex items-center justify-center gap-sm bg-primary text-on-primary py-sm rounded-lg font-button shadow-sm hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+                        Take Photo
+                    </button>
+<button class="flex-1 flex items-center justify-center gap-sm bg-surface-container-high text-primary py-sm rounded-lg font-button hover:bg-surface-container-highest active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+                        Upload
+                    </button>
+</div>
+</section>
+<!-- Appointment Letter Section -->
+<section class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-outline-variant flex flex-col gap-md md:col-span-2">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-2 rounded-lg">description</span>
+<h3 class="font-subtitle text-subtitle">Appointment Letter / Deployment Order</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="md:col-span-2 relative h-48 bg-surface-container rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center group hover:border-primary transition-colors cursor-pointer overflow-hidden">
+<div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity bg-cover bg-center" data-alt="A clean, official document with a municipal seal at the top, partially visible on a polished wooden desk with soft morning sunlight streaming in. The image emphasizes clarity, legality, and trust. The overall aesthetic is grounded and authoritative, fitting for a government-grade utility management application." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCE00-oHd_2iNuxkBwX4UlItBMEf4RNinu1UaDY_VaGUzHmoYKA3ZgPyoOcgG9Ts4UuyG28EN4y9HcxQTWYteaVYs3MVQT7sWjo0uWLGC6FoD14BHy0wz1b-dygkeSH6-io_oc_9rzJdIjCLd3nt-0R1Oj7FXkOBo_Hgs01jnVymdO90yiCUv6uOB8FF_HdegpwAcYOrhOLdMuFFH3z_l7OB8TGnCsa6eyZn9jeagTOSuTyf4Lgy4vKaLQp--0EdemZGxzlTZxtIx4Y')"></div>
+<div class="flex flex-col items-center gap-xs z-10 pointer-events-none">
+<span class="material-symbols-outlined text-outline text-3xl">assignment_add</span>
+<p class="font-body text-on-surface-variant">Select scanned letter (PDF/JPG)</p>
+<p class="font-caption text-outline">Max size 10MB</p>
+</div>
+</div>
+<div class="flex flex-col gap-sm justify-center">
+<button class="w-full flex items-center justify-center gap-sm bg-primary text-on-primary py-md rounded-lg font-button shadow-sm hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[22px]">photo_camera</span>
+                            Take Photo
+                        </button>
+<button class="w-full flex items-center justify-center gap-sm bg-surface-container-high text-primary py-md rounded-lg font-button hover:bg-surface-container-highest active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[22px]">upload_file</span>
+                            Upload File
+                        </button>
+<div class="bg-surface-container p-sm rounded-lg border border-outline-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-error text-[18px]">warning</span>
+<span class="font-caption text-on-surface-variant">Letter must be dated within 30 days.</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Actions -->
+<div class="sticky bottom-4 bg-surface/80 backdrop-blur-md p-md rounded-2xl border border-white/20 shadow-xl flex items-center justify-between gap-md">
+<button class="px-lg py-md text-primary font-button rounded-xl hover:bg-primary/10 transition-colors">
+                Save Draft
+            </button>
+<button class="px-xl py-md bg-primary text-on-primary font-button rounded-xl shadow-lg hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-sm">
+                Continue
+                <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</main>
+<!-- Bottom Spacing -->
+<div class="h-8"></div>
+<script>
+        // Interactive Micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                // Subtle hover logic could be added here if needed
+            });
+        });
+
+        // Simple mock for "Upload" button feedback
+        const uploadButtons = document.querySelectorAll('.bg-surface-container-high');
+        uploadButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Uploading...`;
+                btn.classList.add('pointer-events-none', 'opacity-70');
+                
+                setTimeout(() => {
+                    btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> Success`;
+                    btn.classList.remove('text-primary');
+                    btn.classList.add('bg-secondary-container', 'text-on-secondary-container');
+                }, 2000);
+            });
+        });
+    </script>
+</body></html>

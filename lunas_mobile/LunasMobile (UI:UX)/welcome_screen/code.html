@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUNAS - Urban Management Welcome</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#a3f69c",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#a9c7ff",
+                    "on-tertiary-fixed": "#2a1800",
+                    "on-primary-container": "#dae5ff",
+                    "on-primary-fixed-variant": "#00468c",
+                    "error": "#ba1a1a",
+                    "surface-container": "#e7eeff",
+                    "inverse-surface": "#263143",
+                    "tertiary": "#6d4500",
+                    "surface-bright": "#f9f9ff",
+                    "surface-dim": "#cfdaf2",
+                    "on-error": "#ffffff",
+                    "background": "#f9f9ff",
+                    "secondary-container": "#a0f399",
+                    "on-secondary-fixed": "#002204",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#643f00",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#c2c6d4",
+                    "on-primary-fixed": "#001b3d",
+                    "inverse-on-surface": "#ecf1ff",
+                    "surface-variant": "#d8e3fb",
+                    "tertiary-fixed-dim": "#ffb957",
+                    "surface": "#f9f9ff",
+                    "on-secondary-fixed-variant": "#005312",
+                    "tertiary-fixed": "#ffddb5",
+                    "primary": "#004d99",
+                    "on-tertiary-container": "#ffe0bb",
+                    "secondary-fixed-dim": "#88d982",
+                    "on-secondary-container": "#217128",
+                    "on-surface": "#111c2d",
+                    "primary-fixed-dim": "#a9c7ff",
+                    "surface-container-low": "#f0f3ff",
+                    "primary-fixed": "#d6e3ff",
+                    "on-background": "#111c2d",
+                    "outline": "#727783",
+                    "on-tertiary": "#ffffff",
+                    "secondary": "#1b6d24",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#dee8ff",
+                    "primary-container": "#1565c0",
+                    "tertiary-container": "#8e5b00",
+                    "surface-tint": "#005db7",
+                    "surface-container-highest": "#d8e3fb",
+                    "on-surface-variant": "#424752"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "container_padding": "16px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "gutter": "12px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "subtitle": ["Inter"],
+                    "body": ["Inter"],
+                    "display": ["Inter"],
+                    "title": ["Inter"],
+                    "heading": ["Inter"],
+                    "button": ["Inter"],
+                    "caption": ["Inter"]
+            },
+            "fontSize": {
+                    "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9ff;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen items-center justify-between bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Background Atmospheric Effect -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[100px]"></div>
+<div class="absolute top-[40%] -right-[5%] w-[30%] h-[30%] bg-secondary/5 rounded-full blur-[80px]"></div>
+<div class="absolute -bottom-[5%] left-[20%] w-[35%] h-[35%] bg-tertiary/5 rounded-full blur-[120px]"></div>
+</div>
+<!-- Top Navigation Row (Language Selector) -->
+<div class="relative z-10 w-full flex justify-end p-container_padding">
+<button class="flex items-center justify-center p-3 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-variant transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</button>
+</div>
+<!-- Main Content Area -->
+<main class="relative z-10 flex flex-col items-center justify-center w-full max-w-md px-container_padding text-center flex-grow">
+<!-- Logo & Branding -->
+<div class="mb-xl flex flex-col items-center">
+<div class="w-20 h-20 bg-primary-container rounded-3xl flex items-center justify-center shadow-lg shadow-primary/10 mb-md floating-element">
+<span class="material-symbols-outlined text-on-primary-container text-[48px]" data-icon="location_city" style="font-variation-settings: 'FILL' 1;">location_city</span>
+</div>
+<h1 class="font-display text-display text-on-surface tracking-tight mb-sm">LUNAS</h1>
+<div class="h-1 w-12 bg-primary rounded-full"></div>
+</div>
+<!-- Description Bento Card -->
+<div class="glass-effect p-lg rounded-[28px] shadow-sm mb-xl">
+<p class="font-subtitle text-subtitle text-on-surface-variant leading-relaxed">
+                Report infrastructure concerns and track their resolution.
+            </p>
+</div>
+<!-- Action Grid -->
+<div class="w-full space-y-md">
+<button class="w-full py-4 bg-primary text-on-primary rounded-xl font-button text-button shadow-md hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-[0.98] focus:ring-4 focus:ring-primary/30">
+                Log In
+            </button>
+<button class="w-full py-4 bg-secondary-container text-on-secondary-container rounded-xl font-button text-button hover:bg-secondary-fixed-dim transition-all active:scale-[0.98] focus:ring-4 focus:ring-secondary/20">
+                Create Account
+            </button>
+</div>
+</main>
+<!-- Visual Feature Image Placeholder -->
+<div class="relative z-10 w-full max-w-lg px-container_padding mb-lg">
+<div class="relative aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-surface-container-high">
+<div class="w-full h-full bg-cover bg-center" data-alt="A cinematic, high-resolution 3D render of a futuristic smart city intersection with glowing blue infrastructure data overlays. Clean white architecture is illuminated by soft daylight, creating a professional and trustworthy urban management atmosphere. The scene features minimalist textures and a shallow depth of field, emphasizing high-tech efficiency and governmental reliability in an organized light-mode aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDHrh1hxzv6tpbTzEiFd9lhbiFaomogLqCmi4u9rU4HpNZ-HzB0m-wbFsStpF1I28L8gypXbCzsMIQJ4AhmjbsI6Swbf-mNk_EZtp9M8rtiAi8Ox4Ht3gkvAZx7Hr0RIuhMVGSO_fqnHuPJ3X-aCWb7abIqZgh9ZESN0KOAU0nGhoCn8Hlm8XObE8s2j6pC-zIZ3SsAzHZjSfPPNNcR82roL0JHEdjpi31LmNrB25XUVTCqN1-_CItqaFGhuTggNpShwKQHcusPk0I8')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+</div>
+</div>
+<!-- Footer Area -->
+<footer class="relative z-10 w-full flex flex-col items-center pb-xl pt-md">
+<a class="group flex items-center gap-xs text-primary font-subtitle text-subtitle hover:underline decoration-2 underline-offset-4 transition-all" href="#">
+            Learn About LUNAS
+            <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</a>
+<p class="mt-sm font-caption text-caption text-on-surface-variant/60">
+            © 2024 Urban Infrastructure Management
+        </p>
+</footer>
+<!-- Interactive Layer for micro-shadows -->
+<script>
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            const containers = document.querySelectorAll('.glass-effect');
+            containers.forEach(container => {
+                const moveX = (x - 0.5) * 20;
+                const moveY = (y - 0.5) * 20;
+                container.style.boxShadow = `${moveX}px ${moveY}px 40px rgba(0, 77, 153, 0.05)`;
+            });
+        });
+
+        // Suppression Logic Check (As per System Prompt: Hide Shell on Welcome/Transactional screens)
+        // Since this is a Welcome screen, we are deliberately not rendering the BottomNavBar or SideNav 
+        // to maintain task focus and linear journey priority.
+    </script>
+</body></html>

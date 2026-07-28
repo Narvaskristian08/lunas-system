@@ -17,6 +17,11 @@ class HomeScreen extends StatelessWidget {
       selectedIndex: 0,
       actions: [
         IconButton(
+          onPressed: () => Navigator.pushNamed(context, '/workspaces'),
+          tooltip: 'Workspaces',
+          icon: const Icon(Icons.grid_view_rounded),
+        ),
+        IconButton(
           onPressed: () => Navigator.pushNamed(context, '/notifications'),
           tooltip: 'Notifications',
           icon: const Badge(

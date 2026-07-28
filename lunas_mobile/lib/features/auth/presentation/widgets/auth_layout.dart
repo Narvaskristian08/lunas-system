@@ -107,7 +107,7 @@ class LunasBrand extends StatelessWidget {
         ),
         if (showSubtitle)
           Text(
-            'URBAN SENTINEL',
+            'URBAN INFRASTRUCTURE',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: AppColorsLight.textSecondary,
               fontSize: large ? 9 : 7,

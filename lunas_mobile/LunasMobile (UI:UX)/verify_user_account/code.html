@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUNAS - Verify User Account</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "background": "#f9f9ff",
+                        "on-secondary-container": "#217128",
+                        "on-background": "#111c2d",
+                        "on-secondary-fixed": "#002204",
+                        "on-primary-fixed": "#001b3d",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#a3f69c",
+                        "outline": "#727783",
+                        "surface-variant": "#d8e3fb",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "primary-container": "#1565c0",
+                        "inverse-surface": "#263143",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#dae5ff",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-primary-fixed-variant": "#00468c",
+                        "outline-variant": "#c2c6d4",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "primary-fixed": "#d6e3ff",
+                        "surface-container-highest": "#d8e3fb",
+                        "surface-container": "#e7eeff",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-surface": "#111c2d",
+                        "surface-dim": "#cfdaf2",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#005db7",
+                        "secondary": "#1b6d24",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-container-high": "#dee8ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#8e5b00",
+                        "tertiary": "#6d4500",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-tertiary-fixed": "#2a1800",
+                        "inverse-primary": "#a9c7ff",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container_padding": "16px",
+                        "base": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "caption": ["Inter"],
+                        "heading": ["Inter"],
+                        "body": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"],
+                        "button": ["Inter"],
+                        "subtitle": ["Inter"]
+                    },
+                    "fontSize": {
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface shadow-sm fixed top-0 w-full z-50 flex justify-between items-center px-container_padding h-16 transition-colors duration-200">
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-full flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-title text-title font-bold text-primary">Urban Management</h1>
+</div>
+<div class="flex items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden flex items-center justify-center text-primary font-subtitle text-subtitle font-bold">
+                A
+            </div>
+</div>
+</header>
+<!-- Main Content Area - Navigation is suppressed because this is a focused/transactional task -->
+<main class="flex-grow pt-24 pb-8 px-container_padding max-w-4xl mx-auto w-full flex flex-col gap-lg">
+<!-- Header Section -->
+<div class="flex flex-col gap-xs">
+<h2 class="font-heading text-heading text-on-surface">Verify User Account</h2>
+<p class="font-body text-body text-on-surface-variant">Review the submitted details for the new user application.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- User Profile & Org Details Card (Span 2) -->
+<div class="bg-surface shadow-[0_0px_4px_0_rgba(0,0,0,0.05)] rounded-xl p-md border border-outline-variant/30 flex flex-col gap-md md:col-span-2">
+<div class="flex items-start gap-md border-b border-outline-variant/30 pb-md">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-surface-container shrink-0">
+<img alt="Sarah Jenkins Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged woman wearing modern corporate attire against a plain light background. The lighting is studio quality, soft and even, highlighting her approachable expression. The overall style is clean, corporate, and fits seamlessly into a modern digital interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHNHwXjeyuNstRrMz_56FcV3vpvFE9AA-NmnBz9sUrVfXvQJ_-HplfMtZKTiQNw25psrXX7cwWzssgr6QXNSQeh0Y3pXUjF4HOyZkbjM8pD4CVwlUeu53nAgGUBdJ49m8Tx_BEj4tSV6fyByXUTzIBDo-AIeieqmRu-Tti2UGzm_k6snm21IDYjuVCXT2etJiGzhP2r7RJOyRgZ2CF0r_rue7nt_s2_U8iiHxsNjs4IJhQJqnM5OS-w2yOoCv4epeONczWCdFnuosl"/>
+</div>
+<div class="flex flex-col flex-grow">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title text-title text-on-surface">Sarah Jenkins</h3>
+<p class="font-body text-body text-on-surface-variant">Utility Provider</p>
+</div>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-caption font-caption px-2 py-1 rounded-full whitespace-nowrap">Pending Verification</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Organization</span>
+<span class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">domain</span>
+                            Maynilad Water Services
+                        </span>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Email Address</span>
+<span class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">mail</span>
+                            s.jenkins@maynilad.com
+                        </span>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Phone Number</span>
+<span class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">call</span>
+                            +63 917 555 0192
+                        </span>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant">Role Requested</span>
+<span class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">badge</span>
+                            Field Technician Lead
+                        </span>
+</div>
+</div>
+</div>
+<!-- ID Document Thumbnail Card (Span 1) -->
+<div class="bg-surface shadow-[0_0px_4px_0_rgba(0,0,0,0.05)] rounded-xl p-md border border-outline-variant/30 flex flex-col gap-sm">
+<h4 class="font-subtitle text-subtitle text-on-surface">Submitted ID Document</h4>
+<div class="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-surface-container-high border border-outline-variant/50 group cursor-pointer">
+<img alt="ID Document" class="w-full h-full object-cover" data-alt="A clear, high-resolution flat lay photograph of a corporate identification card resting on a clean white desk surface. The ID card features a prominent barcode, a placeholder portrait area, and a secure holographic seal. The lighting is bright and clinically white, typical of an official document scan or verification photo." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7HEJ7xh1otFZw2oYd8S4l5H7k53H5JPLy6tI6jjQq9ZPXdDZvgtK4jV5b4IuR7Oi0NTNb6Ri_Mbpv2BUNfKPnS5sf0KhFUX23Gyhfi2GEfoRUhezstoufutAjyIIuumc4Mq_cuk651iLoPd54uUsgc3eZWvTbFVHqzh6gJubuMO5NEV2-1u8y-yYRgleCLfvjaL_pmZhHn07QQ3w9IXbNYB_8tl0gB8YeO8jnA9tE66ITAZ7zlG4lccqVX7x0W8-yJiurQMPyK9G3"/>
+<div class="absolute inset-0 bg-on-surface/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-on-primary text-[32px]">zoom_in</span>
+</div>
+</div>
+<p class="font-caption text-caption text-on-surface-variant text-center mt-2">Company ID - Front</p>
+</div>
+<!-- Verification Checklist (Span 3) -->
+<div class="bg-surface shadow-[0_0px_4px_0_rgba(0,0,0,0.05)] rounded-xl p-md border border-outline-variant/30 flex flex-col gap-md md:col-span-3">
+<h4 class="font-subtitle text-subtitle text-on-surface">Verification Checklist</h4>
+<div class="flex flex-col gap-sm">
+<label class="flex items-center gap-md p-sm hover:bg-surface-variant/30 rounded-lg cursor-pointer transition-colors">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-surface" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body text-body text-on-surface font-medium">ID Document is valid and legible</span>
+<span class="font-caption text-caption text-on-surface-variant">Check for expiry dates and visual clarity.</span>
+</div>
+</label>
+<label class="flex items-center gap-md p-sm hover:bg-surface-variant/30 rounded-lg cursor-pointer transition-colors">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-surface" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body text-body text-on-surface font-medium">Organization is recognized and active</span>
+<span class="font-caption text-caption text-on-surface-variant">Ensure the listed utility provider is a current partner.</span>
+</div>
+</label>
+<label class="flex items-center gap-md p-sm hover:bg-surface-variant/30 rounded-lg cursor-pointer transition-colors">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-surface" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body text-body text-on-surface font-medium">Email domain matches organization</span>
+<span class="font-caption text-caption text-on-surface-variant">Verify the email suffix against known corporate domains.</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Action Buttons (Span 3) -->
+<div class="flex flex-col sm:flex-row justify-end items-center gap-md mt-sm md:col-span-3 pt-md border-t border-outline-variant/30">
+<button class="w-full sm:w-auto px-lg py-3 rounded-[14px] font-button text-button text-primary hover:bg-surface-variant/50 transition-colors flex items-center justify-center gap-2">
+                    Request Info
+                </button>
+<button class="w-full sm:w-auto px-lg py-3 rounded-[14px] font-button text-button text-error border border-error hover:bg-error/10 transition-colors flex items-center justify-center gap-2">
+                    Reject Verification
+                </button>
+<button class="w-full sm:w-auto px-lg py-3 rounded-[14px] font-button text-button bg-primary text-on-primary hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
+                    Approve Account
+                </button>
+</div>
+</div>
+</main>
+</body></html>

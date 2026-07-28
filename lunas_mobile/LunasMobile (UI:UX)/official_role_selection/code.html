@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Authorized Personnel Registration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#a3f69c",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#a9c7ff",
+                    "on-tertiary-fixed": "#2a1800",
+                    "on-primary-container": "#dae5ff",
+                    "on-primary-fixed-variant": "#00468c",
+                    "error": "#ba1a1a",
+                    "surface-container": "#e7eeff",
+                    "inverse-surface": "#263143",
+                    "tertiary": "#6d4500",
+                    "surface-bright": "#f9f9ff",
+                    "surface-dim": "#cfdaf2",
+                    "on-error": "#ffffff",
+                    "background": "#f9f9ff",
+                    "secondary-container": "#a0f399",
+                    "on-secondary-fixed": "#002204",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#643f00",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#c2c6d4",
+                    "on-primary-fixed": "#001b3d",
+                    "inverse-on-surface": "#ecf1ff",
+                    "surface-variant": "#d8e3fb",
+                    "tertiary-fixed-dim": "#ffb957",
+                    "surface": "#f9f9ff",
+                    "on-secondary-fixed-variant": "#005312",
+                    "tertiary-fixed": "#ffddb5",
+                    "primary": "#004d99",
+                    "on-tertiary-container": "#ffe0bb",
+                    "secondary-fixed-dim": "#88d982",
+                    "on-secondary-container": "#217128",
+                    "on-surface": "#111c2d",
+                    "primary-fixed-dim": "#a9c7ff",
+                    "surface-container-low": "#f0f3ff",
+                    "primary-fixed": "#d6e3ff",
+                    "on-background": "#111c2d",
+                    "outline": "#727783",
+                    "on-tertiary": "#ffffff",
+                    "secondary": "#1b6d24",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#dee8ff",
+                    "primary-container": "#1565c0",
+                    "tertiary-container": "#8e5b00",
+                    "surface-tint": "#005db7",
+                    "surface-container-highest": "#d8e3fb",
+                    "on-surface-variant": "#424752"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "container_padding": "16px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "gutter": "12px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "subtitle": ["Inter"],
+                    "body": ["Inter"],
+                    "display": ["Inter"],
+                    "title": ["Inter"],
+                    "heading": ["Inter"],
+                    "button": ["Inter"],
+                    "caption": ["Inter"]
+            },
+            "fontSize": {
+                    "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .role-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .role-card:hover {
+            transform: translateY(-4px);
+        }
+        .role-card.selected {
+            border-color: #004d99;
+            background-color: #f0f3ff;
+            box-shadow: 0 4px 12px rgba(0, 77, 153, 0.12);
+        }
+        .role-card.selected .check-indicator {
+            opacity: 1;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+<!-- Background Elements -->
+<div class="absolute inset-0 pointer-events-none z-0">
+<div class="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl"></div>
+</div>
+<!-- Main Container -->
+<main class="relative z-10 w-full max-w-4xl px-container_padding py-xl">
+<!-- Header Section -->
+<header class="text-center mb-xl">
+<div class="flex justify-center mb-sm">
+<div class="w-16 h-16 bg-primary-fixed flex items-center justify-center rounded-2xl shadow-sm">
+<span class="material-symbols-outlined text-primary text-[32px]">location_city</span>
+</div>
+</div>
+<h1 class="font-display text-display text-on-background mb-xs">Select Your Official Role</h1>
+<p class="font-subtitle text-subtitle text-on-surface-variant max-w-lg mx-auto">
+                Identify your department to access restricted urban management tools and real-time infrastructure data.
+            </p>
+</header>
+<!-- Role Selection Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg mb-xl">
+<!-- Repair Personnel Card -->
+<button class="role-card flex flex-col text-left p-lg bg-surface-container-lowest border-2 border-outline-variant rounded-[14px] relative group overflow-hidden" onclick="selectRole(this)">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-primary-container/10 rounded-xl">
+<span class="material-symbols-outlined text-primary-container text-[28px]">engineering</span>
+</div>
+<span class="bg-error-container text-on-error-container font-caption text-caption px-sm py-[2px] rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                        Verification Required
+                    </span>
+</div>
+<h3 class="font-title text-title text-on-surface mb-xs">Repair Personnel</h3>
+<p class="font-body text-body text-on-surface-variant flex-grow">
+                    Field technicians responsible for physical maintenance, repairs, and infrastructure inspections.
+                </p>
+<div class="check-indicator opacity-0 absolute top-4 right-4 bg-primary text-white rounded-full p-1 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+</button>
+<!-- Barangay Official Card -->
+<button class="role-card flex flex-col text-left p-lg bg-surface-container-lowest border-2 border-outline-variant rounded-[14px] relative group" onclick="selectRole(this)">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-secondary-container/20 rounded-xl">
+<span class="material-symbols-outlined text-secondary text-[28px]">account_balance</span>
+</div>
+<span class="bg-error-container text-on-error-container font-caption text-caption px-sm py-[2px] rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                        Verification Required
+                    </span>
+</div>
+<h3 class="font-title text-title text-on-surface mb-xs">Barangay Official</h3>
+<p class="font-body text-body text-on-surface-variant flex-grow">
+                    Local community leaders managing citizen reports and neighborhood-level resource allocation.
+                </p>
+<div class="check-indicator opacity-0 absolute top-4 right-4 bg-primary text-white rounded-full p-1 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+</button>
+<!-- City Engineering Personnel Card -->
+<button class="role-card flex flex-col text-left p-lg bg-surface-container-lowest border-2 border-outline-variant rounded-[14px] relative group" onclick="selectRole(this)">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-tertiary-fixed/30 rounded-xl">
+<span class="material-symbols-outlined text-tertiary text-[28px]">architecture</span>
+</div>
+<span class="bg-error-container text-on-error-container font-caption text-caption px-sm py-[2px] rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                        Verification Required
+                    </span>
+</div>
+<h3 class="font-title text-title text-on-surface mb-xs">City Engineering Personnel</h3>
+<p class="font-body text-body text-on-surface-variant flex-grow">
+                    Central planning staff managing large-scale construction, planning, and structural integrity.
+                </p>
+<div class="check-indicator opacity-0 absolute top-4 right-4 bg-primary text-white rounded-full p-1 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+</button>
+<!-- Utility Provider Personnel Card -->
+<button class="role-card flex flex-col text-left p-lg bg-surface-container-lowest border-2 border-outline-variant rounded-[14px] relative group" onclick="selectRole(this)">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-primary-fixed-dim/30 rounded-xl">
+<span class="material-symbols-outlined text-primary text-[28px]">bolt</span>
+</div>
+<span class="bg-error-container text-on-error-container font-caption text-caption px-sm py-[2px] rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                        Verification Required
+                    </span>
+</div>
+<h3 class="font-title text-title text-on-surface mb-xs">Utility Provider Personnel</h3>
+<p class="font-body text-body text-on-surface-variant flex-grow">
+                    External partners managing water, electricity, and telecommunications network maintenance.
+                </p>
+<div class="check-indicator opacity-0 absolute top-4 right-4 bg-primary text-white rounded-full p-1 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+</button>
+</div>
+<!-- Action Section -->
+<div class="flex flex-col items-center gap-md">
+<button class="w-full md:w-64 h-14 bg-primary text-white font-button text-button rounded-xl flex items-center justify-center gap-2 shadow-lg hover:bg-primary-container active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed" disabled="" id="continueBtn">
+                Continue
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<button class="font-body text-body text-on-surface-variant hover:text-primary transition-colors py-2">
+                Need help with role selection?
+            </button>
+</div>
+</main>
+<!-- Visual Footer Accent -->
+<div class="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-tertiary opacity-20"></div>
+<script>
+        function selectRole(element) {
+            // Remove selection from all cards
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            element.classList.add('selected');
+            
+            // Enable continue button
+            const continueBtn = document.getElementById('continueBtn');
+            continueBtn.disabled = false;
+            
+            // Interaction feedback
+            continueBtn.classList.remove('opacity-40');
+            continueBtn.classList.add('animate-pulse');
+            setTimeout(() => {
+                continueBtn.classList.remove('animate-pulse');
+            }, 1000);
+        }
+
+        // Initialize micro-interactions
+        document.querySelectorAll('.role-card').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.98)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = '';
+            });
+        });
+    </script>
+</body></html>

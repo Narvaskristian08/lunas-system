@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Work Order #WO-2023-892</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#005db7",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-container": "#a0f399",
+                        "on-secondary-fixed-variant": "#005312",
+                        "background": "#f9f9ff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-primary-container": "#dae5ff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d8e3fb",
+                        "outline-variant": "#c2c6d4",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-tertiary-container": "#ffe0bb",
+                        "on-tertiary-fixed": "#2a1800",
+                        "primary-container": "#1565c0",
+                        "on-secondary-fixed": "#002204",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#a3f69c",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "tertiary-container": "#8e5b00",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "on-primary-fixed": "#001b3d",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "inverse-surface": "#263143",
+                        "tertiary": "#6d4500",
+                        "error": "#ba1a1a",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "surface-container": "#e7eeff",
+                        "secondary-fixed-dim": "#88d982",
+                        "surface-dim": "#cfdaf2",
+                        "primary": "#004d99",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "outline": "#727783",
+                        "surface-container-low": "#f0f3ff",
+                        "on-background": "#111c2d",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container-highest": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "container_padding": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter"],
+                        "caption": ["Inter"],
+                        "heading": ["Inter"],
+                        "button": ["Inter"],
+                        "subtitle": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-container_padding h-16 w-full docked full-width top-0 z-50 bg-surface shadow-sm sticky">
+<div class="flex items-center gap-md hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 p-sm rounded-full cursor-pointer">
+<span class="material-symbols-outlined text-primary" data-icon="menu">menu</span>
+</div>
+<h1 class="font-display text-display font-bold text-primary">LUNAS Repair</h1>
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 cursor-pointer">
+<img alt="Repair Personnel Profile" class="w-full h-full object-cover" data-alt="A small, professional headshot of an urban repair personnel worker wearing a high-visibility safety vest over a blue uniform shirt. The lighting is bright and corporate, suggesting a reliable city worker. The background is a clean, neutral gray to ensure the focus remains on the person's face." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtuJcri9vKYNkuyXJGC7suPtEYObYGQVZoZctwMCHcKv2Wpi5FT6CXmNE7vFf5wLi8XYm-myHyjyWruL7RSMs_wBE0pKdTsK-0cLAZlccp1119W8x7Jbq30cjH1Q1IrA_-msU2GW8H8nHR_iIyztNBaA8aXnS22dt3o3Oo-ulgx_U-EhBXbzDQUUpMXidEYlh2OMLNgwdQb-FJeyYPVazOmhGDBx0-jJIbThW0tWJ1mpr55TlQkNilKXgXqk9dPdV9m6ri3WpD1Zh9"/>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-container_padding pt-lg space-y-lg">
+<!-- Header -->
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-heading text-heading">Work Order #WO-2023-892</h2>
+<p class="font-body text-body text-on-surface-variant mt-xs">Created Oct 24, 2023 • 08:30 AM</p>
+</div>
+<div class="bg-error-container text-on-error-container font-button text-button px-sm py-xs rounded-full flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] icon-filled">priority_high</span>
+                High Priority
+            </div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- General Info Card -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-sm border-l-4 border-error flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-sm mb-md text-primary">
+<span class="material-symbols-outlined">info</span>
+<h3 class="font-title text-title">General Information</h3>
+</div>
+<div class="space-y-sm">
+<div class="flex justify-between">
+<span class="font-body text-body text-on-surface-variant">Incident Ref</span>
+<span class="font-subtitle text-subtitle">INC-88942-A</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body text-body text-on-surface-variant">Category</span>
+<span class="font-subtitle text-subtitle">Infrastructure</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body text-body text-on-surface-variant">Type</span>
+<span class="font-subtitle text-subtitle">Pothole Repair</span>
+</div>
+</div>
+</div>
+<div class="mt-md pt-md border-t border-outline-variant flex justify-between items-center">
+<span class="font-body text-body text-on-surface-variant">Assigned By</span>
+<div class="flex items-center gap-xs">
+<div class="w-6 h-6 rounded-full bg-surface-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small thumbnail portrait of a city supervisor named Lee, wearing a neat polo shirt. The lighting is bright and evenly distributed, typical of a professional corporate directory photo. The background is a soft, out-of-focus office setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTJWEVqYbL0wwQ6-4V_PfD_2WT0Jr3CfA3pdar-jDdb1OPZdXWam6GT6pi6mWjq1DiFdftzpUDRBwyjFkDxcWXyPSjRATPQ41YHp0M6oIzpCnizcDFxww5n2BMvAuojHY-hZHyy93lAU8He59UTNf1uBLoPeW3NBcT6erED5gM1erXMMp7i2gx5ip8L32PrRcA9_KM3fXMcZSFYRgfAj-JDCcWIAIXc2YfzPbLOz_cD-oSb3WH09xOLq_K0MPpYBeFLhF-DbksWWwe"/>
+</div>
+<span class="font-subtitle text-subtitle">Supervisor Lee</span>
+</div>
+</div>
+</section>
+<!-- Incident Details Card -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-sm">
+<div class="flex items-center gap-sm mb-md text-primary">
+<span class="material-symbols-outlined">report</span>
+<h3 class="font-title text-title">Incident Details</h3>
+</div>
+<p class="font-body text-body text-on-surface mb-md">
+                    Large pothole reported in the right-most lane. Citizen states it has caused damage to multiple vehicles. Approximately 3 feet wide and 5 inches deep. Requires immediate cold patch application.
+                </p>
+<div class="rounded-lg overflow-hidden h-32 relative">
+<img class="w-full h-full object-cover absolute inset-0" data-alt="A close-up photo taken by a citizen showing a large, jagged pothole in an asphalt road during daylight. The asphalt edges are crumbling, and small debris is scattered around the hole. The lighting is natural, casting slight shadows inside the depression, emphasizing its depth. The image has a slightly gritty, realistic urban aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiDq4oHaBw416wib_kMrHYT_mGGq-Q3yoU9ET3jUUrKI8RkP-xOvUGApzRKMWjmxjUnAV2YQlCKYDnQZt9oM2ReC4gA4LceUMrXInP1fzercGYq4TVUjr6IDdTGMc_ZjEmIb8IZHI2B4SNLrwHKndkdlDg5tkCqFqSrPBIeGx6CrspFaIB2IhKov4w1g22SEnsRpdnNkd1qVokCSxO3iJqL5ZOBntvtTKnNg_I5vUoj3uPDD2xYGj9D_LKsz3qj_u41NYD-fe8axhP"/>
+<div class="absolute bottom-2 right-2 bg-inverse-surface/80 text-inverse-on-surface font-caption text-caption px-sm py-xs rounded flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                        Citizen Photo
+                    </div>
+</div>
+</section>
+<!-- Location Card (Spans full width on mobile, 1 col on desktop) -->
+<section class="bg-surface-container-lowest rounded-xl p-md shadow-sm md:col-span-2 flex flex-col md:flex-row gap-md">
+<div class="flex-1">
+<div class="flex items-center gap-sm mb-md text-primary">
+<span class="material-symbols-outlined">location_on</span>
+<h3 class="font-title text-title">Location</h3>
+</div>
+<div class="space-y-sm mb-md">
+<div>
+<span class="font-caption text-caption text-on-surface-variant block">Address</span>
+<span class="font-subtitle text-subtitle">1248 Oak St &amp; 5th Ave Intersection</span>
+</div>
+<div>
+<span class="font-caption text-caption text-on-surface-variant block">GPS Coordinates</span>
+<span class="font-body text-body font-mono text-outline">34.0522° N, 118.2437° W</span>
+</div>
+</div>
+</div>
+<div class="flex-1 rounded-lg overflow-hidden h-48 md:h-auto bg-surface-variant relative shadow-inner">
+<img class="w-full h-full object-cover absolute inset-0" data-alt="A high-contrast, modern digital map view of a city intersection. The map style is clean and functional, using light gray tones for roads and subtle blue accents for water bodies, adhering to a light-mode UI aesthetic. A bright red, distinct location pin drops exactly on the intersection of two major streets, drawing immediate attention." data-location="Los Angeles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbveahPM5_B3IYwxIzEHNDUbH5pviM0qhnjb-zGJ9A3cRI3pleEaHY45I_dGdDi5tCpQ5YbINuZo_uprjywFl5D6FIYyz8FNNOdfaUGsfxFs8e4qHnl2oO8CCiYmaYxv_UCwpU3wPOY20wsHp0VVlKF0y0NSfhMnPdIhrmhJqDbkai6utiGLOXye6-ZB1zmueA_WuNVBZutxvJvZXl9UbBFa9aVJ-b2bojKKxjW05VtzOYTlpfa1dN_k5_R_gzcGAvAoKn4acng8MB"/>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Action Bar (Transactional/Task-Focused context, replaces global nav) -->
+<div class="fixed bottom-0 w-full z-50 bg-surface-container-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.08)] px-container_padding py-md flex gap-md justify-between items-center max-w-4xl mx-auto left-0 right-0">
+<button class="flex-1 bg-surface-variant text-primary font-button text-button py-sm rounded-[14px] flex items-center justify-center gap-sm hover:bg-surface-variant/80 transition-colors active:scale-95 shadow-sm">
+<span class="material-symbols-outlined">navigation</span>
+            Navigate
+        </button>
+<button class="flex-1 bg-primary text-on-primary font-button text-button py-sm rounded-[14px] flex items-center justify-center gap-sm hover:bg-primary/90 transition-colors active:scale-95 shadow-sm">
+<span class="material-symbols-outlined icon-filled">build</span>
+            Start Repair
+        </button>
+</div>
+</body></html>

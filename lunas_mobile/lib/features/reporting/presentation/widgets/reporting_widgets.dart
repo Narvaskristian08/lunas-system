@@ -189,9 +189,13 @@ class AuditTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const events = [
-      ('Contract Validated', '0x7a25...4f21', true),
-      ('Asset Registered', '2 minutes ago', true),
-      ('Sentinel Dispatched', 'Pending Tx...', false),
+      ('Report submitted', 'Today, 9:42 AM', true),
+      (
+        'AI triage suggestion ready',
+        'A Barangay official will validate the suggestion.',
+        true,
+      ),
+      ('Official validation', 'Waiting for assignment.', false),
     ];
     return Column(
       children: [

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infrastructure Analytics - LUNAS Engineering</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-background": "#111c2d",
+                        "secondary-fixed": "#a3f69c",
+                        "primary": "#004d99",
+                        "surface-bright": "#f9f9ff",
+                        "on-secondary-fixed": "#002204",
+                        "primary-container": "#1565c0",
+                        "on-secondary-container": "#217128",
+                        "on-primary-container": "#dae5ff",
+                        "secondary": "#1b6d24",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d8e3fb",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#ffddb5",
+                        "secondary-container": "#a0f399",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#00468c",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-container": "#e7eeff",
+                        "surface-dim": "#cfdaf2",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "secondary-fixed-dim": "#88d982",
+                        "tertiary": "#6d4500",
+                        "surface": "#f9f9ff",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#424752",
+                        "surface-variant": "#d8e3fb",
+                        "on-tertiary-fixed": "#2a1800",
+                        "inverse-primary": "#a9c7ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "inverse-surface": "#263143",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001b3d",
+                        "outline-variant": "#c2c6d4",
+                        "outline": "#727783",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f0f3ff",
+                        "on-tertiary-container": "#ffe0bb",
+                        "background": "#f9f9ff",
+                        "on-surface": "#111c2d",
+                        "tertiary-container": "#8e5b00",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "primary-fixed": "#d6e3ff",
+                        "surface-tint": "#005db7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "container_padding": "16px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "gutter": "12px",
+                        "base": "8px",
+                        "xl": "32px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter"],
+                        "subtitle": ["Inter"],
+                        "title": ["Inter"],
+                        "display": ["Inter"],
+                        "button": ["Inter"],
+                        "heading": ["Inter"],
+                        "caption": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f9f9ff; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pb-[100px] md:pb-0">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-container_padding py-sm w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none bg-surface-container-low dark:bg-surface-container-lowest">
+<div class="flex items-center gap-sm">
+<img class="w-[40px] h-[40px] rounded-full object-cover" data-alt="A professional headshot of a city engineer in a modern hard hat and safety vest, neutral background, high quality, well lit." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaNaGZK48mKileF6Ass6wSBh2fF6AKIE1zd7R-fubWBeTCNdPuPq6brYBxmJE4qxOSJ4_6-r_256iCu51ZaCXHOfsKnk7LCeFzOVx9ApKOPHaH5a5hkekYkAPjLkeDmrSOyfs2GZ6WdgLxA-dQCQxm9XrSPVtGnBU4pjBgNV0JreX6WCVdvSoMpnUOzfbi4Mx9Bdnuk4zE9eNhcoSNGpbfD6VAdZwd9T6PDvxBpztNFHlLNP-oJSQrjwsAIuti3hAFylw8yam1bJOa"/>
+</div>
+<div class="flex-1 text-center">
+<h1 class="font-display text-display text-primary dark:text-primary-fixed-dim tracking-tight">LUNAS Engineering</h1>
+</div>
+<div class="flex items-center">
+<button class="w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-container-highest/50 dark:hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-150 ease-in-out text-primary dark:text-primary-fixed-dim">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Desktop Sidebar Navigation (Hidden on Mobile) -->
+<nav class="hidden md:flex flex-col w-[280px] fixed left-0 top-[72px] h-[calc(100vh-72px)] bg-surface-container shadow-lg z-40 p-md">
+<ul class="flex flex-col gap-sm mt-lg">
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary dark:text-primary-fixed-dim font-bold bg-secondary-container text-on-secondary-container" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-subtitle text-subtitle">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-subtitle text-subtitle">Incidents</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-subtitle text-subtitle">SLA</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant dark:text-outline hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-subtitle text-subtitle">Profile</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-[280px] p-container_padding max-w-[1440px] mx-auto w-full">
+<div class="mb-lg mt-sm flex justify-between items-end">
+<div>
+<h2 class="font-heading text-heading text-on-surface mb-xs">Infrastructure Analytics</h2>
+<p class="font-body text-body text-on-surface-variant">City-wide engineering insights and real-time operational status.</p>
+</div>
+<button class="hidden md:flex items-center gap-sm bg-primary text-on-primary px-lg py-sm rounded-[14px] font-button text-button shadow-sm hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                Export Report
+            </button>
+</div>
+<!-- KPI Cards Grid (Level 1 Elevation) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md mb-lg">
+<!-- Health Score -->
+<div class="bg-surface rounded-xl p-md border-l-[4px] border-secondary-fixed shadow-[0_2px_4px_rgba(0,0,0,0.05)] relative overflow-hidden">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Infrastructure Health</h3>
+<span class="material-symbols-outlined text-secondary-fixed">health_and_safety</span>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-display text-display text-on-surface">88</span>
+<span class="font-body text-body text-on-surface-variant">/ 100</span>
+</div>
+<div class="mt-sm flex items-center gap-xs text-secondary font-caption text-caption">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+2.4% vs last month</span>
+</div>
+</div>
+<!-- Resolution Time -->
+<div class="bg-surface rounded-xl p-md border-l-[4px] border-primary-container shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Avg Resolution Time</h3>
+<span class="material-symbols-outlined text-primary-container">timer</span>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-display text-display text-on-surface">1.4</span>
+<span class="font-body text-body text-on-surface-variant">days</span>
+</div>
+<div class="mt-sm flex items-center gap-xs text-secondary font-caption text-caption">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+<span>-0.3 days vs SLA</span>
+</div>
+</div>
+<!-- Critical Incidents -->
+<div class="bg-surface rounded-xl p-md border-l-[4px] border-error shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface-variant">Critical Incidents</h3>
+<span class="material-symbols-outlined text-error">warning</span>
+</div>
+<div class="flex items-baseline gap-sm">
+<span class="font-display text-display text-on-surface">12</span>
+<span class="font-body text-body text-on-surface-variant">Active</span>
+</div>
+<div class="mt-sm flex gap-sm">
+<span class="px-sm py-xs rounded-full bg-error-container text-on-error-container font-caption text-caption">3 Road</span>
+<span class="px-sm py-xs rounded-full bg-error-container text-on-error-container font-caption text-caption">9 Water</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout for Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md mb-xl">
+<!-- Heat Map (Spans 2 columns on large screens) -->
+<div class="lg:col-span-2 bg-surface rounded-xl p-md shadow-[0_2px_4px_rgba(0,0,0,0.05)] flex flex-col h-[400px]">
+<h3 class="font-title text-title text-on-surface mb-md">Incident Heat Map</h3>
+<div class="flex-1 w-full rounded-lg bg-surface-container overflow-hidden relative">
+<img class="w-full h-full object-cover opacity-80 mix-blend-multiply" data-alt="A detailed, modern city map visualization in a light color palette with glowing red and orange heatmap overlays indicating infrastructure incidents. Clean UI style, invisible grid lines, highly legible geographic features." data-location="Manila" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK0DYk-TNSI2lmOZDnwr-4Cd_t-ygcfrDyvQKo4lY1VhfZpR5i065YIOFywHRhzAtzzrAVP-ARO733cyp9_ge7X0az4nSqBk3rHUJHipujRXpjNXwGhiij6f7cRCHsUl4qG48gLUD0r1Ah1nsMpiCQaKVkYN1iLRFlw2vsJspdgxeKSl7OG3AvVhdy-VbnveNbGwrugfSmzpD2AcfvKIj9p5Bfgu3iYdT337RJVs2TG8t8AHVVQc5IpdS-qAOMLBkhdhhA140IZRW3"/>
+<!-- Decorative overlay UI -->
+<div class="absolute top-sm right-sm flex flex-col gap-xs">
+<button class="w-8 h-8 bg-surface rounded shadow flex items-center justify-center text-on-surface"><span class="material-symbols-outlined text-[18px]">add</span></button>
+<button class="w-8 h-8 bg-surface rounded shadow flex items-center justify-center text-on-surface"><span class="material-symbols-outlined text-[18px]">remove</span></button>
+</div>
+</div>
+</div>
+<!-- Hazard Categories -->
+<div class="bg-surface rounded-xl p-md shadow-[0_2px_4px_rgba(0,0,0,0.05)] flex flex-col h-[400px]">
+<h3 class="font-title text-title text-on-surface mb-md">Hazard Categories</h3>
+<div class="flex-1 flex flex-col justify-end gap-md relative w-full pt-lg">
+<!-- Faux Bar Chart -->
+<div class="flex justify-between items-end h-full px-sm pb-sm">
+<div class="flex flex-col items-center gap-sm group w-1/5">
+<div class="w-full bg-primary rounded-t-sm h-[80%] relative group-hover:opacity-90 transition-opacity">
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 font-caption text-caption text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">80%</span>
+</div>
+<span class="font-caption text-caption text-on-surface text-center truncate w-full">Road</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-1/5">
+<div class="w-full bg-secondary rounded-t-sm h-[65%] relative group-hover:opacity-90 transition-opacity">
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 font-caption text-caption text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">65%</span>
+</div>
+<span class="font-caption text-caption text-on-surface text-center truncate w-full">Water</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-1/5">
+<div class="w-full bg-tertiary-fixed-dim rounded-t-sm h-[30%] relative group-hover:opacity-90 transition-opacity">
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 font-caption text-caption text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">30%</span>
+</div>
+<span class="font-caption text-caption text-on-surface text-center truncate w-full">Power</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-1/5">
+<div class="w-full bg-error rounded-t-sm h-[45%] relative group-hover:opacity-90 transition-opacity">
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 font-caption text-caption text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">45%</span>
+</div>
+<span class="font-caption text-caption text-on-surface text-center truncate w-full">Drain</span>
+</div>
+</div>
+<!-- Chart grid lines -->
+<div class="absolute inset-0 z-[-1] flex flex-col justify-between pt-lg pb-xl">
+<div class="w-full border-t border-outline-variant/30 h-0"></div>
+<div class="w-full border-t border-outline-variant/30 h-0"></div>
+<div class="w-full border-t border-outline-variant/30 h-0"></div>
+<div class="w-full border-t border-outline-variant/30 h-0"></div>
+</div>
+</div>
+</div>
+<!-- Barangay Comparison (Full Width in Grid) -->
+<div class="lg:col-span-3 bg-surface rounded-xl p-md shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title text-title text-on-surface">Barangay Comparison</h3>
+<button class="text-primary font-button text-button hover:bg-surface-variant px-sm py-xs rounded">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[600px]">
+<thead>
+<tr class="border-b border-outline-variant/50">
+<th class="py-sm px-sm font-subtitle text-subtitle text-on-surface-variant">Barangay</th>
+<th class="py-sm px-sm font-subtitle text-subtitle text-on-surface-variant">Health Score</th>
+<th class="py-sm px-sm font-subtitle text-subtitle text-on-surface-variant">Open Incidents</th>
+<th class="py-sm px-sm font-subtitle text-subtitle text-on-surface-variant">Trend</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+<td class="py-sm px-sm font-body text-body text-on-surface font-medium">San Lorenzo</td>
+<td class="py-sm px-sm">
+<div class="flex items-center gap-sm">
+<div class="w-full max-w-[100px] h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed w-[92%]"></div>
+</div>
+<span class="font-caption text-caption text-on-surface">92</span>
+</div>
+</td>
+<td class="py-sm px-sm font-body text-body text-on-surface">14</td>
+<td class="py-sm px-sm"><span class="material-symbols-outlined text-secondary text-[20px]">trending_up</span></td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+<td class="py-sm px-sm font-body text-body text-on-surface font-medium">Poblacion</td>
+<td class="py-sm px-sm">
+<div class="flex items-center gap-sm">
+<div class="w-full max-w-[100px] h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed-dim w-[75%]"></div>
+</div>
+<span class="font-caption text-caption text-on-surface">75</span>
+</div>
+</td>
+<td class="py-sm px-sm font-body text-body text-on-surface">32</td>
+<td class="py-sm px-sm"><span class="material-symbols-outlined text-on-surface-variant text-[20px]">trending_flat</span></td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-sm px-sm font-body text-body text-on-surface font-medium">Guadalupe Viejo</td>
+<td class="py-sm px-sm">
+<div class="flex items-center gap-sm">
+<div class="w-full max-w-[100px] h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-error w-[62%]"></div>
+</div>
+<span class="font-caption text-caption text-on-surface">62</span>
+</div>
+</td>
+<td class="py-sm px-sm font-body text-body text-on-surface">45</td>
+<td class="py-sm px-sm"><span class="material-symbols-outlined text-error text-[20px]">trending_down</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Mobile Export Button -->
+<button class="md:hidden w-full flex items-center justify-center gap-sm bg-primary text-on-primary px-lg py-md rounded-[14px] font-button text-button shadow-[0_4px_8px_rgba(0,77,153,0.2)] active:scale-95 transition-transform mb-xl">
+<span class="material-symbols-outlined">download</span>
+            Export Full Report
+        </button>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center px-md pb-md pt-sm bg-surface-container dark:bg-surface-container-low shadow-[0_-4px_16px_rgba(0,0,0,0.1)] dark:shadow-none rounded-t-xl">
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-on-primary-container rounded-full px-5 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-caption text-caption-mobile md:text-caption mt-xs font-medium">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all rounded-full active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="font-caption text-caption-mobile md:text-caption mt-xs">Incidents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all rounded-full active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-caption text-caption-mobile md:text-caption mt-xs">SLA</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-variant dark:hover:bg-surface-dim transition-all rounded-full active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-caption text-caption-mobile md:text-caption mt-xs">Profile</span>
+</a>
+</nav>
+</body></html>

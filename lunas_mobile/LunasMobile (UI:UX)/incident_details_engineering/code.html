@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Incident Details - INC-9284-B</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-background": "#111c2d",
+                      "secondary-fixed": "#a3f69c",
+                      "primary": "#004d99",
+                      "surface-bright": "#f9f9ff",
+                      "on-secondary-fixed": "#002204",
+                      "primary-container": "#1565c0",
+                      "on-secondary-container": "#217128",
+                      "on-primary-container": "#dae5ff",
+                      "secondary": "#1b6d24",
+                      "on-primary": "#ffffff",
+                      "surface-container-highest": "#d8e3fb",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#ffddb5",
+                      "secondary-container": "#a0f399",
+                      "on-secondary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#00468c",
+                      "inverse-on-surface": "#ecf1ff",
+                      "surface-container": "#e7eeff",
+                      "surface-dim": "#cfdaf2",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "secondary-fixed-dim": "#88d982",
+                      "tertiary": "#6d4500",
+                      "surface": "#f9f9ff",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#424752",
+                      "surface-variant": "#d8e3fb",
+                      "on-tertiary-fixed": "#2a1800",
+                      "inverse-primary": "#a9c7ff",
+                      "surface-container-high": "#dee8ff",
+                      "on-secondary-fixed-variant": "#005312",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "inverse-surface": "#263143",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#001b3d",
+                      "outline-variant": "#c2c6d4",
+                      "outline": "#727783",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-low": "#f0f3ff",
+                      "on-tertiary-container": "#ffe0bb",
+                      "background": "#f9f9ff",
+                      "on-surface": "#111c2d",
+                      "tertiary-container": "#8e5b00",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "primary-fixed": "#d6e3ff",
+                      "surface-tint": "#005db7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "container_padding": "16px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "gutter": "12px",
+                      "base": "8px",
+                      "xl": "32px",
+                      "xs": "4px"
+              },
+              "fontFamily": {
+                      "body": [
+                              "Inter"
+                      ],
+                      "subtitle": [
+                              "Inter"
+                      ],
+                      "title": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "heading": [
+                              "Inter"
+                      ],
+                      "caption": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "subtitle": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "title": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "15px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "heading": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "caption": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background h-full flex flex-col antialiased">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none docked full-width top-0 bg-surface-container-low dark:bg-surface-container-lowest flex justify-between items-center px-container_padding py-sm w-full sticky top-0 z-50">
+<div class="flex items-center gap-sm">
+<button class="p-2 text-on-surface hover:bg-surface-container-highest/50 rounded-full transition-colors active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-heading text-heading dark:text-on-surface text-primary dark:text-primary-fixed-dim font-bold tracking-tight">LUNAS Engineering</h1>
+</div>
+<div class="flex items-center">
+<button class="p-2 text-primary dark:text-primary-fixed-dim hover:bg-surface-container-highest/50 rounded-full transition-colors active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto p-container_padding md:p-lg lg:px-xl space-y-lg max-w-7xl mx-auto w-full pb-32">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-start md:justify-between gap-md">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<span class="bg-error/10 text-error font-caption text-caption px-2 py-1 rounded-full uppercase tracking-wider font-semibold border border-error/20">Critical</span>
+<span class="bg-surface-variant text-on-surface-variant font-caption text-caption px-2 py-1 rounded-full border border-outline-variant">Open</span>
+</div>
+<h2 class="font-display text-display text-on-surface">Incident #INC-9284-B</h2>
+<p class="font-subtitle text-subtitle text-on-surface-variant mt-sm">Water main rupture flooding major intersection.</p>
+</div>
+<div class="flex flex-wrap gap-sm">
+<button class="bg-primary text-on-primary font-button text-button px-md py-sm rounded-[14px] hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[20px]">assignment_ind</span>
+                    Reassign Incident
+                </button>
+<button class="bg-surface-container-high text-primary font-button text-button px-md py-sm rounded-[14px] hover:bg-surface-container-highest transition-colors shadow-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[20px]">engineering</span>
+                    Assign Utility Provider
+                </button>
+<button class="bg-surface text-on-surface-variant font-button text-button px-md py-sm rounded-[14px] border border-outline-variant hover:bg-surface-variant transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+                    View SLA
+                </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter lg:gap-md">
+<!-- General Info & Assignment (Left Column) -->
+<div class="md:col-span-8 space-y-gutter lg:space-y-md">
+<!-- General Info Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border-l-4 border-l-primary border border-outline-variant/30">
+<h3 class="font-title text-title text-on-surface mb-md flex items-center gap-sm border-b border-surface-variant pb-sm">
+<span class="material-symbols-outlined text-primary">info</span>
+                        General Information
+                    </h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<div>
+<p class="font-caption text-caption text-on-surface-variant mb-xs">Category</p>
+<p class="font-body text-body text-on-surface font-medium">Water Infrastructure</p>
+</div>
+<div>
+<p class="font-caption text-caption text-on-surface-variant mb-xs">Sub-Category</p>
+<p class="font-body text-body text-on-surface font-medium">Main Line Rupture</p>
+</div>
+<div>
+<p class="font-caption text-caption text-on-surface-variant mb-xs">Reported Date</p>
+<p class="font-body text-body text-on-surface font-medium">Oct 24, 2023, 08:42 AM</p>
+</div>
+<div>
+<p class="font-caption text-caption text-on-surface-variant mb-xs">Estimated Impact</p>
+<p class="font-body text-body text-on-surface font-medium">High Traffic Disruption</p>
+</div>
+</div>
+</div>
+<!-- Evidence Section -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/30">
+<h3 class="font-title text-title text-on-surface mb-md flex items-center gap-sm border-b border-surface-variant pb-sm">
+<span class="material-symbols-outlined text-primary">photo_library</span>
+                        Evidence &amp; AI Analysis
+                    </h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+<!-- Photo 1 -->
+<div class="relative rounded-lg overflow-hidden group">
+<img class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" data-alt="A close-up photograph of a flooded urban street intersection. Water is gushing from a cracked asphalt road surface. The scene is brightly lit by daylight, showing modern city infrastructure in the background. The aesthetic is documentary and realistic, suitable for a government engineering report. High resolution, clear details of the water flow and damaged pavement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVjXh8frQd0d92YTRjMIP8jINBgB68us7eJizQ4cMrnc9pFnmORLVFBo8PpD-w5O-YSMVNytSB-pTaM--scntVT_yjbw2dRW7aJKPkTMnn-H9qgrZnir7etIF5OVyMBG83eGH2Qu6t2mGX6e3jIWcrEu-yLkOZIqFUIhTEbkyPLWd9kMOKksf46YajqEzY1B1TYjRVp1EbeTjYGCzzb3FjhPV1dttltHqSKadVKOMJ0b7nxVRfbUUOi0vWBIlgczMRCLZXvoFXrro6"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-sm left-sm right-sm flex flex-wrap gap-xs">
+<span class="bg-secondary-container/90 text-on-secondary-container font-caption text-caption px-2 py-0.5 rounded backdrop-blur-sm border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">psychology</span> AI: Water Leak
+                                </span>
+<span class="bg-surface/90 text-on-surface font-caption text-caption px-2 py-0.5 rounded backdrop-blur-sm border border-outline/20">98% Match</span>
+</div>
+</div>
+<!-- Photo 2 -->
+<div class="relative rounded-lg overflow-hidden group">
+<img class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" data-alt="A wider angle shot of a city street showing a large puddle forming near a sidewalk curb. Pedestrians are navigating around the water. Sunlight reflects off the wet surface. The environment looks like a modern urban center during daytime. The visual style is practical, clear, and focused on infrastructure damage assessment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuByV_ePXERVBL4lNBRDtSsOtbtQ8EcsHEoTMH5j-br0A6V_5Epb_X27LDbraePQCB44tuJGHuCOj7E6Qbjs1yfjKGGomeV07sDfloWWjIuTfb9l93ygA9wAh0ZzhzDmoWlBy308UeG0eduUk38UgljDQfRq47xUxekoanlbdH8R6ifB--n0LRToYHx8eRtphEOaYEAVl98RyRfPpU7ofFNd_EwMn9YMQ-5wR7G0dH04vazaPaG9xL6BhtML3Uw5RUH-CdQB7ptSix0G"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-sm left-sm right-sm flex flex-wrap gap-xs">
+<span class="bg-secondary-container/90 text-on-secondary-container font-caption text-caption px-2 py-0.5 rounded backdrop-blur-sm border border-secondary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">psychology</span> AI: Pavement Damage
+                                </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Assignment Info -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border-l-4 border-l-secondary border border-outline-variant/30">
+<h3 class="font-title text-title text-on-surface mb-md flex items-center gap-sm border-b border-surface-variant pb-sm">
+<span class="material-symbols-outlined text-secondary">group</span>
+                        Assignment Details
+                    </h3>
+<div class="flex items-center justify-between p-sm bg-surface-container rounded-lg">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-title text-title">
+                                ES
+                            </div>
+<div>
+<p class="font-subtitle text-subtitle text-on-surface">Engr. Santos</p>
+<p class="font-caption text-caption text-on-surface-variant">Lead Field Engineer</p>
+</div>
+</div>
+<button class="p-2 text-primary hover:bg-primary-container/20 rounded-full transition-colors">
+<span class="material-symbols-outlined">call</span>
+</button>
+</div>
+<div class="mt-sm p-sm bg-surface rounded-lg border border-outline-variant/50">
+<p class="font-caption text-caption text-on-surface-variant mb-xs">Jurisdiction</p>
+<p class="font-body text-body text-on-surface font-medium flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px] text-outline">location_city</span>
+                            District 7, Sector B
+                        </p>
+</div>
+</div>
+</div>
+<!-- Context & Location (Right Column) -->
+<div class="md:col-span-4 space-y-gutter lg:space-y-md">
+<!-- Location Map -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden flex flex-col h-64">
+<div class="bg-surface-variant/50 p-sm border-b border-outline-variant/30 flex items-center justify-between z-10 relative backdrop-blur-md">
+<h3 class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">map</span> Location
+                        </h3>
+<button class="text-primary font-button text-button text-[13px] hover:underline">Open Map</button>
+</div>
+<div class="flex-1 relative bg-surface-container-high" data-alt="A top-down satellite view of a modern city intersection. A red location pin drops right in the middle of a major road crossing. The map style is clean, digital, and high-contrast, resembling a modern GIS mapping software interface used by city planners. Muted gray roads with subtle green park areas." data-location="Manila" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCeyylqFnTJE3M-austBxEpFb1Vo_fFJ4aYASRFTrKardfIcoK_szvqvmrSaiT4ZRxz2MOA4XHDirghscqEGPfiO9CzEvWsrQH1t7kCPIAX6jS5dIOidAuFOUCKH76s4oMOfTpNn5HHSYsHDTpXGvB6NWajf5hlZFB1RZEKjPKWm1mI03bdjlx9UIGPt2Z906DIK8fiTufxbQMintgf_z0o3pfW1AWUOzyS3fYD9rGH2Tl6HEi1825XZSd05KZwdbtWGnEh1UDv5wWt')">
+<!-- Map placeholder visual -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-8 h-8 rounded-full bg-error/20 flex items-center justify-center animate-pulse">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+</div>
+</div>
+</div>
+<div class="p-sm bg-surface z-10 relative">
+<p class="font-body text-body text-on-surface truncate">Intersection of Taft Ave &amp; Vito Cruz St.</p>
+</div>
+</div>
+<!-- Reporter Info -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/30">
+<h3 class="font-title text-title text-on-surface mb-md flex items-center gap-sm border-b border-surface-variant pb-sm">
+<span class="material-symbols-outlined text-outline">person</span>
+                        Reporter Info
+                    </h3>
+<div class="flex items-center gap-sm mb-sm">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">person_off</span>
+</div>
+<div>
+<p class="font-body text-body text-on-surface font-medium">Anonymous Citizen</p>
+<p class="font-caption text-caption text-on-surface-variant">LUNAS Citizen App</p>
+</div>
+</div>
+</div>
+<!-- Timeline Preview -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/30">
+<h3 class="font-title text-title text-on-surface mb-md flex items-center gap-sm border-b border-surface-variant pb-sm">
+<span class="material-symbols-outlined text-outline">history</span>
+                        Timeline Activity
+                    </h3>
+<div class="relative pl-4 border-l-2 border-surface-variant space-y-4">
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-primary ring-4 ring-surface-container-lowest"></div>
+<p class="font-caption text-caption text-primary font-medium">Assigned to Engr. Santos</p>
+<p class="font-caption text-caption text-on-surface-variant text-[10px]">Today, 09:15 AM</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-surface-variant ring-4 ring-surface-container-lowest"></div>
+<p class="font-caption text-caption text-on-surface">AI Analysis Complete</p>
+<p class="font-caption text-caption text-on-surface-variant text-[10px]">Today, 08:45 AM</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-surface-variant ring-4 ring-surface-container-lowest"></div>
+<p class="font-caption text-caption text-on-surface">Incident Reported</p>
+<p class="font-caption text-caption text-on-surface-variant text-[10px]">Today, 08:42 AM</p>
+</div>
+</div>
+<button class="w-full mt-md py-2 text-center text-primary font-button text-button hover:bg-surface-container-low rounded-lg transition-colors">
+                        View Full Timeline
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Incident Report INC-8501 - UrbanGuard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f9f9ff",
+                        "primary-container": "#1565c0",
+                        "background": "#f9f9ff",
+                        "outline-variant": "#c2c6d4",
+                        "secondary-fixed": "#a3f69c",
+                        "inverse-surface": "#263143",
+                        "inverse-on-surface": "#ecf1ff",
+                        "secondary-container": "#a0f399",
+                        "on-primary-container": "#dae5ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-tertiary-fixed": "#2a1800",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#8e5b00",
+                        "surface-tint": "#005db7",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#00468c",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "secondary-fixed-dim": "#88d982",
+                        "outline": "#727783",
+                        "on-secondary-fixed": "#002204",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "primary": "#004d99",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container": "#e7eeff",
+                        "surface-dim": "#cfdaf2",
+                        "tertiary": "#6d4500",
+                        "surface-container-high": "#dee8ff",
+                        "on-tertiary-container": "#ffe0bb",
+                        "surface-variant": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "on-surface-variant": "#424752",
+                        "secondary": "#1b6d24",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-background": "#111c2d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "container_padding": "16px",
+                        "gutter": "12px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter"],
+                        "title": ["Inter"],
+                        "subtitle": ["Inter"],
+                        "display": ["Inter"],
+                        "heading": ["Inter"],
+                        "caption": ["Inter"],
+                        "button": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-md h-16 transition-colors">
+<div class="flex items-center gap-md">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100" onclick="window.history.back()">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim font-bold">arrow_back</span>
+</button>
+<h1 class="font-heading text-heading text-primary dark:text-primary-fixed-dim">INC-8501</h1>
+</div>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline">more_vert</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-24 px-container_padding max-w-3xl mx-auto space-y-lg">
+<!-- Status & Title -->
+<section class="flex flex-col gap-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container/30 text-on-secondary-container font-caption text-caption border border-secondary-container">
+<span class="material-symbols-outlined text-[14px] mr-1">sync</span>
+                        In Progress
+                    </span>
+<span class="font-caption text-caption text-on-surface-variant">Reported Oct 24, 2023</span>
+</div>
+</div>
+<h2 class="font-display text-display text-on-surface">Broken Streetlight</h2>
+<p class="font-body text-body text-on-surface-variant max-w-prose">Streetlight pole #452 at the intersection of Oak and Pine is completely dark. Creates a safety hazard for pedestrians crossing at night.</p>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Incident Image -->
+<div class="col-span-1 md:col-span-2 rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.08)] bg-surface relative h-64 border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A detailed view of a broken streetlight pole at a street intersection during twilight. The image is captured with a modern corporate aesthetic, emphasizing crisp details and a government-grade utility context. The lighting is low-key, highlighting the non-functioning light against a softly illuminated urban background. The scene conveys a need for municipal repair, integrating seamlessly into a professional management application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc2CIZvlAzY5cPzIcR5JgF-SDxQZFLN94HsM8FmY-Q8g007wEXkoR2C63zr6v-DWcsKq6MQJUikaofXE--S21uwdOdXvlo-4lm5rPqKlPutnDMZg1jFGCN2CxEwiV5GQm4uul2dqP7JPEDa7X8NnO23-2m-CAHaeLspqyb5RZIgAXVdzW0QZllA2NxbTEG7J_Mufkf20Q0ALedPapywuww8owr9wTrBAdCjIIqPtFULzJon9f31NFw_8S4js3cR8OTAiqPt7uTplgt"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-md">
+<div class="text-white">
+<p class="font-subtitle text-subtitle flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">photo_camera</span> Incident Evidence</p>
+</div>
+</div>
+</div>
+<!-- Assignment Info -->
+<div class="bg-surface rounded-xl p-md shadow-[0_2px_8px_rgba(0,0,0,0.08)] border-l-4 border-primary flex flex-col gap-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs text-primary">
+<span class="material-symbols-outlined">engineering</span> Assigned Office
+                </h3>
+<div class="mt-xs">
+<p class="font-title text-title text-on-surface">City Engineering Office</p>
+<p class="font-body text-body text-on-surface-variant">Electrical Maintenance Div.</p>
+</div>
+<div class="mt-auto pt-sm border-t border-outline-variant/20 flex items-center justify-between">
+<span class="font-caption text-caption text-on-surface-variant">Est. Completion</span>
+<span class="font-subtitle text-subtitle text-on-surface">Oct 28</span>
+</div>
+</div>
+<!-- Location Map -->
+<div class="bg-surface rounded-xl p-md shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex flex-col gap-sm">
+<h3 class="font-subtitle text-subtitle text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined">location_on</span> Location
+                </h3>
+<div class="w-full h-32 rounded-lg overflow-hidden relative bg-surface-container-low mt-xs">
+<img class="w-full h-full object-cover opacity-80" data-alt="A crisp, high-contrast map interface showing a street intersection in a major city. The map style is modern, minimalist, and utilizes a light-mode color palette with subtle blues and grays, consistent with a high-end municipal application. A sharp, distinct pin marks a specific location, indicating an incident report site. The visual is clean, reducing cognitive load for quick location identification." data-location="Seattle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuSpGpC4wQMwyMr2ChWLsGRMYVDhwkLkAot8JInjEcno733IZj7Nb7AIOpm08Z1M42JcvsmU2ajhD7OjtkkBq7MEYIRR0xtGIBvZAM9d_7kbAtNaXI9C_rxTSlNxyzltej8X0dMA-4em_cDgNz5-9bGrAGKIkbFalSL2RrvnpHS0bf3_1L66faZCCHKGyCAA1B-lgy0l9HJk8V_j36ESdgX5-EMD1OCi4zNAk_Ms530A5PBI_AOBzqZppfYDgK6J3QzGj8z_OG6aP-"/>
+</div>
+<p class="font-body text-body text-on-surface mt-sm truncate">Oak St &amp; Pine Ave, Downtown</p>
+</div>
+</div>
+<!-- Action Buttons -->
+<section class="flex flex-col sm:flex-row gap-sm pt-md">
+<button class="flex-1 bg-primary text-on-primary font-button text-button h-12 rounded-[14px] shadow-sm hover:shadow-md transition-shadow flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[20px]">timeline</span> View Timeline
+            </button>
+<button class="flex-1 bg-surface-container text-primary font-button text-button h-12 rounded-[14px] hover:bg-surface-container-high transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span> View Repair Evidence
+            </button>
+</section>
+</main>
+<!-- Suppressed Nav Shells as this is a focused detail view -->
+</body></html>

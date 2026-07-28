@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Reports - UrbanGuard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#111c2d",
+                        "surface": "#f9f9ff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f9f9ff",
+                        "primary-container": "#1565c0",
+                        "background": "#f9f9ff",
+                        "outline-variant": "#c2c6d4",
+                        "secondary-fixed": "#a3f69c",
+                        "inverse-surface": "#263143",
+                        "inverse-on-surface": "#ecf1ff",
+                        "secondary-container": "#a0f399",
+                        "on-primary-container": "#dae5ff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-tertiary-fixed": "#2a1800",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#8e5b00",
+                        "surface-tint": "#005db7",
+                        "on-tertiary-fixed-variant": "#643f00",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#217128",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#00468c",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb957",
+                        "secondary-fixed-dim": "#88d982",
+                        "outline": "#727783",
+                        "on-secondary-fixed": "#002204",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "primary": "#004d99",
+                        "tertiary-fixed": "#ffddb5",
+                        "surface-container": "#e7eeff",
+                        "surface-dim": "#cfdaf2",
+                        "tertiary": "#6d4500",
+                        "surface-container-high": "#dee8ff",
+                        "on-tertiary-container": "#ffe0bb",
+                        "surface-variant": "#d8e3fb",
+                        "primary-fixed": "#d6e3ff",
+                        "on-surface-variant": "#424752",
+                        "secondary": "#1b6d24",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "on-background": "#111c2d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "container_padding": "16px",
+                        "gutter": "12px",
+                        "base": "8px",
+                        "safe": "env(safe-area-inset-bottom)"
+                    },
+                    "fontFamily": {
+                        "body": ["Inter"],
+                        "title": ["Inter"],
+                        "subtitle": ["Inter"],
+                        "display": ["Inter"],
+                        "heading": ["Inter"],
+                        "caption": ["Inter"],
+                        "button": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "subtitle": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "heading": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "button": ["15px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Hide scrollbar for chips container but allow scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body text-body min-h-screen flex flex-col pt-16 pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim fixed top-0 w-full z-50 shadow-sm flex items-center justify-between px-md h-16 w-full">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A small, professional headshot portrait of a municipal field worker wearing a safety vest and a hard hat, smiling warmly against a bright, sunny outdoor urban background. The lighting is natural and flattering, creating a high-quality, authentic corporate avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9ZtlxMOUcaeLB3mHClQre0-XXgzizuCAPz0plyCry_bFCB5FO87OoAYjW1bFIeHtxgnqYyahvVxJ6QNZncBhS9IWSgFYhFzkG4HqP5CJ-ypUiTGhG_TL5LWMOF7Aak8WKtJZIDvKawppUEJ-XLOW55Ysa48DYccZ-LlS8v88BHDeTYqUa_VfXxWNzegkn8MEUe6EKMGpxgKe4y5XsYC62M3Yeq0R871GOp5VoLUQb8Z8tFMJl438R3woZ9CXFKEiLbRfpukjJp2cL"/>
+</div>
+<h1 class="font-heading text-heading text-primary dark:text-primary-fixed-dim font-extrabold tracking-tight">UrbanGuard</h1>
+</div>
+<button class="text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-95 duration-100 p-sm rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-4xl mx-auto px-container_padding md:px-lg flex flex-col gap-lg mt-md">
+<!-- Header Section -->
+<section class="flex flex-col gap-sm pt-sm">
+<h2 class="font-display text-display text-on-surface">My Reports</h2>
+<p class="font-body text-body text-on-surface-variant">Track and manage issues you've reported in the city.</p>
+</section>
+<!-- Search Bar -->
+<section class="w-full">
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-sm flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+</div>
+<input class="w-full h-[56px] pl-12 pr-sm bg-surface-container-lowest border-none rounded-t-xl rounded-b-[4px] border-b-2 border-outline focus:border-primary focus:ring-0 text-on-surface font-body text-body shadow-[0_4px_8px_rgba(0,0,0,0.05)] transition-shadow hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)]" placeholder="Search reports by ID, type, or location..." type="text"/>
+</div>
+</section>
+<!-- Filter Chips -->
+<section class="w-full overflow-x-auto no-scrollbar pb-xs -mx-container_padding px-container_padding md:mx-0 md:px-0">
+<div class="flex items-center gap-xs w-max">
+<button class="px-sm py-1.5 rounded-full bg-secondary-container text-on-secondary-container font-button text-button flex items-center gap-xs border border-transparent shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
+<span class="material-symbols-outlined text-[18px]" data-icon="check" data-weight="fill">check</span>
+                    All
+                </button>
+<button class="px-sm py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-button text-button flex items-center gap-xs border border-outline-variant hover:bg-surface-container-high transition-colors">
+                    Active
+                </button>
+<button class="px-sm py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-button text-button flex items-center gap-xs border border-outline-variant hover:bg-surface-container-high transition-colors">
+                    Resolved
+                </button>
+<button class="px-sm py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant font-button text-button flex items-center gap-xs border border-outline-variant hover:bg-surface-container-high transition-colors">
+                    In Progress
+                </button>
+</div>
+</section>
+<!-- Reports Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md pb-xl">
+<!-- Card 1: Pothole -->
+<article class="bg-surface-container-lowest rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col border-l-4 border-tertiary-fixed-dim hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow">
+<div class="h-32 w-full relative">
+<img alt="Pothole" class="w-full h-full object-cover" data-alt="A close-up, high-quality photograph of a deep pothole on a cracked urban asphalt street. The image is taken during daylight with clear, sharp lighting, showing the rough texture of the broken pavement and a few small loose rocks inside the hole. The scene looks like a typical city infrastructure issue awaiting repair." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1WLQQZ3E9wJlcuOHJbgiiM1M-MhPTtd2iCrMPRbzWgQKYdoXlPoblpSdRUxpkLRKqXGklRrHSTuCVCiKqT8wJhy7oV8_LaovV6aXx9gGnetL8WLM4Ah75yDHjb_NGDTwILqR1T4g7nkDKxu3AouIGXxFcIMNCNfONuqCHo18boCZWsqFDuX-8Hi0o-txsfWXFTeycBIYaKkoG0BIUMEA6YWhGm-1XdbFrnlEEV8b2pmrpOOensQgEWjnISVFt4l4puhZrscYyBgwX"/>
+<div class="absolute top-sm right-sm bg-tertiary-fixed-dim text-on-tertiary-fixed px-2 py-0.5 rounded-full font-caption text-[10px] font-bold tracking-wider uppercase shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="sync" data-weight="fill">sync</span>
+                        In Progress
+                    </div>
+</div>
+<div class="p-md flex flex-col gap-sm flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-subtitle text-subtitle text-on-surface">Pothole</h3>
+<p class="font-caption text-caption text-outline">ID: #REP-2023-849</p>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-caption text-caption mt-auto">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span>Oct 24, 2023</span>
+<span class="mx-1">•</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+<span class="truncate">124 Main St.</span>
+</div>
+</div>
+</article>
+<!-- Card 2: Broken Streetlight -->
+<article class="bg-surface-container-lowest rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col border-l-4 border-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow">
+<div class="h-32 w-full relative bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-outline opacity-50 text-[48px]" data-icon="image">image</span>
+<div class="absolute top-sm right-sm bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full font-caption text-[10px] font-bold tracking-wider uppercase shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="fact_check" data-weight="fill">fact_check</span>
+                        Validated
+                    </div>
+</div>
+<div class="p-md flex flex-col gap-sm flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-subtitle text-subtitle text-on-surface">Broken Streetlight</h3>
+<p class="font-caption text-caption text-outline">ID: #REP-2023-842</p>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-caption text-caption mt-auto">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span>Oct 22, 2023</span>
+<span class="mx-1">•</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+<span class="truncate">Oak Ave &amp; 5th</span>
+</div>
+</div>
+</article>
+<!-- Card 3: Water Leak -->
+<article class="bg-surface-container-lowest rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col border-l-4 border-secondary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow">
+<div class="h-32 w-full relative">
+<img alt="Water Leak" class="w-full h-full object-cover" data-alt="A photograph showing a steady stream of clear water leaking from a cracked metal municipal pipe near a concrete curb on a city street. The pavement around the leak is dark and wet, reflecting the overcast sky. The image has a realistic, documentary feel, typical of field reports for utility maintenance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV0NadncT-_JZyzXxXULplKYNui6uaZW5sn-8MnYYJXDJvh8IVDcXlx-C_BERNonrZfKOSVxyWmwzqbt34RuLLLyTcMIi87P37L2W7b2-0PEDYIuokdX-U1gbAC8GkL-ZobpLKK_ET1HBZ7oj1Pg8YZPBvByGklFtSbqbWxgkIt_bMOirPw0XvEB5ynCK5Zdd2k7mw4czyGBxnUFN_HhsyNabsje30b1mSMZz9Nq5SwSfrhFQ-hj1KMw8j6VOOvpA808dAfc-6A8-I"/>
+<div class="absolute top-sm right-sm bg-secondary text-on-secondary px-2 py-0.5 rounded-full font-caption text-[10px] font-bold tracking-wider uppercase shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle" data-weight="fill">check_circle</span>
+                        Completed
+                    </div>
+</div>
+<div class="p-md flex flex-col gap-sm flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-subtitle text-subtitle text-on-surface text-on-surface-variant line-through opacity-70">Water Leak</h3>
+<p class="font-caption text-caption text-outline">ID: #REP-2023-810</p>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-caption text-caption mt-auto opacity-70">
+<span class="material-symbols-outlined text-[16px]" data-icon="calendar_today">calendar_today</span>
+<span>Oct 15, 2023</span>
+<span class="mx-1">•</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+<span class="truncate">Pine Park Rd.</span>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container-lowest dark:bg-surface-container-low fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0_-2px_8px_rgba(0,0,0,0.08)] flex justify-around items-center w-full h-20 pb-safe px-sm">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined font-heading text-heading text-primary" data-icon="home">home</span>
+<span class="font-caption text-caption mt-1">Home</span>
+</a>
+<!-- Active Tab: Reports -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined font-heading text-heading text-primary" data-icon="assignment" data-weight="fill">assignment</span>
+<span class="font-caption text-caption mt-1 font-bold">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined font-heading text-heading text-primary" data-icon="map">map</span>
+<span class="font-caption text-caption mt-1">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined font-heading text-heading text-primary" data-icon="notifications">notifications</span>
+<span class="font-caption text-caption mt-1">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined font-heading text-heading text-primary" data-icon="person">person</span>
+<span class="font-caption text-caption mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

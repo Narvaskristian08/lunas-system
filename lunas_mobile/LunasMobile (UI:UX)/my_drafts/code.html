@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Draft Reports - UrbanGuard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#f0f3ff",
+                      "on-primary-fixed": "#001b3d",
+                      "on-surface": "#111c2d",
+                      "surface": "#f9f9ff",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#f9f9ff",
+                      "primary-container": "#1565c0",
+                      "background": "#f9f9ff",
+                      "outline-variant": "#c2c6d4",
+                      "secondary-fixed": "#a3f69c",
+                      "inverse-surface": "#263143",
+                      "inverse-on-surface": "#ecf1ff",
+                      "secondary-container": "#a0f399",
+                      "on-primary-container": "#dae5ff",
+                      "on-secondary-fixed-variant": "#005312",
+                      "on-tertiary-fixed": "#2a1800",
+                      "on-error-container": "#93000a",
+                      "tertiary-container": "#8e5b00",
+                      "surface-tint": "#005db7",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "error-container": "#ffdad6",
+                      "on-secondary-container": "#217128",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#00468c",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "secondary-fixed-dim": "#88d982",
+                      "outline": "#727783",
+                      "on-secondary-fixed": "#002204",
+                      "on-primary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "primary": "#004d99",
+                      "tertiary-fixed": "#ffddb5",
+                      "surface-container": "#e7eeff",
+                      "surface-dim": "#cfdaf2",
+                      "tertiary": "#6d4500",
+                      "surface-container-high": "#dee8ff",
+                      "on-tertiary-container": "#ffe0bb",
+                      "surface-variant": "#d8e3fb",
+                      "primary-fixed": "#d6e3ff",
+                      "on-surface-variant": "#424752",
+                      "secondary": "#1b6d24",
+                      "surface-container-highest": "#d8e3fb",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#a9c7ff",
+                      "on-background": "#111c2d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "md": "16px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "container_padding": "16px",
+                      "gutter": "12px",
+                      "base": "8px"
+              },
+              "fontFamily": {
+                      "body": [
+                              "Inter"
+                      ],
+                      "title": [
+                              "Inter"
+                      ],
+                      "subtitle": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "heading": [
+                              "Inter"
+                      ],
+                      "caption": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "subtitle": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "heading": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "caption": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "button": [
+                              "15px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body antialiased min-h-screen pb-[100px] md:pb-0 pt-16">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim fixed top-0 w-full z-50 shadow-sm">
+<div class="flex items-center justify-between px-md h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-sm">
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+</div>
+<h1 class="font-heading text-heading text-primary dark:text-primary-fixed-dim">My Draft Reports</h1>
+<div class="w-10"></div> <!-- Spacer for center alignment -->
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-container_padding pt-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg mb-xl">
+<!-- Draft Card 1 -->
+<article class="bg-surface-container-low rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-outline-variant overflow-hidden flex flex-col relative group">
+<div class="absolute top-0 left-0 w-1 h-full bg-outline-variant"></div>
+<div class="p-md flex-grow ml-1">
+<div class="flex justify-between items-start mb-sm">
+<span class="bg-surface-variant text-on-surface-variant font-caption text-caption px-3 py-1 rounded-full inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+                            Draft
+                        </span>
+<span class="text-on-surface-variant font-caption text-caption">Last edited 2h ago</span>
+</div>
+<h2 class="font-subtitle text-subtitle text-on-surface mb-xs">Sidewalk Crack</h2>
+<p class="font-body text-body text-on-surface-variant mb-md line-clamp-2">Large crack on the pedestrian path near the main intersection. Needs immediate attention as it poses a tripping hazard.</p>
+<div class="flex items-center gap-sm text-on-surface-variant font-caption text-caption mb-4">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>123 Main St, Springfield</span>
+</div>
+</div>
+<div class="p-md border-t border-outline-variant bg-surface flex justify-between items-center ml-1">
+<button class="text-error font-button text-button px-4 py-2 hover:bg-error-container rounded-lg transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                        Delete
+                    </button>
+<button class="bg-primary text-on-primary font-button text-button px-4 py-2 rounded-[14px] hover:bg-primary-container transition-colors shadow-sm active:scale-95 duration-200">
+                        Continue Editing
+                    </button>
+</div>
+</article>
+<!-- Draft Card 2 (Example) -->
+<article class="bg-surface-container-low rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-outline-variant overflow-hidden flex flex-col relative group">
+<div class="absolute top-0 left-0 w-1 h-full bg-outline-variant"></div>
+<div class="p-md flex-grow ml-1">
+<div class="flex justify-between items-start mb-sm">
+<span class="bg-surface-variant text-on-surface-variant font-caption text-caption px-3 py-1 rounded-full inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+                            Draft
+                        </span>
+<span class="text-on-surface-variant font-caption text-caption">Last edited 1d ago</span>
+</div>
+<h2 class="font-subtitle text-subtitle text-on-surface mb-xs">Broken Streetlight</h2>
+<p class="font-body text-body text-on-surface-variant mb-md line-clamp-2">Streetlight completely out. The area is very dark at night.</p>
+<div class="flex items-center gap-sm text-on-surface-variant font-caption text-caption mb-4">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>Oak Ave &amp; 4th St</span>
+</div>
+</div>
+<div class="p-md border-t border-outline-variant bg-surface flex justify-between items-center ml-1">
+<button class="text-error font-button text-button px-4 py-2 hover:bg-error-container rounded-lg transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                        Delete
+                    </button>
+<button class="bg-primary text-on-primary font-button text-button px-4 py-2 rounded-[14px] hover:bg-primary-container transition-colors shadow-sm active:scale-95 duration-200">
+                        Continue Editing
+                    </button>
+</div>
+</article>
+</div>
+<!-- Empty State Preview (Hidden by default, shown for preview purposes) -->
+<div class="mt-xl py-xl border-t border-outline-variant">
+<h3 class="font-title text-title text-on-surface mb-lg text-center opacity-50">Empty State Preview</h3>
+<div class="bg-surface-container-lowest rounded-xl p-xl flex flex-col items-center justify-center text-center max-w-md mx-auto shadow-sm border border-outline-variant">
+<div class="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center mb-md text-primary">
+<span class="material-symbols-outlined text-[48px]" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+</div>
+<h4 class="font-heading text-heading text-on-surface mb-sm">No Draft Reports</h4>
+<p class="font-body text-body text-on-surface-variant mb-lg">You don't have any unfinished reports at the moment. All caught up!</p>
+<button class="bg-primary-container text-on-primary-container font-button text-button px-6 py-3 rounded-[14px] hover:bg-primary transition-colors hover:text-on-primary shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                    Create New Report
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Hidden on md+) -->
+<nav class="bg-surface-container-lowest dark:bg-surface-container-low fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0_-2px_8px_rgba(0,0,0,0.08)] flex justify-around items-center h-20 pb-safe px-sm md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-caption text-caption">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container rounded-full px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="font-caption text-caption font-medium">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">map</span>
+<span class="font-caption text-caption">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">notifications</span>
+<span class="font-caption text-caption">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-inverse-surface rounded-full transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-caption text-caption">Profile</span>
+</a>
+</nav>
+</body></html>

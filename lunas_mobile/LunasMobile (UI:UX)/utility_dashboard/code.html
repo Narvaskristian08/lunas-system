@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUNAS Utility Dashboard - DECORP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#005db7",
+                      "on-secondary-fixed": "#002204",
+                      "outline": "#727783",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "secondary-container": "#a0f399",
+                      "inverse-primary": "#a9c7ff",
+                      "surface-container-low": "#f0f3ff",
+                      "on-tertiary-container": "#ffe0bb",
+                      "on-tertiary": "#ffffff",
+                      "surface-variant": "#d8e3fb",
+                      "on-background": "#111c2d",
+                      "on-tertiary-fixed": "#2a1800",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-fixed-variant": "#005312",
+                      "on-error-container": "#93000a",
+                      "error-container": "#ffdad6",
+                      "surface": "#f9f9ff",
+                      "surface-container-high": "#dee8ff",
+                      "inverse-surface": "#263143",
+                      "outline-variant": "#c2c6d4",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "inverse-on-surface": "#ecf1ff",
+                      "on-primary-fixed-variant": "#00468c",
+                      "on-primary-container": "#dae5ff",
+                      "on-primary": "#ffffff",
+                      "tertiary": "#6d4500",
+                      "surface-dim": "#cfdaf2",
+                      "on-surface-variant": "#424752",
+                      "secondary-fixed": "#a3f69c",
+                      "on-secondary": "#ffffff",
+                      "secondary": "#1b6d24",
+                      "background": "#f9f9ff",
+                      "on-surface": "#111c2d",
+                      "surface-container-highest": "#d8e3fb",
+                      "primary-container": "#1565c0",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f9f9ff",
+                      "primary": "#004d99",
+                      "secondary-fixed-dim": "#88d982",
+                      "on-secondary-container": "#217128",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "tertiary-container": "#8e5b00",
+                      "primary-fixed": "#d6e3ff",
+                      "surface-container": "#e7eeff",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed": "#ffddb5",
+                      "on-primary-fixed": "#001b3d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "container_padding": "16px",
+                      "lg": "24px",
+                      "gutter": "12px",
+                      "sm": "8px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "button": ["Inter"],
+                      "display": ["Inter"],
+                      "body": ["Inter"],
+                      "subtitle": ["Inter"],
+                      "caption": ["Inter"],
+                      "heading": ["Inter"],
+                      "title": ["Inter"]
+              },
+              "fontSize": {
+                      "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-40 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-container_padding h-16 md:hidden">
+<button class="p-2 -ml-2 text-primary dark:text-primary-fixed-dim hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-colors active:scale-95 transition-transform rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">grid_view</span>
+</button>
+<h1 class="font-title text-title font-bold text-primary dark:text-primary-fixed-dim">LUNAS Utility</h1>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-variant">
+<img alt="User profile photo" class="object-cover w-full h-full" data-alt="Professional headshot of a Filipino male electrical engineer in his 40s wearing a high-visibility orange and yellow utility vest over a light blue collared shirt. He has short dark hair and a confident, approachable expression. The background is a slightly blurred outdoors daytime setting with hints of utility infrastructure in a modern light-mode civic app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1N-UTyhPkljatz5ENZFrt-SfpdXEYzasVl1vVT045y_ILSzmshpq95jfN0COxrlwlR8xqejJQhOzjgMXRnedraXZ7NhWfmDfWYCwYCQji5KDemaBUf3Ya6Q2TqdZgvvESHG11JFk3qZOkiBvSexK7k169galOP0w_Vp2mbx0Uro8vPbaaOujpYb_t0UCCaxwrRxjILqWQRe0dIcxYQUYCWAF-gm_C8KuS1KSwAM5poWnv_kW8N_y8_KnDWKIhrkm4hQuncXKm9Bv7"/>
+</div>
+</header>
+<!-- Top Navigation (Desktop) -->
+<nav class="hidden md:flex sticky top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm justify-between items-center px-container_padding h-16">
+<div class="flex items-center gap-md">
+<button class="p-2 -ml-2 text-primary dark:text-primary-fixed-dim hover:bg-surface-variant/50 transition-colors rounded-full">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<h1 class="font-title text-title font-bold text-primary dark:text-primary-fixed-dim">LUNAS Utility</h1>
+</div>
+<div class="flex items-center gap-lg">
+<!-- Desktop Nav Items -->
+<a class="flex flex-col items-center text-primary dark:text-primary-fixed-dim border-b-2 border-primary" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-button text-button">Home</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">4g_mobiledata</span>
+<span class="font-button text-button">Incidents</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">map</span>
+<span class="font-button text-button">Map</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">notifications</span>
+<span class="font-button text-button">Alerts</span>
+</a>
+<div class="w-8 h-8 rounded-full overflow-hidden ml-md bg-surface-variant">
+<img alt="User profile photo" class="object-cover w-full h-full" data-alt="Professional headshot of a Filipino male electrical engineer in his 40s wearing a high-visibility orange and yellow utility vest over a light blue collared shirt. He has short dark hair and a confident, approachable expression. The background is a slightly blurred outdoors daytime setting with hints of utility infrastructure in a modern light-mode civic app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZHtAizF2MqTY27pdZhLVr-ooujdR-1A21SoTBw3bjFYk-5anRoAinWkDv6dDX1ZzEu5qzojjxp1fBheFzBwl5E29fEO5ZOZXo1SYJJfzYkyiibTiqmF14Iiet475IjHz7exSNDe5I-OBIhCMTZL2YZjxtv7ZDUniBtkFAqMwoojx5h9bJOe2P07G-OIowJTeRrzxocTf65l-cUJcs-lPnvtjbhC-OJAahWPq8kTdrQl2n95XftgZ-htspFLMmMfgPd9rSef3wtnSD"/>
+</div>
+</div>
+</nav>
+<main class="pt-20 px-container_padding md:px-lg max-w-7xl mx-auto flex flex-col gap-lg">
+<!-- User Welcome -->
+<section class="py-sm">
+<p class="font-subtitle text-subtitle text-on-surface-variant">Dagupan Electric Corporation (DECORP)</p>
+<h2 class="font-display text-display text-on-surface mt-xs">Engr. Mateo Rivera</h2>
+</section>
+<!-- SLA Compliance Banner -->
+<section class="bg-primary text-on-primary rounded-xl p-md shadow-md flex items-center justify-between relative overflow-hidden">
+<div class="z-10">
+<p class="font-subtitle text-subtitle opacity-90">SLA Compliance Summary</p>
+<p class="font-display text-display font-bold mt-xs">96%</p>
+</div>
+<span class="material-symbols-outlined text-[80px] opacity-20 absolute -right-4 -bottom-4 z-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</section>
+<!-- Bento Grid: Summary Cards -->
+<section class="grid grid-cols-2 md:grid-cols-3 gap-sm md:gap-md">
+<div class="bg-surface-container rounded-xl p-md shadow-sm border-l-4 border-primary flex flex-col justify-between">
+<span class="material-symbols-outlined text-primary mb-sm">fiber_new</span>
+<p class="font-display text-display text-on-surface">3</p>
+<p class="font-body text-body text-on-surface-variant mt-xs">Newly Assigned</p>
+</div>
+<div class="bg-surface-container rounded-xl p-md shadow-sm border-l-4 border-secondary flex flex-col justify-between">
+<span class="material-symbols-outlined text-secondary mb-sm">thumb_up</span>
+<p class="font-display text-display text-on-surface">5</p>
+<p class="font-body text-body text-on-surface-variant mt-xs">Accepted</p>
+</div>
+<div class="bg-surface-container rounded-xl p-md shadow-sm border-l-4 border-tertiary flex flex-col justify-between">
+<span class="material-symbols-outlined text-tertiary mb-sm">sync</span>
+<p class="font-display text-display text-on-surface">2</p>
+<p class="font-body text-body text-on-surface-variant mt-xs">In Progress</p>
+</div>
+<div class="bg-surface-container rounded-xl p-md shadow-sm border-l-4 border-tertiary-fixed-dim flex flex-col justify-between">
+<span class="material-symbols-outlined text-tertiary-container mb-sm">verified_user</span>
+<p class="font-display text-display text-on-surface">4</p>
+<p class="font-body text-body text-on-surface-variant mt-xs">Awaiting Verification</p>
+</div>
+<div class="bg-error-container rounded-xl p-md shadow-sm border-l-4 border-error flex flex-col justify-between">
+<span class="material-symbols-outlined text-error mb-sm">warning</span>
+<p class="font-display text-display text-on-error-container">1</p>
+<p class="font-body text-body text-on-error-container mt-xs font-semibold">Overdue</p>
+</div>
+<div class="bg-secondary-container rounded-xl p-md shadow-sm border-l-4 border-secondary flex flex-col justify-between">
+<span class="material-symbols-outlined text-on-secondary-container mb-sm">task_alt</span>
+<p class="font-display text-display text-on-secondary-container">8</p>
+<p class="font-body text-body text-on-secondary-container mt-xs">Completed Today</p>
+</div>
+</section>
+<!-- Urgent Incidents -->
+<section>
+<h3 class="font-heading text-heading text-on-surface mb-md">Urgent Incidents</h3>
+<div class="flex flex-col gap-sm">
+<!-- Incident 1 -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-error/30 flex items-start gap-md">
+<div class="bg-error-container p-sm rounded-full text-error flex-shrink-0 mt-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">electric_bolt</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<h4 class="font-title text-title text-on-surface">Transformer Sparking</h4>
+<span class="bg-error text-on-error font-caption text-caption px-2 py-1 rounded-full whitespace-nowrap ml-sm">Critical</span>
+</div>
+<p class="font-body text-body text-on-surface-variant mt-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Brgy. Tapuac
+                        </p>
+</div>
+</div>
+<!-- Incident 2 -->
+<div class="bg-surface rounded-xl p-md shadow-sm border border-error/30 flex items-start gap-md">
+<div class="bg-error-container p-sm rounded-full text-error flex-shrink-0 mt-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cable</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<h4 class="font-title text-title text-on-surface">Exposed High-Voltage Cable</h4>
+<span class="bg-error text-on-error font-caption text-caption px-2 py-1 rounded-full whitespace-nowrap ml-sm">Critical</span>
+</div>
+<p class="font-body text-body text-on-surface-variant mt-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Arellano St.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Actions -->
+<section class="mb-lg">
+<h3 class="font-heading text-heading text-on-surface mb-md">Quick Actions</h3>
+<div class="grid grid-cols-2 gap-sm">
+<button class="bg-primary text-on-primary rounded-xl p-sm font-button text-button shadow-sm hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-xs h-24">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-center">View Assigned</span>
+</button>
+<button class="bg-surface-container-high text-on-surface rounded-xl p-sm font-button text-button shadow-sm hover:bg-surface-variant transition-colors flex flex-col items-center justify-center gap-xs h-24">
+<span class="material-symbols-outlined text-primary">map</span>
+<span class="text-center">Open Map</span>
+</button>
+<button class="bg-surface-container-high text-on-surface rounded-xl p-sm font-button text-button shadow-sm hover:bg-surface-variant transition-colors flex flex-col items-center justify-center gap-xs h-24">
+<span class="material-symbols-outlined text-primary">update</span>
+<span class="text-center">Update Status</span>
+</button>
+<button class="bg-secondary-container text-on-secondary-container rounded-xl p-sm font-button text-button shadow-sm hover:bg-secondary-fixed transition-colors flex flex-col items-center justify-center gap-xs h-24">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="text-center">Submit Completion</span>
+</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-surface dark:bg-surface-dim shadow-[0_-2px_8px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-full px-5 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined font-caption text-caption mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-caption text-caption">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant/10 active:scale-90 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined font-caption text-caption mb-1">4g_mobiledata</span>
+<span class="font-caption text-caption">Incidents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant/10 active:scale-90 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined font-caption text-caption mb-1">map</span>
+<span class="font-caption text-caption">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant/10 active:scale-90 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined font-caption text-caption mb-1">notifications</span>
+<span class="font-caption text-caption">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant/10 active:scale-90 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined font-caption text-caption mb-1">person</span>
+<span class="font-caption text-caption">Profile</span>
+</a>
+</nav>
+</body></html>

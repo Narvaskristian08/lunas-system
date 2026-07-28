@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit Repair Completion</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#005db7",
+                      "surface-bright": "#f9f9ff",
+                      "secondary-container": "#a0f399",
+                      "on-secondary-fixed-variant": "#005312",
+                      "background": "#f9f9ff",
+                      "inverse-on-surface": "#ecf1ff",
+                      "on-primary-container": "#dae5ff",
+                      "on-error": "#ffffff",
+                      "surface-variant": "#d8e3fb",
+                      "outline-variant": "#c2c6d4",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#00468c",
+                      "on-tertiary-container": "#ffe0bb",
+                      "on-tertiary-fixed": "#2a1800",
+                      "primary-container": "#1565c0",
+                      "on-secondary-fixed": "#002204",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#a3f69c",
+                      "tertiary-fixed-dim": "#ffb957",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#1b6d24",
+                      "on-tertiary-fixed-variant": "#643f00",
+                      "tertiary-container": "#8e5b00",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#dee8ff",
+                      "on-primary-fixed": "#001b3d",
+                      "error-container": "#ffdad6",
+                      "on-secondary-container": "#217128",
+                      "inverse-surface": "#263143",
+                      "tertiary": "#6d4500",
+                      "error": "#ba1a1a",
+                      "on-surface": "#111c2d",
+                      "surface": "#f9f9ff",
+                      "surface-container": "#e7eeff",
+                      "secondary-fixed-dim": "#88d982",
+                      "surface-dim": "#cfdaf2",
+                      "primary": "#004d99",
+                      "on-surface-variant": "#424752",
+                      "primary-fixed-dim": "#a9c7ff",
+                      "outline": "#727783",
+                      "surface-container-low": "#f0f3ff",
+                      "on-background": "#111c2d",
+                      "tertiary-fixed": "#ffddb5",
+                      "surface-container-highest": "#d8e3fb",
+                      "primary-fixed": "#d6e3ff",
+                      "inverse-primary": "#a9c7ff",
+                      "on-primary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "md": "16px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "container_padding": "16px",
+                      "xl": "32px",
+                      "lg": "24px",
+                      "gutter": "12px"
+              },
+              "fontFamily": {
+                      "body": ["Inter"],
+                      "caption": ["Inter"],
+                      "heading": ["Inter"],
+                      "button": ["Inter"],
+                      "subtitle": ["Inter"],
+                      "title": ["Inter"],
+                      "display": ["Inter"]
+              },
+              "fontSize": {
+                      "body": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "heading": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "button": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "subtitle": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "title": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar -->
+<header class="docked full-width top-0 z-50 bg-surface dark:bg-surface-container-high shadow-sm flex justify-between items-center px-container_padding h-16 w-full flex-shrink-0">
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 p-xs rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-title text-title font-bold text-primary dark:text-primary-fixed-dim">LUNAS Repair</h1>
+</div>
+<div class="flex items-center">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-button text-button">
+                RP
+            </div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow overflow-y-auto px-container_padding py-lg flex flex-col gap-lg items-center">
+<div class="w-full max-w-2xl flex flex-col gap-lg">
+<!-- Page Header -->
+<div>
+<h2 class="font-heading text-heading text-on-surface">Submit Repair Completion</h2>
+<p class="font-body text-body text-on-surface-variant mt-xs">Review summary for Work Order #WO-2023-892</p>
+</div>
+<!-- Bento Layout Summary -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Photo Evidence Card -->
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/30 overflow-hidden">
+<div class="px-md py-sm border-b border-outline-variant/30 bg-surface-container-low flex justify-between items-center">
+<h3 class="font-subtitle text-subtitle text-on-surface">Visual Evidence</h3>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">photo_library</span>
+</div>
+<div class="p-md flex gap-md">
+<div class="flex-1 flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider">Before</span>
+<div class="aspect-video rounded-lg overflow-hidden relative border border-outline-variant/50">
+<img class="w-full h-full object-cover" data-alt="A close-up, highly detailed photograph of a large, jagged pothole in the middle of a heavily weathered urban asphalt street. The lighting is harsh midday sunlight, highlighting the rough textures, cracked edges, and scattered debris within the hole. The overall color palette features muted grays, dark charcoal asphalt, and sandy beige undertones. The mood is utilitarian and indicative of infrastructure decay requiring immediate government-grade repair." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfFLrITmpR6msKE5FtvQ9pBtOl8MgO4fSOQr0k0ojvWoPU_FG3CI2wqZrorMk4LIy7TxKBvCQS_Vty100dP9sEDQLHNv_KWhqaMmZcOCkePguKTuFPIGhMuJinowIdqmWbvOWqrxdLE9wHsYHhmkl-CY68Dw3LdHnwLrpEuXS6mUAtZjadB0YvSTBSDswCRh9Lyead4H3TyZM4_YM46w3m_oAyaVJMI63Au3MuWH2wz7-thB8BSWKbDQGo8RPfrXnXE4gWJY8U7Ye8"/>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-xs">
+<span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider">After</span>
+<div class="aspect-video rounded-lg overflow-hidden relative border border-outline-variant/50">
+<img class="w-full h-full object-cover" data-alt="A close-up, highly detailed photograph of a freshly patched section of an urban asphalt street, replacing a previous pothole. The new asphalt is smooth, dark, and perfectly leveled with the surrounding weathered street. The lighting is bright midday sunlight, showcasing the high-quality, seamless repair work. The overall color palette contrasts the deep, fresh black of the new patch against the lighter gray tones of the older road. The mood conveys structural integrity, modern corporate efficiency, and successful urban maintenance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3kIpbNykSQKobMLO1X-jn080iKcllosPZHEC3Kye1paMlZQTMsDaP19ybzlxDpP_CX1zg-IStxRSYJ1cql4se8-_NufgVSQU-JYO-CDwDol8sGyPUZEugzWO1VSB7UF7HO8OOkosx89LmoJ9FJ2jSEb_3qPKGB-zQcpKPlVdM_ALD5zwvgJXqETn7aDLaS-ROMIN1FpATmE4J3VKzw_J0E5iBrP9KadgTUoiAccOkotac7R9qv-jAwigffl_5FGT6lT59v9G1xWvN"/>
+<div class="absolute top-2 right-2 bg-secondary-container text-on-secondary-container rounded-full p-xs shadow-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Repair Details Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/30 p-md flex flex-col gap-sm">
+<div class="flex items-center gap-xs text-on-surface-variant mb-xs">
+<span class="material-symbols-outlined text-[20px]">notes</span>
+<h3 class="font-subtitle text-subtitle text-on-surface">Repair Notes</h3>
+</div>
+<p class="font-body text-body text-on-surface bg-surface-container-low p-sm rounded-lg min-h-[80px]">
+                        Cleared debris from pothole. Applied bonding agent and filled with hot mix asphalt. Compacted and sealed edges to prevent water ingress.
+                    </p>
+</div>
+<!-- Meta Info Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/30 p-md flex flex-col justify-center gap-md">
+<div class="flex items-center gap-md">
+<div class="bg-primary-container/20 p-sm rounded-full text-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<span class="font-caption text-caption text-on-surface-variant block">Completion Time</span>
+<span class="font-subtitle text-subtitle text-on-surface font-semibold">11:45 AM</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-outline-variant/30"></div>
+<div class="flex items-center gap-md">
+<div class="bg-secondary-container/30 p-sm rounded-full text-secondary">
+<span class="material-symbols-outlined">my_location</span>
+</div>
+<div>
+<span class="font-caption text-caption text-on-surface-variant block">GPS Location</span>
+<span class="font-subtitle text-subtitle text-secondary font-semibold">Verified</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Attestation Section -->
+<div class="mt-md bg-surface-container-low p-md rounded-xl border border-outline-variant/50">
+<label class="flex items-start gap-sm cursor-pointer group">
+<div class="mt-1 flex items-center justify-center">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-outline rounded-sm peer-checked:bg-primary peer-checked:border-primary flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-on-primary text-[16px] opacity-0 peer-checked:opacity-100" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<span class="font-body text-body text-on-surface group-hover:text-primary transition-colors select-none">
+                        I certify that this repair meets city engineering standards and all provided information is accurate.
+                    </span>
+</label>
+</div>
+<!-- Actions -->
+<div class="mt-lg flex flex-col-reverse md:flex-row gap-md justify-end">
+<button class="font-button text-button px-lg py-3 rounded-[14px] bg-surface-container-high text-on-surface-variant hover:bg-surface-variant transition-colors shadow-sm active:scale-95 duration-150">
+                    Edit Details
+                </button>
+<button class="font-button text-button px-lg py-3 rounded-[14px] bg-primary text-on-primary shadow-[0_4px_8px_rgba(0,0,0,0.1)] hover:bg-primary-container hover:text-on-primary-container transition-colors active:scale-95 duration-150 flex items-center justify-center gap-sm">
+                    Submit Completion
+                    <span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Suppressed Bottom Navigation (Transactional Screen) -->
+<!-- The BottomNavBar is intentionally excluded here as this is a linear/transactional screen (Submit/Review), fulfilling the Semantic Shell Mandate to prioritize the content canvas. -->
+</body></html>
