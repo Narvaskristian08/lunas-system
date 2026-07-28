@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColorsLight {
   // Background & Surface
-  static const Color background = Color(0xFFF3F4F6); // Civic Gray
+  static const Color background = Color(0xFFF7F9FC); // Civic Gray
   static const Color surface = Color(0xFFFFFFFF); // Pure White
 
   // Text
@@ -11,7 +11,7 @@ class AppColorsLight {
 
   // Dividers & Accents
   static const Color divider = Color(0xFFE5E7EB); // Soft Gray
-  static const Color brandBase = Color(0xFF1D4ED8); // Marine Blue
+  static const Color brandBase = Color(0xFF005EA8); // LUNAS Blue
   static const Color focus = Color(0xFF0EA5E9); // Sky Blue
 
   // Functions / Status
