@@ -4,7 +4,6 @@ import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
-import 'package:lunas_mobile/features/stitch_auth/presentation/screens/stitch_auth_widgets.dart';
 
 /// Submission confirmation for personnel registrations awaiting review.
 class RegistrationPendingApprovalScreen extends StatelessWidget {
@@ -13,7 +12,9 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
   void _showRecordMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Registration status is a static preview until account services are connected.'),
+        content: Text(
+          'Registration status is a static preview until account services are connected.',
+        ),
       ),
     );
   }
@@ -72,7 +73,9 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
                           color: AppColorsLight.alert,
                         ),
                         const Padding(
-                          padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
                           child: Divider(),
                         ),
                         const _StatusRow(
@@ -82,7 +85,9 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
                           color: AppColorsLight.brandBase,
                         ),
                         const Padding(
-                          padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
                           child: Divider(),
                         ),
                         _StatusRow(

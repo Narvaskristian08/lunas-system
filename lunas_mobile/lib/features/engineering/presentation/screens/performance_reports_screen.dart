@@ -95,7 +95,9 @@ class PerformanceReportsScreen extends StatelessWidget {
           const _ResponseTrendCard(),
           const SizedBox(height: AppSpacing.xl),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .40),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .40),
             child: const EngineeringInfoRow(
               icon: Icons.assessment_outlined,
               label: 'Report scope',
@@ -200,7 +202,10 @@ class _ZoneChart extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('${values[index]}h', style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    '${values[index]}h',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Container(
                     height: height,
@@ -209,7 +214,9 @@ class _ZoneChart extends StatelessWidget {
                       color: index == 3
                           ? AppColorsLight.alert
                           : AppColorsLight.brandBase,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(5),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -240,9 +247,9 @@ class _ResponseTrendCard extends StatelessWidget {
         children: [
           Text(
             'Response-time improvement',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(
@@ -261,8 +268,12 @@ class _ResponseTrendCard extends StatelessWidget {
                         height: 16 + value * 62,
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: BoxDecoration(
-                          color: AppColorsLight.success.withValues(alpha: .35 + value * .6),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                          color: AppColorsLight.success.withValues(
+                            alpha: .35 + value * .6,
+                          ),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
                         ),
                       ),
                     ),

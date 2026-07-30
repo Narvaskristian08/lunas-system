@@ -13,7 +13,8 @@ class OfficialRoleSelectionScreen extends StatefulWidget {
       _OfficialRoleSelectionScreenState();
 }
 
-class _OfficialRoleSelectionScreenState extends State<OfficialRoleSelectionScreen> {
+class _OfficialRoleSelectionScreenState
+    extends State<OfficialRoleSelectionScreen> {
   _OfficialRole? _role;
 
   void _continue() {
@@ -38,9 +39,9 @@ class _OfficialRoleSelectionScreenState extends State<OfficialRoleSelectionScree
           Text(
             'Select Your Official Role',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(

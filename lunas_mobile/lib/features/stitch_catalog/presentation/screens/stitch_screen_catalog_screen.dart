@@ -97,7 +97,11 @@ class StitchScreenCatalogScreen extends StatelessWidget {
     ]),
     _CatalogGroup('Repair personnel', [
       _CatalogEntry('repair_dashboard', 'Repair dashboard', '/repair'),
-      _CatalogEntry('repair_tasks_list', 'Repair task list', '/repair/tasks-list'),
+      _CatalogEntry(
+        'repair_tasks_list',
+        'Repair task list',
+        '/repair/tasks-list',
+      ),
       _CatalogEntry(
         'assigned_work_orders',
         'Assigned work orders',
@@ -121,9 +125,21 @@ class StitchScreenCatalogScreen extends StatelessWidget {
         '/repair/evidence',
       ),
       _CatalogEntry('ai_quality_check', 'AI quality check', '/repair/quality'),
-      _CatalogEntry('confirm_completion', 'Confirm completion', '/repair/confirm'),
-      _CatalogEntry('repair_submitted', 'Repair submitted', '/repair/submitted'),
-      _CatalogEntry('completed_repairs', 'Completed repairs', '/repair/completed'),
+      _CatalogEntry(
+        'confirm_completion',
+        'Confirm completion',
+        '/repair/confirm',
+      ),
+      _CatalogEntry(
+        'repair_submitted',
+        'Repair submitted',
+        '/repair/submitted',
+      ),
+      _CatalogEntry(
+        'completed_repairs',
+        'Completed repairs',
+        '/repair/completed',
+      ),
       _CatalogEntry(
         'finished_repair_details',
         'Finished repair details',
@@ -131,7 +147,11 @@ class StitchScreenCatalogScreen extends StatelessWidget {
       ),
     ]),
     _CatalogGroup('Official and barangay', [
-      _CatalogEntry('incoming_reports', 'Incoming reports', '/official/incoming'),
+      _CatalogEntry(
+        'incoming_reports',
+        'Incoming reports',
+        '/official/incoming',
+      ),
       _CatalogEntry(
         'incident_details_official',
         'Official incident details',
@@ -139,7 +159,11 @@ class StitchScreenCatalogScreen extends StatelessWidget {
       ),
       _CatalogEntry('validate_report', 'Validate report', '/official/validate'),
       _CatalogEntry('assign_personnel', 'Assign personnel', '/official/assign'),
-      _CatalogEntry('repair_verification', 'Repair verification', '/official/verify'),
+      _CatalogEntry(
+        'repair_verification',
+        'Repair verification',
+        '/official/verify',
+      ),
       _CatalogEntry('sla_monitoring', 'SLA monitoring', '/official/sla'),
       _CatalogEntry('barangay_dashboard', 'Barangay dashboard', '/barangay'),
       _CatalogEntry(
@@ -149,7 +173,11 @@ class StitchScreenCatalogScreen extends StatelessWidget {
       ),
     ]),
     _CatalogGroup('City engineering', [
-      _CatalogEntry('engineering_dashboard', 'Engineering dashboard', '/engineering'),
+      _CatalogEntry(
+        'engineering_dashboard',
+        'Engineering dashboard',
+        '/engineering',
+      ),
       _CatalogEntry(
         'city_wide_incidents',
         'City-wide incidents',
@@ -199,13 +227,21 @@ class StitchScreenCatalogScreen extends StatelessWidget {
         'Utility incident details',
         '/utility/incidents/details',
       ),
-      _CatalogEntry('accept_assignment', 'Accept assignment', '/utility/accept'),
+      _CatalogEntry(
+        'accept_assignment',
+        'Accept assignment',
+        '/utility/accept',
+      ),
     ]),
     _CatalogGroup('System administration', [
       _CatalogEntry('admin_dashboard', 'Admin dashboard', '/admin'),
       _CatalogEntry('user_management', 'User management', '/admin/users'),
       _CatalogEntry('user_details', 'User details', '/admin/users/details'),
-      _CatalogEntry('verify_user_account', 'Verify user', '/admin/users/verify'),
+      _CatalogEntry(
+        'verify_user_account',
+        'Verify user',
+        '/admin/users/verify',
+      ),
       _CatalogEntry('audit_logs', 'Audit logs', '/admin/audit'),
       _CatalogEntry(
         'system_announcements',
@@ -242,12 +278,15 @@ class StitchScreenCatalogScreen extends StatelessWidget {
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.dashboard_customize_outlined,
-                    color: AppColorsLight.brandBase),
+                Icon(
+                  Icons.dashboard_customize_outlined,
+                  color: AppColorsLight.brandBase,
+                ),
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Each item opens the corresponding native Flutter screen. Source-folder names are retained for design review.'),
+                    'Each item opens the corresponding native Flutter screen. Source-folder names are retained for design review.',
+                  ),
                 ),
               ],
             ),
@@ -279,15 +318,16 @@ class _CatalogGroupCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Text(
               group.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
           ),
           for (var index = 0; index < group.entries.length; index++) ...[
             if (index != 0) const Divider(height: 1),
             InkWell(
-              onTap: () => Navigator.pushNamed(context, group.entries[index].route),
+              onTap: () =>
+                  Navigator.pushNamed(context, group.entries[index].route),
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Row(
@@ -312,15 +352,19 @@ class _CatalogGroupCard extends StatelessWidget {
                         children: [
                           Text(
                             group.entries[index].title,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
                             group.entries[index].source,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
                                   fontFamily: 'RobotoMono',
                                   letterSpacing: 0,
                                 ),

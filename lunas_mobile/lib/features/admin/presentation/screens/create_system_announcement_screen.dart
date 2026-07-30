@@ -11,10 +11,12 @@ class CreateSystemAnnouncementScreen extends StatefulWidget {
   const CreateSystemAnnouncementScreen({super.key});
 
   @override
-  State<CreateSystemAnnouncementScreen> createState() => _CreateSystemAnnouncementScreenState();
+  State<CreateSystemAnnouncementScreen> createState() =>
+      _CreateSystemAnnouncementScreenState();
 }
 
-class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncementScreen> {
+class _CreateSystemAnnouncementScreenState
+    extends State<CreateSystemAnnouncementScreen> {
   String _audience = 'All LUNAS users';
   String _priority = 'Standard';
   bool _sendPush = true;
@@ -66,23 +68,41 @@ class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncemen
             child: Column(
               children: [
                 DropdownButtonFormField<String>(
-                  value: _audience,
+                  initialValue: _audience,
                   decoration: const InputDecoration(
                     labelText: 'Target audience',
                     prefixIcon: Icon(Icons.groups_outlined),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'All LUNAS users', child: Text('All LUNAS users')),
-                    DropdownMenuItem(value: 'Citizens', child: Text('Citizens')),
-                    DropdownMenuItem(value: 'Field personnel', child: Text('Field personnel')),
-                    DropdownMenuItem(value: 'Officials and administrators', child: Text('Officials and administrators')),
+                    DropdownMenuItem(
+                      value: 'All LUNAS users',
+                      child: Text('All LUNAS users'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Citizens',
+                      child: Text('Citizens'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Field personnel',
+                      child: Text('Field personnel'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Officials and administrators',
+                      child: Text('Officials and administrators'),
+                    ),
                   ],
-                  onChanged: (value) => setState(() => _audience = value ?? _audience),
+                  onChanged: (value) =>
+                      setState(() => _audience = value ?? _audience),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Priority level', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  child: Text(
+                    'Priority level',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Wrap(
@@ -93,8 +113,11 @@ class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncemen
                         (priority) => ChoiceChip(
                           label: Text(priority),
                           selected: _priority == priority,
-                          selectedColor: _priorityColor(priority).withValues(alpha: .18),
-                          onSelected: (_) => setState(() => _priority = priority),
+                          selectedColor: _priorityColor(
+                            priority,
+                          ).withValues(alpha: .18),
+                          onSelected: (_) =>
+                              setState(() => _priority = priority),
                         ),
                       )
                       .toList(),
@@ -114,15 +137,20 @@ class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncemen
                   onChanged: (value) => setState(() => _sendPush = value),
                   secondary: const Icon(Icons.notifications_active_outlined),
                   title: const Text('Push notification'),
-                  subtitle: const Text('Send an immediate mobile alert to the selected audience.'),
+                  subtitle: const Text(
+                    'Send an immediate mobile alert to the selected audience.',
+                  ),
                 ),
                 const Divider(height: 1),
                 SwitchListTile.adaptive(
                   value: _schedulePublication,
-                  onChanged: (value) => setState(() => _schedulePublication = value),
+                  onChanged: (value) =>
+                      setState(() => _schedulePublication = value),
                   secondary: const Icon(Icons.schedule_outlined),
                   title: const Text('Schedule publication'),
-                  subtitle: const Text('Set a time for this announcement to go live.'),
+                  subtitle: const Text(
+                    'Set a time for this announcement to go live.',
+                  ),
                 ),
               ],
             ),
@@ -132,8 +160,11 @@ class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncemen
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => showAdminMessage(context, 'Announcement saved locally as a prototype draft.'),
-                  icon: const Icon(Icons.draft_outlined),
+                  onPressed: () => showAdminMessage(
+                    context,
+                    'Announcement saved locally as a prototype draft.',
+                  ),
+                  icon: const Icon(Icons.description_outlined),
                   label: const Text('Save draft'),
                 ),
               ),
@@ -141,11 +172,19 @@ class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncemen
               Expanded(
                 flex: 2,
                 child: LunasButton(
-                  label: _schedulePublication ? 'Schedule announcement' : 'Publish announcement',
+                  label: _schedulePublication
+                      ? 'Schedule announcement'
+                      : 'Publish announcement',
                   icon: Icons.send_outlined,
                   onPressed: () {
-                    showAdminMessage(context, 'Announcement delivery is represented as a static local action.');
-                    Navigator.pushReplacementNamed(context, AdminRoutes.announcements);
+                    showAdminMessage(
+                      context,
+                      'Announcement delivery is represented as a static local action.',
+                    );
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AdminRoutes.announcements,
+                    );
                   },
                 ),
               ),
@@ -162,8 +201,8 @@ class _CreateSystemAnnouncementScreenState extends State<CreateSystemAnnouncemen
   }
 
   Color _priorityColor(String priority) => switch (priority) {
-        'Urgent' => AppColorsLight.critical,
-        'Important' => AppColorsLight.alert,
-        _ => AppColorsLight.brandBase,
-      };
+    'Urgent' => AppColorsLight.critical,
+    'Important' => AppColorsLight.alert,
+    _ => AppColorsLight.brandBase,
+  };
 }

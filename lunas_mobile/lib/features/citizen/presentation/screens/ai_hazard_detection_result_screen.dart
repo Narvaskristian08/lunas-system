@@ -104,7 +104,10 @@ class AiHazardDetectionResultScreen extends StatelessWidget {
                       const SizedBox(width: AppSpacing.sm),
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                        child: Text('certainty', style: theme.textTheme.bodyMedium),
+                        child: Text(
+                          'certainty',
+                          style: theme.textTheme.bodyMedium,
+                        ),
                       ),
                     ],
                   ),

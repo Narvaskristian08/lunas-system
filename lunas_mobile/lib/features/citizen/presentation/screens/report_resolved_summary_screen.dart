@@ -14,13 +14,16 @@ class ReportResolvedSummaryScreen extends StatefulWidget {
       _ReportResolvedSummaryScreenState();
 }
 
-class _ReportResolvedSummaryScreenState extends State<ReportResolvedSummaryScreen> {
+class _ReportResolvedSummaryScreenState
+    extends State<ReportResolvedSummaryScreen> {
   int _rating = 0;
 
   void _leaveFeedback() {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose a rating before leaving feedback.')),
+        const SnackBar(
+          content: Text('Choose a rating before leaving feedback.'),
+        ),
       );
       return;
     }
@@ -133,8 +136,10 @@ class _ReportResolvedSummaryScreenState extends State<ReportResolvedSummaryScree
                             const CitizenPhotoComparison(),
                             const SizedBox(height: AppSpacing.md),
                             TextButton.icon(
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/reports/evidence'),
+                              onPressed: () => Navigator.pushNamed(
+                                context,
+                                '/reports/evidence',
+                              ),
                               icon: const Icon(Icons.visibility_outlined),
                               label: const Text('View repair evidence'),
                             ),
@@ -192,11 +197,12 @@ class _ReportResolvedSummaryScreenState extends State<ReportResolvedSummaryScree
                             LunasButton(
                               label: 'Return Home',
                               icon: Icons.arrow_forward_rounded,
-                              onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/home',
-                                (_) => false,
-                              ),
+                              onPressed: () =>
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    '/home',
+                                    (_) => false,
+                                  ),
                             ),
                           ],
                         ),

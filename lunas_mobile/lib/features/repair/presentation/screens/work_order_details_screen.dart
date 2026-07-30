@@ -219,10 +219,7 @@ class _LocationDetail extends StatelessWidget {
 }
 
 class _WorkOrderActionBar extends StatelessWidget {
-  const _WorkOrderActionBar({
-    required this.onNavigate,
-    required this.onStart,
-  });
+  const _WorkOrderActionBar({required this.onNavigate, required this.onStart});
 
   final VoidCallback onNavigate;
   final VoidCallback onStart;
@@ -236,7 +233,9 @@ class _WorkOrderActionBar extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
         ),
         child: Row(
           children: [

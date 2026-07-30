@@ -62,7 +62,8 @@ class AdminPage extends StatelessWidget {
           },
         ),
       ),
-      bottomNavigationBar: bottomAction ??
+      bottomNavigationBar:
+          bottomAction ??
           (selectedNavigationIndex == null
               ? null
               : AdminBottomNavigation(selectedIndex: selectedNavigationIndex!)),
@@ -105,7 +106,10 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         children: [
           if (!showBackButton) ...[
-            Icon(Icons.admin_panel_settings_outlined, color: theme.colorScheme.primary),
+            Icon(
+              Icons.admin_panel_settings_outlined,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(width: AppSpacing.sm),
           ],
           Expanded(
@@ -220,16 +224,21 @@ class AdminMetricCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
                 Icon(icon, color: color),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               value,
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.displayMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -301,9 +310,9 @@ class AdminSectionTitle extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         if (actionLabel != null)
@@ -399,9 +408,9 @@ class AdminVisualPlaceholder extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               if (detail != null) ...[
                 const SizedBox(height: AppSpacing.xxs),

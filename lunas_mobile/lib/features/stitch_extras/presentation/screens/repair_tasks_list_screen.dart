@@ -40,9 +40,8 @@ class RepairTasksListScreen extends StatelessWidget {
                     children: [
                       Text(
                         '3 tasks due today',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       Text(
                         'A critical SLA target is approaching.',
@@ -57,9 +56,9 @@ class RepairTasksListScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             'Assigned tasks',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           _TaskCard(
@@ -128,9 +127,9 @@ class _TaskCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(
@@ -142,7 +141,10 @@ class _TaskCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
-                child: Text(location, style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  location,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           ),

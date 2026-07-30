@@ -29,7 +29,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         IconButton(
           tooltip: 'Pending verification',
           onPressed: () => Navigator.pushNamed(context, AdminRoutes.verifyUser),
-          icon: const Badge(smallSize: 8, child: Icon(Icons.person_add_alt_1_outlined)),
+          icon: const Badge(
+            smallSize: 8,
+            child: Icon(Icons.person_add_alt_1_outlined),
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
       ],
@@ -66,7 +69,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () => showAdminMessage(context, 'Advanced filters are a static prototype control.'),
+                onPressed: () => showAdminMessage(
+                  context,
+                  'Advanced filters are a static prototype control.',
+                ),
                 icon: const Icon(Icons.tune_rounded, size: 18),
                 label: const Text('Filter'),
               ),
@@ -76,8 +82,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           for (final user in visibleUsers) ...[
             _UserCard(
               user: user,
-              onOpen: () => Navigator.pushNamed(context, AdminRoutes.userDetails),
-              onSuspend: () => showAdminMessage(context, 'Account review opened for ${user.name}.'),
+              onOpen: () =>
+                  Navigator.pushNamed(context, AdminRoutes.userDetails),
+              onSuspend: () => showAdminMessage(
+                context,
+                'Account review opened for ${user.name}.',
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -91,7 +101,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 Icon(Icons.info_outline_rounded, color: AppColorsLight.alert),
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text('Account suspension and role changes are represented as local prototype feedback only.'),
+                  child: Text(
+                    'Account suspension and role changes are represented as local prototype feedback only.',
+                  ),
                 ),
               ],
             ),
@@ -162,7 +174,9 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = user.verified ? AppColorsLight.success : AppColorsLight.alert;
+    final statusColor = user.verified
+        ? AppColorsLight.success
+        : AppColorsLight.alert;
     return LunasCard(
       onTap: onOpen,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -172,7 +186,10 @@ class _UserCard extends StatelessWidget {
             radius: 24,
             backgroundColor: statusColor.withValues(alpha: .13),
             foregroundColor: statusColor,
-            child: Text(user.initials, style: const TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(
+              user.initials,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -184,18 +201,24 @@ class _UserCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         user.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                     ),
                     Icon(
-                      user.verified ? Icons.verified_rounded : Icons.pending_outlined,
+                      user.verified
+                          ? Icons.verified_rounded
+                          : Icons.pending_outlined,
                       color: statusColor,
                       size: 19,
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text('${user.role} • ${user.organization}', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  '${user.role} • ${user.organization}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 AdminStatusPill(
                   label: user.verified ? 'Verified' : 'Needs review',

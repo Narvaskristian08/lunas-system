@@ -28,9 +28,9 @@ class EngineeringDashboardScreen extends StatelessWidget {
         children: [
           Text(
             'Engineering dashboard',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -39,10 +39,8 @@ class EngineeringDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(
-              context,
-              EngineeringRoutes.incidents,
-            ),
+            onPressed: () =>
+                Navigator.pushNamed(context, EngineeringRoutes.incidents),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Create work order'),
           ),
@@ -104,10 +102,8 @@ class EngineeringDashboardScreen extends StatelessWidget {
           EngineeringSectionHeading(
             title: 'High-priority incidents',
             trailing: TextButton(
-              onPressed: () => Navigator.pushNamed(
-                context,
-                EngineeringRoutes.incidents,
-              ),
+              onPressed: () =>
+                  Navigator.pushNamed(context, EngineeringRoutes.incidents),
               child: const Text('View all'),
             ),
           ),
@@ -158,10 +154,8 @@ class EngineeringDashboardScreen extends StatelessWidget {
                     ),
                     IconButton(
                       tooltip: 'Open SLA dashboard',
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.sla,
-                      ),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, EngineeringRoutes.sla),
                       icon: const Icon(Icons.more_horiz_rounded),
                     ),
                   ],
@@ -172,10 +166,11 @@ class EngineeringDashboardScreen extends StatelessWidget {
                   children: [
                     Text(
                       '94%',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: AppColorsLight.brandBase,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(
+                            color: AppColorsLight.brandBase,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Padding(
@@ -242,10 +237,8 @@ class EngineeringDashboardScreen extends StatelessWidget {
                       icon: Icons.timer_outlined,
                       label: 'SLA dashboard',
                       color: AppColorsLight.alert,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.sla,
-                      ),
+                      onTap: () =>
+                          Navigator.pushNamed(context, EngineeringRoutes.sla),
                     ),
                   ),
                   SizedBox(
@@ -355,7 +348,11 @@ class _Metadata extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 15,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: AppSpacing.xxs),
         Text(value, style: Theme.of(context).textTheme.bodySmall),
       ],
@@ -380,22 +377,27 @@ class _QuickActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LunasCard(
       onTap: onTap,
-      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .55),
+      color: Theme.of(
+        context,
+      ).colorScheme.primaryContainer.withValues(alpha: .55),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 46,
             height: 46,
-            decoration: BoxDecoration(color: color.withValues(alpha: .14), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .14),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -421,8 +423,12 @@ class _SlaTrend extends StatelessWidget {
                   child: Container(
                     height: 14 + value * 52,
                     decoration: BoxDecoration(
-                      color: AppColorsLight.brandBase.withValues(alpha: .35 + value * .55),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      color: AppColorsLight.brandBase.withValues(
+                        alpha: .35 + value * .55,
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(4),
+                      ),
                     ),
                   ),
                 ),

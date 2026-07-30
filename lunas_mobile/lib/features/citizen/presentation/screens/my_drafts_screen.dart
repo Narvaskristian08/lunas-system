@@ -34,9 +34,9 @@ class _MyDraftsScreenState extends State<MyDraftsScreen> {
 
   void _removeDraft(_CitizenDraft draft) {
     setState(() => _drafts.remove(draft));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${draft.title} draft deleted.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${draft.title} draft deleted.')));
   }
 
   @override
@@ -145,7 +145,10 @@ class _DraftCard extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
-                      child: Text(draft.location, style: theme.textTheme.bodyMedium),
+                      child: Text(
+                        draft.location,
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ),
                   ],
                 ),

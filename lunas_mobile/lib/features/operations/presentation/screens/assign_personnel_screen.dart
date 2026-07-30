@@ -78,17 +78,24 @@ class _AssignPersonnelScreenState extends State<AssignPersonnelScreen> {
                       color: AppColorsLight.brandBase,
                     ),
                     const Spacer(),
-                    Icon(Icons.schedule_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    Icon(
+                      Icons.schedule_outlined,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: AppSpacing.xxs),
-                    Text('12m ago', style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      '12m ago',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Large pothole on A.B. Fernandez Ave.',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 const OperationsInfoRow(
@@ -99,7 +106,9 @@ class _AssignPersonnelScreenState extends State<AssignPersonnelScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Repair requires asphalt patching and traffic-safe work area setup. Priority was confirmed by an official reviewer.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.45),
                 ),
               ],
             ),
@@ -107,14 +116,18 @@ class _AssignPersonnelScreenState extends State<AssignPersonnelScreen> {
           const SizedBox(height: AppSpacing.xxl),
           OperationsSectionHeading(
             title: 'Available technicians',
-            trailing: Text('3 nearby', style: Theme.of(context).textTheme.bodySmall),
+            trailing: Text(
+              '3 nearby',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           for (final technician in _technicians) ...[
             _TechnicianCard(
               technician: technician,
               isSelected: technician.name == _selectedTechnician,
-              onTap: () => setState(() => _selectedTechnician = technician.name),
+              onTap: () =>
+                  setState(() => _selectedTechnician = technician.name),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -124,7 +137,9 @@ class _AssignPersonnelScreenState extends State<AssignPersonnelScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.xxs),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .55),
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: .55),
               borderRadius: AppRadius.input,
             ),
             child: Row(
@@ -148,7 +163,8 @@ class _AssignPersonnelScreenState extends State<AssignPersonnelScreen> {
             maxLines: 4,
             decoration: const InputDecoration(
               alignLabelWithHint: true,
-              hintText: 'Add access notes, traffic controls, or safety requirements for the technician...',
+              hintText:
+                  'Add access notes, traffic controls, or safety requirements for the technician...',
               prefixIcon: Padding(
                 padding: EdgeInsets.only(bottom: 72),
                 child: Icon(Icons.edit_note_outlined),
@@ -161,12 +177,15 @@ class _AssignPersonnelScreenState extends State<AssignPersonnelScreen> {
             decoration: BoxDecoration(
               color: AppColorsLight.alert.withValues(alpha: .09),
               borderRadius: AppRadius.input,
-              border: Border.all(color: AppColorsLight.alert.withValues(alpha: .30)),
+              border: Border.all(
+                color: AppColorsLight.alert.withValues(alpha: .30),
+              ),
             ),
             child: const OperationsInfoRow(
               icon: Icons.assignment_ind_outlined,
               label: 'Assignment check',
-              value: 'Confirm workload and field suitability before dispatching the work order.',
+              value:
+                  'Confirm workload and field suitability before dispatching the work order.',
             ),
           ),
         ],
@@ -233,13 +252,19 @@ class _TechnicianCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(technician.specialty, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  technician.specialty,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Wrap(
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xxs,
                   children: [
-                    OperationsBadge(label: technician.availability, color: availabilityColor),
+                    OperationsBadge(
+                      label: technician.availability,
+                      color: availabilityColor,
+                    ),
                     OperationsBadge(
                       label: technician.workload,
                       color: colors.onSurfaceVariant,
@@ -252,7 +277,9 @@ class _TechnicianCard extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Icon(
-            isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            isSelected
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
             color: isSelected ? colors.primary : colors.outline,
           ),
         ],

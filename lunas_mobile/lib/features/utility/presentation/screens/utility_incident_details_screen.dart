@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
-import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/utility/presentation/screens/utility_routes.dart';
@@ -17,8 +16,12 @@ class UtilityIncidentDetailsScreen extends StatelessWidget {
       subtitle: 'Utility incident details',
       showBackButton: true,
       bottomAction: _IncidentActionBar(
-        onRequestReassignment: () => showUtilityMessage(context, 'Reassignment request is recorded as local prototype feedback.'),
-        onAccept: () => Navigator.pushNamed(context, UtilityRoutes.acceptAssignment),
+        onRequestReassignment: () => showUtilityMessage(
+          context,
+          'Reassignment request is recorded as local prototype feedback.',
+        ),
+        onAccept: () =>
+            Navigator.pushNamed(context, UtilityRoutes.acceptAssignment),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -51,11 +54,16 @@ class UtilityIncidentDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _CardHeading(icon: Icons.description_outlined, title: 'Description'),
+                _CardHeading(
+                  icon: Icons.description_outlined,
+                  title: 'Description',
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'A citizen reported visible sparks after heavy rain near a transformer by the Tapuac public market. Keep pedestrians clear until the electrical hazard is assessed.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.5),
                 ),
               ],
             ),
@@ -91,8 +99,17 @@ class UtilityIncidentDetailsScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Expanded(child: _CardHeading(icon: Icons.location_on_outlined, title: 'Location details')),
-                    const UtilityStatusPill(label: '1.2 km away', color: AppColorsLight.info, icon: Icons.route_outlined),
+                    const Expanded(
+                      child: _CardHeading(
+                        icon: Icons.location_on_outlined,
+                        title: 'Location details',
+                      ),
+                    ),
+                    const UtilityStatusPill(
+                      label: '1.2 km away',
+                      color: AppColorsLight.info,
+                      icon: Icons.route_outlined,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -102,12 +119,20 @@ class UtilityIncidentDetailsScreen extends StatelessWidget {
                     final details = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Brgy. Tapuac', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                        Text(
+                          'Brgy. Tapuac',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
                         const SizedBox(height: AppSpacing.xxs),
-                        Text('Near public market, Tapuac District, Dagupan City', style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          'Near public market, Tapuac District, Dagupan City',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         const SizedBox(height: AppSpacing.md),
                         OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, UtilityRoutes.map),
+                          onPressed: () =>
+                              Navigator.pushNamed(context, UtilityRoutes.map),
                           icon: const Icon(Icons.navigation_outlined),
                           label: const Text('Open navigation'),
                         ),
@@ -179,7 +204,9 @@ class _IncidentOverviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Container(
         decoration: const BoxDecoration(
-          border: Border(left: BorderSide(color: AppColorsLight.critical, width: 4)),
+          border: Border(
+            left: BorderSide(color: AppColorsLight.critical, width: 4),
+          ),
         ),
         padding: const EdgeInsets.only(left: AppSpacing.sm),
         child: Column(
@@ -189,18 +216,37 @@ class _IncidentOverviewCard extends StatelessWidget {
               spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: const [
-                UtilityStatusPill(label: 'Critical priority', color: AppColorsLight.critical, icon: Icons.warning_amber_rounded),
-                UtilityStatusPill(label: 'Newly assigned', color: AppColorsLight.brandBase),
+                UtilityStatusPill(
+                  label: 'Critical priority',
+                  color: AppColorsLight.critical,
+                  icon: Icons.warning_amber_rounded,
+                ),
+                UtilityStatusPill(
+                  label: 'Newly assigned',
+                  color: AppColorsLight.brandBase,
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Sparking transformer', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              'Sparking transformer',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: AppSpacing.xxs),
             Row(
               children: [
-                const Icon(Icons.electric_bolt_rounded, color: AppColorsLight.critical, size: 19),
+                const Icon(
+                  Icons.electric_bolt_rounded,
+                  color: AppColorsLight.critical,
+                  size: 19,
+                ),
                 const SizedBox(width: AppSpacing.xxs),
-                Text('Electrical hazard', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  'Electrical hazard',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ],
@@ -222,14 +268,24 @@ class _SlaTimerCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.timer_outlined, color: AppColorsLight.critical, size: 31),
+            const Icon(
+              Icons.timer_outlined,
+              color: AppColorsLight.critical,
+              size: 31,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               '45m 00s',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: AppColorsLight.critical, fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                color: AppColorsLight.critical,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSpacing.xxs),
-            Text('SLA time remaining', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'SLA time remaining',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ),
       ),
@@ -250,7 +306,12 @@ class _CardHeading extends StatelessWidget {
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.primary, size: 21),
         const SizedBox(width: AppSpacing.xs),
-        Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
       ],
     );
   }
@@ -265,7 +326,10 @@ class _AiAnalysisCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardHeading(icon: Icons.smart_toy_outlined, title: 'AI analysis'),
+          const _CardHeading(
+            icon: Icons.smart_toy_outlined,
+            title: 'AI analysis',
+          ),
           const SizedBox(height: AppSpacing.md),
           Center(
             child: Stack(
@@ -277,20 +341,39 @@ class _AiAnalysisCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: .95,
                     strokeWidth: 8,
-                    backgroundColor: AppColorsLight.brandBase.withValues(alpha: .12),
+                    backgroundColor: AppColorsLight.brandBase.withValues(
+                      alpha: .12,
+                    ),
                     color: AppColorsLight.brandBase,
                   ),
                 ),
-                Text('95%', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColorsLight.brandBase, fontWeight: FontWeight.w800)),
+                Text(
+                  '95%',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColorsLight.brandBase,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Center(
-            child: Text('Confidence level', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+            child: Text(
+              'Confidence level',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(height: AppSpacing.xxs),
-          Center(child: Text('Detected: arcing transformer', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall)),
+          Center(
+            child: Text(
+              'Detected: arcing transformer',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
         ],
       ),
     );
@@ -330,21 +413,30 @@ class _AssignmentCard extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CardHeading(icon: Icons.assignment_ind_outlined, title: 'Assignment'),
+          _CardHeading(
+            icon: Icons.assignment_ind_outlined,
+            title: 'Assignment',
+          ),
           SizedBox(height: AppSpacing.md),
           Row(
             children: [
               CircleAvatar(
                 backgroundColor: Color(0xFFDCE6FF),
                 foregroundColor: AppColorsLight.brandBase,
-                child: Text('DE', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: Text(
+                  'DE',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
               SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('DECORP', style: TextStyle(fontWeight: FontWeight.w800)),
+                    Text(
+                      'DECORP',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
                     Text('Team Alpha', style: TextStyle(fontSize: 12)),
                   ],
                 ),
@@ -372,11 +464,24 @@ class _TimelineCard extends StatelessWidget {
         children: [
           _CardHeading(icon: Icons.history_rounded, title: 'Activity timeline'),
           SizedBox(height: AppSpacing.md),
-          _TimelineStep(title: 'Report submitted', detail: 'Citizen via LUNAS app', color: AppColorsLight.textSecondary),
+          _TimelineStep(
+            title: 'Report submitted',
+            detail: 'Citizen via LUNAS app',
+            color: AppColorsLight.textSecondary,
+          ),
           SizedBox(height: AppSpacing.md),
-          _TimelineStep(title: 'Validated by AI', detail: 'High-confidence match', color: AppColorsLight.brandBase),
+          _TimelineStep(
+            title: 'Validated by AI',
+            detail: 'High-confidence match',
+            color: AppColorsLight.brandBase,
+          ),
           SizedBox(height: AppSpacing.md),
-          _TimelineStep(title: 'Routed to DECORP', detail: 'Pending acceptance', color: AppColorsLight.success, active: true),
+          _TimelineStep(
+            title: 'Routed to DECORP',
+            detail: 'Pending acceptance',
+            color: AppColorsLight.success,
+            active: true,
+          ),
         ],
       ),
     );
@@ -416,7 +521,13 @@ class _TimelineStep extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: active ? color : null, fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: active ? color : null,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: AppSpacing.xxs),
               Text(detail, style: Theme.of(context).textTheme.bodySmall),
             ],
@@ -428,7 +539,10 @@ class _TimelineStep extends StatelessWidget {
 }
 
 class _IncidentActionBar extends StatelessWidget {
-  const _IncidentActionBar({required this.onRequestReassignment, required this.onAccept});
+  const _IncidentActionBar({
+    required this.onRequestReassignment,
+    required this.onAccept,
+  });
 
   final VoidCallback onRequestReassignment;
   final VoidCallback onAccept;
@@ -438,17 +552,28 @@ class _IncidentActionBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.sm,
+          AppSpacing.xl,
+          AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
         ),
         child: Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: onRequestReassignment,
-                style: OutlinedButton.styleFrom(foregroundColor: AppColorsLight.critical),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColorsLight.critical,
+                ),
                 icon: const Icon(Icons.sync_problem_rounded),
                 label: const Text('Reassign'),
               ),

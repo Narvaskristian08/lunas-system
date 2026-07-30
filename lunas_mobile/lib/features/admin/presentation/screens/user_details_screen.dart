@@ -25,12 +25,17 @@ class UserDetailsScreen extends StatelessWidget {
                   radius: 36,
                   backgroundColor: Color(0xFFDCE6FF),
                   foregroundColor: AppColorsLight.brandBase,
-                  child: Text('JD', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                  child: Text(
+                    'JD',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Juan Dela Cruz',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 const Text('ID: USR-DAG-9284'),
@@ -47,17 +52,24 @@ class UserDetailsScreen extends StatelessWidget {
                   runSpacing: AppSpacing.sm,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, AdminRoutes.verifyUser),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AdminRoutes.verifyUser),
                       icon: const Icon(Icons.fact_check_outlined),
                       label: const Text('Review ID'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: () => showAdminMessage(context, 'Password-reset workflow is a prototype action.'),
+                      onPressed: () => showAdminMessage(
+                        context,
+                        'Password-reset workflow is a prototype action.',
+                      ),
                       icon: const Icon(Icons.lock_reset_outlined),
                       label: const Text('Reset access'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: () => showAdminMessage(context, 'Access review opened for Juan Dela Cruz.'),
+                      onPressed: () => showAdminMessage(
+                        context,
+                        'Access review opened for Juan Dela Cruz.',
+                      ),
                       icon: const Icon(Icons.block_outlined),
                       label: const Text('Review access'),
                     ),
@@ -143,7 +155,10 @@ class UserDetailsScreen extends StatelessWidget {
                   icon: Icons.verified_rounded,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text('Identity was verified from the submitted document on 14 October 2026.', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  'Identity was verified from the submitted document on 14 October 2026.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 const AdminVisualPlaceholder(
                   icon: Icons.badge_outlined,
@@ -154,7 +169,10 @@ class UserDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 TextButton.icon(
-                  onPressed: () => showAdminMessage(context, 'Document preview is not included in this static prototype.'),
+                  onPressed: () => showAdminMessage(
+                    context,
+                    'Document preview is not included in this static prototype.',
+                  ),
                   icon: const Icon(Icons.zoom_in_rounded),
                   label: const Text('View submitted document'),
                 ),

@@ -152,7 +152,9 @@ class _SlaRiskBanner extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Container(
         decoration: const BoxDecoration(
-          border: Border(left: BorderSide(color: AppColorsLight.critical, width: 4)),
+          border: Border(
+            left: BorderSide(color: AppColorsLight.critical, width: 4),
+          ),
         ),
         padding: const EdgeInsets.only(left: AppSpacing.sm),
         child: Column(
@@ -275,7 +277,11 @@ class _QuickActionsGrid extends StatelessWidget {
         icon: Icons.assignment_outlined,
         route: RepairRoutes.workOrders,
       ),
-      (label: 'Navigate', icon: Icons.navigation_outlined, route: RepairRoutes.map),
+      (
+        label: 'Navigate',
+        icon: Icons.navigation_outlined,
+        route: RepairRoutes.map,
+      ),
       (
         label: 'Evidence',
         icon: Icons.add_a_photo_outlined,

@@ -36,7 +36,9 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Container(
               decoration: const BoxDecoration(
-                border: Border(left: BorderSide(color: AppColorsLight.critical, width: 4)),
+                border: Border(
+                  left: BorderSide(color: AppColorsLight.critical, width: 4),
+                ),
               ),
               padding: const EdgeInsets.only(left: AppSpacing.sm),
               child: Column(
@@ -44,16 +46,37 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
                 children: [
                   Row(
                     children: const [
-                      Expanded(child: Text('#INC-DE-001', style: TextStyle(fontWeight: FontWeight.w800))),
-                      UtilityStatusPill(label: 'Critical priority', color: AppColorsLight.critical),
+                      Expanded(
+                        child: Text(
+                          '#INC-DE-001',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      UtilityStatusPill(
+                        label: 'Critical priority',
+                        color: AppColorsLight.critical,
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  Text('Sparking transformer', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(
+                    'Sparking transformer',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.md),
-                  const UtilityDetailRow(label: 'Location', value: 'Near Tapuac Public Market, Dagupan City', icon: Icons.location_on_outlined),
+                  const UtilityDetailRow(
+                    label: 'Location',
+                    value: 'Near Tapuac Public Market, Dagupan City',
+                    icon: Icons.location_on_outlined,
+                  ),
                   const SizedBox(height: AppSpacing.md),
-                  const UtilityDetailRow(label: 'Reported', value: 'Today, 08:14 AM', icon: Icons.schedule_outlined),
+                  const UtilityDetailRow(
+                    label: 'Reported',
+                    value: 'Today, 08:14 AM',
+                    icon: Icons.schedule_outlined,
+                  ),
                 ],
               ),
             ),
@@ -66,16 +89,25 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<String>(
-                  value: _selectedTeam,
+                  initialValue: _selectedTeam,
                   decoration: const InputDecoration(
                     labelText: 'Select internal repair team',
                     prefixIcon: Icon(Icons.groups_outlined),
                   ),
                   hint: const Text('Select a team...'),
                   items: const [
-                    DropdownMenuItem(value: 'Team Alpha', child: Text('Team Alpha — heavy repair')),
-                    DropdownMenuItem(value: 'Team Beta', child: Text('Team Beta — rapid response')),
-                    DropdownMenuItem(value: 'Team Gamma', child: Text('Team Gamma — diagnostics')),
+                    DropdownMenuItem(
+                      value: 'Team Alpha',
+                      child: Text('Team Alpha — heavy repair'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Team Beta',
+                      child: Text('Team Beta — rapid response'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Team Gamma',
+                      child: Text('Team Gamma — diagnostics'),
+                    ),
                   ],
                   onChanged: (value) => setState(() => _selectedTeam = value),
                 ),
@@ -93,7 +125,8 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
                   maxLines: 5,
                   decoration: const InputDecoration(
                     labelText: 'Acknowledgment notes (optional)',
-                    hintText: 'Add initial equipment needs or safety conditions...',
+                    hintText:
+                        'Add initial equipment needs or safety conditions...',
                     alignLabelWithHint: true,
                     prefixIcon: Padding(
                       padding: EdgeInsets.only(bottom: 52),
@@ -105,8 +138,11 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _responsibilityConfirmed,
-                  onChanged: (value) => setState(() => _responsibilityConfirmed = value ?? false),
-                  title: const Text('I confirm this utility incident falls under our organization’s responsibility.'),
+                  onChanged: (value) =>
+                      setState(() => _responsibilityConfirmed = value ?? false),
+                  title: const Text(
+                    'I confirm this utility incident falls under our organization’s responsibility.',
+                  ),
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
               ],
@@ -144,15 +180,23 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
 
   void _acceptAssignment() {
     if (_selectedTeam == null || !_responsibilityConfirmed) {
-      showUtilityMessage(context, 'Select a repair team and confirm responsibility before accepting.');
+      showUtilityMessage(
+        context,
+        'Select a repair team and confirm responsibility before accepting.',
+      );
       return;
     }
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.assignment_turned_in_outlined, color: AppColorsLight.brandBase),
+        icon: const Icon(
+          Icons.assignment_turned_in_outlined,
+          color: AppColorsLight.brandBase,
+        ),
         title: const Text('Confirm acceptance?'),
-        content: Text('This will notify City Engineering that $_selectedTeam is responding to #INC-DE-001.'),
+        content: Text(
+          'This will notify City Engineering that $_selectedTeam is responding to #INC-DE-001.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -161,7 +205,10 @@ class _AcceptAssignmentScreenState extends State<AcceptAssignmentScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              showUtilityMessage(context, 'Assignment accepted locally for this static prototype.');
+              showUtilityMessage(
+                context,
+                'Assignment accepted locally for this static prototype.',
+              );
               Navigator.pushReplacementNamed(context, UtilityRoutes.incidents);
             },
             child: const Text('Confirm'),

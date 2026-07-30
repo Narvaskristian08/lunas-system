@@ -71,7 +71,10 @@ class CitizenExtraMetricCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
               Icon(icon, color: color, size: 20),
             ],
@@ -139,7 +142,9 @@ class CitizenExtraTimelineItem extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                      margin: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.xs,
+                      ),
                       color: theme.colorScheme.outlineVariant,
                     ),
                   ),

@@ -22,7 +22,8 @@ class OperationsDashboardScreen extends StatelessWidget {
       actions: [
         IconButton(
           tooltip: 'SLA monitoring',
-          onPressed: () => Navigator.pushNamed(context, OperationsRoutes.slaMonitoring),
+          onPressed: () =>
+              Navigator.pushNamed(context, OperationsRoutes.slaMonitoring),
           icon: const Icon(Icons.timer_outlined),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -126,28 +127,36 @@ class OperationsDashboardScreen extends StatelessWidget {
           _WorkflowCard(
             step: '01',
             title: 'Incoming reports',
-            description: 'Review citizen submissions and the AI-provided context.',
+            description:
+                'Review citizen submissions and the AI-provided context.',
             icon: Icons.inbox_outlined,
             color: AppColorsLight.brandBase,
-            onTap: () => Navigator.pushNamed(context, OperationsRoutes.incomingReports),
+            onTap: () =>
+                Navigator.pushNamed(context, OperationsRoutes.incomingReports),
           ),
           const SizedBox(height: AppSpacing.sm),
           _WorkflowCard(
             step: '02',
             title: 'Validate and assign',
-            description: 'Confirm category, priority, location, and appropriate personnel.',
+            description:
+                'Confirm category, priority, location, and appropriate personnel.',
             icon: Icons.assignment_ind_outlined,
             color: AppColorsLight.alert,
-            onTap: () => Navigator.pushNamed(context, OperationsRoutes.validateReport),
+            onTap: () =>
+                Navigator.pushNamed(context, OperationsRoutes.validateReport),
           ),
           const SizedBox(height: AppSpacing.sm),
           _WorkflowCard(
             step: '03',
             title: 'Verify repair evidence',
-            description: 'Review field evidence before formally approving completion.',
+            description:
+                'Review field evidence before formally approving completion.',
             icon: Icons.verified_outlined,
             color: AppColorsLight.success,
-            onTap: () => Navigator.pushNamed(context, OperationsRoutes.repairVerification),
+            onTap: () => Navigator.pushNamed(
+              context,
+              OperationsRoutes.repairVerification,
+            ),
           ),
           const SizedBox(height: AppSpacing.xxl),
           LunasCard(
@@ -155,7 +164,8 @@ class OperationsDashboardScreen extends StatelessWidget {
             child: const OperationsInfoRow(
               icon: Icons.verified_user_outlined,
               label: 'Prototype safeguard',
-              value: 'AI suggestions are advisory; an authorized official makes the final decision.',
+              value:
+                  'AI suggestions are advisory; an authorized official makes the final decision.',
             ),
           ),
         ],

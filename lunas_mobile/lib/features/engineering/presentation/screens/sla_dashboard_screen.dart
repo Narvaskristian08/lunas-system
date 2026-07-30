@@ -120,10 +120,8 @@ class SlaDashboardScreen extends StatelessWidget {
             description: 'Items closest to their SLA response deadline.',
             trailing: IconButton(
               tooltip: 'Open incident queue',
-              onPressed: () => Navigator.pushNamed(
-                context,
-                EngineeringRoutes.incidents,
-              ),
+              onPressed: () =>
+                  Navigator.pushNamed(context, EngineeringRoutes.incidents),
               icon: const Icon(Icons.search_rounded),
             ),
           ),
@@ -186,9 +184,9 @@ class _MonthlyComplianceCard extends StatelessWidget {
         children: [
           Text(
             'Monthly compliance trend',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(
@@ -219,7 +217,10 @@ class _MonthlyComplianceCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      Text(months[index], style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        months[index],
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 );
@@ -244,12 +245,15 @@ class _ResolutionTimeCard extends StatelessWidget {
         children: [
           Text(
             'Avg. resolution time',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xxs),
-          Text('Hours per weekly cohort', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            'Hours per weekly cohort',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(
             height: 132,
@@ -261,18 +265,26 @@ class _ResolutionTimeCard extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(values[index].toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        values[index].toStringAsFixed(1),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                       const SizedBox(height: AppSpacing.xxs),
                       Container(
                         height: height,
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: const BoxDecoration(
                           color: AppColorsLight.alert,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      Text('W${index + 1}', style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        'W${index + 1}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 );
@@ -307,7 +319,8 @@ class _SlaIncidentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LunasCard(
-      onTap: () => Navigator.pushNamed(context, EngineeringRoutes.incidentDetails),
+      onTap: () =>
+          Navigator.pushNamed(context, EngineeringRoutes.incidentDetails),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
@@ -329,9 +342,9 @@ class _SlaIncidentCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   issue,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(department, style: Theme.of(context).textTheme.bodySmall),

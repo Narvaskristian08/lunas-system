@@ -4,6 +4,9 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
+import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
+import 'package:lunas_mobile/features/reporting/domain/models/report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class CreateReportScreen extends StatefulWidget {
@@ -18,7 +21,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   final _descriptionController = TextEditingController();
   String _category = 'Roads & Sidewalks';
   String? _photoReference;
-  String _location = 'Use my current location';
+  SelectedLocation? _location;
   bool _isSubmitting = false;
 
   @override
@@ -33,9 +36,9 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   }
 
   Future<void> _selectLocation() async {
-    final result = await Navigator.pushNamed<String>(
+    final result = await MapPickerScreen.open(
       context,
-      '/reports/location',
+      initialLocation: _location,
     );
     if (result != null && mounted) setState(() => _location = result);
   }
@@ -57,11 +60,23 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       );
       return;
     }
+    if (_location == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose the report location first.')),
+      );
+      return;
+    }
+    final report = ReportDraft(
+      category: _category,
+      description: _descriptionController.text.trim(),
+      photoReference: _photoReference!,
+      location: _location!,
+    );
     setState(() => _isSubmitting = true);
     await Future<void>.delayed(const Duration(milliseconds: 450));
     if (!mounted) return;
     setState(() => _isSubmitting = false);
-    Navigator.pushNamed(context, '/reports/ai-suggestion');
+    Navigator.pushNamed(context, '/reports/ai-suggestion', arguments: report);
   }
 
   @override
@@ -166,31 +181,42 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                   : null,
             ),
             const SizedBox(height: AppSpacing.md),
-            LunasCard(
-              onTap: _selectLocation,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Report location',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                        Text(_location, style: theme.textTheme.titleMedium),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded),
-                ],
-              ),
+            OutlinedButton.icon(
+              onPressed: _selectLocation,
+              icon: const Icon(Icons.add_location_alt_outlined),
+              label: const Text('Choose Location'),
             ),
+            if (_location != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              LunasCard(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _location!.address,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            _location!.coordinates,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.xl),
             LunasButton(
               label: 'Review AI Suggestion',

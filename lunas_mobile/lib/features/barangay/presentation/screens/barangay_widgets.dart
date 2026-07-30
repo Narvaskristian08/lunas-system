@@ -85,13 +85,16 @@ class BarangaySectionHeading extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               if (description != null) ...[
                 const SizedBox(height: AppSpacing.xxs),
-                Text(description!, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  description!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ],
           ),
@@ -180,9 +183,9 @@ class BarangayMetricCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               Icon(icon, color: color),
@@ -236,9 +239,9 @@ class BarangayInfoRow extends StatelessWidget {
               const SizedBox(height: AppSpacing.xxs),
               Text(
                 value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -280,7 +283,10 @@ class BarangayVisualPanel extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [accent.withValues(alpha: .22), accent.withValues(alpha: .06)],
+            colors: [
+              accent.withValues(alpha: .22),
+              accent.withValues(alpha: .06),
+            ],
           ),
         ),
         child: Stack(
@@ -288,7 +294,10 @@ class BarangayVisualPanel extends StatelessWidget {
             Positioned(
               top: AppSpacing.sm,
               right: AppSpacing.sm,
-              child: Icon(Icons.grid_4x4_rounded, color: accent.withValues(alpha: .42)),
+              child: Icon(
+                Icons.grid_4x4_rounded,
+                color: accent.withValues(alpha: .42),
+              ),
             ),
             Center(
               child: Column(
@@ -398,7 +407,10 @@ class BarangayTimelineItem extends StatelessWidget {
                   width: 12,
                   height: 12,
                   margin: const EdgeInsets.only(top: AppSpacing.xs),
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 if (!isLast)
                   Expanded(
@@ -424,7 +436,10 @@ class BarangayTimelineItem extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxs),
-                  Text(description, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   const SizedBox(height: AppSpacing.xxs),
                   Text(time, style: Theme.of(context).textTheme.bodySmall),
                 ],
@@ -490,7 +505,9 @@ class BarangayActionBar extends StatelessWidget {
               flex: 2,
               child: ElevatedButton.icon(
                 onPressed: onPrimary,
-                icon: primaryIcon == null ? const SizedBox.shrink() : Icon(primaryIcon),
+                icon: primaryIcon == null
+                    ? const SizedBox.shrink()
+                    : Icon(primaryIcon),
                 label: Text(primaryLabel),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),

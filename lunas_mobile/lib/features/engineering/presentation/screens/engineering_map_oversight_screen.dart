@@ -73,10 +73,15 @@ class _EngineeringMapOversightScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .38),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .38),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, color: AppColorsLight.brandBase),
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: AppColorsLight.brandBase,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
@@ -137,10 +142,8 @@ class _EngineeringMapOversightScreenState
           EngineeringSectionHeading(
             title: 'Recent critical alerts',
             trailing: TextButton(
-              onPressed: () => Navigator.pushNamed(
-                context,
-                EngineeringRoutes.incidents,
-              ),
+              onPressed: () =>
+                  Navigator.pushNamed(context, EngineeringRoutes.incidents),
               child: const Text('View queue'),
             ),
           ),
@@ -154,10 +157,8 @@ class _EngineeringMapOversightScreenState
             time: '10m ago',
             urgency: 'High urgency',
             color: AppColorsLight.critical,
-            onTap: () => Navigator.pushNamed(
-              context,
-              EngineeringRoutes.incidentDetails,
-            ),
+            onTap: () =>
+                Navigator.pushNamed(context, EngineeringRoutes.incidentDetails),
           ),
           const SizedBox(height: AppSpacing.sm),
           _MapAlert(
@@ -187,10 +188,8 @@ class _EngineeringMapOversightScreenState
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    EngineeringRoutes.analytics,
-                  ),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, EngineeringRoutes.analytics),
                   icon: const Icon(Icons.analytics_outlined),
                   label: const Text('Insights'),
                 ),
@@ -258,7 +257,10 @@ class _MapAlert extends StatelessWidget {
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: [
-                    EngineeringBadge(label: zone, color: AppColorsLight.brandBase),
+                    EngineeringBadge(
+                      label: zone,
+                      color: AppColorsLight.brandBase,
+                    ),
                     EngineeringBadge(label: urgency, color: color),
                     Text(time, style: Theme.of(context).textTheme.bodySmall),
                   ],

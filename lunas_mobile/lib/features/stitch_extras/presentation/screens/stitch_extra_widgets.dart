@@ -72,7 +72,10 @@ class StitchMapPlaceholder extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
@@ -151,10 +154,9 @@ class StitchStatusPill extends StatelessWidget {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              letterSpacing: .2,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: color, letterSpacing: .2),
           ),
         ],
       ),
@@ -269,7 +271,11 @@ class _MapGridPainter extends CustomPainter {
       );
     }
     for (var offset = 20.0; offset < size.height; offset += 46) {
-      canvas.drawLine(Offset(0, offset), Offset(size.width, offset - 20), paint);
+      canvas.drawLine(
+        Offset(0, offset),
+        Offset(size.width, offset - 20),
+        paint,
+      );
     }
   }
 

@@ -16,7 +16,10 @@ class SlaMonitoringScreen extends StatelessWidget {
       actions: [
         IconButton(
           tooltip: 'Filter SLA records',
-          onPressed: () => _showMessage(context, 'SLA filters are a static UI control in this prototype.'),
+          onPressed: () => _showMessage(
+            context,
+            'SLA filters are a static UI control in this prototype.',
+          ),
           icon: const Icon(Icons.filter_list_rounded),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -27,7 +30,9 @@ class SlaMonitoringScreen extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final columns = constraints.maxWidth >= 680 ? 3 : 1;
-              final width = (constraints.maxWidth - (columns - 1) * AppSpacing.sm) / columns;
+              final width =
+                  (constraints.maxWidth - (columns - 1) * AppSpacing.sm) /
+                  columns;
               return Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
@@ -68,7 +73,8 @@ class SlaMonitoringScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.xxl),
           const OperationsSectionHeading(
             title: 'Active incidents',
-            description: 'Time remaining is recalculated from the validated work order.',
+            description:
+                'Time remaining is recalculated from the validated work order.',
           ),
           const SizedBox(height: AppSpacing.md),
           _SlaIncidentCard(
@@ -104,12 +110,15 @@ class SlaMonitoringScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColorsLight.brandBase.withValues(alpha: .07),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColorsLight.brandBase.withValues(alpha: .20)),
+              border: Border.all(
+                color: AppColorsLight.brandBase.withValues(alpha: .20),
+              ),
             ),
             child: const OperationsInfoRow(
               icon: Icons.notifications_active_outlined,
               label: 'SLA safeguard',
-              value: 'Escalate overdue incidents according to the city response policy; this prototype does not send live notifications.',
+              value:
+                  'Escalate overdue incidents according to the city response policy; this prototype does not send live notifications.',
             ),
           ),
         ],
@@ -118,7 +127,9 @@ class SlaMonitoringScreen extends StatelessWidget {
   }
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -144,7 +155,8 @@ class _SlaIncidentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LunasCard(
-      onTap: () => Navigator.pushNamed(context, OperationsRoutes.repairVerification),
+      onTap: () =>
+          Navigator.pushNamed(context, OperationsRoutes.repairVerification),
       color: isOverdue ? color.withValues(alpha: .11) : null,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
@@ -162,9 +174,15 @@ class _SlaIncidentCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text('Personnel: $personnel', style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Personnel: $personnel',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text('Priority: $priority', style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Priority: $priority',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             ),
           ),

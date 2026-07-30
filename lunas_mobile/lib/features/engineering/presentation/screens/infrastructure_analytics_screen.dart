@@ -76,13 +76,15 @@ class InfrastructureAnalyticsScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.xxl),
           const EngineeringSectionHeading(
             title: 'Incident heat map',
-            description: 'Static regional intensity view for the current reporting period.',
+            description:
+                'Static regional intensity view for the current reporting period.',
           ),
           const SizedBox(height: AppSpacing.sm),
           const EngineeringVisualPanel(
             icon: Icons.location_searching_outlined,
             label: 'Dagupan incident concentration',
-            detail: 'Higher intensity near Pantal, Downtown, and Bonuan corridors',
+            detail:
+                'Higher intensity near Pantal, Downtown, and Bonuan corridors',
             accent: AppColorsLight.critical,
             height: 240,
             markerLabel: '12 critical incidents',
@@ -127,10 +129,8 @@ class InfrastructureAnalyticsScreen extends StatelessWidget {
           EngineeringSectionHeading(
             title: 'Barangay comparison',
             trailing: TextButton(
-              onPressed: () => Navigator.pushNamed(
-                context,
-                EngineeringRoutes.performance,
-              ),
+              onPressed: () =>
+                  Navigator.pushNamed(context, EngineeringRoutes.performance),
               child: const Text('View performance'),
             ),
           ),
@@ -167,7 +167,9 @@ class InfrastructureAnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .42),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .42),
             child: const EngineeringInfoRow(
               icon: Icons.privacy_tip_outlined,
               label: 'Responsible analytics',
@@ -204,16 +206,13 @@ class _CategoryRow extends StatelessWidget {
           width: 70,
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         Expanded(
-          child: EngineeringProgressBar(
-            value: percent / 100,
-            color: color,
-          ),
+          child: EngineeringProgressBar(value: percent / 100, color: color),
         ),
         const SizedBox(width: AppSpacing.sm),
         Text('$percent%', style: Theme.of(context).textTheme.bodySmall),
@@ -247,9 +246,9 @@ class _BarangayRow extends StatelessWidget {
             flex: 2,
             child: Text(
               name,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           _Stat(label: 'Health', value: score),
@@ -274,7 +273,12 @@ class _Stat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          value,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );

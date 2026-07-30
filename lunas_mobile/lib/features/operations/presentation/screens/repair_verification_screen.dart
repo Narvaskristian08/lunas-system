@@ -9,7 +9,8 @@ class RepairVerificationScreen extends StatefulWidget {
   const RepairVerificationScreen({super.key});
 
   @override
-  State<RepairVerificationScreen> createState() => _RepairVerificationScreenState();
+  State<RepairVerificationScreen> createState() =>
+      _RepairVerificationScreenState();
 }
 
 class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
@@ -61,7 +62,11 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.compare_outlined, size: 18, color: colors.onSurfaceVariant),
+                Icon(
+                  Icons.compare_outlined,
+                  size: 18,
+                  color: colors.onSurfaceVariant,
+                ),
                 const SizedBox(width: AppSpacing.xxs),
                 Text('Compare', style: Theme.of(context).textTheme.bodySmall),
               ],
@@ -72,7 +77,8 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
           Slider(
             value: _comparison,
             onChanged: (value) => setState(() => _comparison = value),
-            semanticFormatterCallback: (value) => '${(value * 100).round()} percent before evidence',
+            semanticFormatterCallback: (value) =>
+                '${(value * 100).round()} percent before evidence',
           ),
           Text(
             'Slide to compare the submitted before and after evidence.',
@@ -84,7 +90,9 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
             decoration: BoxDecoration(
               color: AppColorsLight.success.withValues(alpha: .12),
               borderRadius: AppRadius.card,
-              border: Border.all(color: AppColorsLight.success.withValues(alpha: .36)),
+              border: Border.all(
+                color: AppColorsLight.success.withValues(alpha: .36),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +104,10 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
                     shape: BoxShape.circle,
                     color: AppColorsLight.success,
                   ),
-                  child: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -112,15 +123,18 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
                         'Quality likely matches specifications',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColorsLight.success,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: AppColorsLight.success,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'The visual comparison suggests a 98% match with the planned asphalt patch. Treat this as advisory evidence and inspect the work before approving it.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(height: 1.45),
                       ),
                     ],
                   ),
@@ -135,7 +149,9 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
             color: colors.primaryContainer.withValues(alpha: .36),
             child: Text(
               'Cleared debris from the primary cavity. Applied bonding agent and filled with hot-mix asphalt to a 5 cm depth. Compacted the surface to align with the existing road grade, then kept the area secured during cooling.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.5),
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -149,7 +165,8 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
             child: const OperationsInfoRow(
               icon: Icons.gavel_outlined,
               label: 'Approval control',
-              value: 'Only an authorized official can close the work order after reviewing the evidence and site condition.',
+              value:
+                  'Only an authorized official can close the work order after reviewing the evidence and site condition.',
             ),
           ),
         ],
@@ -213,7 +230,10 @@ class _EvidenceComparison extends StatelessWidget {
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.compare_arrows_rounded, color: AppColorsLight.brandBase),
+                      child: const Icon(
+                        Icons.compare_arrows_rounded,
+                        color: AppColorsLight.brandBase,
+                      ),
                     ),
                   ),
                 ],
@@ -264,9 +284,9 @@ class _EvidencePanel extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   detail,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),

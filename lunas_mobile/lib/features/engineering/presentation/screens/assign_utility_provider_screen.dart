@@ -13,7 +13,8 @@ class AssignUtilityProviderScreen extends StatefulWidget {
       _AssignUtilityProviderScreenState();
 }
 
-class _AssignUtilityProviderScreenState extends State<AssignUtilityProviderScreen> {
+class _AssignUtilityProviderScreenState
+    extends State<AssignUtilityProviderScreen> {
   String _provider = 'Dagupan Water District';
 
   static const _providers = [
@@ -74,7 +75,8 @@ class _AssignUtilityProviderScreenState extends State<AssignUtilityProviderScree
           const SizedBox(height: AppSpacing.xxl),
           const EngineeringSectionHeading(
             title: 'Select provider',
-            description: 'Availability is static sample data for this prototype.',
+            description:
+                'Availability is static sample data for this prototype.',
           ),
           const SizedBox(height: AppSpacing.sm),
           for (final provider in _providers) ...[
@@ -102,7 +104,9 @@ class _AssignUtilityProviderScreenState extends State<AssignUtilityProviderScree
           ),
           const SizedBox(height: AppSpacing.xl),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .40),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .40),
             child: const EngineeringInfoRow(
               icon: Icons.gavel_outlined,
               label: 'Dispatch control',
@@ -155,9 +159,8 @@ class _ProviderCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         provider.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                     ),
                     EngineeringBadge(
@@ -169,15 +172,23 @@ class _ProviderCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(provider.service, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  provider.service,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(provider.response, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  provider.response,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
           Icon(
-            selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            selected
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
             color: selected ? colors.primary : colors.outline,
           ),
         ],

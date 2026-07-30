@@ -31,7 +31,10 @@ class _AlternateReportHazardFormScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Photo evidence', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Photo evidence',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Container(
                   height: 152,
@@ -40,9 +43,9 @@ class _AlternateReportHazardFormScreenState
                     color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(AppSpacing.sm),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(
-                        alpha: .3,
-                      ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: .3),
                     ),
                   ),
                   child: const Column(
@@ -58,7 +61,10 @@ class _AlternateReportHazardFormScreenState
                 const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.auto_awesome_outlined, color: AppColorsLight.brandBase),
+                    Icon(
+                      Icons.auto_awesome_outlined,
+                      color: AppColorsLight.brandBase,
+                    ),
                     SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
@@ -72,7 +78,7 @@ class _AlternateReportHazardFormScreenState
           ),
           const SizedBox(height: AppSpacing.lg),
           DropdownButtonFormField<String>(
-            value: _category,
+            initialValue: _category,
             decoration: const InputDecoration(
               labelText: 'Hazard category',
               prefixIcon: Icon(Icons.category_outlined),
@@ -81,12 +87,18 @@ class _AlternateReportHazardFormScreenState
               DropdownMenuItem(value: 'Road', child: Text('Road')),
               DropdownMenuItem(value: 'Drainage', child: Text('Drainage')),
               DropdownMenuItem(value: 'Water', child: Text('Water')),
-              DropdownMenuItem(value: 'Electricity', child: Text('Electricity')),
+              DropdownMenuItem(
+                value: 'Electricity',
+                child: Text('Electricity'),
+              ),
             ],
             onChanged: (value) => setState(() => _category = value),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Severity level', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Severity level',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.sm),
           SegmentedButton<String>(
             segments: const [

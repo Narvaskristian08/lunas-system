@@ -9,7 +9,8 @@ class BarangayStatisticsScreen extends StatefulWidget {
   const BarangayStatisticsScreen({super.key});
 
   @override
-  State<BarangayStatisticsScreen> createState() => _BarangayStatisticsScreenState();
+  State<BarangayStatisticsScreen> createState() =>
+      _BarangayStatisticsScreenState();
 }
 
 class _BarangayStatisticsScreenState extends State<BarangayStatisticsScreen> {
@@ -95,7 +96,8 @@ class _BarangayStatisticsScreenState extends State<BarangayStatisticsScreen> {
               ],
               selected: {_period},
               showSelectedIcon: false,
-              onSelectionChanged: (value) => setState(() => _period = value.first),
+              onSelectionChanged: (value) =>
+                  setState(() => _period = value.first),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -163,7 +165,8 @@ class _BarangayStatisticsScreenState extends State<BarangayStatisticsScreen> {
           const _ActivityCard(
             icon: Icons.fact_check_outlined,
             title: 'Pothole report on Main Street validated',
-            detail: 'Assigned to Road Works Team Alpha. Priority escalated to Medium.',
+            detail:
+                'Assigned to Road Works Team Alpha. Priority escalated to Medium.',
             time: '10m ago',
             color: AppColorsLight.brandBase,
           ),
@@ -171,7 +174,8 @@ class _BarangayStatisticsScreenState extends State<BarangayStatisticsScreen> {
           const _ActivityCard(
             icon: Icons.assignment_ind_outlined,
             title: 'Water pipe leak repaired at Block 4',
-            detail: 'Marked as resolved by Technician Reyes. Evidence was attached.',
+            detail:
+                'Marked as resolved by Technician Reyes. Evidence was attached.',
             time: '2h ago',
             color: AppColorsLight.success,
           ),
@@ -179,13 +183,16 @@ class _BarangayStatisticsScreenState extends State<BarangayStatisticsScreen> {
           const _ActivityCard(
             icon: Icons.campaign_outlined,
             title: 'Community announcement published',
-            detail: 'Regarding a scheduled power interruption over the weekend.',
+            detail:
+                'Regarding a scheduled power interruption over the weekend.',
             time: 'Yesterday',
             color: AppColorsLight.alert,
           ),
           const SizedBox(height: AppSpacing.xl),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .40),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .40),
             child: const BarangayInfoRow(
               icon: Icons.analytics_outlined,
               label: 'Interpretation note',
@@ -224,16 +231,21 @@ class _CategoryCount extends StatelessWidget {
           width: 70,
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         Expanded(
           child: BarangayProgressBar(value: value / max, color: color),
         ),
         const SizedBox(width: AppSpacing.sm),
-        Text('$value', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          '$value',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
       ],
     );
   }
@@ -310,9 +322,9 @@ class _ActivityCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(detail, style: Theme.of(context).textTheme.bodySmall),

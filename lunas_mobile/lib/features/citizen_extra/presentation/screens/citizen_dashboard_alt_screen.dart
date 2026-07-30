@@ -49,7 +49,9 @@ class CitizenDashboardAltScreen extends StatelessWidget {
             readOnly: true,
             onTap: () => ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Search is a visual control in this static dashboard.'),
+                content: Text(
+                  'Search is a visual control in this static dashboard.',
+                ),
               ),
             ),
             decoration: const InputDecoration(
@@ -114,7 +116,8 @@ class CitizenDashboardAltScreen extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/reports/history'),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/reports/history'),
                 child: const Text('View All'),
               ),
             ],

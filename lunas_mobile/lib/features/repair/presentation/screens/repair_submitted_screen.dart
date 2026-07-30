@@ -115,10 +115,8 @@ class RepairSubmittedScreen extends StatelessWidget {
                     RepairPrimaryButton(
                       label: 'View repair history',
                       icon: Icons.history_rounded,
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        RepairRoutes.completed,
-                      ),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, RepairRoutes.completed),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     RepairSecondaryButton(

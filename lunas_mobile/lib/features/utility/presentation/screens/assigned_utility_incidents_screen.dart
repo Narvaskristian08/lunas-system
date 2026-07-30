@@ -10,17 +10,21 @@ class AssignedUtilityIncidentsScreen extends StatefulWidget {
   const AssignedUtilityIncidentsScreen({super.key});
 
   @override
-  State<AssignedUtilityIncidentsScreen> createState() => _AssignedUtilityIncidentsScreenState();
+  State<AssignedUtilityIncidentsScreen> createState() =>
+      _AssignedUtilityIncidentsScreenState();
 }
 
-class _AssignedUtilityIncidentsScreenState extends State<AssignedUtilityIncidentsScreen> {
+class _AssignedUtilityIncidentsScreenState
+    extends State<AssignedUtilityIncidentsScreen> {
   String _selectedStatus = 'All';
 
   @override
   Widget build(BuildContext context) {
     final incidents = _selectedStatus == 'All'
         ? _incidents
-        : _incidents.where((incident) => incident.status == _selectedStatus).toList();
+        : _incidents
+              .where((incident) => incident.status == _selectedStatus)
+              .toList();
     return UtilityPage(
       title: 'Assigned incidents',
       selectedNavigationIndex: 1,
@@ -37,17 +41,28 @@ class _AssignedUtilityIncidentsScreenState extends State<AssignedUtilityIncident
           Row(
             children: [
               Expanded(
-                child: Text('Dispatch queue', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                child: Text(
+                  'Dispatch queue',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
               IconButton.outlined(
                 tooltip: 'Filter incidents',
-                onPressed: () => showUtilityMessage(context, 'Advanced filters are a static prototype control.'),
+                onPressed: () => showUtilityMessage(
+                  context,
+                  'Advanced filters are a static prototype control.',
+                ),
                 icon: const Icon(Icons.tune_rounded),
               ),
               const SizedBox(width: AppSpacing.xs),
               IconButton.outlined(
                 tooltip: 'Sort incidents',
-                onPressed: () => showUtilityMessage(context, 'Sorting is a static prototype control.'),
+                onPressed: () => showUtilityMessage(
+                  context,
+                  'Sorting is a static prototype control.',
+                ),
                 icon: const Icon(Icons.sort_rounded),
               ),
             ],
@@ -63,7 +78,8 @@ class _AssignedUtilityIncidentsScreenState extends State<AssignedUtilityIncident
                       child: ChoiceChip(
                         label: Text(filter.label),
                         selected: _selectedStatus == filter.status,
-                        onSelected: (_) => setState(() => _selectedStatus = filter.status),
+                        onSelected: (_) =>
+                            setState(() => _selectedStatus = filter.status),
                       ),
                     ),
                   )
@@ -74,10 +90,17 @@ class _AssignedUtilityIncidentsScreenState extends State<AssignedUtilityIncident
           for (final incident in incidents) ...[
             _IncidentQueueCard(
               incident: incident,
-              onOpen: () => Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
+              onOpen: () =>
+                  Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
               onAction: incident.action == 'Accept task'
-                  ? () => Navigator.pushNamed(context, UtilityRoutes.acceptAssignment)
-                  : () => Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
+                  ? () => Navigator.pushNamed(
+                      context,
+                      UtilityRoutes.acceptAssignment,
+                    )
+                  : () => Navigator.pushNamed(
+                      context,
+                      UtilityRoutes.incidentDetails,
+                    ),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
@@ -85,7 +108,10 @@ class _AssignedUtilityIncidentsScreenState extends State<AssignedUtilityIncident
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xxl),
               child: Center(
-                child: Text('No incidents in this static filter.', style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(
+                  'No incidents in this static filter.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
             ),
         ],
@@ -99,7 +125,10 @@ const _filters = [
   _IncidentFilter(label: 'New (1)', status: 'New'),
   _IncidentFilter(label: 'Accepted (1)', status: 'Accepted'),
   _IncidentFilter(label: 'In progress (1)', status: 'In progress'),
-  _IncidentFilter(label: 'Awaiting verification', status: 'Awaiting verification'),
+  _IncidentFilter(
+    label: 'Awaiting verification',
+    status: 'Awaiting verification',
+  ),
   _IncidentFilter(label: 'Completed', status: 'Completed'),
 ];
 
@@ -202,8 +231,18 @@ class _IncidentQueueCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(incident.id, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800))),
-              UtilityStatusPill(label: incident.priority, color: incident.priorityColor),
+              Expanded(
+                child: Text(
+                  incident.id,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+              UtilityStatusPill(
+                label: incident.priority,
+                color: incident.priorityColor,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -220,15 +259,28 @@ class _IncidentQueueCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(incident.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                    Text(
+                      incident.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.xxs),
-                    Text(incident.category, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      incident.category,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
                         const Icon(Icons.location_on_outlined, size: 16),
                         const SizedBox(width: AppSpacing.xxs),
-                        Expanded(child: Text(incident.location, style: Theme.of(context).textTheme.bodySmall)),
+                        Expanded(
+                          child: Text(
+                            incident.location,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xxs),
@@ -236,7 +288,10 @@ class _IncidentQueueCard extends StatelessWidget {
                       children: [
                         const Icon(Icons.timer_outlined, size: 16),
                         const SizedBox(width: AppSpacing.xxs),
-                        Text(incident.eta, style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          incident.eta,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ],
                     ),
                   ],

@@ -119,10 +119,13 @@ class RepairPage extends StatelessWidget {
         ),
       ),
       floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomActionBar ??
+      bottomNavigationBar:
+          bottomActionBar ??
           (selectedNavigationIndex == null
               ? null
-              : RepairBottomNavigation(selectedIndex: selectedNavigationIndex!)),
+              : RepairBottomNavigation(
+                  selectedIndex: selectedNavigationIndex!,
+                )),
     );
   }
 }
@@ -427,7 +430,8 @@ class _CompactDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedColor = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    final resolvedColor =
+        color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -593,9 +597,9 @@ class RepairPrimaryButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          textStyle: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
         ),
       ),
@@ -630,9 +634,9 @@ class RepairSecondaryButton extends StatelessWidget {
             context,
           ).colorScheme.primaryContainer.withValues(alpha: .48),
           side: BorderSide(color: Colors.transparent),
-          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          textStyle: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
         ),
       ),

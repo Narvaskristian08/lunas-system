@@ -28,7 +28,10 @@ class AuditLogsScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => showAdminMessage(context, 'Date-range selection is a static prototype control.'),
+                  onPressed: () => showAdminMessage(
+                    context,
+                    'Date-range selection is a static prototype control.',
+                  ),
                   icon: const Icon(Icons.calendar_today_outlined, size: 18),
                   label: const Text('Last 7 days'),
                 ),
@@ -36,7 +39,10 @@ class AuditLogsScreen extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               IconButton.outlined(
                 tooltip: 'Filter logs',
-                onPressed: () => showAdminMessage(context, 'Log filters are a static prototype control.'),
+                onPressed: () => showAdminMessage(
+                  context,
+                  'Log filters are a static prototype control.',
+                ),
                 icon: const Icon(Icons.filter_list_rounded),
               ),
             ],
@@ -137,13 +143,23 @@ class _AuditLogCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(log.id, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800)),
+                      child: Text(
+                        log.id,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                     AdminStatusPill(label: 'Recorded', color: log.color),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(log.action, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  log.action,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(log.detail, style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.xs),

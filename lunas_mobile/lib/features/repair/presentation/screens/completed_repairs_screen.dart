@@ -106,9 +106,8 @@ class _CompletedRepairCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           title,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),
                       RepairStatusChip(
@@ -121,9 +120,9 @@ class _CompletedRepairCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     workOrderId,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'RobotoMono',
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontFamily: 'RobotoMono'),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.md),

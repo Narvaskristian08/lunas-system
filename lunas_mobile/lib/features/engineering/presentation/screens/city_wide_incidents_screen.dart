@@ -10,7 +10,8 @@ class CityWideIncidentsScreen extends StatefulWidget {
   const CityWideIncidentsScreen({super.key});
 
   @override
-  State<CityWideIncidentsScreen> createState() => _CityWideIncidentsScreenState();
+  State<CityWideIncidentsScreen> createState() =>
+      _CityWideIncidentsScreenState();
 }
 
 class _CityWideIncidentsScreenState extends State<CityWideIncidentsScreen> {
@@ -153,7 +154,9 @@ class _CityWideIncidentsScreenState extends State<CityWideIncidentsScreen> {
             ],
           const SizedBox(height: AppSpacing.xl),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .44),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .44),
             child: const EngineeringInfoRow(
               icon: Icons.info_outline_rounded,
               label: 'Routing safeguard',
@@ -215,13 +218,22 @@ class _IncidentCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          _DetailLine(icon: Icons.location_on_outlined, value: incident.location),
+          _DetailLine(
+            icon: Icons.location_on_outlined,
+            value: incident.location,
+          ),
           const SizedBox(height: AppSpacing.xs),
-          _DetailLine(icon: Icons.person_outline_rounded, value: incident.assignee),
+          _DetailLine(
+            icon: Icons.person_outline_rounded,
+            value: incident.assignee,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Row(
             children: [
-              _DetailLine(icon: Icons.timer_outlined, value: incident.remaining),
+              _DetailLine(
+                icon: Icons.timer_outlined,
+                value: incident.remaining,
+              ),
               const Spacer(),
               EngineeringBadge(
                 label: incident.status,
@@ -259,7 +271,11 @@ class _DetailLine extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 17, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 17,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(value, style: Theme.of(context).textTheme.bodySmall),

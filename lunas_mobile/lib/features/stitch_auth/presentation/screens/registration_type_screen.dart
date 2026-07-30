@@ -42,9 +42,9 @@ class _RegistrationTypeScreenState extends State<RegistrationTypeScreen> {
           Text(
             'Create Your LUNAS Account',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(

@@ -75,10 +75,9 @@ class CitizenStatusPill extends StatelessWidget {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontSize: 12,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: color, fontSize: 12),
           ),
         ],
       ),
@@ -104,7 +103,7 @@ class CitizenSectionTitle extends StatelessWidget {
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }
@@ -132,9 +131,7 @@ class CitizenAccentCard extends StatelessWidget {
         border: Border(
           left: BorderSide(color: accent, width: 4),
           top: BorderSide(color: scheme.outlineVariant.withValues(alpha: .7)),
-          right: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: .7),
-          ),
+          right: BorderSide(color: scheme.outlineVariant.withValues(alpha: .7)),
           bottom: BorderSide(
             color: scheme.outlineVariant.withValues(alpha: .7),
           ),
@@ -602,10 +599,7 @@ class _CitizenTimelineItem extends StatelessWidget {
                 ),
                 if (showLine)
                   Expanded(
-                    child: Container(
-                      width: 2,
-                      color: scheme.primaryContainer,
-                    ),
+                    child: Container(width: 2, color: scheme.primaryContainer),
                   ),
               ],
             ),

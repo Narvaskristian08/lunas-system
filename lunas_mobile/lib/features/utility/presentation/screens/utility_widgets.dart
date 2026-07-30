@@ -59,10 +59,13 @@ class UtilityPage extends StatelessWidget {
           },
         ),
       ),
-      bottomNavigationBar: bottomAction ??
+      bottomNavigationBar:
+          bottomAction ??
           (selectedNavigationIndex == null
               ? null
-              : UtilityBottomNavigation(selectedIndex: selectedNavigationIndex!)),
+              : UtilityBottomNavigation(
+                  selectedIndex: selectedNavigationIndex!,
+                )),
     );
   }
 }
@@ -299,9 +302,9 @@ class UtilitySectionTitle extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         if (actionLabel != null)
@@ -397,9 +400,9 @@ class UtilityVisualPlaceholder extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               if (detail != null) ...[
                 const SizedBox(height: AppSpacing.xxs),

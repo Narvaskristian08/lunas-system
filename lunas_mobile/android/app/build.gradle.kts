@@ -4,6 +4,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val mapsApiKey =
+    providers.gradleProperty("MAPS_API_KEY")
+        .orElse(providers.environmentVariable("GOOGLE_MAPS_API_KEY"))
+        .getOrElse("YOUR_ANDROID_GOOGLE_MAPS_API_KEY")
+
 android {
     namespace = "com.example.lunas_mobile"
     compileSdk = flutter.compileSdkVersion
@@ -29,6 +34,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

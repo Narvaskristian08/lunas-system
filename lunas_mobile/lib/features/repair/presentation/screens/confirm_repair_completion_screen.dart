@@ -26,10 +26,8 @@ class _ConfirmRepairCompletionScreenState
       bottomActionBar: _CompletionActionBar(
         canSubmit: _isCertified,
         onCancel: () => Navigator.of(context).maybePop(),
-        onSubmit: () => Navigator.pushReplacementNamed(
-          context,
-          RepairRoutes.submitted,
-        ),
+        onSubmit: () =>
+            Navigator.pushReplacementNamed(context, RepairRoutes.submitted),
       ),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xl,
@@ -60,7 +58,9 @@ class _ConfirmRepairCompletionScreenState
               children: [
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: .43),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: .43,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -125,7 +125,8 @@ class _ConfirmRepairCompletionScreenState
             ),
             child: CheckboxListTile(
               value: _isCertified,
-              onChanged: (value) => setState(() => _isCertified = value ?? false),
+              onChanged: (value) =>
+                  setState(() => _isCertified = value ?? false),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xs,
@@ -215,7 +216,10 @@ class _EvidencePane extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: Theme.of(context).textTheme.labelSmall),
+        Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
         const SizedBox(height: AppSpacing.xs),
         RepairPlaceholderImage(
           label: label,
@@ -324,7 +328,9 @@ class _CompletionActionBar extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
         ),
         child: Row(
           children: [

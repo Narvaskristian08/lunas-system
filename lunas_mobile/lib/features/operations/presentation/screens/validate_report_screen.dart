@@ -28,7 +28,8 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
         onSecondary: () => Navigator.maybePop(context),
         primaryLabel: 'Confirm validation',
         primaryIcon: Icons.check_circle_outline_rounded,
-        onPrimary: () => Navigator.pushNamed(context, OperationsRoutes.assignPersonnel),
+        onPrimary: () =>
+            Navigator.pushNamed(context, OperationsRoutes.assignPersonnel),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -41,7 +42,8 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
                 const OperationsVisualPlaceholder(
                   icon: Icons.add_road_outlined,
                   label: 'Citizen evidence preview',
-                  detail: 'Original media remains attached to the report record.',
+                  detail:
+                      'Original media remains attached to the report record.',
                   accent: AppColorsLight.alert,
                   height: 160,
                 ),
@@ -53,26 +55,35 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
                       color: AppColorsLight.brandBase,
                     ),
                     const Spacer(),
-                    Text('Reported 2h ago', style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      'Reported 2h ago',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Large pothole on A.B. Fernandez Ave.',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   'A deep pothole is forcing vehicles toward the opposite lane near the intersection. Field review is requested.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.45),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.location_on_outlined, color: colors.primary, size: 20),
+                    Icon(
+                      Icons.location_on_outlined,
+                      color: colors.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
@@ -117,7 +128,7 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
           const OperationsSectionHeading(title: 'Confirmed category'),
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<String>(
-            value: _category,
+            initialValue: _category,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Category type',
@@ -163,7 +174,9 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => _showPrototypeMessage('Map editing is not connected in this static prototype.'),
+                  onPressed: () => _showPrototypeMessage(
+                    'Map editing is not connected in this static prototype.',
+                  ),
                   child: const Text('Edit map'),
                 ),
               ],
@@ -188,9 +201,8 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
                     children: [
                       Text(
                         'Calculated SLA deadline',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
@@ -219,7 +231,8 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
             maxLines: 4,
             decoration: const InputDecoration(
               alignLabelWithHint: true,
-              hintText: 'Record the observed condition, required resources, or immediate hazards...',
+              hintText:
+                  'Record the observed condition, required resources, or immediate hazards...',
               prefixIcon: Padding(
                 padding: EdgeInsets.only(bottom: 72),
                 child: Icon(Icons.edit_note_outlined),
@@ -232,12 +245,15 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
             decoration: BoxDecoration(
               color: AppColorsLight.success.withValues(alpha: .08),
               borderRadius: AppRadius.input,
-              border: Border.all(color: AppColorsLight.success.withValues(alpha: .28)),
+              border: Border.all(
+                color: AppColorsLight.success.withValues(alpha: .28),
+              ),
             ),
             child: const OperationsInfoRow(
               icon: Icons.auto_awesome_outlined,
               label: 'AI assistance',
-              value: 'The suggested category is advisory. Confirm or correct it before validating this report.',
+              value:
+                  'The suggested category is advisory. Confirm or correct it before validating this report.',
             ),
           ),
         ],
@@ -254,7 +270,9 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
   }
 
   void _showPrototypeMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -284,10 +302,14 @@ class _PriorityButton extends StatelessWidget {
           height: 52,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: .16) : Colors.transparent,
+            color: isSelected
+                ? color.withValues(alpha: .16)
+                : Colors.transparent,
             borderRadius: AppRadius.input,
             border: Border.all(
-              color: isSelected ? color : Theme.of(context).colorScheme.outlineVariant,
+              color: isSelected
+                  ? color
+                  : Theme.of(context).colorScheme.outlineVariant,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -295,7 +317,11 @@ class _PriorityButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (label == 'Critical') ...[
-                Icon(Icons.warning_amber_rounded, size: 18, color: isSelected ? color : null),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: isSelected ? color : null,
+                ),
                 const SizedBox(width: AppSpacing.xxs),
               ],
               Text(

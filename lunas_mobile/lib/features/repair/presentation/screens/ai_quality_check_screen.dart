@@ -136,9 +136,9 @@ class _QualityMetrics extends StatelessWidget {
               SizedBox(
                 width: width,
                 child: LunasCard(
-                  color: Theme.of(context).colorScheme.primaryContainer.withValues(
-                    alpha: .38,
-                  ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: .38),
                   padding: const EdgeInsets.all(AppSpacing.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,9 +154,12 @@ class _QualityMetrics extends StatelessWidget {
                           Expanded(
                             child: Text(
                               metric.label,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
                             ),
                           ),
                         ],
@@ -167,10 +170,13 @@ class _QualityMetrics extends StatelessWidget {
                           Expanded(
                             child: Text(
                               metric.value,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                           ),
                           const Icon(
@@ -203,7 +209,10 @@ class _PrivacyScanCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.privacy_tip_outlined, color: theme.colorScheme.primary),
+              Icon(
+                Icons.privacy_tip_outlined,
+                color: theme.colorScheme.primary,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Text('Privacy scan', style: theme.textTheme.titleMedium),
             ],

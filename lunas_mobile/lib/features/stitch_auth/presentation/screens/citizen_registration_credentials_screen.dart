@@ -31,7 +31,8 @@ class _CitizenRegistrationCredentialsScreenState
             step: 2,
             totalSteps: 4,
             title: 'Account Security',
-            detail: 'Set the contact details and password for your citizen account.',
+            detail:
+                'Set the contact details and password for your citizen account.',
           ),
           const SizedBox(height: AppSpacing.xxl),
           TextFormField(
@@ -72,7 +73,8 @@ class _CitizenRegistrationCredentialsScreenState
               prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_outlined
@@ -91,20 +93,14 @@ class _CitizenRegistrationCredentialsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                _PasswordRule(
-                  met: true,
-                  label: 'At least 8 characters',
-                ),
+                _PasswordRule(met: true, label: 'At least 8 characters'),
                 SizedBox(height: AppSpacing.xs),
                 _PasswordRule(
                   met: true,
                   label: 'Includes uppercase and lowercase letters',
                 ),
                 SizedBox(height: AppSpacing.xs),
-                _PasswordRule(
-                  met: true,
-                  label: 'Includes a number or symbol',
-                ),
+                _PasswordRule(met: true, label: 'Includes a number or symbol'),
               ],
             ),
           ),
@@ -129,8 +125,7 @@ class _CitizenRegistrationCredentialsScreenState
           LunasButton(
             label: 'Continue to Verification',
             icon: Icons.verified_user_outlined,
-            onPressed: () =>
-                Navigator.pushNamed(context, '/registration/otp'),
+            onPressed: () => Navigator.pushNamed(context, '/registration/otp'),
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
@@ -165,7 +160,9 @@ class _PasswordRule extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
           ),
         ),
       ],

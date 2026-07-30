@@ -18,7 +18,8 @@ class SystemAnnouncementsScreen extends StatelessWidget {
       actions: [
         IconButton(
           tooltip: 'Create announcement',
-          onPressed: () => Navigator.pushNamed(context, AdminRoutes.createAnnouncement),
+          onPressed: () =>
+              Navigator.pushNamed(context, AdminRoutes.createAnnouncement),
           icon: const Icon(Icons.add_rounded),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -39,7 +40,10 @@ class SystemAnnouncementsScreen extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               IconButton.outlined(
                 tooltip: 'Filter announcements',
-                onPressed: () => showAdminMessage(context, 'Announcement filters are a static prototype control.'),
+                onPressed: () => showAdminMessage(
+                  context,
+                  'Announcement filters are a static prototype control.',
+                ),
                 icon: const Icon(Icons.filter_list_rounded),
               ),
             ],
@@ -48,13 +52,17 @@ class SystemAnnouncementsScreen extends StatelessWidget {
           for (final announcement in _announcements) ...[
             _AnnouncementCard(
               announcement: announcement,
-              onMore: () => showAdminMessage(context, 'Announcement actions are a static prototype control.'),
+              onMore: () => showAdminMessage(
+                context,
+                'Announcement actions are a static prototype control.',
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
           const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, AdminRoutes.createAnnouncement),
+            onPressed: () =>
+                Navigator.pushNamed(context, AdminRoutes.createAnnouncement),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Create system announcement'),
           ),
@@ -69,7 +77,8 @@ const _announcements = [
     state: 'Published',
     date: '24 Oct 2026',
     title: 'Scheduled maintenance — Dagupan services',
-    message: 'Routine maintenance will affect report synchronization for a short scheduled window. Field submissions will remain queued safely.',
+    message:
+        'Routine maintenance will affect report synchronization for a short scheduled window. Field submissions will remain queued safely.',
     icon: Icons.groups_outlined,
     color: AppColorsLight.brandBase,
   ),
@@ -77,7 +86,8 @@ const _announcements = [
     state: 'Draft',
     date: '26 Oct 2026',
     title: 'New security protocol rollout',
-    message: 'Draft guidance for the upcoming account security review and required administrator actions.',
+    message:
+        'Draft guidance for the upcoming account security review and required administrator actions.',
     icon: Icons.admin_panel_settings_outlined,
     color: AppColorsLight.alert,
   ),
@@ -85,7 +95,8 @@ const _announcements = [
     state: 'Urgent',
     date: '23 Oct 2026',
     title: 'Utility response update',
-    message: 'Utility response teams should check the active incident queue before dispatching to the central market area.',
+    message:
+        'Utility response teams should check the active incident queue before dispatching to the central market area.',
     icon: Icons.campaign_outlined,
     color: AppColorsLight.critical,
   ),
@@ -134,9 +145,17 @@ class _AnnouncementCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    AdminStatusPill(label: announcement.state, color: announcement.color),
+                    AdminStatusPill(
+                      label: announcement.state,
+                      color: announcement.color,
+                    ),
                     const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: Text(announcement.date, style: Theme.of(context).textTheme.bodySmall)),
+                    Expanded(
+                      child: Text(
+                        announcement.date,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
                     IconButton(
                       tooltip: 'Announcement actions',
                       onPressed: onMore,
@@ -145,9 +164,19 @@ class _AnnouncementCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(announcement.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  announcement.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(announcement.message, style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4)),
+                Text(
+                  announcement.message,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(height: 1.4),
+                ),
               ],
             ),
           ),

@@ -12,7 +12,8 @@ class ReportDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final reportId =
-        ModalRoute.of(context)?.settings.arguments as String? ?? 'RPT-2026-0142';
+        ModalRoute.of(context)?.settings.arguments as String? ??
+        'RPT-2026-0142';
     return Scaffold(
       appBar: const LunasAppBar(
         title: 'Report Details',

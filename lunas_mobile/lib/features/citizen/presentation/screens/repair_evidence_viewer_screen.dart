@@ -11,7 +11,9 @@ class RepairEvidenceViewerScreen extends StatelessWidget {
   const RepairEvidenceViewerScreen({super.key});
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -88,15 +90,16 @@ class RepairEvidenceViewerScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CitizenMapPreview(
-                  locationLabel: 'A.B. Fernandez Avenue',
-                ),
+                const CitizenMapPreview(locationLabel: 'A.B. Fernandez Avenue'),
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Location details', style: theme.textTheme.titleMedium),
+                      Text(
+                        'Location details',
+                        style: theme.textTheme.titleMedium,
+                      ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'A.B. Fernandez Avenue near the public market, Dagupan City',

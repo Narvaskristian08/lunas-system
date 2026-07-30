@@ -57,9 +57,9 @@ class WorkspaceSelectorScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             'Available prototypes',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           _WorkspaceCard(
@@ -95,9 +95,9 @@ class WorkspaceSelectorScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             'Additional role workspaces',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           _WorkspaceCard(
@@ -156,9 +156,9 @@ class WorkspaceSelectorScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'In the live product, official workspaces are available only after account and department verification.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      height: 1.45,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(height: 1.45),
                   ),
                 ),
               ],
@@ -222,9 +222,9 @@ class _WorkspaceCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    height: 1.4,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(height: 1.4),
                 ),
               ],
             ),

@@ -51,10 +51,8 @@ class UpdateRepairProgressScreen extends StatelessWidget {
           Text('Repair status', style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           DropdownButtonFormField<String>(
-            value: 'Resurfacing base layer',
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.handyman),
-            ),
+            initialValue: 'Resurfacing base layer',
+            decoration: const InputDecoration(prefixIcon: Icon(Icons.handyman)),
             items: const [
               DropdownMenuItem(
                 value: 'Site preparation',
@@ -141,7 +139,10 @@ class _ProgressSummary extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              Text('Last updated 10 minutes ago', style: theme.textTheme.bodyMedium),
+              Text(
+                'Last updated 10 minutes ago',
+                style: theme.textTheme.bodyMedium,
+              ),
             ],
           );
           return Column(
@@ -163,7 +164,9 @@ class _ProgressSummary extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: .62),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: .62,
+                  ),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Row(
@@ -177,7 +180,10 @@ class _ProgressSummary extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Estimated remaining time', style: theme.textTheme.bodySmall),
+                        Text(
+                          'Estimated remaining time',
+                          style: theme.textTheme.bodySmall,
+                        ),
                         Text(
                           '45 minutes',
                           style: theme.textTheme.titleMedium?.copyWith(
@@ -214,9 +220,9 @@ class _ProgressRing extends StatelessWidget {
           CircularProgressIndicator(
             value: value,
             strokeWidth: 10,
-            backgroundColor: Theme.of(context).colorScheme.primary.withValues(
-              alpha: .16,
-            ),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: .16),
           ),
           Text(
             label,
@@ -292,13 +298,15 @@ class _EvidenceRow extends StatelessWidget {
         }
         return Row(
           children: [
-            const Expanded(child: RepairPlaceholderImage(
-              label: 'Latest field photo',
-              detail: 'Photo attached',
-              icon: Icons.construction_rounded,
-              height: 132,
-              accentColor: AppColorsLight.success,
-            )),
+            const Expanded(
+              child: RepairPlaceholderImage(
+                label: 'Latest field photo',
+                detail: 'Photo attached',
+                icon: Icons.construction_rounded,
+                height: 132,
+                accentColor: AppColorsLight.success,
+              ),
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(child: upload),
           ],

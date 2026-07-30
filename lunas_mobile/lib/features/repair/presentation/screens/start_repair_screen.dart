@@ -51,10 +51,7 @@ class StartRepairScreen extends StatelessWidget {
           LunasCard(
             child: Column(
               children: [
-                Text(
-                  'SCHEDULED START',
-                  style: theme.textTheme.labelSmall,
-                ),
+                Text('SCHEDULED START', style: theme.textTheme.labelSmall),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   '08:45 AM',
@@ -185,7 +182,9 @@ class _StartRepairActionBar extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -206,9 +205,8 @@ class _StartRepairActionBar extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: onCancel,
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primaryContainer.withValues(
-                    alpha: .45,
-                  ),
+                  backgroundColor: theme.colorScheme.primaryContainer
+                      .withValues(alpha: .45),
                   side: BorderSide.none,
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),

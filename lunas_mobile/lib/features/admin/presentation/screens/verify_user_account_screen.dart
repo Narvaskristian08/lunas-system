@@ -9,7 +9,8 @@ class VerifyUserAccountScreen extends StatefulWidget {
   const VerifyUserAccountScreen({super.key});
 
   @override
-  State<VerifyUserAccountScreen> createState() => _VerifyUserAccountScreenState();
+  State<VerifyUserAccountScreen> createState() =>
+      _VerifyUserAccountScreenState();
 }
 
 class _VerifyUserAccountScreenState extends State<VerifyUserAccountScreen> {
@@ -23,10 +24,16 @@ class _VerifyUserAccountScreenState extends State<VerifyUserAccountScreen> {
       showBackButton: true,
       bottomAction: _ReviewActionBar(
         approved: _approved,
-        onRequestMore: () => showAdminMessage(context, 'A request-for-information draft was prepared.'),
+        onRequestMore: () => showAdminMessage(
+          context,
+          'A request-for-information draft was prepared.',
+        ),
         onApprove: () {
           setState(() => _approved = true);
-          showAdminMessage(context, 'Sarah Jenkins is approved in this static prototype.');
+          showAdminMessage(
+            context,
+            'Sarah Jenkins is approved in this static prototype.',
+          );
         },
       ),
       child: Column(
@@ -39,17 +46,31 @@ class _VerifyUserAccountScreenState extends State<VerifyUserAccountScreen> {
                   radius: 34,
                   backgroundColor: Color(0xFFDCE6FF),
                   foregroundColor: AppColorsLight.brandBase,
-                  child: Text('SJ', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                  child: Text(
+                    'SJ',
+                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text('Sarah Jenkins', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  'Sarah Jenkins',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: AppSpacing.xxs),
                 const Text('Utility provider applicant'),
                 const SizedBox(height: AppSpacing.sm),
                 AdminStatusPill(
-                  label: _approved ? 'Approved for access' : 'Pending verification',
-                  color: _approved ? AppColorsLight.success : AppColorsLight.alert,
-                  icon: _approved ? Icons.check_circle_outline_rounded : Icons.pending_outlined,
+                  label: _approved
+                      ? 'Approved for access'
+                      : 'Pending verification',
+                  color: _approved
+                      ? AppColorsLight.success
+                      : AppColorsLight.alert,
+                  icon: _approved
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.pending_outlined,
                 ),
               ],
             ),
@@ -60,13 +81,29 @@ class _VerifyUserAccountScreenState extends State<VerifyUserAccountScreen> {
           LunasCard(
             child: const Column(
               children: [
-                AdminDetailRow(label: 'Organization', value: 'Dagupan Electric Corporation', icon: Icons.domain_outlined),
+                AdminDetailRow(
+                  label: 'Organization',
+                  value: 'Dagupan Electric Corporation',
+                  icon: Icons.domain_outlined,
+                ),
                 SizedBox(height: AppSpacing.lg),
-                AdminDetailRow(label: 'Email address', value: 'sarah.jenkins@decorp.ph', icon: Icons.mail_outline_rounded),
+                AdminDetailRow(
+                  label: 'Email address',
+                  value: 'sarah.jenkins@decorp.ph',
+                  icon: Icons.mail_outline_rounded,
+                ),
                 SizedBox(height: AppSpacing.lg),
-                AdminDetailRow(label: 'Phone number', value: '+63 917 555 0144', icon: Icons.call_outlined),
+                AdminDetailRow(
+                  label: 'Phone number',
+                  value: '+63 917 555 0144',
+                  icon: Icons.call_outlined,
+                ),
                 SizedBox(height: AppSpacing.lg),
-                AdminDetailRow(label: 'Role requested', value: 'Utility incident coordinator', icon: Icons.badge_outlined),
+                AdminDetailRow(
+                  label: 'Role requested',
+                  value: 'Utility incident coordinator',
+                  icon: Icons.badge_outlined,
+                ),
               ],
             ),
           ),
@@ -85,7 +122,10 @@ class _VerifyUserAccountScreenState extends State<VerifyUserAccountScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextButton.icon(
-                  onPressed: () => showAdminMessage(context, 'Document zoom is unavailable in this static UI.'),
+                  onPressed: () => showAdminMessage(
+                    context,
+                    'Document zoom is unavailable in this static UI.',
+                  ),
                   icon: const Icon(Icons.zoom_in_rounded),
                   label: const Text('Inspect document'),
                 ),
@@ -105,12 +145,14 @@ class _VerifyUserAccountScreenState extends State<VerifyUserAccountScreen> {
                 Divider(height: AppSpacing.xl),
                 _VerificationCheck(
                   title: 'Organization is recognized and active',
-                  detail: 'Confirm the listed provider is a current Dagupan partner.',
+                  detail:
+                      'Confirm the listed provider is a current Dagupan partner.',
                 ),
                 Divider(height: AppSpacing.xl),
                 _VerificationCheck(
                   title: 'Email domain matches organization',
-                  detail: 'Verify the corporate email suffix against known records.',
+                  detail:
+                      'Verify the corporate email suffix against known records.',
                 ),
               ],
             ),
@@ -137,13 +179,21 @@ class _VerificationCheck extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.check_circle_outline_rounded, color: AppColorsLight.success),
+        const Icon(
+          Icons.check_circle_outline_rounded,
+          color: AppColorsLight.success,
+        ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
               const SizedBox(height: AppSpacing.xxs),
               Text(detail, style: Theme.of(context).textTheme.bodySmall),
             ],
@@ -170,10 +220,19 @@ class _ReviewActionBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.sm,
+          AppSpacing.xl,
+          AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
         ),
         child: Row(
           children: [
@@ -188,7 +247,11 @@ class _ReviewActionBar extends StatelessWidget {
               flex: 2,
               child: ElevatedButton.icon(
                 onPressed: approved ? null : onApprove,
-                icon: Icon(approved ? Icons.check_circle_rounded : Icons.verified_user_outlined),
+                icon: Icon(
+                  approved
+                      ? Icons.check_circle_rounded
+                      : Icons.verified_user_outlined,
+                ),
                 label: Text(approved ? 'Account approved' : 'Approve account'),
               ),
             ),

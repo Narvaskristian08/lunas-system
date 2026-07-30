@@ -105,7 +105,9 @@ class WelcomeScreen extends StatelessWidget {
                     TextButton.icon(
                       onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('LUNAS helps residents and offices coordinate infrastructure response.'),
+                          content: Text(
+                            'LUNAS helps residents and offices coordinate infrastructure response.',
+                          ),
                         ),
                       ),
                       icon: const Icon(Icons.arrow_forward_rounded),

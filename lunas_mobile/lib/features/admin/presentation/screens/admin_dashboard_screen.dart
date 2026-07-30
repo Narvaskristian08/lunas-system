@@ -35,7 +35,10 @@ class AdminDashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xxs),
-          Text('Dagupan City • Operations overview', style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            'Dagupan City • Operations overview',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: AppSpacing.sm),
           const Align(
             alignment: Alignment.centerLeft,
@@ -63,7 +66,8 @@ class AdminDashboardScreen extends StatelessWidget {
                       value: '1,248',
                       icon: Icons.group_outlined,
                       color: AppColorsLight.brandBase,
-                      onTap: () => Navigator.pushNamed(context, AdminRoutes.users),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AdminRoutes.users),
                     ),
                   ),
                   SizedBox(
@@ -82,7 +86,8 @@ class AdminDashboardScreen extends StatelessWidget {
                       value: '12',
                       icon: Icons.hourglass_empty_rounded,
                       color: AppColorsLight.alert,
-                      onTap: () => Navigator.pushNamed(context, AdminRoutes.verifyUser),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AdminRoutes.verifyUser),
                     ),
                   ),
                   SizedBox(
@@ -92,7 +97,8 @@ class AdminDashboardScreen extends StatelessWidget {
                       value: '3',
                       icon: Icons.warning_amber_rounded,
                       color: AppColorsLight.critical,
-                      onTap: () => Navigator.pushNamed(context, AdminRoutes.auditLogs),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AdminRoutes.auditLogs),
                     ),
                   ),
                 ],
@@ -109,13 +115,15 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, AdminRoutes.auditLogs),
+            onPressed: () =>
+                Navigator.pushNamed(context, AdminRoutes.auditLogs),
             icon: const Icon(Icons.receipt_long_outlined),
             label: const Text('Review audit logs'),
           ),
           const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, AdminRoutes.createAnnouncement),
+            onPressed: () =>
+                Navigator.pushNamed(context, AdminRoutes.createAnnouncement),
             icon: const Icon(Icons.campaign_outlined),
             label: const Text('Create announcement'),
           ),
@@ -142,7 +150,8 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.security_outlined,
                   color: AppColorsLight.critical,
                   title: 'Access attempt flagged',
-                  detail: 'An automated check requested an administrator review.',
+                  detail:
+                      'An automated check requested an administrator review.',
                   time: '45 minutes ago',
                 ),
               ],
@@ -153,13 +162,18 @@ class AdminDashboardScreen extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColorsLight.brandBase.withValues(alpha: .07),
-              border: Border.all(color: AppColorsLight.brandBase.withValues(alpha: .16)),
+              border: Border.all(
+                color: AppColorsLight.brandBase.withValues(alpha: .16),
+              ),
               borderRadius: AppRadius.input,
             ),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.verified_user_outlined, color: AppColorsLight.brandBase),
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: AppColorsLight.brandBase,
+                ),
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
@@ -207,7 +221,12 @@ class _ActivityRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(detail, style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: AppSpacing.xs),

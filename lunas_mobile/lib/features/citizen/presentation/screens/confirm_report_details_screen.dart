@@ -48,10 +48,7 @@ class ConfirmReportDetailsScreen extends StatelessWidget {
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           shadows: const [
-                            Shadow(
-                              color: Color(0x99000000),
-                              blurRadius: 6,
-                            ),
+                            Shadow(color: Color(0x99000000), blurRadius: 6),
                           ],
                         ),
                       ),
@@ -101,7 +98,10 @@ class ConfirmReportDetailsScreen extends StatelessWidget {
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.xxs),
-                  Text('16.0438° N, 120.3330° E', style: theme.textTheme.bodyMedium),
+                  Text(
+                    '16.0438° N, 120.3330° E',
+                    style: theme.textTheme.bodyMedium,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   const CitizenMapPreview(
                     locationLabel: 'Dagupan City report location',
@@ -123,7 +123,10 @@ class ConfirmReportDetailsScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  const CitizenDetailRow(label: 'Category', value: 'Road condition'),
+                  const CitizenDetailRow(
+                    label: 'Category',
+                    value: 'Road condition',
+                  ),
                   const CitizenDetailRow(
                     label: 'Severity',
                     value: 'High',
@@ -143,7 +146,8 @@ class ConfirmReportDetailsScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/reports/new'),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/reports/new'),
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('Edit'),
                   ),

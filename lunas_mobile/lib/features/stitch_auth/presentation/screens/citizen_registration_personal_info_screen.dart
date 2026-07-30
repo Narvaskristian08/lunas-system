@@ -64,7 +64,9 @@ class _CitizenRegistrationPersonalInfoScreenState
             readOnly: true,
             onTap: () => ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Date selection is represented in this static UI.'),
+                content: Text(
+                  'Date selection is represented in this static UI.',
+                ),
               ),
             ),
             decoration: const InputDecoration(
@@ -75,15 +77,21 @@ class _CitizenRegistrationPersonalInfoScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           DropdownButtonFormField<String>(
-            value: _barangay,
+            initialValue: _barangay,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Barangay (Dagupan City)',
               prefixIcon: Icon(Icons.location_on_outlined),
             ),
             items: const [
-              DropdownMenuItem(value: 'Bonuan Boquig', child: Text('Bonuan Boquig')),
-              DropdownMenuItem(value: 'Bonuan Gueset', child: Text('Bonuan Gueset')),
+              DropdownMenuItem(
+                value: 'Bonuan Boquig',
+                child: Text('Bonuan Boquig'),
+              ),
+              DropdownMenuItem(
+                value: 'Bonuan Gueset',
+                child: Text('Bonuan Gueset'),
+              ),
               DropdownMenuItem(value: 'Lucao', child: Text('Lucao')),
               DropdownMenuItem(value: 'Malued', child: Text('Malued')),
               DropdownMenuItem(value: 'Mayombo', child: Text('Mayombo')),

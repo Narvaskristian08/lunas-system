@@ -57,9 +57,9 @@ class _RepairVerificationEngineeringScreenState
           const SizedBox(height: AppSpacing.md),
           Text(
             'Bridge expansion joint repair',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -97,9 +97,9 @@ class _RepairVerificationEngineeringScreenState
               children: [
                 Text(
                   'Incident summary',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 const EngineeringInfoRow(
@@ -144,7 +144,9 @@ class _RepairVerificationEngineeringScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .38),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .38),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -184,7 +186,9 @@ class _RepairVerificationEngineeringScreenState
             decoration: BoxDecoration(
               color: AppColorsLight.alert.withValues(alpha: .10),
               borderRadius: AppRadius.input,
-              border: Border.all(color: AppColorsLight.alert.withValues(alpha: .35)),
+              border: Border.all(
+                color: AppColorsLight.alert.withValues(alpha: .35),
+              ),
             ),
             child: const EngineeringInfoRow(
               icon: Icons.gavel_outlined,
@@ -309,9 +313,9 @@ class _EvidenceSurface extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   detail,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ],
             ),

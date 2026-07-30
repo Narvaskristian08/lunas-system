@@ -117,7 +117,9 @@ class OperationsActionBar extends StatelessWidget {
               flex: 2,
               child: ElevatedButton.icon(
                 onPressed: onPrimary,
-                icon: primaryIcon == null ? const SizedBox.shrink() : Icon(primaryIcon),
+                icon: primaryIcon == null
+                    ? const SizedBox.shrink()
+                    : Icon(primaryIcon),
                 label: Text(primaryLabel),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
@@ -154,13 +156,16 @@ class OperationsSectionHeading extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               if (description != null) ...[
                 const SizedBox(height: AppSpacing.xxs),
-                Text(description!, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  description!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ],
           ),
@@ -307,7 +312,12 @@ class OperationsMetricCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
               Icon(icon, color: color),
             ],
           ),
@@ -355,7 +365,8 @@ class OperationsInfoRow extends StatelessWidget {
                 TextSpan(
                   text: value,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+                    color:
+                        valueColor ?? Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

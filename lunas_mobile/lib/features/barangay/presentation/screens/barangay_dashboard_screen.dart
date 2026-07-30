@@ -35,9 +35,9 @@ class BarangayDashboardScreen extends StatelessWidget {
         children: [
           Text(
             'Good morning, Kagawad!',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -106,9 +106,9 @@ class BarangayDashboardScreen extends StatelessWidget {
               children: [
                 Text(
                   'Service level agreement',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -120,10 +120,11 @@ class BarangayDashboardScreen extends StatelessWidget {
                   children: [
                     Text(
                       '85%',
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: AppColorsLight.success,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.displayMedium
+                          ?.copyWith(
+                            color: AppColorsLight.success,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     const BarangayBadge(
@@ -146,10 +147,8 @@ class BarangayDashboardScreen extends StatelessWidget {
           BarangaySectionHeading(
             title: 'High-priority incidents',
             trailing: TextButton(
-              onPressed: () => Navigator.pushNamed(
-                context,
-                BarangayRoutes.incidentDetails,
-              ),
+              onPressed: () =>
+                  Navigator.pushNamed(context, BarangayRoutes.incidentDetails),
               child: const Text('View all'),
             ),
           ),
@@ -160,10 +159,8 @@ class BarangayDashboardScreen extends StatelessWidget {
             severity: 'Critical',
             detail: 'Zone 3, Rizal Street · reported 2 hours ago',
             color: AppColorsLight.critical,
-            onTap: () => Navigator.pushNamed(
-              context,
-              BarangayRoutes.incidentDetails,
-            ),
+            onTap: () =>
+                Navigator.pushNamed(context, BarangayRoutes.incidentDetails),
           ),
           const SizedBox(height: AppSpacing.sm),
           _PriorityIncident(
@@ -172,10 +169,8 @@ class BarangayDashboardScreen extends StatelessWidget {
             severity: 'High',
             detail: 'Zone 1, Mabini Avenue · reported 5 hours ago',
             color: AppColorsLight.alert,
-            onTap: () => Navigator.pushNamed(
-              context,
-              BarangayRoutes.incidentDetails,
-            ),
+            onTap: () =>
+                Navigator.pushNamed(context, BarangayRoutes.incidentDetails),
           ),
           const SizedBox(height: AppSpacing.xxl),
           const BarangaySectionHeading(title: 'Quick actions'),
@@ -196,7 +191,8 @@ class BarangayDashboardScreen extends StatelessWidget {
                       title: 'Validate reports',
                       detail: 'Review new citizen submissions.',
                       color: AppColorsLight.brandBase,
-                      onTap: () => Navigator.pushNamed(context, '/official/incoming'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/official/incoming'),
                     ),
                   ),
                   SizedBox(
@@ -206,13 +202,14 @@ class BarangayDashboardScreen extends StatelessWidget {
                       title: 'Assign personnel',
                       detail: 'Dispatch teams to active issues.',
                       color: AppColorsLight.success,
-                      onTap: () => Navigator.pushNamed(context, '/official/assign'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/official/assign'),
                     ),
                   ),
                   SizedBox(
                     width: width,
                     child: _QuickAction(
-                      icon: Icons.monitoring_outlined,
+                      icon: Icons.monitor_heart_outlined,
                       title: 'Monitor incidents',
                       detail: 'Review local operational insights.',
                       color: AppColorsLight.alert,
@@ -229,7 +226,8 @@ class BarangayDashboardScreen extends StatelessWidget {
                       title: 'Verify repairs',
                       detail: 'Approve completed work orders.',
                       color: AppColorsLight.brandBase,
-                      onTap: () => Navigator.pushNamed(context, '/official/verify'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/official/verify'),
                     ),
                   ),
                 ],
@@ -238,7 +236,9 @@ class BarangayDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           LunasCard(
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .40),
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: .40),
             child: const BarangayInfoRow(
               icon: Icons.verified_user_outlined,
               label: 'Approval safeguard',
@@ -333,7 +333,9 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return LunasCard(
       onTap: onTap,
-      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .48),
+      color: Theme.of(
+        context,
+      ).colorScheme.primaryContainer.withValues(alpha: .48),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -349,9 +351,9 @@ class _QuickAction extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(detail, style: Theme.of(context).textTheme.bodySmall),

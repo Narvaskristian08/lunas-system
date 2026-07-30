@@ -46,9 +46,9 @@ class IncidentDetailsOfficialScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             'Road hazard on A.B. Fernandez Ave.',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
@@ -76,7 +76,9 @@ class IncidentDetailsOfficialScreen extends StatelessWidget {
               children: [
                 Text(
                   'A severe road surface failure was reported on a main arterial route. The pothole is approximately three feet wide and six inches deep in the center lane, creating a hazard for passing vehicles.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.48),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.48),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 LayoutBuilder(
@@ -136,7 +138,9 @@ class IncidentDetailsOfficialScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   'The model suggests a structural anomaly consistent with Category 3 road deterioration. This is an advisory recommendation, not automated dispatch approval.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(height: 1.45),
                 ),
               ],
             ),
@@ -172,20 +176,22 @@ class IncidentDetailsOfficialScreen extends StatelessWidget {
               children: [
                 Text(
                   'Incident timeline',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 const BarangayTimelineItem(
                   title: 'AI triage completed',
-                  description: 'System evaluated the report and suggested a priority.',
+                  description:
+                      'System evaluated the report and suggested a priority.',
                   time: '10:45 AM',
                   color: AppColorsLight.brandBase,
                 ),
                 const BarangayTimelineItem(
                   title: 'Initial report logged',
-                  description: 'Submission received through the citizen portal.',
+                  description:
+                      'Submission received through the citizen portal.',
                   time: '10:42 AM',
                   color: AppColorsLight.alert,
                   isLast: true,
@@ -212,7 +218,9 @@ class IncidentDetailsOfficialScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColorsLight.alert.withValues(alpha: .10),
               borderRadius: AppRadius.input,
-              border: Border.all(color: AppColorsLight.alert.withValues(alpha: .35)),
+              border: Border.all(
+                color: AppColorsLight.alert.withValues(alpha: .35),
+              ),
             ),
             child: const BarangayInfoRow(
               icon: Icons.gavel_outlined,
@@ -251,9 +259,9 @@ class _OfficialDetailCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -283,7 +291,9 @@ class _MiniDetail extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .36),
+        color: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: .36),
         borderRadius: AppRadius.input,
       ),
       child: Row(
@@ -298,9 +308,9 @@ class _MiniDetail extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),

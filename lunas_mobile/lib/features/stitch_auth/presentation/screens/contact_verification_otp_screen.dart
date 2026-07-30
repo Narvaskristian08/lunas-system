@@ -44,7 +44,9 @@ class ContactVerificationOtpScreen extends StatelessWidget {
               6,
               (index) => Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: index == 5 ? 0 : AppSpacing.xs),
+                  padding: EdgeInsets.only(
+                    right: index == 5 ? 0 : AppSpacing.xs,
+                  ),
                   child: TextField(
                     maxLength: 1,
                     textAlign: TextAlign.center,

@@ -35,7 +35,8 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
               initialValue: 'LUNAS',
               decoration: const InputDecoration(
                 labelText: 'System name',
-                helperText: 'The display name used across verified LUNAS dashboards.',
+                helperText:
+                    'The display name used across verified LUNAS dashboards.',
                 prefixIcon: Icon(Icons.badge_outlined),
               ),
             ),
@@ -49,10 +50,13 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
               children: [
                 SwitchListTile.adaptive(
                   value: _deviceNotifications,
-                  onChanged: (value) => setState(() => _deviceNotifications = value),
+                  onChanged: (value) =>
+                      setState(() => _deviceNotifications = value),
                   secondary: const Icon(Icons.notifications_active_outlined),
                   title: const Text('Field-device notifications'),
-                  subtitle: const Text('Allow routine response alerts on mobile field devices.'),
+                  subtitle: const Text(
+                    'Allow routine response alerts on mobile field devices.',
+                  ),
                 ),
                 const Divider(height: 1),
                 SwitchListTile.adaptive(
@@ -60,7 +64,9 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
                   onChanged: (value) => setState(() => _slaAlerts = value),
                   secondary: const Icon(Icons.timer_outlined),
                   title: const Text('SLA warning alerts'),
-                  subtitle: const Text('Notify teams when critical work approaches an SLA limit.'),
+                  subtitle: const Text(
+                    'Notify teams when critical work approaches an SLA limit.',
+                  ),
                 ),
                 const Divider(height: 1),
                 SwitchListTile.adaptive(
@@ -68,7 +74,9 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
                   onChanged: (value) => setState(() => _securityAlerts = value),
                   secondary: const Icon(Icons.security_outlined),
                   title: const Text('Security access alerts'),
-                  subtitle: const Text('Immediately flag unusual account access attempts.'),
+                  subtitle: const Text(
+                    'Immediately flag unusual account access attempts.',
+                  ),
                 ),
               ],
             ),
@@ -81,34 +89,49 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<String>(
-                  value: _timeout,
+                  initialValue: _timeout,
                   decoration: const InputDecoration(
                     labelText: 'Session timeout',
-                    helperText: 'Automatic sign-out duration for inactive users.',
+                    helperText:
+                        'Automatic sign-out duration for inactive users.',
                     prefixIcon: Icon(Icons.timer_outlined),
                   ),
                   items: const [
-                    DropdownMenuItem(value: '15 minutes', child: Text('15 minutes')),
-                    DropdownMenuItem(value: '30 minutes', child: Text('30 minutes')),
+                    DropdownMenuItem(
+                      value: '15 minutes',
+                      child: Text('15 minutes'),
+                    ),
+                    DropdownMenuItem(
+                      value: '30 minutes',
+                      child: Text('30 minutes'),
+                    ),
                     DropdownMenuItem(value: '1 hour', child: Text('1 hour')),
                   ],
-                  onChanged: (value) => setState(() => _timeout = value ?? _timeout),
+                  onChanged: (value) =>
+                      setState(() => _timeout = value ?? _timeout),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColorsLight.alert.withValues(alpha: .08),
-                    border: Border.all(color: AppColorsLight.alert.withValues(alpha: .22)),
+                    border: Border.all(
+                      color: AppColorsLight.alert.withValues(alpha: .22),
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline_rounded, color: AppColorsLight.alert),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColorsLight.alert,
+                      ),
                       SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: Text('Production security settings require additional confirmation and an audit event.'),
+                        child: Text(
+                          'Production security settings require additional confirmation and an audit event.',
+                        ),
                       ),
                     ],
                   ),
@@ -120,7 +143,10 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
           LunasButton(
             label: 'Save settings',
             icon: Icons.save_outlined,
-            onPressed: () => showAdminMessage(context, 'Settings are saved locally for this static prototype.'),
+            onPressed: () => showAdminMessage(
+              context,
+              'Settings are saved locally for this static prototype.',
+            ),
           ),
         ],
       ),

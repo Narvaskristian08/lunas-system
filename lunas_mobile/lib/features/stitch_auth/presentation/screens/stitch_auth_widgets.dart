@@ -274,16 +274,20 @@ class StitchSelectionCard extends StatelessWidget {
                         ),
                         child: Text(
                           badge!,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColorsLight.alert,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppColorsLight.alert,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(description, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             ),
           ),
@@ -365,7 +369,9 @@ class StitchDocumentCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isReady ? Icons.task_alt_rounded : Icons.upload_file_outlined,
+                    isReady
+                        ? Icons.task_alt_rounded
+                        : Icons.upload_file_outlined,
                     size: 30,
                     color: accent,
                   ),

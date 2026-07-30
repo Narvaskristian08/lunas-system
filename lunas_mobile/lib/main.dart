@@ -43,6 +43,7 @@ import 'package:lunas_mobile/features/engineering/presentation/screens/repair_ve
 import 'package:lunas_mobile/features/engineering/presentation/screens/sla_dashboard_screen.dart';
 import 'package:lunas_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_screen.dart';
+import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/location_confirmation_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/screens/notification_details_screen.dart';
@@ -56,7 +57,6 @@ import 'package:lunas_mobile/features/profile/presentation/screens/profile_scree
 import 'package:lunas_mobile/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/create_report_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/edit_report_screen.dart';
-import 'package:lunas_mobile/features/reporting/presentation/screens/location_selection_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/photo_upload_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_details_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_categories_screen.dart';
@@ -192,7 +192,7 @@ class MyApp extends StatelessWidget {
         '/reports/history': (context) => const ReportHistoryScreen(),
         '/reports/details': (context) => const ReportDetailsScreen(),
         '/reports/status': (context) => const ReportStatusScreen(),
-        '/reports/location': (context) => const LocationSelectionScreen(),
+        '/reports/location': (context) => const MapPickerScreen(),
         '/reports/location/confirm': (context) =>
             const LocationConfirmationScreen(),
         '/reports/photo': (context) => const PhotoUploadScreen(),
@@ -219,7 +219,8 @@ class MyApp extends StatelessWidget {
         '/repair/completed': (context) => const CompletedRepairsScreen(),
         '/repair/finished': (context) => const FinishedRepairDetailsScreen(),
         '/utility': (context) => const UtilityDashboardScreen(),
-        '/utility/incidents': (context) => const AssignedUtilityIncidentsScreen(),
+        '/utility/incidents': (context) =>
+            const AssignedUtilityIncidentsScreen(),
         '/utility/incidents/details': (context) =>
             const UtilityIncidentDetailsScreen(),
         '/utility/accept': (context) => const AcceptAssignmentScreen(),

@@ -28,11 +28,17 @@ class UtilityDashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Dagupan Electric Corporation (DECORP)', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Dagupan Electric Corporation (DECORP)',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.xxs),
           Text(
             'Engr. Mateo Rivera',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: 30, fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Container(
@@ -49,17 +55,30 @@ class UtilityDashboardScreen extends StatelessWidget {
                     children: [
                       Text(
                         'SLA compliance summary',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         '96%',
-                        style: Theme.of(context).textTheme.displayMedium?.copyWith(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.displayMedium
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontSize: 38,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.check_circle_rounded, color: Colors.white.withValues(alpha: .30), size: 68),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white.withValues(alpha: .30),
+                  size: 68,
+                ),
               ],
             ),
           ),
@@ -78,14 +97,57 @@ class UtilityDashboardScreen extends StatelessWidget {
                       value: '3',
                       icon: Icons.fiber_new_outlined,
                       color: AppColorsLight.brandBase,
-                      onTap: () => Navigator.pushNamed(context, UtilityRoutes.incidents),
+                      onTap: () =>
+                          Navigator.pushNamed(context, UtilityRoutes.incidents),
                     ),
                   ),
-                  SizedBox(width: width, child: const UtilityMetricCard(label: 'Accepted', value: '5', icon: Icons.thumb_up_outlined, color: AppColorsLight.success)),
-                  SizedBox(width: width, child: const UtilityMetricCard(label: 'In progress', value: '2', icon: Icons.sync_rounded, color: AppColorsLight.alert)),
-                  SizedBox(width: width, child: const UtilityMetricCard(label: 'Awaiting verification', value: '4', icon: Icons.verified_user_outlined, color: AppColorsLight.info)),
-                  SizedBox(width: width, child: const UtilityMetricCard(label: 'Overdue', value: '1', icon: Icons.warning_amber_rounded, color: AppColorsLight.critical, emphasized: true)),
-                  SizedBox(width: width, child: const UtilityMetricCard(label: 'Completed today', value: '8', icon: Icons.task_alt_rounded, color: AppColorsLight.success, emphasized: true)),
+                  SizedBox(
+                    width: width,
+                    child: const UtilityMetricCard(
+                      label: 'Accepted',
+                      value: '5',
+                      icon: Icons.thumb_up_outlined,
+                      color: AppColorsLight.success,
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const UtilityMetricCard(
+                      label: 'In progress',
+                      value: '2',
+                      icon: Icons.sync_rounded,
+                      color: AppColorsLight.alert,
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const UtilityMetricCard(
+                      label: 'Awaiting verification',
+                      value: '4',
+                      icon: Icons.verified_user_outlined,
+                      color: AppColorsLight.info,
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const UtilityMetricCard(
+                      label: 'Overdue',
+                      value: '1',
+                      icon: Icons.warning_amber_rounded,
+                      color: AppColorsLight.critical,
+                      emphasized: true,
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const UtilityMetricCard(
+                      label: 'Completed today',
+                      value: '8',
+                      icon: Icons.task_alt_rounded,
+                      color: AppColorsLight.success,
+                      emphasized: true,
+                    ),
+                  ),
                 ],
               );
             },
@@ -94,21 +156,24 @@ class UtilityDashboardScreen extends StatelessWidget {
           UtilitySectionTitle(
             title: 'Urgent incidents',
             actionLabel: 'View assigned',
-            onAction: () => Navigator.pushNamed(context, UtilityRoutes.incidents),
+            onAction: () =>
+                Navigator.pushNamed(context, UtilityRoutes.incidents),
           ),
           const SizedBox(height: AppSpacing.sm),
           _UrgentIncidentCard(
             title: 'Transformer sparking',
             location: 'Brgy. Tapuac',
             icon: Icons.electric_bolt_rounded,
-            onTap: () => Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
+            onTap: () =>
+                Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
           ),
           const SizedBox(height: AppSpacing.sm),
           _UrgentIncidentCard(
             title: 'Exposed high-voltage cable',
             location: 'Arellano Street',
             icon: Icons.cable_rounded,
-            onTap: () => Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
+            onTap: () =>
+                Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
           ),
           const SizedBox(height: AppSpacing.xxl),
           const UtilitySectionTitle(title: 'Quick actions'),
@@ -151,19 +216,32 @@ class _UrgentIncidentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xxs),
                 Row(
                   children: [
                     const Icon(Icons.location_on_outlined, size: 17),
                     const SizedBox(width: AppSpacing.xxs),
-                    Expanded(child: Text(location, style: Theme.of(context).textTheme.bodySmall)),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const UtilityStatusPill(label: 'Critical', color: AppColorsLight.critical),
+          const UtilityStatusPill(
+            label: 'Critical',
+            color: AppColorsLight.critical,
+          ),
         ],
       ),
     );
@@ -190,13 +268,17 @@ class _QuickActionGrid extends StatelessWidget {
         icon: Icons.update_rounded,
         label: 'Update status',
         color: AppColorsLight.info,
-        onTap: () => Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
+        onTap: () =>
+            Navigator.pushNamed(context, UtilityRoutes.incidentDetails),
       ),
       _QuickAction(
         icon: Icons.check_circle_outline_rounded,
         label: 'Submit completion',
         color: AppColorsLight.success,
-        onTap: () => showUtilityMessage(context, 'Completion submission is represented in the static incident workflow.'),
+        onTap: () => showUtilityMessage(
+          context,
+          'Completion submission is represented in the static incident workflow.',
+        ),
       ),
     ];
     return LayoutBuilder(
@@ -232,13 +314,22 @@ class _QuickAction extends StatelessWidget {
     return LunasCard(
       onTap: onTap,
       color: color.withValues(alpha: .08),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color),
           const SizedBox(height: AppSpacing.xs),
-          Text(label, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );

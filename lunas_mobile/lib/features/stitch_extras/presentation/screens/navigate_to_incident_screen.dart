@@ -10,7 +10,9 @@ class NavigateToIncidentScreen extends StatelessWidget {
   const NavigateToIncidentScreen({super.key});
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

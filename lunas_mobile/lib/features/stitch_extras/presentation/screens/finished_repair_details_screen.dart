@@ -47,13 +47,16 @@ class FinishedRepairDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Repair notes', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Repair notes',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'The damaged pavement was cleared, the base compacted, and a hot-mix asphalt patch was applied and sealed. The area was cleaned before reopening.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.5,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.5),
                 ),
               ],
             ),
@@ -63,7 +66,10 @@ class FinishedRepairDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Verification', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Verification',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 const _DetailRow(
                   icon: Icons.verified_user_outlined,

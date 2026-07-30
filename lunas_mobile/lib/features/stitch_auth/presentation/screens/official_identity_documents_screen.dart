@@ -24,7 +24,9 @@ class _OfficialIdentityDocumentsScreenState
     setState(() => _readyDocuments.add(document));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$action selected for ${document.label}. Placeholder marked ready.'),
+        content: Text(
+          '$action selected for ${document.label}. Placeholder marked ready.',
+        ),
       ),
     );
   }
@@ -76,7 +78,8 @@ class _OfficialIdentityDocumentsScreenState
           const SizedBox(height: AppSpacing.md),
           StitchDocumentCard(
             title: _DocumentType.appointmentLetter.label,
-            description: 'Select a scanned appointment letter or deployment order (PDF/JPG).',
+            description:
+                'Select a scanned appointment letter or deployment order (PDF/JPG).',
             icon: Icons.description_outlined,
             note: 'The appointment letter must be dated within 30 days.',
             isReady: _readyDocuments.contains(_DocumentType.appointmentLetter),
@@ -91,7 +94,11 @@ class _OfficialIdentityDocumentsScreenState
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Registration draft saved locally for this UI preview.')),
+                    const SnackBar(
+                      content: Text(
+                        'Registration draft saved locally for this UI preview.',
+                      ),
+                    ),
                   ),
                   child: const Text('Save Draft'),
                 ),

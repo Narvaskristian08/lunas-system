@@ -17,7 +17,8 @@ class IncomingReportsScreen extends StatelessWidget {
       actions: [
         IconButton(
           tooltip: 'SLA monitoring',
-          onPressed: () => Navigator.pushNamed(context, OperationsRoutes.slaMonitoring),
+          onPressed: () =>
+              Navigator.pushNamed(context, OperationsRoutes.slaMonitoring),
           icon: const Icon(Icons.timer_outlined),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -36,7 +37,10 @@ class IncomingReportsScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _showPrototypeMessage(context, 'Filters are a static UI control in this prototype.'),
+                  onPressed: () => _showPrototypeMessage(
+                    context,
+                    'Filters are a static UI control in this prototype.',
+                  ),
                   icon: const Icon(Icons.filter_list_rounded),
                   label: const Text('Filter'),
                 ),
@@ -44,7 +48,10 @@ class IncomingReportsScreen extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _showPrototypeMessage(context, 'Sorting is a static UI control in this prototype.'),
+                  onPressed: () => _showPrototypeMessage(
+                    context,
+                    'Sorting is a static UI control in this prototype.',
+                  ),
                   icon: const Icon(Icons.sort_rounded),
                   label: const Text('Sort'),
                 ),
@@ -122,7 +129,9 @@ class IncomingReportsScreen extends StatelessWidget {
   }
 
   void _showPrototypeMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -147,15 +156,18 @@ class _IncomingReportCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
-              Icon(Icons.more_vert_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.more_vert_rounded,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             report.title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(report.location, style: Theme.of(context).textTheme.bodySmall),
@@ -185,7 +197,10 @@ class _IncomingReportCard extends StatelessWidget {
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: [
-              OperationsBadge(label: report.priority, color: report.priorityColor),
+              OperationsBadge(
+                label: report.priority,
+                color: report.priorityColor,
+              ),
               OperationsBadge(
                 label: 'Pending validation',
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -199,9 +214,13 @@ class _IncomingReportCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                report.isUrgent ? Icons.warning_amber_rounded : Icons.schedule_outlined,
+                report.isUrgent
+                    ? Icons.warning_amber_rounded
+                    : Icons.schedule_outlined,
                 size: 18,
-                color: report.isUrgent ? AppColorsLight.critical : AppColorsLight.textSecondary,
+                color: report.isUrgent
+                    ? AppColorsLight.critical
+                    : AppColorsLight.textSecondary,
               ),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
@@ -216,7 +235,10 @@ class _IncomingReportCard extends StatelessWidget {
               LunasButton(
                 label: 'Validate',
                 expand: false,
-                onPressed: () => Navigator.pushNamed(context, OperationsRoutes.validateReport),
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  OperationsRoutes.validateReport,
+                ),
               ),
             ],
           ),

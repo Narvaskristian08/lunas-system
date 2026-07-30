@@ -51,7 +51,8 @@ class UploadRepairEvidenceScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           _CaptureEvidenceCard(
-            onTap: () => Navigator.pushNamed(context, RepairRoutes.qualityCheck),
+            onTap: () =>
+                Navigator.pushNamed(context, RepairRoutes.qualityCheck),
           ),
           const SizedBox(height: AppSpacing.xxl),
           const RepairSectionTitle(title: 'Uploaded media (2)'),
@@ -204,7 +205,9 @@ class _EvidenceMediaCard extends StatelessWidget {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Evidence removal is unavailable in this demo.'),
+                        content: Text(
+                          'Evidence removal is unavailable in this demo.',
+                        ),
                       ),
                     );
                   },

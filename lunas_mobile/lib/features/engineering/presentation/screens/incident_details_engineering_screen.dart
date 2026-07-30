@@ -35,23 +35,22 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
                 color: AppColorsLight.critical,
                 icon: Icons.priority_high_rounded,
               ),
-              EngineeringBadge(
-                label: 'Open',
-                color: AppColorsLight.brandBase,
-              ),
+              EngineeringBadge(label: 'Open', color: AppColorsLight.brandBase),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             'Water main rupture',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'A ruptured line is flooding the A.B. Fernandez Avenue intersection in Barangay Pantal.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(height: 1.45),
           ),
           const SizedBox(height: AppSpacing.lg),
           ElevatedButton.icon(
@@ -87,10 +86,8 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
                   SizedBox(
                     width: width,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.sla,
-                      ),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, EngineeringRoutes.sla),
                       icon: const Icon(Icons.timer_outlined),
                       label: const Text('View SLA'),
                     ),
@@ -148,14 +145,16 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'AI suggestion',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   'The model suggests a main-line leak based on the submitted evidence. This confidence score is advisory and must be confirmed by an engineer before dispatch.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(height: 1.45),
                 ),
               ],
             ),
@@ -193,20 +192,22 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
               children: [
                 Text(
                   'Incident timeline',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 const EngineeringTimelineItem(
                   title: 'Assigned to Engr. Santos',
-                  description: 'Field review was requested after initial validation.',
+                  description:
+                      'Field review was requested after initial validation.',
                   time: 'Today, 9:15 AM',
                   color: AppColorsLight.brandBase,
                 ),
                 const EngineeringTimelineItem(
                   title: 'AI analysis completed',
-                  description: 'A water-infrastructure category suggestion was generated.',
+                  description:
+                      'A water-infrastructure category suggestion was generated.',
                   time: 'Today, 8:45 AM',
                   color: AppColorsLight.success,
                 ),
@@ -226,7 +227,9 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColorsLight.alert.withValues(alpha: .10),
               borderRadius: AppRadius.input,
-              border: Border.all(color: AppColorsLight.alert.withValues(alpha: .35)),
+              border: Border.all(
+                color: AppColorsLight.alert.withValues(alpha: .35),
+              ),
             ),
             child: const EngineeringInfoRow(
               icon: Icons.gavel_outlined,
@@ -265,9 +268,9 @@ class _InformationCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
