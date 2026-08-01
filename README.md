@@ -289,16 +289,18 @@ Functions:
 |------------|------------|
 | Mobile | Flutter (Dart) |
 | Web | Next.js (React) |
-| Backend | FastAPI (Python) |
-| Database | PostgreSQL |
-| Cloud Storage | Amazon S3 |
+| **Backend** | **Node.js + Express.js** |
+| **Database** | **MongoDB** |
+| **Cloud Platform** | **Supabase** (Storage + Realtime) |
+| **Push Notifications** | **OneSignal** |
 | AI Framework | TensorFlow Lite |
 | Computer Vision | OpenCV |
 | Image Similarity | SSIM |
 | Authentication | JWT |
 | Digital Signature | Ed25519 |
 | Maps | Google Maps API |
-| Notifications | Firebase Cloud Messaging |
+| **Notifications** | **OneSignal** |
+| Image Processing | Sharp |
 | Version Control | GitHub |
 
 ---
@@ -321,13 +323,15 @@ Functions:
       (Citizen • Repair • Officials)
                      │
                      ▼
-                FastAPI Backend
+          Node.js/Express Backend
+           RESTful API + MongoDB
                      │
       ┌──────────────┼──────────────┐
       ▼              ▼              ▼
- PostgreSQL      Amazon S3      AI Services
-  Database      Image Storage   (TensorFlow Lite,
-                                OpenCV, SSIM)
+   MongoDB      Supabase         AI Services
+  (Incidents,   Storage      (TensorFlow Lite,
+  WorkOrders,  (Images +       OpenCV, SSIM)
+   Users)      Push Notifs)   + OneSignal
                      │
                      ▼
           Web Command Center
@@ -395,11 +399,287 @@ Dagupan City, Philippines fileciteturn0file0
 
 ---
 
-# 📜 License
+# � Quick Start
+
+## Backend Setup
+
+The backend is a **MongoDB-based RESTful API** built with Node.js and Express.
+
+### Prerequisites
+- Node.js 18+
+- MongoDB 6.0+
+- Supabase Account (for file storage and realtime features)
+- OneSignal Account (for push notifications)
+
+### Installation
+
+```bash
+# Navigate to backend directory
+cd lunas_backend
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your MongoDB URI, Supabase, and OneSignal credentials
+
+# Start development server
+npm run dev
+
+# Server will run on http://localhost:5000
+```
+
+### API Documentation
+- **Base URL:** `http://localhost:5000/api/v1`
+- **Health Check:** `http://localhost:5000/health`
+- **Full API Reference:** See `lunas_backend/API_ENDPOINTS.md`
+- **Setup Guide:** See `lunas_backend/SETUP_GUIDE.md`
+
+### Key Features Implemented
+✅ JWT Authentication & Role-Based Authorization  
+✅ Incident Management (CRUD + Geospatial Queries)  
+✅ Work Order System with Progress Tracking  
+✅ Automated SLA Monitoring with Cron Jobs  
+✅ Supabase Storage Integration for Files & Images  
+✅ Push Notifications via OneSignal  
+✅ Comprehensive Audit Logging  
+✅ Image Processing & Optimization  
+✅ Real-time Statistics & Analytics  
+
+### API Endpoints Summary
+- **Authentication:** Register, Login, Profile Management
+- **Incidents:** Create, Read, Update, Delete, Validate, Reject, Nearby Search
+- **Work Orders:** Create, Assign, Accept, Update Progress, Complete, Verify
+- **Users:** User Management, Role Assignment
+- **Notifications:** In-app & Push Notifications
+- **Statistics:** Dashboard Stats, Analytics
+
+### Project Structure
+```
+lunas_backend/
+├── src/
+│   ├── controllers/      # Business logic (6 controllers)
+│   ├── models/          # MongoDB schemas (8 models)
+│   ├── routes/          # API routes
+│   ├── middleware/      # Auth, validation, upload
+│   ├── services/        # Supabase, OneSignal, SLA monitoring
+│   └── utils/           # Helpers, validators, logger
+├── logs/                # Application logs
+├── .env.example         # Environment template
+├── README.md            # Backend documentation
+└── package.json         # Dependencies
+```
+
+---
+
+# 📂 Project Structure
+
+```
+lunas-system/
+├── README.md                 # This file (project overview)
+├── Task.md                   # Project requirements
+│
+├── lunas_backend/           # Node.js/Express REST API
+│   ├── src/
+│   │   ├── controllers/     # API business logic
+│   │   ├── models/          # MongoDB schemas
+│   │   ├── routes/          # API endpoints
+│   │   ├── middleware/      # Auth, validation
+│   │   ├── services/        # External integrations
+│   │   └── utils/           # Helper functions
+│   ├── README.md            # Backend documentation
+│   ├── API_ENDPOINTS.md     # Complete API reference
+│   ├── SETUP_GUIDE.md       # Step-by-step setup
+│   └── package.json         # Node.js dependencies
+│
+├── lunas_mobile/            # Flutter mobile app
+│   └── (To be implemented)
+│
+└── lunas_web/               # Next.js web dashboard
+    └── (To be implemented)
+```
+
+---
+
+# 🔑 Environment Configuration
+
+The backend requires the following environment variables:
+
+```bash
+# Server
+NODE_ENV=development
+PORT=5000
+
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/lunas_db
+
+# JWT Authentication
+JWT_SECRET=your_secret_key
+JWT_EXPIRE=7d
+
+# Supabase (File Storage + Realtime)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_STORAGE_BUCKET=lunas-storage
+
+# OneSignal (Push Notifications)
+ONESIGNAL_APP_ID=your_onesignal_app_id
+ONESIGNAL_REST_API_KEY=your_rest_api_key
+ONESIGNAL_USER_AUTH_KEY=your_user_auth_key
+
+# SLA Configuration (hours)
+SLA_CRITICAL=48
+SLA_HIGH=72
+SLA_MEDIUM=168
+SLA_LOW=336
+```
+
+See `lunas_backend/.env.example` for complete configuration.
+
+---
+
+# 📊 Database Schema
+
+The MongoDB database includes these collections:
+
+1. **users** - User accounts with role-based fields
+2. **incidents** - Infrastructure incident reports with geospatial indexing
+3. **workorders** - Repair assignments with progress tracking
+4. **notifications** - In-app and push notifications
+5. **categories** - Incident categorization
+6. **slaconfigs** - SLA rules by priority
+7. **auditlogs** - Complete audit trail
+8. **systemconfigs** - System-wide settings
+
+---
+
+# 🔐 User Roles & Permissions
+
+| Role | Permissions |
+|------|------------|
+| **Citizen** | Report incidents, track own reports, receive notifications |
+| **Repair Personnel** | Accept work orders, update progress, submit completion |
+| **Barangay Official** | Validate incidents, assign work, verify repairs (barangay-scoped) |
+| **City Engineer** | City-wide incident management, work order oversight |
+| **Utility Provider** | Handle utility-related incidents and repairs |
+| **Admin** | Full system access, user management, configuration |
+
+---
+
+# 📱 API Integration
+
+The backend provides RESTful APIs that can be consumed by:
+
+### Mobile Application (Flutter)
+```dart
+// Example: Login request
+final response = await http.post(
+  Uri.parse('http://localhost:5000/api/v1/auth/login'),
+  headers: {'Content-Type': 'application/json'},
+  body: jsonEncode({
+    'email': 'user@example.com',
+    'password': 'password123'
+  }),
+);
+```
+
+### Web Dashboard (Next.js/React)
+```javascript
+// Example: Fetch incidents
+const response = await fetch('http://localhost:5000/api/v1/incidents', {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+---
+
+# 🧪 Testing
+
+```bash
+# Run tests
+cd lunas_backend
+npm test
+
+# Run with coverage
+npm test -- --coverage
+```
+
+---
+
+# 🚀 Deployment
+
+### Backend Deployment Options
+- **Heroku** - Easy deployment with MongoDB Atlas
+- **DigitalOcean** - VPS with PM2 process manager
+- **AWS EC2** - Scalable cloud infrastructure
+- **Render** - Free tier available
+- **Railway** - Modern platform with auto-deploy
+
+See deployment guides in `lunas_backend/` for specific platforms.
+
+---
+
+# �📜 License
 
 This project is developed as a Capstone Research Project for academic purposes under the College of Information Technology, PHINMA University of Pangasinan.
 
 ---
 
+# 📞 Contact & Support
+
+**Development Team**  
+PHINMA University of Pangasinan  
+College of Information Technology
+
+For technical questions or contributions:
+- Check the documentation in each component directory
+- Review API documentation for integration details
+- Contact the development team for support
+
+---
+
+# 🎓 Academic Context
+
+**Course:** Capstone Project  
+**Program:** Bachelor of Science in Information Technology  
+**Institution:** PHINMA University of Pangasinan  
+**Academic Year:** 2025-2026  
+**Location:** Dagupan City, Pangasinan, Philippines
+
+---
+
+# 📝 Development Status
+
+| Component | Status | Progress |
+|-----------|--------|----------|
+| Backend API | ✅ Complete | 100% |
+| Database Schema | ✅ Complete | 100% |
+| Authentication | ✅ Complete | 100% |
+| File Storage | ✅ Complete | 100% |
+| SLA Monitoring | ✅ Complete | 100% |
+| Notifications | ✅ Complete | 100% |
+| Mobile App | 🔄 In Progress | 0% |
+| Web Dashboard | 🔄 In Progress | 0% |
+| AI Integration | 🔄 Planned | 0% |
+
+---
+
+# 🙏 Acknowledgments
+
+Special thanks to:
+- PHINMA University of Pangasinan for the institutional support
+- College of Information Technology faculty for guidance
+- City Government of Dagupan for the project inspiration
+- Open source community for the excellent tools and libraries
+
+---
+
 > **LUNAS** — *Building smarter, faster, and more transparent urban infrastructure maintenance through AI and automation.*
+
+**Made with ❤️ by the LUNAS Development Team**
 ````

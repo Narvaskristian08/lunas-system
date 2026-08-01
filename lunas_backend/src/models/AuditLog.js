@@ -1,0 +1,81 @@
+const mongoose = require('mongoose');
+
+const auditLogSchema = new mongoose.Schema({
+  action: {
+    type: String,
+    required: true,
+    enum: [
+      'user_login',
+      'user_logout',
+      'user_created',
+      'user_updated',
+      'user_deleted',
+      'incident_created',
+      'incident_updated',
+      'incident_validated',
+      'incident_rejected',
+      'incident_assigned',
+      'incident_closed',
+      'work_order_created',
+      'work_order_assigned',
+      'work_order_updated',
+      'work_order_completed',
+      'work_order_verified',
+      'repair_approved',
+      'repair_rejected',
+      'sla_escalated',
+      'file_uploaded',
+      'file_deleted',
+      'settings_changed',
+      'role_changed',
+      'permission_changed'
+    ]
+  },
+  performedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  affectedUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  resourceType: {
+    type: String,
+    enum: ['User', 'Incident', 'WorkOrder', 'Notification', 'System']
+  },
+  resourceId: mongoose.Schema.Types.ObjectId,
+  details: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  changes: {
+    before: mongoose.Schema.Types.Mixed,
+    after: mongoose.Schema.Types.Mixed
+  },
+  ipAddress: String,
+  userAgent: String,
+  status: {
+    type: String,
+    enum: ['success', 'failure', 'warning'],
+    default: 'success'
+  },
+  errorMessage: String,
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+// Indexes
+auditLogSchema.index({ performedBy: 1, timestamp: -1 });
+auditLogSchema.index({ resourceType: 1, resourceId: 1 });
+auditLogSchema.index({ action: 1 });
+auditLogSchema.index({ timestamp: -1 });
+
+// TTL index - auto-delete logs older than 1 year
+auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 31536000 });
+
+module.exports = mongoose.model('AuditLog', auditLogSchema);
