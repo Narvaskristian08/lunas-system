@@ -116,39 +116,9 @@ The LUNAS Backend API provides comprehensive endpoints for managing urban infras
 - Supabase Account (for file storage)
 - OneSignal Account (for push notifications)
 
-**OR**
-
-- Docker and Docker Compose (recommended for easy setup)
+**Using Docker?** See `../DOCKER_SETUP.md` for running the entire LUNAS system with Docker.
 
 ### Installation
-
-#### Option 1: Using Docker (Recommended)
-
-1. Install Docker Desktop from https://www.docker.com/products/docker-desktop
-
-2. Configure environment variables
-
-```bash
-cp .env.docker .env
-# Edit .env with your Supabase and OneSignal credentials
-```
-
-3. Start all services
-
-```bash
-docker-compose up -d
-```
-
-4. Verify services are running
-
-```bash
-docker-compose ps
-curl http://localhost:5000/health
-```
-
-See `DOCKER_GUIDE.md` for complete Docker documentation.
-
-#### Option 2: Local Installation
 
 1. Install dependencies
 
@@ -252,17 +222,13 @@ lunas_backend/
 │   └── server.js                # Entry point
 ├── logs/                        # Log files
 ├── .env.example
-├── .env.docker                  # Docker environment template
 ├── .dockerignore
 ├── .gitignore
 ├── Dockerfile                   # Docker image configuration
-├── docker-compose.yml           # Docker services orchestration
 ├── package.json
 ├── README.md                    # This file
-├── QUICK_START.md               # 5-minute quick start guide
 ├── API_ENDPOINTS.md             # Complete API reference
 ├── SETUP_GUIDE.md               # Step-by-step setup
-├── DOCKER_GUIDE.md              # Complete Docker documentation
 └── SUPABASE_ONESIGNAL_GUIDE.md  # Integration guide
 ```
 
