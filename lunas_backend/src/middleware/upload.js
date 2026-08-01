@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 
-// Configure multer for memory storage (for S3 upload)
+// Configure multer for memory storage (for cloud upload)
 const storage = multer.memoryStorage();
 
 // File filter
