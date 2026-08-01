@@ -1,0 +1,61 @@
+⚠ Turbopack's filesystem cache has been deleted because we previously detected an internal error in Turbopack. Builds or page loads may be slower as a result.
+⨯ Error: A "use server" file can only export async functions, found object.
+Read more: https://nextjs.org/docs/messages/invalid-use-server-value
+    at module evaluation (C:\Users\Terrence\Desktop\lunas\lunas-system\lunas_web\.next\dev\server\chunks\ssr\[root-of-the-server]__0ih_ixf._.js:1253:239)
+    at module evaluation (.next-internal\server\app\(auth)\login\page\actions.js (server actions loader):1:1)
+    at module evaluation (C:\Users\Terrence\Desktop\lunas\lunas-system\lunas_web\.next\dev\server\chunks\ssr\[root-of-the-server]__0ih_ixf._.js:1283:381)
+> 1 | export {initialLoginState as '7fc6370e68da68cd3ce008645b4a592dfb1c5206d6'} from 'ACTIONS_MO...
+    | ^
+  2 | export {loginAction as '602c41c6815fd1efe72eb6d69faddf6230f2f969b2'} from 'ACTIONS_MODULE0'
+  3 | {
+  digest: '444509736@E352'
+}
+[browser] LUNAS route error 444509736@E352 
+    at RootError.useEffect (src/app/error.tsx:14:13)
+  12 | }) {
+  13 |   useEffect(() => {
+> 14 |     console.error("LUNAS route error", error.digest ?? "no-reference");
+     |             ^
+  15 |   }, [error]);
+  16 |   return (
+  17 |     <main id="main-content" className="min-h-screen bg-slate-50"> (src/app/error.tsx:14:13)
+[browser] LUNAS route error 444509736@E352 
+    at RootError.useEffect (src/app/error.tsx:14:13)
+  12 | }) {
+  13 |   useEffect(() => {
+> 14 |     console.error("LUNAS route error", error.digest ?? "no-reference");
+     |             ^
+  15 |   }, [error]);
+  16 |   return (
+  17 |     <main id="main-content" className="min-h-screen bg-slate-50"> (src/app/error.tsx:14:13)
+⨯ Error: A "use server" file can only export async functions, found object.
+Read more: https://nextjs.org/docs/messages/invalid-use-server-value
+    at module evaluation (C:\Users\Terrence\Desktop\lunas\lunas-system\lunas_web\.next\dev\server\chunks\ssr\[root-of-the-server]__0ih_ixf._.js:1253:239)
+    at module evaluation (.next-internal\server\app\(auth)\login\page\actions.js (server actions loader):1:1)
+    at module evaluation (C:\Users\Terrence\Desktop\lunas\lunas-system\lunas_web\.next\dev\server\chunks\ssr\[root-of-the-server]__0ih_ixf._.js:1283:381)
+> 1 | export {initialLoginState as '7fc6370e68da68cd3ce008645b4a592dfb1c5206d6'} from 'ACTIONS_MO...
+    | ^
+  2 | export {loginAction as '602c41c6815fd1efe72eb6d69faddf6230f2f969b2'} from 'ACTIONS_MODULE0'
+  3 | {
+  digest: '444509736@E352'
+}
+[browser] LUNAS route error 444509736@E352 
+    at RootError.useEffect (src/app/error.tsx:14:13)
+  12 | }) {
+  13 |   useEffect(() => {
+> 14 |     console.error("LUNAS route error", error.digest ?? "no-reference");
+     |             ^
+  15 |   }, [error]);
+  16 |   return (
+  17 |     <main id="main-content" className="min-h-screen bg-slate-50"> (src/app/error.tsx:14:13)
+[browser] LUNAS route error 444509736@E352 
+    at RootError.useEffect (src/app/error.tsx:14:13)
+  12 | }) {
+  13 |   useEffect(() => {
+> 14 |     console.error("LUNAS route error", error.digest ?? "no-reference");
+     |             ^
+  15 |   }, [error]);
+  16 |   return (
+  17 |     <main id="main-content" className="min-h-screen bg-slate-50"> (src/app/error.tsx:14:13)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior

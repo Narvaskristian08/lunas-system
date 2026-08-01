@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LUNAS web command center
 
-## Getting Started
+Shared, role-aware web screens for **LUNAS: An AI-Assisted Urban Infrastructure Maintenance and Monitoring System with Automated SLA Management**.
 
-First, run the development server:
+## Local preview
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. For the full System Administrator preview, sign in with:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Email: `carlo.mendoza@lunas.gov.ph`
+- Password: `LunasDemo!2026`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The sign-in screen includes a role mockup gallery for loading any of the six preview accounts. Every account uses the password `LunasDemo!2026`.
 
-## Learn More
+| Role | Mock account |
+| --- | --- |
+| Barangay Official | `maria.santos@pantal.gov.ph` |
+| City Engineering Office | `rafael.cruz@dagupan.gov.ph` |
+| Utility Provider | `ana.reyes@dagupanwater.gov.ph` |
+| System Administrator | `carlo.mendoza@lunas.gov.ph` |
+| Maintenance Coordinator | `miguel.torres@dagupan.gov.ph` |
+| Executive Viewer | `elena.garcia@dagupan.gov.ph` |
 
-To learn more about Next.js, take a look at the following resources:
+The profile menu also includes a clearly marked demo-only role switcher for moving between all six permission-driven navigation and dashboard variants without signing out.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Implemented shared routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Authentication: `/login`, `/forgot-password`, `/reset-password`, `/verify-account`, `/session-expired`
+- Protected: `/dashboard`, `/notifications`, `/notifications/[id]`, `/profile`, `/profile/edit`, `/profile/change-password`, `/help`, `/unauthorized`
+- Public/legal: `/privacy`, `/terms`, `/maintenance`
+- Framework states: route loading, error boundaries, protected and public not-found screens
 
-## Deploy on Vercel
+## Quality checks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run lint
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Backend contracts, mock assumptions, security boundaries, and required FastAPI endpoints are documented in [INTEGRATION.md](./INTEGRATION.md).
