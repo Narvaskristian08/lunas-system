@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # MongoDB Service
+  # MongoDB Database
   mongodb:
     image: mongo:6.0
     container_name: lunas_mongodb
@@ -26,25 +26,22 @@ services:
   # Backend API Service
   backend:
     build:
-      context: .
+      context: ./lunas_backend
       dockerfile: Dockerfile
     container_name: lunas_backend
     restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
-      # Server
       NODE_ENV: production
       PORT: 5000
       API_VERSION: v1
-      
-      # MongoDB - connects to mongodb service
       MONGODB_URI: mongodb://admin:admin123@mongodb:27017/lunas_db?authSource=admin
       
-      # JWT (CHANGE THESE IN PRODUCTION!)
-      JWT_SECRET: ${JWT_SECRET:-change_this_super_secret_key_minimum_32_characters}
+      # JWT (load from .env)
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRE: 7d
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_this_refresh_secret_key_minimum_32_characters}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRE: 30d
       
       # Supabase
@@ -61,7 +58,7 @@ services:
       # Google Maps
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
       
-      # SLA Config (hours)
+      # SLA
       SLA_CRITICAL: 48
       SLA_HIGH: 72
       SLA_MEDIUM: 168
@@ -75,19 +72,15 @@ services:
       MAX_FILE_SIZE: 10485760
       ALLOWED_FILE_TYPES: image/jpeg,image/png,image/jpg
       
-      # CORS
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:8080}
-    
+      # CORS - Allow web frontend
+      CORS_ORIGIN: http://localhost:3000,http://web:3000
     volumes:
-      - ./logs:/app/logs
-    
+      - ./lunas_backend/logs:/app/logs
     depends_on:
       mongodb:
         condition: service_healthy
-    
     networks:
       - lunas_network
-    
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
       interval: 30s
@@ -95,7 +88,32 @@ services:
       retries: 3
       start_period: 40s
 
-  # MongoDB Express (Optional - for database management UI)
+  # Web Dashboard (Next.js)
+  web:
+    build:
+      context: ./lunas_web
+      dockerfile: Dockerfile
+    container_name: lunas_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
+      # Add other Next.js environment variables here
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - lunas_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Express (Optional - Database UI)
   mongo-express:
     image: mongo-express:latest
     container_name: lunas_mongo_express

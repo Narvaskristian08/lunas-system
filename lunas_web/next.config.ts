@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     // This repository sits below a separate user-level lockfile on the test machine.
     root: process.cwd(),
   },
+  output: 'standalone', // Enable for Docker deployment
 };
 
 export default nextConfig;
