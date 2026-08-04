@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/text_styles.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/email_login_screen.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/signup_screen.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
   const PhoneLoginScreen({super.key});
@@ -32,17 +31,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   }
 
   void _loginWithEmail() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const EmailLoginScreen()),
-    );
+    context.pushNamed('emailLogin');
+    // OR using path: context.push(AuthRoutes.phoneLogin);
   }
 
-  void _navigateToRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SignUpScreen()),
-    );
+  void _navigateToSignUp() {
+    context.pushNamed('signUp');
+    // OR using path: context.push(AuthRoutes.signUp);
   }
 
   @override
@@ -231,7 +226,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                         const SizedBox(height: 12),
 
                         OutlinedButton(
-                          onPressed: _navigateToRegister,
+                          onPressed: _navigateToSignUp,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: const BorderSide(

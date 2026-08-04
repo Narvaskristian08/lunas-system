@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/core/routes/auth_routes.dart';
 import 'package:flutter/services.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/text_styles.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/password_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -109,24 +110,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     );
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // final otp = _otpValue;
+void _submitForm() {
+  if (_formKey.currentState!.validate()) {
+    // final otp = _otpValue;
 
-      // TODO: Call your backend API here to verify the OTP before navigating
+    // TODO: Call your backend API here to verify the OTP before navigating
 
-      // Navigate to Set Password Screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SetPasswordScreen(
-            // email: widget.email,
-            // otp: otp,
-          ),
-        ),
-      );
-    }
+    // Navigate to Set Password Screen using GoRouter
+    context.pushNamed(
+      AuthRoutes.password, // or '/password'
+      extra: {
+      //  'email': widget.email,
+      //  'otp': otp,
+      },
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

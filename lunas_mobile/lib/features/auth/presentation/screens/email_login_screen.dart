@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/text_styles.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/phone_login_screen.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/forgot_password_screen.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/signup_screen.dart';
 
 class EmailLoginScreen extends StatefulWidget {
   const EmailLoginScreen({super.key});
@@ -39,24 +37,18 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   }
 
   void _loginWithPhone() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PhoneLoginScreen()),
-    );
+    context.pushNamed('phoneLogin');
+    // OR using path: context.push(AuthRoutes.phoneLogin);
   }
 
   void _navigateToForgotPassword() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
-    );
+    context.pushNamed('forgotPassword');
+    // OR using path: context.push(AuthRoutes.forgotPassword);
   }
 
-  void _navigateToRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SignUpScreen()),
-    );
+  void _navigateToSignUp() {
+    context.pushNamed('signUp');
+    // OR using path: context.push(AuthRoutes.signUp);
   }
 
   @override
@@ -304,7 +296,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                         const SizedBox(height: 12),
 
                         OutlinedButton(
-                          onPressed: _navigateToRegister,
+                          onPressed: _navigateToSignUp,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: const BorderSide(

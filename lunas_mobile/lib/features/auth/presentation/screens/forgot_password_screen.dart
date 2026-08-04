@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/core/routes/auth_routes.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/text_styles.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/otp_verification_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -35,13 +36,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
 
-      // Navigate to OtpVerificationScreen, passing the email parameter
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtpVerificationScreen(email: email),
-        ),
-      );
+      // Navigate using GoRouter passing the email via extra map
+      context.push(AuthRoutes.otpVerification, extra: {'destination': email});
     }
   }
 
