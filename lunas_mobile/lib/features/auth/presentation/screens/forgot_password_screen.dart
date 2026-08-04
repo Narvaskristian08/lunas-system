@@ -37,7 +37,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
 
       // Navigate using GoRouter passing the email via extra map
-      context.push(AuthRoutes.otpVerification, extra: {'destination': email});
+      context.push(AuthRoutes.otpVerification, extra: {'email': email});
     }
   }
 

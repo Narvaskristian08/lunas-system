@@ -36,11 +36,15 @@ final List<RouteBase> authRoutes = [
     name: 'forgotPassword',
     builder: (context, state) => const ForgotPasswordScreen(),
   ),
-  GoRoute(
-    path: AuthRoutes.otpVerification,
-    name: 'otpVerification',
-    builder: (context, state) => const OtpVerificationScreen(),
-  ),
+GoRoute(
+  path: AuthRoutes.otpVerification,
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    final email = extra?['email'] as String? ?? 'example@domain.com';
+
+    return OtpVerificationScreen(email: email);
+  },
+),
   GoRoute(
     path: AuthRoutes.password,
     name: 'password',
