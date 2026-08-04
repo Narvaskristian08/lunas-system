@@ -66,7 +66,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       children: [
                         const SizedBox(height: 40),
 
-                        // ─── Header Section ───
                         Text(
                           'Create Account',
                           textAlign: TextAlign.left,
@@ -86,8 +85,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // ─── Form Fields Section ───
-                        // 👤 First Name
+                        // First Name Input Field
                         TextFormField(
                           controller: _firstNameController,
                           textCapitalization: TextCapitalization.words,
@@ -96,10 +94,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             color: AppColorsLight.textPrimary,
                           ),
                           decoration: const InputDecoration(
-                            labelText: 'First Name',
-                            hintText: 'John',
-                            border: OutlineInputBorder(),
+                            hintText: 'First Name',
+                            hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
+                            errorMaxLines: 1,
+                            prefix: SizedBox(width: 12.0),
+                            prefixIconConstraints: BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                            contentPadding: EdgeInsets.only(
+                              left: 0.0,
+                              top: 12.0,
+                              bottom: 12.0,
+                              right: 12.0,
+                            ),
+                            counterText: '',
+                            border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -108,9 +119,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
-                        // 👤 Middle Name
+                        // Middle Name Input Field
                         TextFormField(
                           controller: _middleNameController,
                           enabled: !_hasNoMiddleName,
@@ -121,11 +132,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ? AppColorsLight.textSecondary
                                 : AppColorsLight.textPrimary,
                           ),
-                          decoration: InputDecoration(
-                            labelText: 'Middle Name',
-                            hintText: _hasNoMiddleName ? 'N/A' : 'Dela',
-                            border: const OutlineInputBorder(),
+                          decoration: const InputDecoration(
+                            hintText: 'Middle Name',
+                            hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
+                            errorMaxLines: 1,
+                            prefix: SizedBox(width: 12.0),
+                            prefixIconConstraints: BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                            contentPadding: EdgeInsets.only(
+                              left: 0.0,
+                              top: 12.0,
+                              bottom: 12.0,
+                              right: 12.0,
+                            ),
+                            counterText: '',
+                            border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (!_hasNoMiddleName &&
@@ -136,7 +160,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                         ),
 
-                        // ☑️ "I have no middle name" Checkbox (Checkbox Left, Text Right, Aligned Right)
+                        // Checkbox
                         const SizedBox(height: 4),
                         Align(
                           alignment: Alignment.centerRight,
@@ -187,7 +211,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // 👤 Last Name
+                        // Last Name Input Field
                         TextFormField(
                           controller: _lastNameController,
                           textCapitalization: TextCapitalization.words,
@@ -196,10 +220,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             color: AppColorsLight.textPrimary,
                           ),
                           decoration: const InputDecoration(
-                            labelText: 'Last Name',
-                            hintText: 'Doe',
-                            border: OutlineInputBorder(),
+                            hintText: 'Last Name',
+                            hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
+                            errorMaxLines: 1,
+                            prefix: SizedBox(width: 12.0),
+                            prefixIconConstraints: BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                            contentPadding: EdgeInsets.only(
+                              left: 0.0,
+                              top: 12.0,
+                              bottom: 12.0,
+                              right: 12.0,
+                            ),
+                            counterText: '',
+                            border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -208,9 +245,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
-                        // ✉️ Email Address
+                        // ✉️ Email Address Input Field
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -219,28 +256,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             color: AppColorsLight.textPrimary,
                           ),
                           decoration: const InputDecoration(
-                            labelText: 'Email Address',
-                            hintText: 'example@domain.com',
-                            prefixIcon: Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(),
+                            hintText: 'Email Address',
+                            hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
+                            errorMaxLines: 1,
+                            prefix: SizedBox(width: 12.0),
+                            prefixIconConstraints: BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                            contentPadding: EdgeInsets.only(
+                              left: 0.0,
+                              top: 12.0,
+                              bottom: 12.0,
+                              right: 12.0,
+                            ),
+                            counterText: '',
+                            border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your email address';
                             }
-                            if (!_emailRegex.hasMatch(value.trim())) {
+                            final cleanValue = value.trim();
+                            if (!_emailRegex.hasMatch(cleanValue)) {
                               return 'Please enter a valid email address';
                             }
                             return null;
                           },
                         ),
 
-                        // ─── Flexible Spacer to Push Actions to Bottom ───
                         const Spacer(),
                         const SizedBox(height: 24),
 
-                        // 📩 Create Account Button
                         ElevatedButton(
                           onPressed: _submitForm,
                           style: ElevatedButton.styleFrom(
@@ -261,7 +309,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // ─── Divider ───
                         Row(
                           children: [
                             const Expanded(
@@ -302,7 +349,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 🔑 Login Button
                         OutlinedButton(
                           onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
