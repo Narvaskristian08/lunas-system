@@ -1,43 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/text_styles.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/phone_login_screen.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/signup_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class EmailLoginScreen extends StatefulWidget {
+  const EmailLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<EmailLoginScreen> createState() => _EmailLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _EmailLoginScreenState extends State<EmailLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+
+  // Basic regular expression for validating emails
+  final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final fullPhoneNumber = '+63${_phoneController.text.trim()}';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logging in with $fullPhoneNumber...')),
-      );
+      final email = _emailController.text.trim();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logging in with $email...')));
     }
   }
 
-  void _loginWithEmail() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Switching to Email Login...')),
+  void _loginWithPhone() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PhoneLoginScreen()),
+    );
+  }
+
+  void _navigateToForgotPassword() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
     );
   }
 
   void _navigateToRegister() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigating to Registration...')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SignUpScreen()),
     );
   }
 
@@ -80,48 +98,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // PH Phone Number Input Field
+                        // ✉️ Email Address Input Field
                         TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.number,
-                          maxLength: 10,
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                           style: AppTextStyles.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColorsLight.textPrimary,
                           ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
                           decoration: InputDecoration(
-                            hintText: '9XXXXXXXXX',
+                            hintText: 'Email',
                             hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
                             errorMaxLines: 1,
-                            // 🌟 Removes default padding box bounds so error starts completely left
                             contentPadding: const EdgeInsets.only(
                               left: 0.0,
                               top: 12.0,
                               bottom: 12.0,
                               right: 12.0,
                             ),
-                            prefixIcon: Padding(
-                              padding: const EdgeInsets.only(
-                                left: 12.0,
-                                right: 2.0,
-                              ),
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.only(left: 12.0, right: 8.0),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.phone_outlined),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '+63',
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColorsLight.textPrimary,
-                                    ),
-                                  ),
-                                ],
+                                children: [Icon(Icons.email_outlined)],
                               ),
                             ),
                             counterText: '',
@@ -129,22 +129,99 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your mobile number';
+                              return 'Please enter your email address';
                             }
                             final cleanValue = value.trim();
-                            if (!cleanValue.startsWith('9') ||
-                                cleanValue.length != 10) {
-                              return 'Please enter a valid 10-digit mobile number';
+                            if (!_emailRegex.hasMatch(cleanValue)) {
+                              return 'Please enter a valid email address';
                             }
                             return null;
                           },
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+
+                        // 🔑 Password Input Field
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColorsLight.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Password',
+                            hintStyle: AppTextStyles.bodySmallItalic,
+                            isDense: true,
+                            errorMaxLines: 1,
+                            contentPadding: const EdgeInsets.only(
+                              left: 0.0,
+                              top: 12.0,
+                              bottom: 12.0,
+                              right: 12.0,
+                            ),
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.only(left: 12.0, right: 8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [Icon(Icons.lock_outline)],
+                              ),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                            counterText: '',
+                            border: const OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 8),
+
+                        // ❓ Forgot Password Button
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _navigateToForgotPassword,
+                            style: TextButton.styleFrom(
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 4,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Forgot Password?',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColorsLight.brandBase,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
                         Align(
                           alignment: Alignment.center,
                           child: TextButton(
-                            onPressed: _loginWithEmail,
+                            onPressed: _loginWithPhone,
                             style: TextButton.styleFrom(
                               minimumSize: Size.zero,
                               padding: const EdgeInsets.symmetric(
@@ -154,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Text(
-                              'Login via Email',
+                              'Login via Mobile Number',
                               style: AppTextStyles.labelButton.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: AppColorsLight.brandBase,

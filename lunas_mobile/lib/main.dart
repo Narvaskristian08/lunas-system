@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/login_screen.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/phone_login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Inter',
       ),
-      home: const LoginScreen(),
+      home: const PhoneLoginScreen(),
     );
   }
 }
