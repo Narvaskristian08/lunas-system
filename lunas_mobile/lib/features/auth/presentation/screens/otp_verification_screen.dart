@@ -117,7 +117,7 @@ void _submitForm() {
     // TODO: Call your backend API here to verify the OTP before navigating
 
     // Navigate to Set Password Screen using GoRouter
-    context.pushNamed(
+    context.push(
       AuthRoutes.password, // or '/password'
       extra: {
       //  'email': widget.email,

@@ -99,7 +99,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                             color: AppColorsLight.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Email',
+                            hintText: 'Email Address',
                             hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
                             errorMaxLines: 1,

@@ -99,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColorsLight.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'example@domain.com',
+                            hintText: 'Email Address',
                             hintStyle: AppTextStyles.bodySmallItalic,
                             isDense: true,
                             errorMaxLines: 1,

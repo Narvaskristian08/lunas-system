@@ -96,7 +96,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           decoration: const InputDecoration(
                             hintText: 'First Name',
                             hintStyle: AppTextStyles.bodySmallItalic,
-                            isDense: true,
                             errorMaxLines: 1,
                             prefix: SizedBox(width: 12.0),
                             prefixIconConstraints: BoxConstraints(
@@ -135,7 +134,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           decoration: const InputDecoration(
                             hintText: 'Middle Name',
                             hintStyle: AppTextStyles.bodySmallItalic,
-                            isDense: true,
                             errorMaxLines: 1,
                             prefix: SizedBox(width: 12.0),
                             prefixIconConstraints: BoxConstraints(
@@ -222,7 +220,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           decoration: const InputDecoration(
                             hintText: 'Last Name',
                             hintStyle: AppTextStyles.bodySmallItalic,
-                            isDense: true,
                             errorMaxLines: 1,
                             prefix: SizedBox(width: 12.0),
                             prefixIconConstraints: BoxConstraints(
@@ -258,7 +255,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           decoration: const InputDecoration(
                             hintText: 'Email Address',
                             hintStyle: AppTextStyles.bodySmallItalic,
-                            isDense: true,
                             errorMaxLines: 1,
                             prefix: SizedBox(width: 12.0),
                             prefixIconConstraints: BoxConstraints(
