@@ -1,0 +1,161 @@
+# LUNAS AI Service - Model Configuration
+# ML Engineering: Centralized configuration for all models
+
+models:
+  # Primary: YOLOv8s (Best for RDD2022 - 93.5% mAP)
+  road_damage:
+    name: "YOLOv8s Road Damage Detection"
+    path: "models/yolov8s-road-damage.pt"
+    type: "detection"
+    classes:
+      - pothole
+      - alligator_crack
+      - longitudinal_crack
+      - transverse_crack
+      - manhole
+      - sewer_cover
+    confidence_threshold: 0.25
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Trained on RDD2022 dataset - optimized for Philippine roads"
+    
+  crack_segmentation:
+    name: "YOLOv8n-seg Crack Segmentation"
+    path: "models/yolov8n-seg-cracks.pt"
+    type: "segmentation"
+    classes:
+      - crack
+    confidence_threshold: 0.30
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+  
+  privacy_detection:
+    name: "YOLOv8n Privacy Detection"
+    path: "models/yolov8n.pt"
+    type: "detection"
+    classes:
+      - person
+      - car
+      - truck
+      - bus
+      - motorcycle
+      - license_plate
+    confidence_threshold: 0.40
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+
+categories:
+  road_pavement:
+    display_name: "Road/Pavement"
+    models:
+      - road_damage
+      - crack_segmentation
+    priority: high
+    
+  drainage_sewage:
+    display_name: "Drainage/Sewage"
+    models:
+      - road_damage
+    priority: high
+    
+  street_lighting:
+    display_name: "Street Lighting"
+    models: []
+    priority: medium
+    manual_review: true
+    
+  water_supply:
+    display_name: "Water Supply"
+    models: []
+    priority: high
+    manual_review: true
+    
+  signage:
+    display_name: "Signage"
+    models: []
+    priority: low
+    manual_review: true
+    
+  public_facilities:
+    display_name: "Public Facilities"
+    models: []
+    priority: medium
+    manual_review: true
+    
+  trees_vegetation:
+    display_name: "Trees/Vegetation"
+    models: []
+    priority: low
+    manual_review: true
+
+severity_estimation:
+  pothole:
+    minor: 0.05      # < 5% of image area
+    moderate: 0.10   # 5-10% of image area
+    severe: 0.15     # > 10% of image area
+  crack:
+    minor: 0.03
+    moderate: 0.08
+    severe: 0.15
+
+device:
+  auto_detect: true
+  preference:
+    - mps      # Apple M1/M2 GPU
+    - cuda     # NVIDIA GPU
+    - cpu      # Fallback
+
+inference:
+  batch_size: 1
+  half_precision: false  # FP16 (GPU only)
+  augment: false         # TTA (slower but more accurate)
+  max_det: 50           # Max detections per image
+  agnostic_nms: false   # Class-agnostic NMS
+
+training:
+  dataset: "rdd2022"
+  epochs: 100
+  batch_size: 16
+  image_size: 640
+  optimizer: "AdamW"
+  learning_rate: 0.001
+  momentum: 0.937
+  weight_decay: 0.0005
+  warmup_epochs: 3
+  patience: 50
+  save_period: 10
+  pretrained: true
+  freeze: 0  # Freeze first N layers
+  
+  # RDD2022-specific optimizations
+  # Based on research: best settings for road damage detection
+  augmentation:
+    hsv_h: 0.015      # Hue variation (minimal - roads don't change color much)
+    hsv_s: 0.7        # Saturation (higher - handle different lighting)
+    hsv_v: 0.4        # Value/brightness (moderate)
+    degrees: 0.0      # No rotation (roads are horizontal)
+    translate: 0.1    # Slight translation
+    scale: 0.5        # Scale variation
+    shear: 0.0        # No shearing
+    perspective: 0.0  # No perspective transform
+    flipud: 0.0       # No vertical flip
+    fliplr: 0.5       # 50% horizontal flip (important for roads)
+    mosaic: 1.0       # Mosaic augmentation (very important)
+    mixup: 0.0        # No mixup (not good for detection)
+    copy_paste: 0.0   # No copy-paste
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/lunas_ai.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5

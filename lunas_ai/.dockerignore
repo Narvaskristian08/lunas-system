@@ -1,0 +1,66 @@
+# Docker ignore file
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+.venv/
+ENV/
+env/
+
+# Environment
+.env
+.env.local
+
+# Models (download at runtime)
+models/*.pt
+models/*.pth
+models/cache/
+
+# Datasets
+datasets/
+data/
+
+# Training outputs
+runs/
+weights/
+
+# Logs
+logs/
+*.log
+
+# Cache
+cache/
+*.cache
+
+# Testing
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Temporary
+tmp/
+temp/
+*.tmp

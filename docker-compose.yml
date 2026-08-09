@@ -72,6 +72,11 @@ services:
       MAX_FILE_SIZE: 10485760
       ALLOWED_FILE_TYPES: image/jpeg,image/png,image/jpg
       
+      # AI Service
+      AI_SERVICE_URL: http://lunas-ai:5001
+      AI_SERVICE_TIMEOUT: 30000
+      AI_SERVICE_ENABLED: true
+      
       # CORS - Allow web frontend
       CORS_ORIGIN: http://localhost:3000,http://web:3000
     volumes:
@@ -112,6 +117,52 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # AI Service (Python/YOLO)
+  lunas-ai:
+    build:
+      context: ./lunas_ai
+      dockerfile: Dockerfile
+    container_name: lunas_ai
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      FLASK_ENV: production
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5001
+      DEBUG: "False"
+      
+      # Device configuration
+      DEVICE: cpu  # Change to 'cuda' if GPU available
+      ENABLE_HALF_PRECISION: "False"
+      
+      # Detection thresholds
+      CONFIDENCE_THRESHOLD: 0.25
+      IOU_THRESHOLD: 0.45
+      MAX_DETECTIONS: 50
+      
+      # Image processing
+      MAX_IMAGE_SIZE: 1920
+      IMAGE_QUALITY: 85
+      
+      # Logging
+      LOG_LEVEL: INFO
+      
+      # CORS - Allow backend access
+      ALLOWED_ORIGINS: http://localhost:5000,http://backend:5000
+    volumes:
+      - ./lunas_ai/models:/app/models
+      - ./lunas_ai/logs:/app/logs
+      - ./lunas_ai/cache:/app/cache
+    networks:
+      - lunas_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5001/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # MongoDB Express (Optional - Database UI)
   mongo-express:
