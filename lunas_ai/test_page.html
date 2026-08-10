@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUNAS AI - Road Damage Detection Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            background: #f8f9fa;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #e8edff;
+            transform: scale(1.02);
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .confidence-slider {
+            margin: 30px 0;
+        }
+        
+        .confidence-slider label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .confidence-slider input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .confidence-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .confidence-value {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            margin-top: 40px;
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .result-header h2 {
+            color: #333;
+        }
+        
+        .result-badge {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .result-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .result-badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .result-badge.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .damage-list {
+            margin-top: 20px;
+        }
+        
+        .damage-item {
+            background: #f8f9fa;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        
+        .damage-item.high {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .damage-item.medium {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        
+        .damage-item.low {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        
+        .damage-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 1.2em;
+        }
+        
+        .damage-detail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .damage-detail span {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .image-preview {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .no-damage {
+            text-align: center;
+            padding: 40px;
+            background: #d4edda;
+            border-radius: 15px;
+            border: 2px solid #28a745;
+        }
+        
+        .no-damage h2 {
+            color: #155724;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            background: #f8d7da;
+            border-radius: 15px;
+            border: 2px solid #dc3545;
+        }
+        
+        .error-message h2 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+        
+        .selected-file {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8edff;
+            border-radius: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛣️ LUNAS AI</h1>
+            <p>Road Damage Detection System</p>
+        </div>
+        
+        <div class="content">
+            <div class="upload-section" id="dropZone">
+                <h2>📸 Upload Road Image</h2>
+                <p style="margin: 15px 0; color: #666;">Drag & drop or click to select</p>
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="imageInput" accept="image/*" onchange="handleFileSelect(event)">
+                    <label for="imageInput" class="file-input-label">
+                        Choose Image
+                    </label>
+                </div>
+                
+                <div id="selectedFile" class="selected-file" style="display: none;"></div>
+            </div>
+            
+            <div class="confidence-slider">
+                <label>
+                    Detection Confidence: 
+                    <span class="confidence-value" id="confidenceValue">0.5</span>
+                </label>
+                <input type="range" id="confidenceSlider" min="0.1" max="0.9" step="0.1" value="0.5" 
+                       oninput="updateConfidence(this.value)">
+                <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    Lower = More sensitive (more detections) | Higher = More strict (fewer detections)
+                </p>
+            </div>
+            
+            <button class="analyze-btn" onclick="analyzeImage()" id="analyzeBtn" disabled>
+                🔍 Analyze Image
+            </button>
+            
+            <div class="result-section" id="resultSection">
+                <div class="loading" id="loadingIndicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>🔄 Analyzing image...</p>
+                </div>
+                
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        
+        // Drag and drop handlers
+        const dropZone = document.getElementById('dropZone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('imageInput').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        });
+        
+        function handleFileSelect(event) {
+            selectedFile = event.target.files[0];
+            const fileInfo = document.getElementById('selectedFile');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            if (selectedFile) {
+                fileInfo.innerHTML = `✅ Selected: <strong>${selectedFile.name}</strong> (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`;
+                fileInfo.style.display = 'block';
+                analyzeBtn.disabled = false;
+            }
+        }
+        
+        function updateConfidence(value) {
+            document.getElementById('confidenceValue').textContent = value;
+        }
+        
+        async function analyzeImage() {
+            if (!selectedFile) {
+                alert('Please select an image first!');
+                return;
+            }
+            
+            const resultSection = document.getElementById('resultSection');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultContent = document.getElementById('resultContent');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            // Show loading
+            resultSection.style.display = 'block';
+            loadingIndicator.style.display = 'block';
+            resultContent.innerHTML = '';
+            analyzeBtn.disabled = true;
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('confidence', document.getElementById('confidenceSlider').value);
+            
+            try {
+                // Send to API
+                const response = await fetch('http://localhost:5001/api/v1/detect/road-damage', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                // Hide loading
+                loadingIndicator.style.display = 'none';
+                
+                // Display results
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    displayError(result.error || 'Unknown error occurred');
+                }
+            } catch (error) {
+                loadingIndicator.style.display = 'none';
+                displayError(`Connection error: ${error.message}<br><br>Make sure the AI service is running on <code>http://localhost:5001</code>`);
+            } finally {
+                analyzeBtn.disabled = false;
+            }
+        }
+        
+        function displayResults(result) {
+            const resultContent = document.getElementById('resultContent');
+            
+            if (result.total_damages === 0) {
+                resultContent.innerHTML = `
+                    <div class="no-damage">
+                        <h2>✅ No Damage Detected</h2>
+                        <p>The road appears to be in good condition!</p>
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${result.inference_time}</div>
+                                <div class="stat-label">Processing Time</div>
+                            </div>
+                        </div>
+                    </div>
+                    ${getImagePreview()}
+                `;
+            } else {
+                let damagesHTML = '';
+                result.detections.forEach((detection, index) => {
+                    const confidence = (detection.confidence * 100).toFixed(1);
+                    damagesHTML += `
+                        <div class="damage-item ${detection.severity}">
+                            <h3>${index + 1}. ${detection.class.replace(/_/g, ' ')}</h3>
+                            <div class="damage-detail">
+                                <span>📊 Confidence: ${confidence}%</span>
+                                <span>⚠️ Severity: ${detection.severity.toUpperCase()}</span>
+                                <span>📍 Position: (${detection.bbox.x}, ${detection.bbox.y})</span>
+                                <span>📐 Size: ${detection.bbox.width}×${detection.bbox.height}px</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                const badgeClass = result.total_damages > 3 ? 'danger' : result.total_damages > 1 ? 'warning' : 'warning';
+                
+                resultContent.innerHTML = `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h2>⚠️ Damage Analysis</h2>
+                            <span class="result-badge ${badgeClass}">
+                                ${result.total_damages} Damage${result.total_damages > 1 ? 's' : ''} Found
+                            </span>
+                        </div>
+                        
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${result.total_damages}</div>
+                                <div class="stat-label">Total Damages</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${result.inference_time}</div>
+                                <div class="stat-label">Processing Time</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${result.image_size.width}×${result.image_size.height}</div>
+                                <div class="stat-label">Image Size</div>
+                            </div>
+                        </div>
+                        
+                        <div class="damage-list">
+                            <h3>Detected Issues:</h3>
+                            ${damagesHTML}
+                        </div>
+                    </div>
+                    ${getImagePreview()}
+                `;
+            }
+        }
+        
+        function displayError(message) {
+            const resultContent = document.getElementById('resultContent');
+            resultContent.innerHTML = `
+                <div class="error-message">
+                    <h2>❌ Error</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        function getImagePreview() {
+            const imageUrl = URL.createObjectURL(selectedFile);
+            return `
+                <div class="image-preview">
+                    <h3>Analyzed Image:</h3>
+                    <img src="${imageUrl}" alt="Analyzed road image">
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
