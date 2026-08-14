@@ -1,15 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { Bell, Menu, Search, ShieldCheck } from "lucide-react";
-import { NotificationBadge } from "@/components/ui/badge";
+import { Menu, Search, ShieldCheck } from "lucide-react";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useViewer } from "@/components/providers/viewer-provider";
-import { notifications } from "@/lib/mock-data";
 
 export function TopHeader({ onOpenNavigation, menuButtonRef }: { onOpenNavigation: () => void; menuButtonRef: React.RefObject<HTMLButtonElement | null> }) {
   const viewer = useViewer();
-  const unread = notifications.filter((item) => !item.read).length;
   return (
     <header className="flex h-[72px] shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 sm:px-5 lg:px-6">
       <div className="flex min-w-0 items-center gap-2">
@@ -19,8 +15,6 @@ export function TopHeader({ onOpenNavigation, menuButtonRef }: { onOpenNavigatio
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <button type="button" className="flex size-11 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 md:hidden" aria-label="Open global search"><Search className="size-5" aria-hidden="true" /></button>
-        <Link href="/notifications" className="relative flex size-11 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label={`${unread} unread notifications`}><Bell className="size-5" aria-hidden="true" /><span className="absolute right-0 top-0"><NotificationBadge count={unread} /></span></Link>
-        <span className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
         <UserMenu compact={viewer.role.length > 22} />
       </div>
     </header>

@@ -6,7 +6,7 @@ import { BadgeCheck, Clock3, Mail, RefreshCw } from "lucide-react";
 import { AuthAlert, AuthCard, BackToLogin, SecurityNotice } from "@/components/auth/auth-ui";
 import { useConnectivity } from "@/components/providers/connectivity-provider";
 import { Button, buttonStyles } from "@/components/ui/button";
-import { accountService } from "@/lib/mock-api";
+import { resendVerificationAction, verifyAccountAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 
 type VerificationState = "waiting" | "verifying" | "success" | "failed" | "link-expired" | "code-expired" | "code-invalid" | "already";
@@ -73,19 +73,20 @@ export function VerificationForm({
     }
     const code = digits.join("");
     setStatus("verifying");
-    if (code === "000000") {
-      window.setTimeout(() => setStatus("code-invalid"), 500);
-      return;
-    }
-    if (code === "111111") {
-      window.setTimeout(() => setStatus("code-expired"), 500);
-      return;
-    }
     try {
-      await accountService.verifyAccount(code);
+      const result = await verifyAccountAction(code);
+      if (!result.ok) {
+        if (result.code === "invalid") setStatus("code-invalid");
+        else if (result.code === "expired") setStatus("code-expired");
+        else {
+          setFailureKind("server");
+          setStatus("failed");
+        }
+        return;
+      }
       setStatus("success");
-    } catch (caught) {
-      setFailureKind(caught instanceof Error && caught.message === "OFFLINE" ? "offline" : "server");
+    } catch {
+      setFailureKind("server");
       setStatus("failed");
     }
   }
@@ -95,14 +96,18 @@ export function VerificationForm({
     setResending(true);
     setResendStatus(null);
     try {
-      const result = await accountService.resendVerification();
-      setCooldown(result.data.retryAfterSeconds);
+      const result = await resendVerificationAction(email);
+      if (!result.ok) {
+        setResendStatus("error");
+        return;
+      }
+      setCooldown(result.retryAfterSeconds ?? 30);
       setResendStatus("success");
       setStatus("waiting");
       setDigits(["", "", "", "", "", ""]);
       window.setTimeout(() => inputs.current[0]?.focus(), 0);
-    } catch (caught) {
-      setResendStatus(caught instanceof Error && caught.message === "OFFLINE" ? "offline" : "error");
+    } catch {
+      setResendStatus("error");
     } finally {
       setResending(false);
     }
@@ -156,9 +161,9 @@ export function VerificationForm({
       </div>
 
       {status === "code-invalid" ? (
-        <AuthAlert tone="error" title="That code is not valid" assertive>Check all six digits and try again. For a preview of this state, use 000000.</AuthAlert>
+        <AuthAlert tone="error" title="That code is not valid" assertive>Check all six digits and try again.</AuthAlert>
       ) : status === "code-expired" ? (
-        <AuthAlert tone="warning" title="That code has expired" assertive>Request a new code below. For a preview of this state, use 111111.</AuthAlert>
+        <AuthAlert tone="warning" title="That code has expired" assertive>Request a new code below.</AuthAlert>
       ) : status === "failed" ? (
         <AuthAlert tone={failureKind === "offline" ? "warning" : "error"} title={failureKind === "offline" ? "No internet connection" : "Verification could not be completed"} assertive>
           {failureKind === "offline" ? "Reconnect and try again. Your code remains in the form." : "The verification service is temporarily unavailable. Please try again shortly."}

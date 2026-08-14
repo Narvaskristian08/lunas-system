@@ -16,8 +16,20 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || '*',
+  origin(origin, callback) {
+    // Native mobile applications and server-to-server requests do not send an
+    // Origin header. Browser origins must be explicitly configured.
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+
+    const error = new Error('Origin is not allowed by CORS policy');
+    error.statusCode = 403;
+    return callback(error);
+  },
   credentials: true
 }));
 
@@ -99,13 +111,17 @@ const startServer = async () => {
   }
 };
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  logger.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
-  process.exit(1);
-});
+if (require.main === module) {
+  // Handle unhandled promise rejections only when this file is executed as the
+  // server. Supertest and controller tests can import the app without an
+  // attempted MongoDB connection or a process-wide exit handler.
+  process.on('unhandledRejection', (err) => {
+    logger.error('Unhandled Promise Rejection:', err);
+    process.exit(1);
+  });
 
-startServer();
+  startServer();
+}
 
 module.exports = app;
+module.exports.startServer = startServer;

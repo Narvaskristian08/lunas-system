@@ -1,7 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/routes/app_router.dart';
+import 'package:lunas_mobile/core/theme/app_theme.dart';
+import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  configureAppServices();
+  unawaited(authController.restoreSession());
   runApp(const MyApp());
 }
 
@@ -10,14 +18,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'LUNAS Mobile',
-      debugShowCheckedModeBanner: false,
-      routerConfig: appRouter, 
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-        fontFamily: 'Inter',
+    return AuthScope(
+      controller: authController,
+      child: MaterialApp.router(
+        title: 'LUNAS Mobile',
+        debugShowCheckedModeBanner: false,
+        routerConfig: appRouter,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system,
       ),
     );
   }

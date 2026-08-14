@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -69,22 +70,40 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Incrementing this value invalidates every access and refresh token that
+  // was issued before the change. It is used for logout and password changes.
+  tokenVersion: {
+    type: Number,
+    default: 0,
+    select: false
+  },
+  // Refresh tokens are stored as SHA-256 hashes only. The raw token is never
+  // persisted, so a database disclosure cannot be used as an active session.
+  refreshTokens: {
+    type: [{
+      tokenHash: { type: String, required: true },
+      expiresAt: { type: Date, required: true },
+      createdAt: { type: Date, default: Date.now },
+      userAgent: { type: String, maxlength: 512 }
+    }],
+    select: false,
+    default: []
+  },
   deviceTokens: [{
     token: String,
     platform: { type: String, enum: ['android', 'ios', 'web'] },
     addedAt: { type: Date, default: Date.now }
   }],
   lastLogin: Date,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-  verificationToken: String,
-  verificationTokenExpires: Date
+  passwordResetToken: { type: String, select: false },
+  passwordResetExpires: { type: Date, select: false },
+  verificationToken: { type: String, select: false },
+  verificationTokenExpires: { type: Date, select: false }
 }, {
   timestamps: true
 });
 
 // Index for better query performance
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ barangay: 1 });
 
@@ -104,6 +123,21 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Generate a one-time reset token. Only its hash is stored on the user.
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  this.passwordResetExpires = new Date(
+    Date.now() + (parseInt(process.env.PASSWORD_RESET_EXPIRE_MINUTES, 10) || 30) * 60 * 1000
+  );
+
+  return resetToken;
+};
+
 // Method to get public profile
 userSchema.methods.toPublicJSON = function() {
   return {
@@ -117,6 +151,7 @@ userSchema.methods.toPublicJSON = function() {
     barangay: this.barangay,
     profileImage: this.profileImage,
     isVerified: this.isVerified,
+    isActive: this.isActive,
     createdAt: this.createdAt
   };
 };

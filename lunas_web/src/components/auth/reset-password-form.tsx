@@ -8,7 +8,7 @@ import { PasswordField } from "@/components/forms/password-field";
 import { PasswordStrength } from "@/components/forms/password-strength";
 import { useConnectivity } from "@/components/providers/connectivity-provider";
 import { Button, buttonStyles } from "@/components/ui/button";
-import { accountService } from "@/lib/mock-api";
+import { resetPasswordAction } from "@/app/actions/auth";
 import { cn, passwordChecks } from "@/lib/utils";
 
 type ResetTokenState = "checking" | "valid" | "invalid" | "expired" | "success";
@@ -51,12 +51,20 @@ export function ResetPasswordForm({
     setPending(true);
     setRequestError(null);
     try {
-      await accountService.resetPassword(token, password);
+      const result = await resetPasswordAction(token, password);
+      if (!result.ok) {
+        if (result.code === "invalid" || result.code === "expired") {
+          setTokenState(result.code);
+        } else {
+          setRequestError("server");
+        }
+        return;
+      }
       setTokenState("success");
       setPassword("");
       setConfirmation("");
-    } catch (caught) {
-      setRequestError(caught instanceof Error && caught.message === "OFFLINE" ? "offline" : "server");
+    } catch {
+      setRequestError("server");
     } finally {
       setPending(false);
     }

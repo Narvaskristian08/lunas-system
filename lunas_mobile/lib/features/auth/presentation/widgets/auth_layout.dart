@@ -52,7 +52,7 @@ class AuthLayout extends StatelessWidget {
                   ),
                 if (showBrand || showBackButton)
                   const SizedBox(height: AppSpacing.xxl),
-                Expanded(child: child),
+                if (scrollable) child else Expanded(child: child),
               ],
             ),
           );
@@ -65,9 +65,7 @@ class AuthLayout extends StatelessWidget {
             ),
             child: Align(alignment: Alignment.topCenter, child: content),
           );
-          return scrollable
-              ? SingleChildScrollView(child: IntrinsicHeight(child: padded))
-              : padded;
+          return scrollable ? SingleChildScrollView(child: padded) : padded;
         },
       ),
     );

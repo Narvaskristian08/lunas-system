@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
+const { isCurrentTokenVersion, verifyAccessToken } = require('../utils/authTokens');
 
 // Verify JWT token and attach user to request
 exports.protect = async (req, res, next) => {
@@ -21,11 +21,18 @@ exports.protect = async (req, res, next) => {
     }
 
     try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Refresh tokens are intentionally rejected here; only short-lived
+      // access tokens can authorize an API request.
+      const decoded = verifyAccessToken(token);
+      if (decoded.tokenType !== 'access') {
+        return res.status(401).json({
+          success: false,
+          message: 'Token is not valid or has expired'
+        });
+      }
 
       // Get user from token
-      req.user = await User.findById(decoded.id).select('-password');
+      req.user = await User.findById(decoded.id).select('-password +tokenVersion');
 
       if (!req.user) {
         return res.status(401).json({
@@ -39,6 +46,13 @@ exports.protect = async (req, res, next) => {
         return res.status(401).json({
           success: false,
           message: 'User account is deactivated'
+        });
+      }
+
+      if (!isCurrentTokenVersion(decoded, req.user)) {
+        return res.status(401).json({
+          success: false,
+          message: 'Your session is no longer valid. Please log in again.'
         });
       }
 
@@ -103,8 +117,13 @@ exports.optionalAuth = async (req, res, next) => {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.id).select('-password');
+        const decoded = verifyAccessToken(token);
+        if (decoded.tokenType !== 'access') {
+          req.user = null;
+        } else {
+          const user = await User.findById(decoded.id).select('-password +tokenVersion');
+          req.user = user && user.isActive && isCurrentTokenVersion(decoded, user) ? user : null;
+        }
       } catch (error) {
         // Token invalid, but continue without user
         req.user = null;

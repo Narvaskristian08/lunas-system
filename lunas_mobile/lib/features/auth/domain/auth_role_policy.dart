@@ -1,0 +1,50 @@
+/// Roles which have an implemented mobile workspace in the current milestone.
+///
+/// This is only a presentation guard. The API remains authoritative for every
+/// incident read and decision, including jurisdiction checks.
+/// Roles with a usable mobile workspace in this milestone.
+///
+/// `utility_provider` remains a recognized server-side official role, but its
+/// routed-incident and work-order workspace has not been implemented in the
+/// mobile app yet. It must therefore land on the safe role-unavailable
+/// boundary instead of the submitted-report validation queue.
+const supportedMobileRoles = <String>{
+  'citizen',
+  'barangay_official',
+  'city_engineer',
+  'admin',
+};
+
+const validationOfficialRoles = <String>{
+  'barangay_official',
+  'city_engineer',
+  'utility_provider',
+  'admin',
+};
+
+bool isCitizenRole(String role) => role == 'citizen';
+
+bool isValidationOfficialRole(String role) =>
+    validationOfficialRoles.contains(role);
+
+bool isSupportedMobileRole(String role) => supportedMobileRoles.contains(role);
+
+bool isUtilityProviderRole(String role) => role == 'utility_provider';
+
+/// The only authenticated entry point for each implemented mobile workspace.
+/// Keeping this decision beside the role policy prevents a successful official
+/// sign-in from being redirected into citizen reporting routes.
+String? mobileWorkspaceHome(String role) {
+  if (isCitizenRole(role)) return '/citizen';
+  if (isValidationOfficialRole(role) && !isUtilityProviderRole(role)) {
+    return '/official';
+  }
+  return null;
+}
+
+String roleLabel(String role) => role
+    .replaceAll('_', ' ')
+    .split(' ')
+    .where((part) => part.isNotEmpty)
+    .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+    .join(' ');

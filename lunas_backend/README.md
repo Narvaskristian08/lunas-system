@@ -1,685 +1,475 @@
 # LUNAS Backend API
 
-AI-Assisted Urban Infrastructure Maintenance System
+Backend service for the LUNAS urban-infrastructure reporting system. It is the
+authorization and workflow source of truth for the completed 25% citizen
+reporting foundation and 50% official validation/routing milestone.
 
-RESTful API backend for LUNAS - A cloud-based infrastructure reporting and maintenance platform for Dagupan City, Philippines.
+> **Current handoff scope:** citizen account access, secure evidence-backed
+> incident reporting, report tracking, official validation/rejection/duplicate
+> decisions, jurisdiction/routing, SLA deadline initialization, notifications,
+> and audit history. Repair operations and AI model capabilities are not part
+> of the accepted scope yet.
 
----
+Read the milestone records before planning later work:
 
-## Table of Contents
+- [25% Citizen Reporting Foundation](../MILESTONE_25.md)
+- [50% Official Validation and Incident Routing](../MILESTONE_50.md)
+- [Detailed endpoint reference](./API_ENDPOINTS.md)
 
-- [Overview](#overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [API Documentation](#api-documentation)
-- [Database Schema](#database-schema)
-- [Authentication](#authentication)
-- [Environment Configuration](#environment-configuration)
-- [Development](#development)
-- [Testing](#testing)
-- [Deployment](#deployment)
+## Contents
 
----
+- [What is implemented](#what-is-implemented)
+- [Requirements](#requirements)
+- [Setup and run](#setup-and-run)
+- [Configuration](#configuration)
+- [Development commands](#development-commands)
+- [Roles and access scope](#roles-and-access-scope)
+- [Workflow and API overview](#workflow-and-api-overview)
+- [Manual acceptance checklist](#manual-acceptance-checklist)
+- [Security and privacy boundaries](#security-and-privacy-boundaries)
+- [External dependencies and known limits](#external-dependencies-and-known-limits)
+- [Deferred work](#deferred-work)
+- [Troubleshooting](#troubleshooting)
 
-## Overview
+## What is implemented
 
-The LUNAS Backend API provides comprehensive endpoints for managing urban infrastructure incidents, work orders, notifications, and user management with role-based access control.
+### 25% — citizen reporting foundation
 
-### Key Capabilities
+- Public registration creates **citizen** accounts only; roles cannot be
+  self-assigned.
+- JWT access tokens, rotating refresh tokens, logout/session invalidation,
+  password change, and optional password-reset delivery.
+- Category lookup and multipart citizen report submission with one to five
+  JPG/PNG evidence files.
+- Server-side image decoding, quality checks, JPEG re-encoding to remove EXIF
+  metadata, checksums, non-predictable object keys, and private signed URLs.
+- Ownership-protected **My Reports**, report detail, and status-history reads.
+- Advisory possible-duplicate suggestions. They never change a report state
+  automatically.
 
-- JWT-based authentication with role-based authorization
-- Geospatial incident tracking with MongoDB
-- Automated SLA monitoring and escalation
-- OneSignal for push notifications
-- Supabase Storage for image uploads
-- Comprehensive audit logging
-- Real-time statistics and analytics
+### 50% — official validation and routing
 
----
+- Server-scoped official queue with pagination, search, category, barangay,
+  date, duplicate-candidate, and safe sort filters.
+- Scoped report review: evidence, location, status history, advisory duplicate
+  candidates, routing, and SLA data.
+- One controlled decision from `submitted` to `validated`, `rejected`, or
+  `duplicate`. Competing/stale decisions receive **HTTP 409**.
+- Validation records priority, jurisdiction, accountable organization, and SLA
+  start. Rejection and duplicate decisions require a citizen-visible reason.
+- Priority, jurisdiction, and routing updates for validated reports, each with
+  audit metadata and route history where applicable.
+- Persisted in-app notifications for the reporting citizen; optional push
+  delivery when OneSignal is configured.
+- Audit records for validation, rejection, duplicate, priority, jurisdiction,
+  and routing actions.
 
-## Features
+## Requirements
 
-### Authentication & Authorization
-- User registration and login
-- JWT token-based authentication
-- Role-based access control (6 roles)
-- Password change and profile management
-- Device token management for push notifications
+- Node.js **18+** and npm **9+**
+- MongoDB **6+** locally or a reachable MongoDB Atlas deployment
+- A Supabase project and private Storage bucket for real evidence upload and
+  signed evidence URLs
+- An image file that satisfies the configured evidence rules for end-to-end
+  submission testing
 
-### Incident Management
-- Create and track infrastructure incidents
-- Geospatial location tracking
-- AI analysis integration (placeholder)
-- Priority-based categorization
-- Status workflow management
-- Nearby incident search
-- Duplicate detection
+Optional integrations:
 
-### Work Order System
-- Automated work order creation
-- Personnel assignment
-- Progress tracking with updates
-- Completion reporting
-- Repair verification
-- Before/after image comparison
+- OneSignal credentials for push notifications
+- An approved password-reset delivery webhook/provider
+- An approved AI service and model only if automated analysis is deliberately
+  enabled; it is disabled by default and not required for this milestone
 
-### SLA Monitoring
-- Automated deadline tracking
-- Priority-based SLA configuration
-- Escalation management
-- Reminder notifications
-- Overdue incident tracking
+## Setup and run
 
-### Notifications
-- In-app notifications
-- OneSignal push notifications
-- Notification templates for common events
-- Bulk notification sending
-- Read/unread status tracking
+1. Install dependencies and create a local configuration file.
 
-### Analytics & Reports
-- Dashboard statistics
-- Incident analytics by category, priority, barangay
-- Work order completion metrics
-- SLA compliance tracking
-- Resolution time analysis
+   ```bash
+   cd lunas_backend
+   npm install
+   cp .env.example .env
+   ```
 
----
+2. Edit `.env`. At minimum, configure MongoDB, unique JWT secrets, allowed web
+   origins, and Supabase Storage credentials if you will submit evidence. See
+   [Configuration](#configuration).
 
-## Technology Stack
+3. Start MongoDB if using a local installation, then start the API.
 
-| Component | Technology |
-|-----------|-----------|
-| Runtime | Node.js 18+ |
-| Framework | Express.js |
-| Database | MongoDB |
-| ODM | Mongoose |
-| Authentication | JWT (jsonwebtoken) |
-| File Storage | Supabase Storage |
-| Push Notifications | OneSignal |
-| Image Processing | Sharp |
-| Validation | Express Validator |
-| Security | Helmet, CORS, Rate Limiting |
-| Logging | Winston |
-| Scheduling | Node-cron |
+   ```bash
+   npm run dev
+   ```
 
----
+   The API listens on `http://localhost:5000` by default. The REST base URL is
+   `http://localhost:5000/api/v1`.
 
-## Getting Started
+4. Confirm the process is healthy.
 
-### Prerequisites
+   ```bash
+   curl http://localhost:5000/health
+   ```
 
-- Node.js 18+ and npm
-- MongoDB 6.0+
-- Supabase Account (for file storage)
-- OneSignal Account (for push notifications)
+   The endpoint responds with an `OK` status, current timestamp, uptime, and
+   environment. It does not prove that Supabase upload, email, maps, or push
+   notifications are configured.
 
-**Using Docker?** See `../DOCKER_SETUP.md` for running the entire LUNAS system with Docker.
+### Platform connection notes
 
-### Installation
+- The web BFF should use server-only `LUNAS_API_URL`, normally
+  `http://localhost:5000/api/v1` locally or `http://backend:5000/api/v1` in
+  Docker.
+- Flutter should receive its API URL at runtime, for example Android emulator:
 
-1. Install dependencies
+  ```bash
+  flutter run --dart-define=LUNAS_API_BASE_URL=http://10.0.2.2:5000/api/v1
+  ```
 
-```bash
-npm install
+  A physical device needs your machine's reachable LAN/HTTPS address instead
+  of `10.0.2.2`.
+
+## Configuration
+
+Copy `.env.example`; it is the complete variable template. Never commit the
+completed `.env` file or expose service-role credentials to web/mobile clients.
+
+| Group | Variables | Required use |
+| --- | --- | --- |
+| Server | `NODE_ENV`, `PORT`, `API_VERSION` | Process configuration. |
+| Database | `MONGODB_URI` | Required for persistent API operation. |
+| Auth | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRE`, `JWT_REFRESH_EXPIRE`, `MAX_REFRESH_TOKENS_PER_USER` | Use distinct, high-entropy production secrets. |
+| Auth protection | `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX_REQUESTS` | Login/registration/reset rate limits. |
+| Password reset (optional) | `PASSWORD_RESET_EXPIRE_MINUTES`, `PASSWORD_RESET_APP_URL`, `PASSWORD_RESET_DELIVERY_URL`, `PASSWORD_RESET_DELIVERY_TIMEOUT_MS` | Reset links are delivered only when both URL settings are configured. |
+| Evidence storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `SUPABASE_STORAGE_PUBLIC`, `EVIDENCE_SIGNED_URL_EXPIRE_SECONDS` | Required for real private evidence upload/read. Keep `SUPABASE_STORAGE_PUBLIC=false` unless a public bucket is intentionally approved. |
+| Evidence limits | `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES`, `ALLOWED_IMAGE_FORMATS`, `MIN_IMAGE_WIDTH`, `MIN_IMAGE_HEIGHT`, `EVIDENCE_MAX_WIDTH`, `EVIDENCE_JPEG_QUALITY` | Upload acceptance and image processing. |
+| SLA foundation | `SLA_CRITICAL`, `SLA_HIGH`, `SLA_MEDIUM`, `SLA_LOW` | Validation initializes a deadline from these hour values. Defaults: 48, 72, 168, and 336. |
+| Later SLA automation | `SLA_AUTOMATION_ENABLED` | Leave `false` for the 50% milestone. The pre-existing reminder/escalation scheduler is not accepted workflow scope. |
+| Browser access | `CORS_ORIGIN` | Comma-separated allowed browser origins. Native mobile/server requests do not send an Origin header. |
+| General protection | `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, `DEFAULT_PAGE_SIZE`, `MAX_PAGE_SIZE` | API throttling and pagination limits. |
+| Push (optional) | `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, `ONESIGNAL_USER_AUTH_KEY` | In-app notifications persist without these values; push delivery does not. |
+| AI (disabled by default) | `AI_SERVICE_URL`, `AI_SERVICE_TIMEOUT`, `AI_SERVICE_ENABLED`, `AI_EVIDENCE_ANALYSIS_ENABLED` | Do not enable without a real approved model and validation plan. |
+| Duplicate hints | `DUPLICATE_WINDOW_HOURS`, `DUPLICATE_RADIUS_METERS` | Advisory matching only; never performs an automatic decision. |
+
+`SUPABASE_ANON_KEY`, `GOOGLE_MAPS_API_KEY`, and SMTP placeholders remain in
+the template for existing platform integrations. They are not substitutes for
+the service-role storage credentials required by the server's evidence path.
+
+## Development commands
+
+Run commands from `lunas_backend/`.
+
+| Purpose | Command |
+| --- | --- |
+| Start production-style server | `npm start` |
+| Start development server with reload | `npm run dev` |
+| Run backend tests | `npm test` |
+| Run tests without coverage noise | `npm test -- --runInBand --silent` |
+| Run ESLint | `npm run lint` |
+
+The test suite exercises authentication, controlled incident transitions,
+jurisdiction scope, SLA initialization, evidence behavior, validation
+middleware, and the submitted-incident work-order gate. It does **not** replace
+the cross-account, real-storage manual checks below.
+
+## Roles and access scope
+
+| Role | Current backend access |
+| --- | --- |
+| `citizen` | Create and read only their own reports/history; see permitted rejection/duplicate reason; never official actions. |
+| `barangay_official` | Review and decide reports only in their configured `barangay`; may keep accountable routing within that barangay. |
+| `city_engineer` | City-wide review, validation, jurisdiction confirmation, and routing. |
+| `admin` | City-wide validation and administrative account management. |
+| `utility_provider` | Can read only incidents already routed to the exact configured `utilityCompany`; provider repair flow is later work. |
+| `repair_personnel` | Not granted incident-review access in the 25%/50% workflow. |
+
+Public `POST /auth/register` always creates a citizen. Provision official
+accounts through an authenticated administrator using `PUT /users/:id` or by
+an approved secure administrative setup process. A barangay official needs a
+matching `barangay`; a utility provider needs a matching `utilityCompany`.
+
+## Workflow and API overview
+
+All protected endpoints use:
+
+```http
+Authorization: Bearer <access-token>
 ```
 
-2. Configure environment variables
+Success responses use `{ "success": true, "data": ... }`; errors use
+`{ "success": false, "message": ... }`. Paginated responses additionally
+include `pagination`.
 
-```bash
-cp .env.example .env
-# Edit .env with your configuration
+### Citizen reporting flow
+
+```text
+register/login → POST /incidents → submitted → My Reports/detail/history
 ```
 
-3. Start MongoDB (if running locally)
+`POST /incidents` is `multipart/form-data`. It accepts category, optional
+subcategory, 10–2,000 character description, a JSON `location`, explicit
+`privacyAcknowledged=true`, and one to five evidence files. The client cannot
+choose priority, starting status, or an AI outcome. The server always starts a
+new report at `submitted`.
 
-```bash
-mongod
+Primary endpoints:
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Public | Creates a citizen account only. |
+| `POST` | `/auth/login` | Public | Returns short-lived access and rotating refresh tokens. |
+| `POST` | `/auth/refresh` | Public with refresh token | Rotates the refresh token. |
+| `POST` | `/auth/logout` | Private | Revokes active sessions. |
+| `GET` | `/auth/me` | Private | Current account. |
+| `GET` | `/categories` | Public | Reportable categories. |
+| `POST` | `/incidents` | Citizen/Admin | Submit a report with evidence. |
+| `GET` | `/incidents/my` | Citizen | Own reports only. |
+| `GET` | `/incidents/:id` | Scoped private | Safe report detail. |
+| `GET` | `/incidents/:id/history` | Scoped private | Server-authored status history. |
+| `GET` | `/notifications` | Private | Own persisted notifications. |
+
+### Official validation and routing flow
+
+```text
+submitted
+├── validated  → priority + jurisdiction + accountable organization + SLA start
+├── rejected   → required citizen-visible reason
+└── duplicate  → required reason + canonical report
 ```
 
-4. Run the application
-
-Development mode:
-```bash
-npm run dev
-```
-
-Production mode:
-```bash
-npm start
-```
-
-The API will be available at `http://localhost:5000`
-
-### Health Check
-
-```bash
-curl http://localhost:5000/health
-```
-
-Expected response:
-```json
-{
-  "status": "OK",
-  "timestamp": "2026-08-01T10:30:00.000Z",
-  "uptime": 123.45,
-  "environment": "development"
-}
-```
-
----
-
-## Project Structure
-
-```
-lunas_backend/
-├── src/
-│   ├── config/
-│   │   └── database.js          # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.js    # Authentication logic
-│   │   ├── incidentController.js
-│   │   ├── workOrderController.js
-│   │   ├── notificationController.js
-│   │   ├── userController.js
-│   │   └── statsController.js
-│   ├── middleware/
-│   │   ├── auth.js              # JWT & authorization
-│   │   ├── validation.js        # Request validation
-│   │   ├── upload.js            # File upload handling
-│   │   ├── errorHandler.js      # Global error handler
-│   │   └── asyncHandler.js      # Async wrapper
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Incident.js
-│   │   ├── WorkOrder.js
-│   │   ├── Notification.js
-│   │   ├── Category.js
-│   │   ├── SLAConfig.js
-│   │   ├── AuditLog.js
-│   │   └── SystemConfig.js
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── incidentRoutes.js
-│   │   ├── workOrderRoutes.js
-│   │   ├── notificationRoutes.js
-│   │   ├── userRoutes.js
-│   │   ├── statsRoutes.js
-│   │   └── index.js
-│   ├── services/
-│   │   ├── storageService.js    # Supabase Storage
-│   │   ├── notificationService.js # OneSignal
-│   │   └── slaService.js        # SLA monitoring
-│   ├── utils/
-│   │   ├── logger.js            # Winston logger
-│   │   ├── auditLogger.js
-│   │   ├── imageProcessor.js
-│   │   ├── validators.js
-│   │   ├── responseFormatter.js
-│   │   └── helpers.js
-│   └── server.js                # Entry point
-├── logs/                        # Log files
-├── .env.example
-├── .dockerignore
-├── .gitignore
-├── Dockerfile                   # Docker image configuration
-├── package.json
-├── README.md                    # This file
-├── API_ENDPOINTS.md             # Complete API reference
-├── SETUP_GUIDE.md               # Step-by-step setup
-└── SUPABASE_ONESIGNAL_GUIDE.md  # Integration guide
-```
-
----
-
-## API Documentation
-
-### Base URL
-
-```
-http://localhost:5000/api/v1
-```
-
-### Authentication
-
-All protected endpoints require a JWT token in the Authorization header:
-
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-### Endpoints Summary
-
-#### Authentication (`/auth`)
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | `/auth/register` | Register new user | Public |
-| POST | `/auth/login` | Login user | Public |
-| GET | `/auth/me` | Get current user | Private |
-| PUT | `/auth/profile` | Update profile | Private |
-| PUT | `/auth/change-password` | Change password | Private |
-| POST | `/auth/logout` | Logout user | Private |
-
-#### Incidents (`/incidents`)
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/incidents` | Get all incidents | Private |
-| POST | `/incidents` | Create incident | Citizen |
-| GET | `/incidents/:id` | Get single incident | Private |
-| PUT | `/incidents/:id` | Update incident | Officials |
-| DELETE | `/incidents/:id` | Delete incident | Admin |
-| POST | `/incidents/:id/validate` | Validate incident | Officials |
-| POST | `/incidents/:id/reject` | Reject incident | Officials |
-| GET | `/incidents/nearby` | Get nearby incidents | Private |
-
-#### Work Orders (`/work-orders`)
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/work-orders` | Get all work orders | Private |
-| POST | `/work-orders` | Create work order | Officials |
-| GET | `/work-orders/:id` | Get single work order | Private |
-| POST | `/work-orders/:id/accept` | Accept work order | Personnel |
-| POST | `/work-orders/:id/progress` | Update progress | Personnel |
-| POST | `/work-orders/:id/complete` | Complete work order | Personnel |
-| POST | `/work-orders/:id/verify` | Verify completion | Officials |
-| DELETE | `/work-orders/:id` | Delete work order | Admin |
-
-#### Users (`/users`)
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/users` | Get all users | Officials |
-| GET | `/users/:id` | Get single user | Private |
-| PUT | `/users/:id` | Update user | Admin |
-| DELETE | `/users/:id` | Delete user | Admin |
-| GET | `/users/repair-personnel` | Get repair personnel | Officials |
-
-#### Notifications (`/notifications`)
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/notifications` | Get notifications | Private |
-| PUT | `/notifications/:id/read` | Mark as read | Private |
-| PUT | `/notifications/read-all` | Mark all as read | Private |
-| DELETE | `/notifications/:id` | Delete notification | Private |
-
-#### Statistics (`/stats`)
-
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/stats/dashboard` | Get dashboard stats | Private |
-| GET | `/stats/analytics` | Get analytics | Officials |
-
-For detailed API documentation with request/response examples, see `API_ENDPOINTS.md`.
-
----
-
-## Database Schema
-
-### Collections
-
-1. **users** - User accounts with role-based access
-2. **incidents** - Infrastructure incident reports
-3. **workorders** - Repair work assignments
-4. **notifications** - In-app notifications
-5. **categories** - Incident categories and subcategories
-6. **slaconfigs** - SLA configuration by priority
-7. **auditlogs** - System audit trail
-8. **systemconfigs** - System-wide configuration
-
-### User Roles
-
-| Role | Description |
-|------|-------------|
-| citizen | Report incidents, track reports |
-| repair_personnel | Receive and complete work orders |
-| barangay_official | Validate incidents, assign work (barangay-scoped) |
-| city_engineer | City-wide incident management |
-| utility_provider | Handle utility-related incidents |
-| admin | Full system access |
-
----
-
-## Authentication
-
-### JWT Token Structure
-
-```json
-{
-  "id": "user_id",
-  "iat": 1234567890,
-  "exp": 1234567890
-}
-```
-
-### Role-Based Authorization
-
-Routes are protected by role-based middleware:
-
-```javascript
-router.post('/incidents/:id/validate', 
-  protect, 
-  authorize('barangay_official', 'city_engineer', 'admin'),
-  validateIncident
-);
-```
-
----
-
-## Environment Configuration
-
-Create a `.env` file in the root directory with the following variables:
-
-```bash
-# Server Configuration
-NODE_ENV=development
-PORT=5000
-API_VERSION=v1
-
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/lunas_db
-# For MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/lunas_db
-
-# JWT Configuration
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
-JWT_EXPIRE=7d
-JWT_REFRESH_SECRET=your_refresh_token_secret
-JWT_REFRESH_EXPIRE=30d
-
-# Supabase Configuration
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-SUPABASE_STORAGE_BUCKET=lunas-storage
-
-# OneSignal Configuration
-ONESIGNAL_APP_ID=your_onesignal_app_id
-ONESIGNAL_REST_API_KEY=your_onesignal_rest_api_key
-ONESIGNAL_USER_AUTH_KEY=your_onesignal_user_auth_key
-
-# Google Maps API
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-
-# SLA Configuration (in hours)
-SLA_CRITICAL=48
-SLA_HIGH=72
-SLA_MEDIUM=168
-SLA_LOW=336
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Pagination
-DEFAULT_PAGE_SIZE=20
-MAX_PAGE_SIZE=100
-
-# File Upload
-MAX_FILE_SIZE=10485760
-ALLOWED_FILE_TYPES=image/jpeg,image/png,image/jpg
-
-# CORS
-CORS_ORIGIN=http://localhost:3000,http://localhost:8080
-```
-
-See `.env.example` for a complete template.
-
----
-
-## Development
-
-### Running in Development Mode
-
-```bash
-npm run dev
-```
-
-This starts the server with nodemon for automatic restarts on file changes.
-
-### Code Style
-
-The project follows standard JavaScript conventions:
-- Use async/await for asynchronous operations
-- Follow Express.js best practices
-- Use descriptive variable and function names
-- Add comments for complex logic
-- Keep functions small and focused
-
-### Logging
-
-The application uses Winston for structured logging:
-
-```javascript
-const logger = require('./utils/logger');
-
-logger.info('Server started successfully');
-logger.error('Error connecting to database:', error);
-logger.warn('SLA deadline approaching');
-```
-
-Logs are written to:
-- Console (development)
-- `logs/combined.log` (all logs)
-- `logs/error.log` (errors only)
-
----
-
-## Testing
-
-Run tests:
-
-```bash
-npm test
-```
-
-Run tests with coverage:
-
-```bash
-npm test -- --coverage
-```
-
----
-
-## Deployment
-
-### Deployment Options
-
-- **Heroku** - Easy deployment with MongoDB Atlas
-- **DigitalOcean** - VPS with PM2 process manager
-- **AWS EC2** - Scalable cloud infrastructure
-- **Render** - Free tier available
-- **Railway** - Modern platform with auto-deploy
-
-### Pre-Deployment Checklist
-
-- [ ] Update all environment variables for production
-- [ ] Use strong JWT secrets (minimum 32 characters)
-- [ ] Enable MongoDB authentication
-- [ ] Configure Supabase storage policies
-- [ ] Secure OneSignal API keys
-- [ ] Set up HTTPS/SSL
-- [ ] Configure proper CORS origins
-- [ ] Enable production logging
-- [ ] Set up monitoring and alerts
-- [ ] Configure backup strategy
-- [ ] Test all critical endpoints
-
-### Environment Variables for Production
-
-Ensure these are set in your production environment:
-
-- `NODE_ENV=production`
-- `MONGODB_URI` (use MongoDB Atlas or managed service)
-- Strong `JWT_SECRET` and `JWT_REFRESH_SECRET`
-- All Supabase and OneSignal credentials
-- Appropriate `CORS_ORIGIN` values
-
----
-
-## SLA Monitoring
-
-The system includes automated SLA monitoring with cron jobs:
-
-### Priority-Based SLA Times
-
-| Priority | Target Resolution | Reminder Before |
-|----------|------------------|-----------------|
-| Critical | 48 hours | 24h, 12h, 6h, 2h |
-| High | 72 hours | 24h, 12h, 6h, 2h |
-| Medium | 168 hours (7 days) | 24h, 12h |
-| Low | 336 hours (14 days) | 24h |
-
-### Automated Actions
-
-- **Hourly**: Check for overdue incidents
-- **Every 30 minutes**: Send SLA reminders
-- **On overdue**: Escalate to higher authorities
-- **Escalation levels**: Increase with each missed deadline
-
----
-
-## API Response Format
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": { }
-}
-```
-
-### Error Response
-
-```json
-{
-  "success": false,
-  "message": "Error message",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Email is required"
-    }
-  ]
-}
-```
-
-### Paginated Response
-
-```json
-{
-  "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 150,
-    "pages": 8
-  }
-}
-```
-
----
-
-## Security Considerations
-
-### Implemented Security Measures
-
-- JWT token-based authentication
-- Password hashing with bcrypt
-- Role-based access control
-- Request validation and sanitization
-- Rate limiting to prevent abuse
-- Helmet.js for HTTP security headers
-- CORS configuration
-- Comprehensive audit logging
-- Secure file upload handling
-
-### Best Practices
-
-- Never commit `.env` file to version control
-- Use strong, unique secrets for JWT tokens
-- Regularly update dependencies
-- Monitor logs for suspicious activity
-- Implement proper error handling
-- Validate all user inputs
-- Use HTTPS in production
-- Keep service account keys secure
-
----
+The decision update is conditional on `status: submitted`, so only the first
+valid decision wins. A second decision must receive HTTP `409`; it must never
+overwrite the first reviewer’s outcome.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/incidents/pending-validation` | Server-scoped submitted queue. |
+| `GET` | `/stats/validation-summary` | Server-scoped pending/validated/rejected/duplicate counts. |
+| `GET` | `/incidents/:id/duplicate-candidates` | Advisory duplicate candidates only. |
+| `GET` | `/incidents/:id/sla` | SLA foundation/read model. |
+| `POST` | `/incidents/:id/validate` | Validate with required priority and optional jurisdiction/routing. |
+| `POST` | `/incidents/:id/reject` | Reject with required reason. |
+| `POST` | `/incidents/:id/mark-duplicate` | Mark duplicate with canonical report and reason. |
+| `PATCH` | `/incidents/:id/priority` | Reprioritize a validated report. |
+| `PATCH` | `/incidents/:id/jurisdiction` | Correct a validated jurisdiction. |
+| `POST` | `/incidents/:id/route` | Set accountable organization/role and append route history. |
+| `PUT` | `/incidents/:id` | Update a non-workflow official note only. |
+
+The pending queue supports `page`, `limit`, `search`, `category`, `barangay`,
+`hasDuplicateCandidate`, `sortBy`, `from`, and `to`. Full request and response
+payloads, including validation, rejection, duplicate, priority, jurisdiction,
+and route examples, are in [API_ENDPOINTS.md](./API_ENDPOINTS.md).
+
+### SLA behavior in this milestone
+
+Validation starts an active SLA using the selected priority. Updating priority
+recalculates its deadline. Defaults are:
+
+| Priority | Default deadline |
+| --- | --- |
+| `critical` | 48 hours |
+| `high` | 72 hours |
+| `medium` | 168 hours (7 days) |
+| `low` | 336 hours (14 days) |
+
+`SLA_AUTOMATION_ENABLED=false` is intentional: this milestone establishes and
+displays deadlines; it does not claim approved reminder, escalation, repair,
+or closure automation.
+
+## Manual acceptance checklist
+
+Run this against a clean local/staging MongoDB database and configured private
+Supabase bucket. Use at least these accounts:
+
+- citizen A and citizen B
+- a barangay official assigned to Barangay A
+- a barangay official assigned to a different Barangay B
+- city engineer or administrator
+- optional utility provider with an exact `utilityCompany` name
+
+Record report IDs, timestamps, account roles, and unexpected responses for
+each failed item. Do not use production personal evidence for testing.
+
+### Environment and service readiness
+
+- [ ] `npm install` completes without dependency errors.
+- [ ] `npm test -- --runInBand --silent` passes.
+- [ ] `npm run lint` passes.
+- [ ] `GET /health` returns HTTP 200 and the expected environment.
+- [ ] MongoDB is reachable and a test report remains after an API restart.
+- [ ] Supabase bucket exists, uses the intended privacy policy, and the server
+      service-role credentials can upload/delete a test image.
+- [ ] Browser origin(s) in `CORS_ORIGIN` can call the API; an unlisted browser
+      origin is denied.
+- [ ] `.env` and service-role/JWT secrets are not committed or exposed in
+      browser/mobile configuration.
+
+### 25% citizen reporting
+
+- [ ] Register a new account and confirm its returned role is `citizen`, even
+      if a role is included in the request body.
+- [ ] Log in, call `GET /auth/me`, refresh the session once, then verify the
+      old refresh token cannot be reused.
+- [ ] Log out and confirm previous access/refresh tokens no longer authorize
+      protected requests.
+- [ ] Fetch `GET /categories`; confirm the citizen UI has manual category
+      selection when AI is unavailable.
+- [ ] Submit a valid multipart report with a supported category, valid location
+      including barangay, `privacyAcknowledged=true`, and one evidence image.
+- [ ] Confirm the response starts at `submitted`, includes a report number and
+      advisory duplicate count, and ignores client-supplied priority/status/AI
+      fields.
+- [ ] Confirm uploaded evidence is readable through a safe signed URL but the
+      citizen API response contains no storage key or Supabase service secret.
+- [ ] Reject invalid evidence cases: missing acknowledgement, unsupported MIME
+      type, excessive file size, too-small image, malformed location, and
+      insufficient description.
+- [ ] Confirm citizen A sees the report in `GET /incidents/my`, detail, and
+      history; citizen B receives no access to citizen A’s report ID.
+- [ ] Submit a nearby, same-category report and confirm it may appear as an
+      advisory duplicate candidate only—neither report changes status by itself.
+
+### 50% validation and routing
+
+- [ ] Sign in as the Barangay A official and confirm the pending queue contains
+      only `submitted` Barangay A reports.
+- [ ] Confirm the Barangay B official cannot view, read, or decide the Barangay
+      A report by changing an ID or query parameter.
+- [ ] Confirm the city engineer/admin can review the same report city-wide.
+- [ ] Exercise queue pagination, search, category, date, duplicate-candidate,
+      and allowed sort filters; verify the result is server-scoped rather than
+      merely hidden in the client.
+- [ ] Read report detail, history, duplicate candidates, and SLA. Confirm
+      official detail has operational fields while citizen detail does not leak
+      internal notes, reviewer identity, storage keys, or other users’ data.
+- [ ] Validate one submitted report with a permitted priority, jurisdiction,
+      and complete routing object. Confirm `validated`, a history entry,
+      priority metadata, route history, audit event, and active SLA deadline.
+- [ ] Validate another report with optional jurisdiction/routing omitted and
+      confirm only authorized server defaults are applied.
+- [ ] Attempt a partial routing object and confirm validation rejects it rather
+      than storing mismatched organization/role data.
+- [ ] Reprioritize a validated report. Confirm its SLA deadline changes and an
+      audit/status-history record exists.
+- [ ] Correct jurisdiction and route a validated report. Confirm the updates
+      are authorized, auditable, and route history is appended rather than
+      overwritten.
+- [ ] Reject a submitted report with a valid reason. Confirm the reporting
+      citizen sees `rejected` and that permitted reason, but not internal notes.
+- [ ] Mark a submitted report duplicate using a scoped canonical report and a
+      valid reason. Confirm both records remain, the citizen sees `duplicate`,
+      and the duplicate reason is visible without canonical reporter details.
+- [ ] Attempt duplicate self-reference and a circular duplicate chain; confirm
+      both are rejected.
+- [ ] Send two decision requests for the same submitted report at nearly the
+      same time. Confirm one succeeds and the other returns HTTP `409`.
+- [ ] Confirm a citizen and utility provider cannot call decision endpoints.
+- [ ] Route a validated report to the exact optional utility-provider company,
+      then confirm that provider can read that routed report but cannot see
+      unrelated or still-submitted reports.
+- [ ] Confirm validation/rejection/duplicate events create a persisted citizen
+      notification; verify OneSignal delivery only if real credentials are set.
+- [ ] Confirm validation-summary counts match the official’s server scope.
+
+### Guardrails and later-work boundaries
+
+- [ ] Attempt `PUT /incidents/:id` with `status`, `priority`, rejection, or
+      duplicate fields. Confirm only non-workflow notes are allowed.
+- [ ] Attempt work-order creation for a `submitted` report. Confirm it returns
+      HTTP `409` and does not bypass validation.
+- [ ] Keep `SLA_AUTOMATION_ENABLED=false` during milestone acceptance; do not
+      mark reminder/escalation automation as tested or production-ready.
+- [ ] Verify no screen or API claim says evidence was automatically redacted or
+      AI-classified unless a real approved model was separately installed and
+      tested.
+
+## Security and privacy boundaries
+
+- Access is enforced in backend queries and mutations, not only by UI route
+  guards. Scope combines report ownership/jurisdiction/organization with the
+  requested filter to reduce IDOR exposure.
+- Authentication uses short-lived JWT access tokens and rotating hashed refresh
+  tokens. Logout/password changes invalidate sessions through token versioning.
+- Public registration cannot create officials, administrators, repair staff, or
+  utility-provider accounts.
+- Helmet, CORS allow-listing, API/auth rate limits, request validation, and
+  image type/dimension limits are active server protections.
+- Evidence is re-encoded to strip EXIF metadata before storage. Private buckets
+  use expiring signed URLs; persistent response payloads do not expose storage
+  keys to citizens.
+- The system records a reporter privacy acknowledgement. It does **not** claim
+  face/license-plate redaction without an approved real model.
+- Official notes and reviewer/organization details are not returned in citizen
+  incident/timeline responses. Rejection/duplicate reasons are intentionally
+  citizen-visible.
+
+## External dependencies and known limits
+
+| Dependency/limit | Current behavior |
+| --- | --- |
+| MongoDB | Required for real persistence and cross-account concurrency testing. |
+| Supabase Storage | Required for real evidence submission and signed evidence URLs. Ensure bucket policies are tested with non-public evidence. |
+| OneSignal | Optional. Database notifications remain the durable record when push credentials are absent. |
+| Maps/geographic boundaries | A map key can improve clients, but no authoritative Dagupan boundary dataset is bundled or fabricated. Jurisdiction is manually confirmed and audited. |
+| Organization registry | Not included. City engineers/admins manually enter the accountable organization; provider visibility requires an exact `utilityCompany` match. |
+| AI/redaction models | Not included/approved in this milestone. AI fields remain unavailable unless a deployed, tested model is explicitly enabled. |
+| SLA automation | Scheduler is opt-in and intentionally disabled by default. Deadline initialization is the accepted 50% capability. |
+
+## Deferred work
+
+The following are outside the verified 25%/50% handoff, even if legacy models
+or endpoints are present in the repository:
+
+- work-order assignment and provider/repair-personnel operations
+- accept/decline, repair progress percentage, repair evidence, completion,
+  verification, and closure
+- approved reminder/escalation policy and operational SLA automation
+- full analytics/reporting and production operations dashboards
+- authoritative jurisdiction/boundary and organization-registry integrations
+- production AI hazard classification and privacy-redaction models
+
+Do not describe these as delivered until their dedicated milestone, real
+integrations, cross-role testing, and acceptance checks are complete.
 
 ## Troubleshooting
 
-### Common Issues
+### MongoDB connection fails
 
-**MongoDB Connection Failed**
-- Verify MongoDB is running
-- Check connection string in `.env`
-- Ensure network access if using MongoDB Atlas
+- Confirm `MONGODB_URI` points to a running/reachable MongoDB instance.
+- For Atlas, check IP allow-listing, database user credentials, and TLS URI.
+- Restart after editing `.env`; environment variables are read at process start.
 
-**Port Already in Use**
-- Change `PORT` in `.env`
-- Or kill existing process on port 5000
+### Evidence upload or signed URL fails
 
-**JWT Token Invalid**
-- Check token expiration
-- Verify `JWT_SECRET` matches
-- Ensure token is properly formatted
+- Confirm `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
+  `SUPABASE_STORAGE_BUCKET` are set in the backend process.
+- Confirm the bucket exists and the service role has upload/delete/sign access.
+- Check evidence MIME, dimensions, size, and `privacyAcknowledged=true`.
+- Keep evidence private unless a deliberate privacy review approves a public
+  bucket; use the signed URL expiry setting for normal access.
 
-**File Upload Failed**
-- Verify Supabase credentials
-- Check storage bucket exists
-- Ensure bucket policies are configured
+### Browser requests are blocked by CORS
 
-**Push Notifications Not Working**
-- Verify OneSignal credentials
-- Check player IDs are registered
-- Ensure device has notification permissions
+- Add the exact web origin (scheme, host, and port) to comma-separated
+  `CORS_ORIGIN` and restart the backend.
+- Do not use `*` with credentialed browser sessions.
 
-For detailed troubleshooting, see `SETUP_GUIDE.md`.
+### A decision is rejected or returns 409
 
----
+- HTTP `409` means the report is no longer `submitted` or a concurrent decision
+  already succeeded. Refresh the report; do not retry blindly.
+- Confirm the official has the required role and configured barangay/city scope.
+- A barangay official cannot route an incident to an arbitrary provider or a
+  different barangay.
 
-## Contributing
+### Push/password-reset delivery does not arrive
 
-This project is developed as a Capstone Research Project for academic purposes. For questions or contributions, contact the development team at PHINMA University of Pangasinan.
+- In-app notifications and generic reset responses still work without a
+  provider. Delivery requires the corresponding OneSignal or approved reset
+  delivery variables to be configured.
+- Do not log tokens, reset links, or provider credentials while diagnosing.
 
----
+## License and project context
 
-## License
-
-This project is developed as a Capstone Research Project for academic purposes under the College of Information Technology, PHINMA University of Pangasinan.
-
----
-
-## Development Team
-
-| Name | Role |
-|------|------|
-| Mark Khean M. Viari | Project Manager, System Integrator |
-| Terrence Lappay | System Analyst, UI/UX |
-| Mark Anthony Lafuente | System Analyst, Frontend |
-| Kristian Dave Narvas | System Integrator |
-| John Miller Ungos | System Integrator |
-
----
-
-## Contact & Support
-
-**Institution:** PHINMA University of Pangasinan  
-**College:** Information Technology  
-**Location:** Dagupan City, Pangasinan, Philippines
-
-For technical support or questions, contact the development team.
-
----
-
-**LUNAS Backend API** - Building smarter, faster, and more transparent urban infrastructure maintenance through AI and automation.
-
-Version 1.0.0 | Last Updated: August 2026
+LUNAS is a capstone research project for the College of Information Technology,
+PHINMA University of Pangasinan. Treat this backend as an academic project
+handoff until production security, privacy, service ownership, and operational
+acceptance requirements are independently approved.

@@ -5,6 +5,41 @@ const User = require('../models/User');
 const { createNotification, notificationTemplates } = require('./notificationService');
 const logger = require('../utils/logger');
 
+// This is the single 50% SLA policy source. Deployments can tune the values
+// through environment configuration without changing validation controllers
+// or user interfaces. The proposal gives Critical as a range, so 48 hours is
+// the documented configurable default rather than an invented fixed rule.
+const DEFAULT_SLA_HOURS = Object.freeze({
+  critical: 48,
+  high: 72,
+  medium: 168,
+  low: 336
+});
+
+const getSLAHours = (priority) => {
+  const normalizedPriority = String(priority || 'medium').toLowerCase();
+  const environmentValue = process.env[`SLA_${normalizedPriority.toUpperCase()}`];
+  const configured = Number.parseInt(environmentValue, 10);
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : (DEFAULT_SLA_HOURS[normalizedPriority] || DEFAULT_SLA_HOURS.medium);
+};
+
+const initializeIncidentSLA = (priority, startedAt = new Date()) => {
+  const targetResolutionTime = getSLAHours(priority);
+  return {
+    targetResolutionTime,
+    startedAt,
+    deadline: new Date(startedAt.getTime() + targetResolutionTime * 60 * 60 * 1000),
+    state: 'active',
+    isOverdue: false,
+    escalationLevel: 0,
+    remindersSent: 0
+  };
+};
+
+const isSlaAutomationEnabled = () => process.env.SLA_AUTOMATION_ENABLED === 'true';
+
 /**
  * Check and update SLA status for incidents and work orders
  */
@@ -16,7 +51,8 @@ const checkSLAStatus = async () => {
     const overdueIncidents = await Incident.find({
       'sla.deadline': { $lt: new Date() },
       'sla.isOverdue': false,
-      status: { $nin: ['completed', 'verified', 'closed', 'rejected'] }
+      status: { $nin: ['completed', 'verified', 'closed', 'rejected', 'duplicate'] },
+      'sla.state': 'active'
     });
 
     // Mark incidents as overdue
@@ -76,7 +112,8 @@ const sendSLAReminders = async () => {
           $lte: deadlineTime
         },
         'sla.isOverdue': false,
-        status: { $nin: ['completed', 'verified', 'closed', 'rejected'] },
+        status: { $nin: ['completed', 'verified', 'closed', 'rejected', 'duplicate'] },
+        'sla.state': 'active',
         'sla.remindersSent': { $lt: reminderThresholds.indexOf(threshold) + 1 }
       }).populate('assignedTo');
 
@@ -177,6 +214,15 @@ const notifyOverdueIncident = async (incident) => {
  * Start SLA monitoring cron jobs
  */
 exports.startSLAMonitor = () => {
+  // The 50% milestone initializes and displays SLA deadlines, but does not
+  // silently turn on the later escalation/reminder engine in a deployment.
+  // Existing installations that have completed and approved that operational
+  // policy may opt in explicitly.
+  if (!isSlaAutomationEnabled()) {
+    logger.info('SLA deadline foundation is active; reminder/escalation automation is disabled');
+    return;
+  }
+
   // Check SLA status every hour
   cron.schedule('0 * * * *', () => {
     checkSLAStatus();
@@ -197,14 +243,8 @@ exports.startSLAMonitor = () => {
 /**
  * Calculate SLA deadline based on priority
  */
-exports.calculateSLADeadline = (priority) => {
-  const slaHours = {
-    critical: parseInt(process.env.SLA_CRITICAL) || 48,
-    high: parseInt(process.env.SLA_HIGH) || 72,
-    medium: parseInt(process.env.SLA_MEDIUM) || 168,
-    low: parseInt(process.env.SLA_LOW) || 336
-  };
-
-  const hours = slaHours[priority] || slaHours.medium;
-  return new Date(Date.now() + hours * 60 * 60 * 1000);
-};
+exports.DEFAULT_SLA_HOURS = DEFAULT_SLA_HOURS;
+exports.getSLAHours = getSLAHours;
+exports.initializeIncidentSLA = initializeIncidentSLA;
+exports.isSlaAutomationEnabled = isSlaAutomationEnabled;
+exports.calculateSLADeadline = (priority) => initializeIncidentSLA(priority).deadline;

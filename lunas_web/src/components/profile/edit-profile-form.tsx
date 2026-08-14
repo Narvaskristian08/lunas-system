@@ -4,16 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CircleAlert, LockKeyhole, Save, ShieldCheck } from "lucide-react";
+import { updateProfileAction } from "@/app/actions/auth";
 import { PermissionGate } from "@/components/auth/permission-gate";
 import { FormField } from "@/components/forms/form-field";
 import { PageHeader } from "@/components/layout/page-header";
-import { AvatarUploader } from "@/components/profile/avatar-uploader";
 import { useToast } from "@/components/providers/toast-provider";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-import { profileService } from "@/lib/mock-api";
 
 const namePattern = /^[\p{L}\s.'-]+$/u;
 const phonePattern = /^(?:\+63|0)\s?\d{3}\s?\d{3}\s?\d{4}$/;
@@ -32,30 +31,23 @@ function EditProfileWorkspace() {
   const router = useRouter();
   const { notify } = useToast();
   const [firstName, setFirstName] = useState(viewer.firstName);
-  const [middleName, setMiddleName] = useState(viewer.middleName ?? "");
   const [lastName, setLastName] = useState(viewer.lastName);
   const [phone, setPhone] = useState(viewer.phone ?? "");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarError, setAvatarError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [formError, setFormError] = useState<string>();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState("/profile");
 
   const errors = useMemo(() => ({
     firstName: validateName(firstName, "First name"),
-    middleName: validateName(middleName, "Middle name", false),
     lastName: validateName(lastName, "Last name"),
     phone: phone.trim() && !phonePattern.test(phone.trim()) ? "Use a Philippine number such as +63 917 123 4567 or 0917 123 4567." : undefined,
-  }), [firstName, lastName, middleName, phone]);
+  }), [firstName, lastName, phone]);
 
   const dirty = firstName.trim() !== viewer.firstName
-    || middleName.trim() !== (viewer.middleName ?? "")
     || lastName.trim() !== viewer.lastName
-    || phone.trim() !== (viewer.phone ?? "")
-    || Boolean(avatarFile);
-  const valid = !Object.values(errors).some(Boolean) && !avatarError;
+    || phone.trim() !== (viewer.phone ?? "");
+  const valid = !Object.values(errors).some(Boolean);
 
   useEffect(() => {
     if (!dirty) return;
@@ -101,33 +93,25 @@ function EditProfileWorkspace() {
     if (!dirty || !valid || submitting) return;
     setSubmitting(true);
     setFormError(undefined);
-    setUploadProgress(avatarFile ? 8 : 0);
-
-    const progressTimer = avatarFile
-      ? window.setInterval(() => setUploadProgress((current) => Math.min(92, current + 11)), 110)
-      : undefined;
 
     try {
-      await profileService.update(viewer, {
+      const result = await updateProfileAction({
         firstName: firstName.trim(),
-        middleName: middleName.trim() || undefined,
         lastName: lastName.trim(),
         phone: phone.trim() || undefined,
       });
-      if (progressTimer) window.clearInterval(progressTimer);
-      setUploadProgress(100);
+      if (!result.ok) {
+        setFormError(result.message ?? "We couldn’t save your profile. Your changes are still here; try again in a moment.");
+        return;
+      }
       notify({
         title: "Profile updated",
         message: "Your editable profile details were saved successfully.",
         tone: "success",
       });
       router.push("/profile");
-    } catch (error) {
-      if (progressTimer) window.clearInterval(progressTimer);
-      setUploadProgress(0);
-      setFormError(error instanceof Error && error.message === "OFFLINE"
-        ? "You’re offline. Your changes are still in this form; reconnect and try again."
-        : "We couldn’t save your profile. Your changes are still here; try again in a moment.");
+    } catch {
+      setFormError("We couldn’t save your profile. Your changes are still here; try again in a moment.");
     } finally {
       setSubmitting(false);
     }
@@ -138,7 +122,7 @@ function EditProfileWorkspace() {
       <PageHeader
         title="Edit profile"
         eyebrow="Account settings"
-        description="Update your name, contact number, and profile image. Administrative account details are protected."
+        description="Update your name and contact number. Administrative account details are protected."
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "My profile", href: "/profile" },
@@ -152,21 +136,7 @@ function EditProfileWorkspace() {
       />
 
       <form onSubmit={submit} noValidate>
-        <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-          <Card className="self-start p-5 xl:sticky xl:top-28">
-            <AvatarUploader
-              firstName={firstName}
-              lastName={lastName}
-              file={avatarFile}
-              error={avatarError}
-              uploading={submitting}
-              progress={uploadProgress}
-              onChange={setAvatarFile}
-              onError={setAvatarError}
-            />
-          </Card>
-
-          <div className="space-y-5">
+        <div className="space-y-5">
             <Card>
               <CardHeader title="Personal information" description="Fields marked with an asterisk are required." />
               <div className="grid gap-5 p-5 sm:grid-cols-2">
@@ -177,15 +147,6 @@ function EditProfileWorkspace() {
                   onChange={(event) => setFirstName(event.target.value)}
                   error={errors.firstName}
                   autoComplete="given-name"
-                  maxLength={60}
-                />
-                <FormField
-                  label="Middle name"
-                  optional
-                  value={middleName}
-                  onChange={(event) => setMiddleName(event.target.value)}
-                  error={errors.middleName}
-                  autoComplete="additional-name"
                   maxLength={60}
                 />
                 <FormField
@@ -219,7 +180,7 @@ function EditProfileWorkspace() {
               />
               <div className="grid gap-5 p-5 sm:grid-cols-2">
                 <FormField label="Verified email" value={viewer.email} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} helperText="Contact an administrator to change your verified email." />
-                <FormField label="Personnel ID" value={viewer.personnelId} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
+                <FormField label="Personnel ID" value={viewer.personnelId ?? "Not assigned"} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
                 <FormField label="Role" value={viewer.role} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
                 <FormField label="Organization" value={viewer.organization} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
                 <FormField label="Account status" value={viewer.status} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
@@ -245,14 +206,13 @@ function EditProfileWorkspace() {
                 </Button>
               </div>
             </div>
-          </div>
         </div>
       </form>
 
       <ConfirmationDialog
         open={confirmOpen}
         title="Discard unsaved changes?"
-        description="Your profile edits and selected image will be lost if you leave this page."
+        description="Your profile edits will be lost if you leave this page."
         confirmLabel="Discard changes"
         cancelLabel="Keep editing"
         destructive

@@ -1,3 +1,5 @@
-import { BarangayOperations } from "@/components/barangay/barangay-operations";
-import { requirePermission } from "@/lib/auth/dal.server";
-export default async function SlaDetailPage({ params }: { params: Promise<{ id: string }> }) { await requirePermission("sla.view"); const { id } = await params; return <BarangayOperations module="sla" recordId={id} />; }
+import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+
+export default function SlaDetailPage() {
+  return <MilestoneUnavailable title="SLA details are not available yet" description="SLA monitoring and escalation are planned for a later milestone." />;
+}

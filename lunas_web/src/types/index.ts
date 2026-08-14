@@ -1,10 +1,21 @@
 export type UserRole =
+  | "Citizen"
   | "Barangay Official"
   | "City Engineering Office"
   | "Utility Provider"
+  | "Repair Personnel"
   | "System Administrator"
   | "Maintenance Coordinator"
   | "Executive Viewer";
+
+/** Roles sent by the current Express API. Keep these separate from display labels. */
+export type BackendUserRole =
+  | "citizen"
+  | "repair_personnel"
+  | "barangay_official"
+  | "city_engineer"
+  | "utility_provider"
+  | "admin";
 
 export type Permission =
   | "dashboard.view"
@@ -31,12 +42,13 @@ export interface UserProfile {
   email: string;
   phone?: string;
   role: UserRole;
+  backendRole: BackendUserRole;
   organization: string;
   unit?: string;
-  personnelId: string;
+  personnelId?: string;
   status: "Active" | "Suspended" | "Deactivated";
   verified: boolean;
-  lastLogin: string;
+  lastLogin?: string;
   joinedAt: string;
   permissions: Permission[];
   avatarUrl?: string;

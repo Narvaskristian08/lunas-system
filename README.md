@@ -1,807 +1,239 @@
+# LUNAS
 
+LUNAS is an urban-infrastructure reporting system for Dagupan City. The
+currently implemented and documented scope is:
 
+- **25% — Citizen reporting:** account access, evidence, category and location
+  capture, report submission, My Reports, report details, and status history.
+- **50% — Official validation and routing:** jurisdiction-scoped review,
+  validate/reject/duplicate decisions, priority, jurisdiction, responsible
+  organization routing, initial SLA deadlines, audit records, and persisted
+  notifications.
 
-
-````md
-# 🌙 LUNAS
-### AI-Assisted Urban Infrastructure Maintenance and Monitoring System with Automated SLA Management
-
-LUNAS is a cloud-based infrastructure reporting and maintenance platform designed to improve how urban infrastructure issues are reported, managed, assigned, monitored, and resolved.
-
-The system empowers **citizens**, **repair personnel**, and **government officials** through a unified platform that combines AI-assisted image analysis, automated Service Level Agreement (SLA) monitoring, and transparent maintenance workflows. It aims to provide a faster, more accountable, and data-driven approach to infrastructure maintenance in **Dagupan City, Philippines**. fileciteturn0file0
-
----
-
-# 📖 Overview
-
-Urban infrastructure issues such as potholes, damaged roads, utility leaks, drainage problems, and other public hazards often experience delayed reporting, poor monitoring, and lack of accountability.
-
-LUNAS addresses these challenges by providing:
-
-- AI-assisted incident reporting
-- Role-based mobile application
-- Web-based administrative command center
-- Automated work order management
-- SLA monitoring and escalation
-- Repair verification
-- Privacy-preserving image processing
-- Complete audit logging
-
-The system follows a complete **Report → Validation → Assignment → Repair → Verification → Closure** workflow. fileciteturn0file0
-
----
-
-# 🎯 Objectives
-
-The project aims to:
-
-- Develop a role-based mobile application for different users.
-- Build a web-based command center for incident management.
-- Implement AI-assisted hazard detection and image privacy protection.
-- Automate incident routing, work order creation, and SLA monitoring.
-- Improve transparency using repair verification and audit logs. fileciteturn0file0
-
----
-
-# 👥 User Roles
-
-## 👤 Citizen
-
-- Report infrastructure incidents
-- Capture and upload evidence
-- AI-assisted hazard detection
-- Automatic privacy masking
-- Track report progress
-- Receive notifications
-- View completed repairs
-
----
-
-## 👷 Repair Personnel
-
-- Receive assigned work orders
-- View incident information
-- Navigate to incident location
-- Update repair progress
-- Upload repair evidence
-- Digitally submit completed work
-
----
-
-## 🏛️ Barangay Officials
-
-- Validate submitted reports
-- Verify incident details
-- Assign local maintenance tasks
-- Review repair evidence
-- Approve or reject repairs
-- Monitor SLA compliance
-
----
-
-## 🏢 City Engineering Office
-
-- Manage city-wide infrastructure
-- Assign work orders
-- Monitor incident status
-- Review analytics
-- Verify completed repairs
-- Monitor SLA performance
-
----
-
-## 🔧 Utility Providers
-
-- Receive utility-related incidents
-- Perform repairs
-- Submit repair completion
-- Coordinate with LGU
-
----
-
-## 👨‍💼 System Administrator
-
-- Manage users and permissions
-- Configure SLA rules
-- System configuration
-- Monitor audit logs
-- Manage categories
-- Generate reports
-
----
-
-# 🚀 Key Features
-
-## 📍 Smart Incident Reporting
-
-- GPS location capture
-- Photo upload
-- AI-assisted hazard recognition
-- Automatic hazard categorization
-- Duplicate report detection
-- Image quality checking
-
----
-
-## 🤖 AI-Assisted Image Processing
-
-- TensorFlow Lite hazard detection
-- On-device image analysis
-- Privacy-preserving processing
-- Automatic face detection
-- Automatic license plate detection
-- Automatic image redaction
-
----
-
-## 🗺️ Incident Mapping
-
-- Google Maps integration
-- Incident visualization
-- Location confirmation
-- Jurisdiction identification
-
----
-
-## 📋 Work Order Management
-
-- Automatic assignment workflow
-- Personnel assignment
-- Status updates
-- Repair progress tracking
-- Completion records
-
----
-
-## ⏰ Automated SLA Monitoring
-
-- Configurable SLA rules
-- Deadline tracking
-- Automatic reminders
-- Escalation system
-- Resolution monitoring
-
----
-
-## ✅ Repair Verification
-
-- Before vs After comparison
-- Image alignment
-- Structural Similarity Index (SSIM)
-- Human-supervised approval
-- Repair recommendation
-
----
-
-## 🔔 Notifications
-
-- Work order notifications
-- Status updates
-- SLA reminders
-- Approval notifications
-- Resolution updates
-
----
-
-## 🔒 Security
-
-- JWT Authentication
-- Role-based authorization
-- Audit logs
-- Ed25519 digital signatures
-- Secure cloud storage
-- Tamper-evident records
-
----
-
-# 🔄 System Workflow
+The supported incident-decision workflow is:
 
 ```text
-Citizen Reports Incident
-          │
-          ▼
-AI Image Analysis
-(Hazard Detection + Privacy Masking)
-          │
-          ▼
-Submit Report
-          │
-          ▼
-Incident Validation
-          │
-          ▼
-Duplicate Check
-          │
-          ▼
-Jurisdiction Identification
-          │
-          ▼
-Work Order Creation
-          │
-          ▼
-Personnel Assignment
-          │
-          ▼
-Repair Progress
-          │
-          ▼
-Repair Evidence Upload
-          │
-          ▼
-AI Repair Verification
-          │
-          ▼
-Official Review
-          │
-          ▼
-Approve / Reject
-          │
-          ▼
-Incident Closed
+submitted
+├── validated  → priority + jurisdiction + accountable organization + SLA start
+├── rejected   → required citizen-visible reason
+└── duplicate  → required reason + canonical incident reference
 ```
 
----
+Work orders, repair assignment/progress, verification, closure, full analytics,
+and production AI/redaction workflows are later milestones. Some legacy code
+for those areas remains in the repository; it is not part of the verified 25%
+or 50% acceptance flow.
 
-# 📱 Platforms
+## Documentation map
 
-## Mobile Application
+| Area | Purpose |
+| --- | --- |
+| [MILESTONE_25.md](./MILESTONE_25.md) | Citizen-reporting implementation boundary. |
+| [MILESTONE_50.md](./MILESTONE_50.md) | Official-validation/routing contract and limitations. |
+| [lunas_backend/README.md](./lunas_backend/README.md) | API setup, configuration, tests, and backend checklist. |
+| [lunas_backend/API_ENDPOINTS.md](./lunas_backend/API_ENDPOINTS.md) | API endpoint reference and request examples. |
+| [lunas_mobile/README.md](./lunas_mobile/README.md) | Flutter setup and mobile checklist. |
+| [lunas_web/README.md](./lunas_web/README.md) | Web setup and browser checklist. |
 
-Used by:
+The AI directory is deliberately not covered by this handoff or checklist.
 
-- Citizens
-- Repair Personnel
-- Authorized Officials
-
-Functions:
-
-- Report incidents
-- Perform repairs
-- Track reports
-- Receive notifications
-- Verify repairs
-
----
-
-## Web Command Center
-
-Used by:
-
-- Barangay Officials
-- City Engineering Office
-- Utility Providers
-- Administrators
-
-Functions:
-
-- Incident validation
-- Assignment management
-- SLA monitoring
-- Analytics
-- Reporting
-- Verification
-- Administration
-
----
-
-# 🛠 Technology Stack
-
-| Component | Technology |
-|------------|------------|
-| Mobile | Flutter (Dart) |
-| Web | Next.js (React) |
-| **Backend** | **Node.js + Express.js** |
-| **Database** | **MongoDB** |
-| **Cloud Platform** | **Supabase** (Storage + Realtime) |
-| **Push Notifications** | **OneSignal** |
-| **AI/ML Service** | **Python + Flask + YOLOv8/v11** |
-| **AI Framework** | **PyTorch + Ultralytics** |
-| **Object Detection** | **YOLO (You Only Look Once)** |
-| Computer Vision | OpenCV + Sharp |
-| Image Similarity | SSIM |
-| Authentication | JWT |
-| Digital Signature | Ed25519 |
-| Maps | Google Maps API |
-| Image Processing | Sharp |
-| **Containerization** | **Docker + Docker Compose** |
-| Version Control | GitHub |
-
----
-
-# 📊 SLA Levels
-
-| Priority | Example Incidents | Target Resolution |
-|-----------|------------------|-------------------|
-| 🔴 Critical | Road collapse, electrical hazards, major flooding | 24–48 Hours |
-| 🟠 High | Large potholes, major water leaks | 3 Days |
-| 🟡 Medium | Road cracks, drainage blockage | 7 Days |
-| 🟢 Low | Minor maintenance issues, faded road markings | 14 Days |
-
----
-
-# 🏗 System Architecture
+## Repository layout
 
 ```text
-                Mobile Application
-      (Citizen • Repair • Officials)
-                     │
-                     ▼
-          Node.js/Express Backend
-           RESTful API + MongoDB
-                     │
-      ┌──────────────┼──────────────┐
-      ▼              ▼              ▼
-   MongoDB      Supabase         AI Services
-  (Incidents,   Storage      (TensorFlow Lite,
-  WorkOrders,  (Images +       OpenCV, SSIM)
-   Users)      Push Notifs)   + OneSignal
-                     │
-                     ▼
-          Web Command Center
- (Barangay • Engineering • Admin)
-```
-
----
-
-# 🎯 Expected Outcomes
-
-LUNAS is expected to deliver:
-
-- A unified infrastructure reporting platform
-- Faster incident response and resolution
-- Automated SLA monitoring
-- AI-assisted report validation
-- Transparent maintenance records
-- Better accountability through audit logs
-- Increased citizen participation
-- Improved decision-making through centralized data management fileciteturn0file0
-
----
-
-# 👥 Beneficiaries
-
-- Citizens
-- Repair Personnel
-- Barangay Officials
-- City Engineering Office
-- Utility Providers
-- Local Government Unit (LGU) fileciteturn0file0
-
----
-
-# 👨‍💻 Development Team
-
-| Name | Role |
-|------|------|
-| Mark Khean M. Viari | Project Manager • System Integrator |
-| Terrence Lappay | System Analyst • UI/UX |
-| Mark Anthony Lafuente | System Analyst • Frontend |
-| Kristian Dave Narvas | System Integrator |
-| John Miller Ungos | System Integrator |
-
----
-
-# 📄 Research Information
-
-**Title**
-
-> **LUNAS: An AI-Assisted Urban Infrastructure Maintenance and Monitoring System with Automated SLA Management**
-
-**Institution**
-
-PHINMA University of Pangasinan  
-College of Information Technology
-
-**Project Duration**
-
-March 2026 – July 2026
-
-**Location**
-
-Dagupan City, Philippines fileciteturn0file0
-
----
-
-# � Quick Start
-
-## Backend Setup
-
-The backend is a **MongoDB-based RESTful API** built with Node.js and Express.
-
-### Prerequisites
-- Node.js 18+
-- MongoDB 6.0+
-- Supabase Account (for file storage and realtime features)
-- OneSignal Account (for push notifications)
-
-### Installation
-
-```bash
-# Navigate to backend directory
-cd lunas_backend
-
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your MongoDB URI, Supabase, and OneSignal credentials
-
-# Start development server
-npm run dev
-
-# Server will run on http://localhost:5000
-```
-
-### API Documentation
-- **Base URL:** `http://localhost:5000/api/v1`
-- **Health Check:** `http://localhost:5000/health`
-- **Full API Reference:** See `lunas_backend/API_ENDPOINTS.md`
-- **Setup Guide:** See `lunas_backend/SETUP_GUIDE.md`
-
-### Key Features Implemented
-✅ JWT Authentication & Role-Based Authorization  
-✅ Incident Management (CRUD + Geospatial Queries)  
-✅ Work Order System with Progress Tracking  
-✅ Automated SLA Monitoring with Cron Jobs  
-✅ Supabase Storage Integration for Files & Images  
-✅ Push Notifications via OneSignal  
-✅ Comprehensive Audit Logging  
-✅ Image Processing & Optimization  
-✅ Real-time Statistics & Analytics  
-✅ AI Service Integration  
-
----
-
-## AI/ML Service Setup ⭐ NEW
-
-The AI service provides **real-time infrastructure damage detection** using YOLOv8/v11 models.
-
-### Prerequisites
-- Python 3.10+
-- 2GB RAM minimum
-- Internet (first run only - auto-downloads models)
-
-### Quick Setup
-
-```bash
-# Navigate to AI directory
-cd lunas_ai
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-
-# Run the service
-python app.py
-
-# Service will run on http://localhost:5001
-```
-
-### AI Capabilities
-✅ **Road Damage Detection** - Potholes, cracks, road damage (85-90% accuracy)  
-✅ **Crack Segmentation** - Pixel-level crack detection (70-85% accuracy)  
-✅ **Manhole Detection** - Manholes and sewer covers (90% accuracy)  
-✅ **Privacy Protection** - Automatic face and vehicle detection  
-✅ **Severity Estimation** - Minor, moderate, severe classification  
-✅ **Auto-Categorization** - AI-suggested incident categories  
-
-### AI Documentation
-- **API Documentation:** `lunas_ai/README.md`
-- **Quick Start:** `lunas_ai/QUICK_START.md`
-- **Integration Guide:** `lunas_ai/INTEGRATION_GUIDE.md`
-- **Setup Summary:** `lunas_ai/SETUP_SUMMARY.md`
-
-### Test AI Service
-
-```bash
-# Health check
-curl http://localhost:5001/api/v1/health
-
-# Test detection
-python lunas_ai/test_api.py
-```
-
----
-
-# 📂 Project Structure
-
-```
 lunas-system/
-├── README.md                 # This file (project overview)
-├── docker-compose.yml        # Docker orchestration (all services)
-│
-├── lunas_backend/           # Node.js/Express REST API
-│   ├── src/
-│   │   ├── controllers/     # API business logic
-│   │   ├── models/          # MongoDB schemas
-│   │   ├── routes/          # API endpoints
-│   │   ├── middleware/      # Auth, validation
-│   │   ├── services/        # External integrations (Supabase, OneSignal, AI)
-│   │   └── utils/           # Helper functions
-│   ├── README.md            # Backend documentation
-│   ├── API_ENDPOINTS.md     # Complete API reference
-│   ├── SETUP_GUIDE.md       # Step-by-step setup
-│   └── package.json         # Node.js dependencies
-│
-├── lunas_ai/                # Python AI/ML Microservice ⭐ NEW
-│   ├── src/
-│   │   ├── api/            # REST API endpoints
-│   │   ├── models/         # YOLO model management
-│   │   ├── services/       # Detection algorithms
-│   │   └── utils/          # Configuration & logging
-│   ├── models/             # Model weights (*.pt files)
-│   ├── datasets/           # Training datasets (RDD2022)
-│   ├── app.py              # Main Flask application
-│   ├── train.py            # Training script
-│   ├── README.md           # AI service documentation
-│   ├── QUICK_START.md      # 5-minute setup guide
-│   ├── INTEGRATION_GUIDE.md # Backend integration
-│   └── requirements.txt    # Python dependencies
-│
-├── lunas_mobile/            # Flutter mobile app
-│   └── (To be implemented)
-│
-└── lunas_web/               # Next.js web dashboard
-    └── (To be implemented)
+├── lunas_backend/  Node.js + Express + MongoDB API
+├── lunas_mobile/   Flutter application
+├── lunas_web/      Next.js command center
+├── lunas_ai/       Out of scope for this documentation update
+├── MILESTONE_25.md
+├── MILESTONE_50.md
+└── docker-compose.yml
 ```
 
----
+## Prerequisites
 
-# 🔑 Environment Configuration
+Install these before running the complete supported flow:
 
-The backend requires the following environment variables:
+- Node.js 20.9+ and npm 9+
+- MongoDB 6+ (local or managed)
+- Flutter SDK compatible with Dart 3.11+
+- A Supabase project/private storage bucket for real evidence uploads
+- A Google Maps key for the mobile map experience
+
+Optional integrations:
+
+- OneSignal credentials for push delivery; in-app notifications still persist
+  without them.
+- Password-reset delivery provider.
+
+Do not commit secrets. Copy the supplied example environments and keep real
+values in ignored local files.
+
+## Local startup
+
+### 1. Start MongoDB
+
+Use a local MongoDB instance, or start the development database service:
 
 ```bash
-# Server
-NODE_ENV=development
-PORT=5000
-
-# MongoDB
-MONGODB_URI=mongodb://localhost:27017/lunas_db
-
-# JWT Authentication
-JWT_SECRET=your_secret_key
-JWT_EXPIRE=7d
-
-# Supabase (File Storage + Realtime)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-SUPABASE_STORAGE_BUCKET=lunas-storage
-
-# OneSignal (Push Notifications)
-ONESIGNAL_APP_ID=your_onesignal_app_id
-ONESIGNAL_REST_API_KEY=your_rest_api_key
-ONESIGNAL_USER_AUTH_KEY=your_user_auth_key
-
-# AI Service
-AI_SERVICE_URL=http://localhost:5001
-AI_SERVICE_ENABLED=true
-
-# SLA Configuration (hours)
-SLA_CRITICAL=48
-SLA_HIGH=72
-SLA_MEDIUM=168
-SLA_LOW=336
+docker compose up -d mongodb
 ```
 
-See `lunas_backend/.env.example` for complete configuration.
+The Compose stack is optional for this milestone. The local platform commands
+below are the canonical development path because they expose the current
+backend, web BFF, and mobile configuration explicitly.
 
----
-
-# 🐳 Docker Deployment
-
-### Quick Start with Docker Compose
+### 2. Start the backend
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/your-repo/lunas-system.git
-cd lunas-system
-
-# 2. Create .env file
-cp .env.example .env
-# Edit .env with your credentials
-
-# 3. Start all services
-docker-compose up -d
-
-# Services will be available at:
-# - Backend: http://localhost:5000
-# - AI Service: http://localhost:5001
-# - Web: http://localhost:3000
-# - MongoDB: localhost:27017
-```
-
-### Individual Services
-
-```bash
-# Start specific services
-docker-compose up -d mongodb backend lunas-ai
-
-# View logs
-docker logs -f lunas_backend
-docker logs -f lunas_ai
-
-# Stop services
-docker-compose stop
-
-# Remove containers
-docker-compose down
-
-# Remove everything (including volumes)
-docker-compose down -v
-```
-
-### Development Mode with Database UI
-
-```bash
-# Start with Mongo Express (database UI)
-docker-compose --profile dev up -d
-
-# Access Mongo Express at http://localhost:8081
-# Username: admin
-# Password: admin123
-```
-
-### Service URLs
-
-| Service | URL | Port |
-|---------|-----|------|
-| Backend API | http://localhost:5000 | 5000 |
-| AI Service | http://localhost:5001 | 5001 |
-| Web Dashboard | http://localhost:3000 | 3000 |
-| MongoDB | mongodb://localhost:27017 | 27017 |
-| Mongo Express | http://localhost:8081 | 8081 |
-
----
-
-# 📊 Database Schema
-
-The MongoDB database includes these collections:
-
-1. **users** - User accounts with role-based fields
-2. **incidents** - Infrastructure incident reports with geospatial indexing
-3. **workorders** - Repair assignments with progress tracking
-4. **notifications** - In-app and push notifications
-5. **categories** - Incident categorization
-6. **slaconfigs** - SLA rules by priority
-7. **auditlogs** - Complete audit trail
-8. **systemconfigs** - System-wide settings
-
----
-
-# 🔐 User Roles & Permissions
-
-| Role | Permissions |
-|------|------------|
-| **Citizen** | Report incidents, track own reports, receive notifications |
-| **Repair Personnel** | Accept work orders, update progress, submit completion |
-| **Barangay Official** | Validate incidents, assign work, verify repairs (barangay-scoped) |
-| **City Engineer** | City-wide incident management, work order oversight |
-| **Utility Provider** | Handle utility-related incidents and repairs |
-| **Admin** | Full system access, user management, configuration |
-
----
-
-# 📱 API Integration
-
-The backend provides RESTful APIs that can be consumed by:
-
-### Mobile Application (Flutter)
-```dart
-// Example: Login request
-final response = await http.post(
-  Uri.parse('http://localhost:5000/api/v1/auth/login'),
-  headers: {'Content-Type': 'application/json'},
-  body: jsonEncode({
-    'email': 'user@example.com',
-    'password': 'password123'
-  }),
-);
-```
-
-### Web Dashboard (Next.js/React)
-```javascript
-// Example: Fetch incidents
-const response = await fetch('http://localhost:5000/api/v1/incidents', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-});
-```
-
----
-
-# 🧪 Testing
-
-```bash
-# Run tests
 cd lunas_backend
-npm test
-
-# Run with coverage
-npm test -- --coverage
+npm ci
+cp .env.example .env
+# Configure MONGODB_URI, JWT secrets, CORS_ORIGIN, and Supabase storage values.
+npm run dev
 ```
 
----
+The health endpoint is `http://localhost:5000/health` and the API base URL is
+`http://localhost:5000/api/v1`.
 
-# 🚀 Deployment
+### 3. Start the web application
 
-### Backend Deployment Options
-- **Heroku** - Easy deployment with MongoDB Atlas
-- **DigitalOcean** - VPS with PM2 process manager
-- **AWS EC2** - Scalable cloud infrastructure
-- **Render** - Free tier available
-- **Railway** - Modern platform with auto-deploy
+```bash
+cd lunas_web
+npm ci
+cp .env.example .env.local
+# Set LUNAS_API_URL=http://localhost:5000/api/v1
+# Set a unique, high-entropy LUNAS_SESSION_SECRET.
+npm run dev
+```
 
-See deployment guides in `lunas_backend/` for specific platforms.
+Open `http://localhost:3000`.
 
----
+### 4. Start the mobile application
 
-# �📜 License
+```bash
+cd lunas_mobile
+flutter pub get
+flutter run --dart-define=LUNAS_API_BASE_URL=http://10.0.2.2:5000/api/v1
+```
 
-This project is developed as a Capstone Research Project for academic purposes under the College of Information Technology, PHINMA University of Pangasinan.
+`10.0.2.2` is for an Android emulator. Use a reachable LAN/HTTPS backend URL
+for a physical device or a platform-specific simulator.
 
----
+## Accounts required for manual testing
 
-# 📞 Contact & Support
+Public registration creates **citizen** accounts only. Before testing 50%,
+provision these verified, active accounts through the controlled administrative
+process used by your deployment:
 
-**Development Team**  
-PHINMA University of Pangasinan  
-College of Information Technology
+- one citizen;
+- one city engineer or administrator; and optionally
+- one barangay official whose configured barangay matches the citizen report.
 
-For technical questions or contributions:
-- Check the documentation in each component directory
-- Review API documentation for integration details
-- Contact the development team for support
+Utility-provider accounts need a configured `utilityCompany`. They may read
+only incidents routed to that organization; their mobile/work-order workspace
+is not part of the current milestone.
 
----
+## System acceptance checklist
 
-# 🎓 Academic Context
+Use this checklist after services and test accounts are available. Do not mark
+the milestone complete until every applicable item passes.
 
-**Course:** Capstone Project  
-**Program:** Bachelor of Science in Information Technology  
-**Institution:** PHINMA University of Pangasinan  
-**Academic Year:** 2025-2026  
-**Location:** Dagupan City, Pangasinan, Philippines
+### 25% — citizen reporting
 
----
+- [ ] Citizen can register, sign in, restore a session, and sign out.
+- [ ] Public registration cannot self-assign an official role.
+- [ ] Citizen can select a category, enter a valid description, and choose a
+      valid barangay/location.
+- [ ] Citizen can attach allowed JPG/PNG evidence and acknowledge the privacy
+      notice.
+- [ ] Submitted report persists with status `submitted` and appears in **My
+      Reports**.
+- [ ] Report detail shows only the citizen's own report, safe evidence URL,
+      location, and server-authored timeline.
+- [ ] A citizen cannot read another citizen's report by changing the ID.
 
-# 📊 Development Status
+### 50% — official validation and routing
 
-| Component | Status | Progress |
-|-----------|--------|----------|
-| Backend API | ✅ Complete | 100% |
-| Database Schema | ✅ Complete | 100% |
-| Authentication | ✅ Complete | 100% |
-| File Storage | ✅ Complete | 100% |
-| SLA Monitoring | ✅ Complete | 100% |
-| Notifications | ✅ Complete | 100% |
-| **AI/ML Service** | ✅ **Complete** | **100%** |
-| Docker Setup | ✅ Complete | 100% |
-| Mobile App | 🔄 In Progress | 0% |
-| Web Dashboard | 🔄 In Progress | 0% |
+- [ ] Official sign-in opens the appropriate protected workspace.
+- [ ] Pending Validation contains only `submitted` reports in the official's
+      server-authorized jurisdiction.
+- [ ] Search, category, barangay, date, duplicate, sorting, and pagination
+      filters return server-scoped results.
+- [ ] Official can review signed evidence, location/map link, report history,
+      advisory duplicate candidates, and SLA state.
+- [ ] Validating a report requires a valid priority and records jurisdiction,
+      routing, validator, timestamp, history, audit event, notification, and
+      SLA deadline.
+- [ ] Rejecting a report without a reason fails; a valid rejection persists and
+      the citizen sees the permitted reason.
+- [ ] Marking duplicate requires a reason and canonical report; self-reference
+      and circular references fail safely.
+- [ ] Priority, jurisdiction, and route updates apply only to validated reports
+      and create audit/history metadata.
+- [ ] A stale second decision returns HTTP `409` and the UI refreshes rather
+      than overwriting the first decision.
+- [ ] A citizen receives HTTP `403` for official decision endpoints.
+- [ ] A barangay official cannot retrieve or decide a report outside their
+      barangay.
+- [ ] Work-order creation cannot be used to bypass validation for a submitted
+      report.
 
----
+### Platform regression checks
 
-# 🙏 Acknowledgments
+- [ ] Backend automated tests and lint pass.
+- [ ] Web lint and production build pass.
+- [ ] Mobile `flutter analyze` and `flutter test` pass on a Flutter-enabled
+      machine.
+- [ ] Test a browser and a physical/emulated mobile device against the same
+      backend account data.
+- [ ] Confirm no secrets, storage keys, internal notes, or another citizen's
+      personal data appear in client responses.
 
-Special thanks to:
-- PHINMA University of Pangasinan for the institutional support
-- College of Information Technology faculty for guidance
-- City Government of Dagupan for the project inspiration
-- Open source community for the excellent tools and libraries
+## Automated verification
 
----
+```bash
+cd lunas_backend
+npm test -- --runInBand
+npm run lint
 
-> **LUNAS** — *Building smarter, faster, and more transparent urban infrastructure maintenance through AI and automation.*
+cd ../lunas_web
+npm run lint
+npm run build
 
-**Made with ❤️ by the LUNAS Development Team**
-````
+cd ../lunas_mobile
+flutter pub get
+flutter analyze
+flutter test
+```
+
+At the latest handoff, backend tests, backend lint, web lint, web production
+build, JavaScript syntax checks, and `git diff --check` passed. Flutter/Dart
+was not installed in the implementation environment, so mobile analysis and
+tests must be run locally before formal acceptance.
+
+## Security and privacy notes
+
+- The API, not the UI, enforces role and jurisdiction scope.
+- Backend access tokens are short-lived; web token pairs stay in an encrypted
+  HttpOnly BFF session rather than browser JavaScript.
+- Evidence is processed/stored privately and exposed through signed URLs.
+- Citizen timelines omit internal reviewer/routing notes; permitted decision
+  reasons are exposed through dedicated safe fields.
+- No approved AI hazard or face/plate-redaction model is bundled. Do not claim
+  automatic classification or redaction during testing.
+
+## External configuration still required
+
+- MongoDB for persistence and live concurrency testing.
+- Supabase storage for evidence upload and signed URLs.
+- Maps credentials for full map functionality.
+- OneSignal credentials for push delivery.
+- Authoritative jurisdiction boundaries and organization registry, if the
+  deployment needs automated geographic/provider validation.
+
+## Support and scope
+
+For exact API payloads, use the backend endpoint reference. For role and test
+details specific to a client, use that platform's README. Keep future repair
+and AI work separate from the 25%/50% acceptance checklist.

@@ -2,34 +2,21 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { ChevronDown, HelpCircle, KeyRound, LogOut, RefreshCw, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, HelpCircle, KeyRound, LogOut, UserRound } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useViewer } from "@/components/providers/viewer-provider";
-import { useToast } from "@/components/providers/toast-provider";
-import { logoutAction, switchDemoRoleAction } from "@/app/actions/auth";
+import { logoutAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
-import type { UserRole } from "@/types";
-
-const roles: UserRole[] = [
-  "Barangay Official",
-  "City Engineering Office",
-  "Utility Provider",
-  "System Administrator",
-  "Maintenance Coordinator",
-  "Executive Viewer",
-];
 
 export function UserMenu({ compact = false }: { compact?: boolean }) {
   const viewer = useViewer();
   const router = useRouter();
-  const { notify } = useToast();
   const [open, setOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [switching, startSwitch] = useTransition();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,15 +43,6 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
     router.refresh();
   };
 
-  const switchRole = (role: UserRole) => {
-    startSwitch(async () => {
-      await switchDemoRoleAction(role);
-      setOpen(false);
-      notify({ title: `Previewing ${role}`, message: "Navigation and dashboard data now reflect this role.", tone: "info" });
-      router.refresh();
-    });
-  };
-
   return (
     <>
       <div className="relative" ref={wrapperRef}>
@@ -84,13 +62,6 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
               <MenuLink href="/profile" icon={UserRound} onClick={() => setOpen(false)}>View profile</MenuLink>
               <MenuLink href="/profile/change-password" icon={KeyRound} onClick={() => setOpen(false)}>Change password</MenuLink>
               <MenuLink href="/help" icon={HelpCircle} onClick={() => setOpen(false)}>Help & support</MenuLink>
-            </div>
-            <div className="border-y border-slate-200 bg-slate-50 p-3">
-              <label htmlFor="demo-role" className="flex items-center gap-2 text-xs font-semibold text-slate-700"><RefreshCw className={cn("size-3.5", switching && "animate-spin")} aria-hidden="true" /> Preview another role</label>
-              <select id="demo-role" value={viewer.role} onChange={(event) => switchRole(event.target.value as UserRole)} disabled={switching} className="mt-2 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-800 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
-                {roles.map((role) => <option value={role} key={role}>{role}</option>)}
-              </select>
-              <p className="mt-1.5 text-[11px] leading-4 text-slate-500">Demo control only. Production roles are managed by administrators.</p>
             </div>
             <div className="p-2">
               <button type="button" onClick={() => { setOpen(false); setLogoutOpen(true); }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50" role="menuitem"><LogOut className="size-4.5" aria-hidden="true" /> Sign out</button>

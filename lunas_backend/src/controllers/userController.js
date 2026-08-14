@@ -53,6 +53,13 @@ exports.getUser = asyncHandler(async (req, res) => {
     });
   }
 
+  if (req.user.role === 'citizen' && user._id.toString() !== req.user._id.toString()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Not authorized to access another user profile'
+    });
+  }
+
   res.status(200).json({
     success: true,
     data: user
@@ -63,7 +70,7 @@ exports.getUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/v1/users/:id
 // @access  Private (Admin only)
 exports.updateUser = asyncHandler(async (req, res) => {
-  const { role, isActive, isVerified, barangay, expertise } = req.body;
+  const { role, isActive, isVerified, barangay, expertise, utilityCompany } = req.body;
 
   let user = await User.findById(req.params.id);
 
@@ -74,12 +81,37 @@ exports.updateUser = asyncHandler(async (req, res) => {
     });
   }
 
+  const normalizedUtilityCompany = typeof utilityCompany === 'string'
+    ? utilityCompany.trim()
+    : utilityCompany;
+  if (typeof utilityCompany !== 'undefined'
+    && (typeof normalizedUtilityCompany !== 'string'
+      || !normalizedUtilityCompany
+      || normalizedUtilityCompany.length > 160)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Utility company must be a non-empty value of at most 160 characters'
+    });
+  }
+
+  const targetRole = role || user.role;
+  const targetUtilityCompany = typeof utilityCompany === 'undefined'
+    ? user.utilityCompany
+    : normalizedUtilityCompany;
+  if (targetRole === 'utility_provider' && !targetUtilityCompany) {
+    return res.status(400).json({
+      success: false,
+      message: 'A utility-provider account must have a utility company before it can be activated'
+    });
+  }
+
   const updates = {};
   if (role) updates.role = role;
   if (typeof isActive !== 'undefined') updates.isActive = isActive;
   if (typeof isVerified !== 'undefined') updates.isVerified = isVerified;
   if (barangay) updates.barangay = barangay;
   if (expertise) updates.expertise = expertise;
+  if (typeof utilityCompany !== 'undefined') updates.utilityCompany = normalizedUtilityCompany;
 
   user = await User.findByIdAndUpdate(req.params.id, updates, {
     new: true,

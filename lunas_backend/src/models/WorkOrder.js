@@ -35,6 +35,14 @@ const workOrderSchema = new mongoose.Schema({
     enum: ['critical', 'high', 'medium', 'low'],
     required: true
   },
+  // Current repair completion percentage. This is the canonical value used
+  // for the work order; individual updates retain the historical snapshots.
+  progressPercent: {
+    type: Number,
+    default: 0,
+    min: [0, 'Progress percent cannot be less than 0'],
+    max: [100, 'Progress percent cannot be greater than 100']
+  },
   estimatedCompletionTime: Date,
   actualStartTime: Date,
   actualCompletionTime: Date,
@@ -47,6 +55,18 @@ const workOrderSchema = new mongoose.Schema({
   }],
   progressUpdates: [{
     status: String,
+    progressPercent: {
+      type: Number,
+      min: [0, 'Progress percent cannot be less than 0'],
+      max: [100, 'Progress percent cannot be greater than 100']
+    },
+    // A repair milestone such as "site preparation" or "asphalt filling".
+    // It is intentionally distinct from the work-order workflow status.
+    stage: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Progress stage cannot exceed 100 characters']
+    },
     notes: String,
     images: [{
       url: String,
@@ -117,15 +137,16 @@ const workOrderSchema = new mongoose.Schema({
 });
 
 // Indexes
-workOrderSchema.index({ orderNumber: 1 });
 workOrderSchema.index({ incident: 1 });
 workOrderSchema.index({ assignedTo: 1 });
 workOrderSchema.index({ status: 1 });
 workOrderSchema.index({ priority: 1 });
 workOrderSchema.index({ createdAt: -1 });
 
-// Generate unique order number
-workOrderSchema.pre('save', async function(next) {
+// Generate the required order number before Mongoose validates the document.
+// A pre-save hook runs after validation, which would reject a newly created
+// work order before this value could be assigned.
+workOrderSchema.pre('validate', async function(next) {
   if (!this.orderNumber) {
     const date = new Date();
     const year = date.getFullYear();

@@ -12,6 +12,7 @@ const notificationSchema = new mongoose.Schema({
       'incident_submitted',
       'incident_validated',
       'incident_rejected',
+      'incident_routed',
       'work_order_assigned',
       'work_order_accepted',
       'work_order_in_progress',

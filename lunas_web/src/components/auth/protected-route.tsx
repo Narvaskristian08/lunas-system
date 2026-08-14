@@ -5,4 +5,3 @@ export async function ProtectedRoute({ children }: { children: React.ReactNode }
   const viewer = await requireViewer();
   return <ViewerProvider viewer={viewer}>{children}</ViewerProvider>;
 }
-

@@ -1,4 +1,4 @@
-const * as OneSignal = require('onesignal-node');
+const OneSignal = require('onesignal-node');
 const Notification = require('../models/Notification');
 const logger = require('../utils/logger');
 
@@ -207,6 +207,18 @@ exports.notificationTemplates = {
     type: 'incident_validated',
     title: 'Report Validated',
     message: `Your incident report ${reportNumber} has been validated and approved.`
+  }),
+
+  incidentRejected: (reportNumber, reason) => ({
+    type: 'incident_rejected',
+    title: 'Report Rejected',
+    message: `Your incident report ${reportNumber} was rejected: ${reason}`
+  }),
+
+  incidentDuplicate: (reportNumber, reason) => ({
+    type: 'duplicate_detected',
+    title: 'Report Marked as Duplicate',
+    message: `Your incident report ${reportNumber} was marked as a duplicate: ${reason}`
   }),
   
   workOrderAssigned: (orderNumber) => ({

@@ -8,6 +8,7 @@ const workOrderRoutes = require('./workOrderRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const userRoutes = require('./userRoutes');
 const statsRoutes = require('./statsRoutes');
+const categoryRoutes = require('./categoryRoutes');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -16,6 +17,7 @@ router.use('/work-orders', workOrderRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/users', userRoutes);
 router.use('/stats', statsRoutes);
+router.use('/categories', categoryRoutes);
 
 // API info endpoint
 router.get('/', (req, res) => {
@@ -30,7 +32,8 @@ router.get('/', (req, res) => {
       workOrders: '/api/v1/work-orders',
       notifications: '/api/v1/notifications',
       users: '/api/v1/users',
-      stats: '/api/v1/stats'
+      stats: '/api/v1/stats',
+      categories: '/api/v1/categories'
     }
   });
 });

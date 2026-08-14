@@ -1,0 +1,82 @@
+class CategoryOption {
+  const CategoryOption({
+    required this.code,
+    required this.label,
+    required this.description,
+  });
+
+  final String code;
+  final String label;
+  final String description;
+
+  factory CategoryOption.fromJson(Object? value) {
+    if (value is String) return categoryFromCode(value);
+    final json = value is Map<String, dynamic>
+        ? value
+        : value is Map
+        ? Map<String, dynamic>.from(value)
+        : <String, dynamic>{};
+    final code = (json['code'] ?? json['value'] ?? json['id'] ?? json['name'] ?? '')
+        .toString();
+    final fallback = categoryFromCode(code);
+    return CategoryOption(
+      code: code.isEmpty ? fallback.code : code,
+      label: (json['label'] ?? json['name'] ?? fallback.label).toString(),
+      description: (json['description'] ?? fallback.description).toString(),
+    );
+  }
+}
+
+const supportedReportCategories = <CategoryOption>[
+  CategoryOption(
+    code: 'road',
+    label: 'Roads and sidewalks',
+    description: 'Potholes, damaged roads, and unsafe walkways.',
+  ),
+  CategoryOption(
+    code: 'drainage',
+    label: 'Drainage',
+    description: 'Blocked drains, flooding, or drainage damage.',
+  ),
+  CategoryOption(
+    code: 'electrical',
+    label: 'Electrical',
+    description: 'Damaged public electrical infrastructure.',
+  ),
+  CategoryOption(
+    code: 'water',
+    label: 'Water',
+    description: 'Visible water leaks or damaged water infrastructure.',
+  ),
+  CategoryOption(
+    code: 'gas',
+    label: 'Gas',
+    description: 'Possible gas leak or damaged gas infrastructure.',
+  ),
+  CategoryOption(
+    code: 'streetlight',
+    label: 'Streetlight',
+    description: 'Broken, missing, or unlit public streetlights.',
+  ),
+  CategoryOption(
+    code: 'other',
+    label: 'Other infrastructure concern',
+    description: 'An infrastructure issue not listed above.',
+  ),
+];
+
+CategoryOption categoryFromCode(String code) {
+  return supportedReportCategories.firstWhere(
+    (category) => category.code == code,
+    orElse: () => CategoryOption(
+      code: code,
+      label: code
+          .replaceAll('_', ' ')
+          .split(' ')
+          .where((part) => part.isNotEmpty)
+          .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+          .join(' '),
+      description: 'Infrastructure concern',
+    ),
+  );
+}

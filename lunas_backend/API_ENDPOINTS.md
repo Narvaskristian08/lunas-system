@@ -8,10 +8,13 @@ Base URL: `http://localhost:5000/api/v1`
 
 ## Authentication Endpoints
 
-### 1. Register User
+### 1. Register Citizen
 **POST** `/auth/register`
 
 **Access:** Public
+
+Public registration always creates a `citizen` account. A request cannot
+self-assign a barangay, city, utility, repair, or administrator role.
 
 **Request Body:**
 ```json
@@ -21,7 +24,6 @@ Base URL: `http://localhost:5000/api/v1`
   "email": "juan@example.com",
   "phone": "09123456789",
   "password": "SecurePass123",
-  "role": "citizen",
   "address": {
     "street": "123 Main Street",
     "barangay": "Poblacion Oeste",
@@ -35,7 +37,7 @@ Base URL: `http://localhost:5000/api/v1`
 ```json
 {
   "success": true,
-  "message": "User registered successfully",
+  "message": "Citizen account registered successfully",
   "data": {
     "user": {
       "id": "64abc123...",
@@ -44,7 +46,10 @@ Base URL: `http://localhost:5000/api/v1`
       "email": "juan@example.com",
       "role": "citizen"
     },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "accessToken": "short-lived-access-jwt",
+    "refreshToken": "rotating-refresh-jwt",
+    "token": "short-lived-access-jwt",
+    "expiresIn": "15m"
   }
 }
 ```
@@ -59,7 +64,7 @@ Base URL: `http://localhost:5000/api/v1`
 {
   "email": "juan@example.com",
   "password": "SecurePass123",
-  "deviceToken": "fcm_device_token_here",
+  "deviceToken": "optional-push-device-token",
   "platform": "android"
 }
 ```
@@ -71,12 +76,55 @@ Base URL: `http://localhost:5000/api/v1`
   "message": "Login successful",
   "data": {
     "user": { ... },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "accessToken": "short-lived-access-jwt",
+    "refreshToken": "rotating-refresh-jwt",
+    "token": "short-lived-access-jwt",
+    "expiresIn": "15m"
   }
 }
 ```
 
-### 3. Get Current User
+### 3. Refresh Session
+**POST** `/auth/refresh`
+
+**Access:** Public, with a valid one-time refresh token
+
+```json
+{ "refreshToken": "rotating-refresh-jwt" }
+```
+
+The supplied refresh token is rotated. Store it in platform secure storage or
+the web server's encrypted HttpOnly session only; never put it in browser
+JavaScript or application logs.
+
+### 4. Request Password Reset
+**POST** `/auth/forgot-password`
+
+**Access:** Public
+
+```json
+{ "email": "juan@example.com" }
+```
+
+The response is deliberately generic. Reset email delivery occurs only when
+`PASSWORD_RESET_APP_URL` and `PASSWORD_RESET_DELIVERY_URL` are configured.
+
+### 5. Complete Password Reset
+**POST** `/auth/reset-password`
+
+**Access:** Public
+
+```json
+{
+  "token": "one-time-reset-token",
+  "password": "NewSecurePass123"
+}
+```
+
+Reset tokens are stored as hashes, expire, and are invalidated after use. A
+successful reset returns a new access/refresh token pair.
+
+### 6. Get Current User
 **GET** `/auth/me`
 
 **Access:** Private
@@ -101,7 +149,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 4. Update Profile
+### 7. Update Profile
 **PUT** `/auth/profile`
 
 **Access:** Private
@@ -118,7 +166,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 5. Change Password
+### 8. Change Password
 **PUT** `/auth/change-password`
 
 **Access:** Private
@@ -131,17 +179,13 @@ Authorization: Bearer <token>
 }
 ```
 
-### 6. Logout
+### 9. Logout
 **POST** `/auth/logout`
 
 **Access:** Private
 
-**Request Body:**
-```json
-{
-  "deviceToken": "fcm_device_token_here"
-}
-```
+Logout revokes the account's currently issued sessions; an optional
+`deviceToken` removes that push-device registration too.
 
 ---
 
@@ -205,33 +249,33 @@ Authorization: Bearer <token>
 
 **Access:** Private (Citizen, Admin)
 
-**Request Body:**
+**Preferred request:** `multipart/form-data`
+
+| Field | Value |
+| --- | --- |
+| `category` | One of `road`, `drainage`, `electrical`, `water`, `gas`, `streetlight`, `other` |
+| `subcategory` | Optional supported subcategory |
+| `description` | 10–2,000 character citizen description |
+| `location` | JSON string with GeoJSON-style `Point`, `[longitude, latitude]`, and address/barangay |
+| `privacyAcknowledged` | Required `true` for citizen evidence while a real face/plate detector is unavailable |
+| `evidence` | One to five JPG/PNG images, each at most the configured size (10 MB by default) |
+
+The backend decodes and validates the image, re-encodes it to remove EXIF
+metadata, generates the object key/checksum, and stores evidence through the
+configured storage provider. It ignores a citizen-supplied priority and begins
+the report in `submitted`; it does not accept a client-declared AI result.
+
+Example multipart location field:
+
 ```json
 {
-  "category": "road",
-  "subcategory": "pothole",
-  "description": "Large pothole on AB Fernandez Avenue causing traffic delays and potential vehicle damage. Approximately 1 meter in diameter.",
-  "location": {
-    "coordinates": [120.3387, 16.0433],
-    "address": {
-      "street": "AB Fernandez Avenue",
-      "barangay": "Poblacion Oeste",
-      "landmark": "Near City Hall"
-    }
-  },
-  "priority": "high",
-  "images": [
-    {
-      "url": "https://storage.googleapis.com/lunas-bucket/uploads/...",
-      "key": "uploads/1722508800000-abc123.jpg",
-      "isPrivacyMasked": false
-    }
-  ],
-  "aiAnalysis": {
-    "detected": true,
-    "hazardType": "road_damage",
-    "confidence": 0.87,
-    "needsPrivacyMasking": false
+  "type": "Point",
+  "coordinates": [120.3387, 16.0433],
+  "address": {
+    "street": "AB Fernandez Avenue",
+    "barangay": "Poblacion Oeste",
+    "city": "Dagupan City",
+    "landmark": "Near City Hall"
   }
 }
 ```
@@ -242,13 +286,11 @@ Authorization: Bearer <token>
   "success": true,
   "message": "Incident reported successfully",
   "data": {
-    "_id": "64abc123...",
+    "id": "64abc123...",
     "reportNumber": "LUNAS-202608-000001",
     "status": "submitted",
-    "sla": {
-      "targetResolutionTime": 72,
-      "deadline": "2026-08-04T10:30:00Z"
-    }
+    "statusHistory": [{ "status": "submitted", "changedAt": "2026-08-01T10:30:00Z" }],
+    "possibleDuplicateCandidateCount": 0
   }
 }
 ```
@@ -258,49 +300,205 @@ Authorization: Bearer <token>
 
 **Access:** Private
 
-**Response:** Full incident details with populated fields
+Citizen callers may retrieve only their own report. Their response contains
+safe report fields, processed-evidence URLs, location, current status, and
+server-authored status history; it does not expose private storage keys,
+reviewer identity, internal review/routing notes, or other official-only data.
+For a rejected or duplicate outcome, the permitted citizen-visible reason is
+returned in the dedicated `rejectionReason` or `duplicateReason` field.
 
-### 4. Update Incident
-**PUT** `/incidents/:id`
+### 4. Get My Reports
+**GET** `/incidents/my?page=1&limit=20`
 
-**Access:** Private (Officials only)
+**Access:** Private (Citizen)
 
-**Request Body:**
-```json
-{
-  "status": "validated",
-  "priority": "critical",
-  "notes": "Upgraded to critical due to heavy traffic area"
-}
-```
+Returns only the authenticated citizen's reports, newest first, with a normal
+pagination envelope. This endpoint is not a client-side filter over all
+citizen records.
 
-### 5. Validate Incident
-**POST** `/incidents/:id/validate`
+### 5. Get Status History
+**GET** `/incidents/:id/history`
 
-**Access:** Private (Barangay Official, City Engineer, Admin)
+**Access:** Private, ownership-protected for citizens
 
-**Response:**
 ```json
 {
   "success": true,
-  "message": "Incident validated successfully",
-  "data": { ... }
+  "data": [{
+    "status": "submitted",
+    "changedAt": "2026-08-01T10:30:00Z"
+  }]
 }
 ```
 
-### 6. Reject Incident
-**POST** `/incidents/:id/reject`
+### 6. Pending Validation Queue
+**GET** `/incidents/pending-validation`
 
-**Access:** Private (Officials only)
+**Access:** Private (Barangay Official, City Engineer, Administrator)
 
-**Request Body:**
+Returns only `submitted` reports within the authenticated official's
+server-enforced jurisdiction. The result is not a client-side filter over all
+reports.
+
+**Query parameters:**
+
+- `page`, `limit`
+- `search` - report number, description, street, or barangay
+- `category`
+- `barangay` - city-wide roles only; barangay scope is always enforced
+- `hasDuplicateCandidate=true|false`
+- `sortBy=createdAt|-createdAt|priority|-priority`
+- `from`, `to` - ISO calendar dates
+
+Each item includes only operationally necessary fields: report number,
+category/description, submitted location, signed evidence thumbnail, status,
+submitted time, advisory duplicate count, and safe AI suggestion metadata when
+available. It does not expose citizen email, phone, account internals, or
+storage keys.
+
+### 7. Review Advisory Duplicate Candidates
+**GET** `/incidents/:id/duplicate-candidates`
+
+**Access:** Private (authorized validation officials)
+
+Candidates are suggestions only. They contain a scoped reference number,
+category, submitted time, location, distance/score when available, and a
+signed evidence thumbnail. This endpoint never changes a report's status.
+
+### 8. Read SLA Foundation
+**GET** `/incidents/:id/sla`
+
+**Access:** Private and incident-scope protected
+
+Returns `priority`, target resolution hours, `startedAt`, `deadline`, and the
+current SLA state. A submitted report has `not_started`; validating with a
+priority initializes an active SLA record.
+
+### 9. Validate a Report
+**POST** `/incidents/:id/validate`
+
+**Access:** Private (Barangay Official, City Engineer, Administrator), scoped
+to the report's jurisdiction
+
 ```json
 {
-  "reason": "Duplicate report. Original report number: LUNAS-202607-000945"
+  "priority": "high",
+  "jurisdiction": {
+    "barangay": "Poblacion Oeste",
+    "city": "Dagupan City",
+    "responsibility": "city_engineering"
+  },
+  "routing": {
+    "responsibleOrganization": "City Engineering",
+    "responsibleRole": "city_engineering",
+    "reason": "Requires city road assessment"
+  },
+  "notes": "Evidence and location reviewed"
 }
 ```
 
-### 7. Get Nearby Incidents
+This is the only validate transition: `submitted → validated`. It persists the
+priority, validator/timestamp, jurisdiction, routing history, and SLA start in
+the same conditional incident update, then records audit and notification
+events. A stale or already-decided report returns HTTP `409`. The `jurisdiction`
+and `routing` objects may both be omitted to use the authorized server defaults;
+when routing is supplied, `responsibleOrganization` and `responsibleRole` must
+be supplied together so a partial client value cannot produce a mismatched
+route.
+
+### 10. Reject a Report
+**POST** `/incidents/:id/reject`
+
+**Access:** Private (authorized validation officials), jurisdiction scoped
+
+```json
+{
+  "reason": "Insufficient evidence to identify the infrastructure issue",
+  "notes": "Optional internal review note"
+}
+```
+
+`reason` is mandatory, trimmed, and 2–500 characters. This is the only reject
+transition: `submitted → rejected`. The safe reason is available to the
+reporting citizen; internal notes are not.
+
+### 11. Mark a Report as Duplicate
+**POST** `/incidents/:id/mark-duplicate`
+
+**Access:** Private (authorized validation officials), jurisdiction scoped
+
+```json
+{
+  "duplicateOf": "64abc123...",
+  "reason": "Same road defect and evidence as the canonical report",
+  "notes": "Optional internal review note"
+}
+```
+
+This is the only duplicate transition: `submitted → duplicate`. The canonical
+report must be visible to the official, cannot be the same report, and cannot
+create a circular duplicate chain. The duplicate report remains stored and
+auditable.
+
+### 12. Update Priority of a Validated Report
+**PATCH** `/incidents/:id/priority`
+
+**Access:** Private (Barangay Official, City Engineer, Administrator),
+jurisdiction scoped
+
+```json
+{ "priority": "critical" }
+```
+
+Only a `validated` report can be reprioritized. The endpoint records priority
+metadata/history and recalculates its centralized SLA foundation.
+
+### 13. Confirm Jurisdiction of a Validated Report
+**PATCH** `/incidents/:id/jurisdiction`
+
+**Access:** Private (authorized validation officials), jurisdiction scoped
+
+```json
+{
+  "barangay": "Poblacion Oeste",
+  "city": "Dagupan City",
+  "responsibility": "barangay"
+}
+```
+
+Jurisdiction confirmation is auditable. Barangay officials can only confirm
+their own configured barangay; city engineers and administrators have the
+city-wide permission.
+
+### 14. Route a Validated Report
+**POST** `/incidents/:id/route`
+
+**Access:** Private (authorized validation officials), jurisdiction scoped
+
+```json
+{
+  "responsibleOrganization": "Dagupan Water District",
+  "responsibleRole": "utility_provider",
+  "reason": "Water-line leak requires provider review"
+}
+```
+
+Routing identifies the responsible organization and appends a routing-history
+record. It is not a work order or repair-personnel assignment.
+
+### 15. Update an Official Note
+**PUT** `/incidents/:id`
+
+**Access:** Private (authorized officials), jurisdiction scoped
+
+```json
+{ "notes": "A non-workflow review note" }
+```
+
+This endpoint cannot update `status`, `priority`, a rejection reason, or a
+duplicate reference. Use the dedicated controlled endpoints above instead.
+
+### 16. Get Nearby Incidents
 **GET** `/incidents/nearby`
 
 **Access:** Private
@@ -320,6 +518,19 @@ Authorization: Bearer <token>
   "count": 3
 }
 ```
+
+---
+
+## Category Endpoints
+
+### 1. Get Reportable Categories
+**GET** `/categories`
+
+**Access:** Public
+
+Returns active category records when configured, otherwise the established
+incident category codes used by the report validator. The citizen app can keep
+manual selection available if this request is temporarily unavailable.
 
 ---
 
@@ -357,6 +568,7 @@ Authorization: Bearer <token>
   "data": {
     "orderNumber": "WO-202608-000001",
     "status": "pending",
+    "progressPercent": 0,
     "sla": {
       "deadline": "2026-08-04T10:30:00Z"
     }
@@ -381,12 +593,14 @@ Authorization: Bearer <token>
 ### 4. Update Progress
 **POST** `/work-orders/:id/progress`
 
-**Access:** Private (Repair Personnel)
+**Access:** Private (Repair Personnel, Utility Provider)
 
 **Request Body:**
 ```json
 {
   "status": "in_progress",
+  "progressPercent": 65,
+  "stage": "asphalt filling",
   "notes": "Started repair work. Excavation complete, preparing for asphalt filling.",
   "images": [
     {
@@ -401,10 +615,20 @@ Authorization: Bearer <token>
 }
 ```
 
+`progressPercent` is a number from `0` to `100` and cannot be reduced from
+the work order's current value. It is optional for legacy clients; an omitted
+value retains the current percentage. `stage` is an optional repair milestone
+and is separate from the workflow status. Progress updates may only set the
+workflow status to `in_progress`.
+
 ### 5. Complete Work Order
 **POST** `/work-orders/:id/complete`
 
-**Access:** Private (Repair Personnel)
+**Access:** Private (Repair Personnel, Utility Provider)
+
+**Prerequisite:** The work order must have `progressPercent` equal to `100`.
+Submitting completion retains/sets the aggregate percentage to `100` and adds
+a completion entry to the progress history.
 
 **Request Body:**
 ```json
@@ -458,7 +682,16 @@ Authorization: Bearer <token>
 
 ## User Endpoints
 
-### 1. Get All Users
+### 1. Get or Update My Profile
+**GET/PATCH** `/users/me`
+
+**Access:** Private
+
+Returns or updates only the authenticated account's permitted personal fields.
+`role`, account status, organization, and other administrative fields cannot be
+self-assigned through this endpoint.
+
+### 2. Get All Users
 **GET** `/users`
 
 **Access:** Private (Officials, Admin)
@@ -466,12 +699,12 @@ Authorization: Bearer <token>
 **Query Parameters:**
 - `page`, `limit`, `role`, `barangay`, `search`, `sortBy`
 
-### 2. Get Single User
+### 3. Get Single User
 **GET** `/users/:id`
 
 **Access:** Private
 
-### 3. Update User
+### 4. Update User
 **PUT** `/users/:id`
 
 **Access:** Private (Admin only)
@@ -482,11 +715,12 @@ Authorization: Bearer <token>
   "role": "barangay_official",
   "isActive": true,
   "isVerified": true,
-  "barangay": "Poblacion Oeste"
+  "barangay": "Poblacion Oeste",
+  "utilityCompany": "Dagupan Water District"
 }
 ```
 
-### 4. Get Repair Personnel
+### 5. Get Repair Personnel
 **GET** `/users/repair-personnel`
 
 **Access:** Private (Officials)
@@ -558,7 +792,7 @@ Authorization: Bearer <token>
 ### 1. Dashboard Statistics
 **GET** `/stats/dashboard`
 
-**Access:** Private
+**Access:** Private (operational roles only; not citizens)
 
 **Response:**
 ```json
@@ -590,7 +824,29 @@ Authorization: Bearer <token>
 }
 ```
 
-### 2. Analytics
+### 2. Validation Summary
+**GET** `/stats/validation-summary`
+
+**Access:** Private (Barangay Official, City Engineer, Administrator)
+
+Returns real aggregate counts only for the authenticated official's incident
+scope. It is intended for the 50% validation dashboard and does not load the
+queue merely to count it.
+
+```json
+{
+  "success": true,
+  "data": {
+    "pending": 12,
+    "validated": 9,
+    "rejected": 2,
+    "duplicate": 1,
+    "total": 24
+  }
+}
+```
+
+### 3. Analytics
 **GET** `/stats/analytics`
 
 **Access:** Private (Officials, Admin)
@@ -690,6 +946,7 @@ Authorization: Bearer <token>
 | 401 | Unauthorized |
 | 403 | Forbidden |
 | 404 | Not Found |
+| 409 | Conflict: a submitted report was already decided by another official |
 | 429 | Too Many Requests |
 | 500 | Server Error |
 

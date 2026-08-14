@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { MailCheck, Send } from "lucide-react";
-import { accountService } from "@/lib/mock-api";
+import { requestPasswordResetAction } from "@/app/actions/auth";
 import { isValidEmail } from "@/lib/utils";
 import { useConnectivity } from "@/components/providers/connectivity-provider";
 import { AuthAlert, AuthCard, BackToLogin, SecurityNotice } from "@/components/auth/auth-ui";
@@ -39,11 +39,15 @@ export function ForgotPasswordForm() {
     setRequestError(null);
     setPending(true);
     try {
-      const result = await accountService.requestPasswordReset(normalized);
+      const result = await requestPasswordResetAction(normalized);
+      if (!result.ok) {
+        setRequestError("server");
+        return;
+      }
       setSent(true);
-      setCooldown(result.data.retryAfterSeconds);
-    } catch (caught) {
-      setRequestError(caught instanceof Error && caught.message === "OFFLINE" ? "offline" : "server");
+      setCooldown(result.retryAfterSeconds ?? 30);
+    } catch {
+      setRequestError("server");
     } finally {
       setPending(false);
     }
@@ -63,9 +67,9 @@ export function ForgotPasswordForm() {
           </span>
           <h2 className="mt-4 text-xl font-semibold text-slate-950">Check your inbox</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
-            If an authorized LUNAS account matches <span className="break-all font-semibold text-slate-800">{email.trim()}</span>, password reset instructions will be sent shortly.
+            If an authorized LUNAS account matches <span className="break-all font-semibold text-slate-800">{email.trim()}</span>, LUNAS has accepted the recovery request.
           </p>
-          <p className="mt-3 text-xs leading-5 text-slate-500">Check your spam folder and allow a few minutes for delivery. For security, we cannot confirm whether an account exists.</p>
+          <p className="mt-3 text-xs leading-5 text-slate-500">When reset-email delivery is configured for your organization, instructions will be sent shortly. For security, we cannot confirm whether an account exists.</p>
 
           {requestError ? (
             <AuthAlert className="mt-5 text-left" tone={requestError === "offline" ? "warning" : "error"} title={requestError === "offline" ? "Connection lost" : "Message not sent"} assertive>

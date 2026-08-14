@@ -1,17 +1,8 @@
 import type { Metadata } from "next";
-import { NotificationDetail } from "@/components/notifications/notification-detail";
-import { requirePermission } from "@/lib/auth/dal.server";
+import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
 
-export const metadata: Metadata = {
-  title: "Notification details",
-};
+export const metadata: Metadata = { title: "Notification details" };
 
-export default async function NotificationDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  await requirePermission("notifications.view");
-  const { id } = await params;
-  return <NotificationDetail id={id} />;
+export default function NotificationDetailPage() {
+  return <MilestoneUnavailable title="Notifications are not available yet" description="Live notifications will be introduced with the later operational workflows they support." />;
 }

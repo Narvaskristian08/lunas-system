@@ -1,4 +1,10 @@
 const { body, param, query, validationResult } = require('express-validator');
+const { INCIDENT_CATEGORY_CODES } = require('../utils/incidentCategories');
+
+const passwordValidationRule = (field) => body(field)
+  .isLength({ min: 8, max: 128 }).withMessage('Password must be between 8 and 128 characters')
+  .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+  .withMessage('Password must contain uppercase, lowercase, and number');
 
 // Middleware to check validation results
 exports.validate = (req, res, next) => {
@@ -18,40 +24,197 @@ exports.validate = (req, res, next) => {
 
 // User validation rules
 exports.registerValidation = [
-  body('firstName').trim().notEmpty().withMessage('First name is required'),
-  body('lastName').trim().notEmpty().withMessage('Last name is required'),
+  body('firstName').trim().isLength({ min: 1, max: 80 }).withMessage('First name is required and must be at most 80 characters'),
+  body('lastName').trim().isLength({ min: 1, max: 80 }).withMessage('Last name is required and must be at most 80 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('phone').trim().notEmpty().withMessage('Phone number is required'),
-  body('password')
-    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Password must contain uppercase, lowercase, and number'),
-  body('role').optional().isIn(['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider', 'admin'])
-    .withMessage('Invalid role'),
-  body('barangay').optional().trim(),
-  body('address').optional().isObject()
+  body('phone').trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  passwordValidationRule('password'),
+  // Privileged accounts must be provisioned through protected administration,
+  // never through the public registration endpoint.
+  body('role').optional().equals('citizen').withMessage('Public registration can only create citizen accounts'),
+  body('address').optional().isObject().withMessage('Address must be an object'),
+  body('address.street').optional().trim().isLength({ max: 160 }),
+  body('address.barangay').optional().trim().isLength({ max: 100 }),
+  body('address.city').optional().trim().isLength({ max: 100 }),
+  body('address.province').optional().trim().isLength({ max: 100 }),
+  body('address.zipCode').optional().trim().isLength({ max: 20 })
 ];
 
 exports.loginValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('password').notEmpty().withMessage('Password is required')
+  body('password').isLength({ min: 1, max: 128 }).withMessage('Password is required'),
+  body('deviceToken').optional().trim().isLength({ max: 512 }),
+  body('platform').optional().isIn(['android', 'ios', 'web']).withMessage('Invalid device platform')
+];
+
+exports.refreshValidation = [
+  body('refreshToken').isString().isLength({ min: 20, max: 4096 }).withMessage('A valid refresh token is required')
+];
+
+exports.forgotPasswordValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required')
+];
+
+exports.resetPasswordValidation = [
+  body('token').isString().isLength({ min: 32, max: 256 }).withMessage('A valid reset token is required'),
+  passwordValidationRule('password')
+];
+
+exports.changePasswordValidation = [
+  body('currentPassword').isLength({ min: 1, max: 128 }).withMessage('Current password is required'),
+  passwordValidationRule('newPassword')
+];
+
+exports.updateProfileValidation = [
+  body('firstName').optional().trim().isLength({ min: 1, max: 80 }),
+  body('lastName').optional().trim().isLength({ min: 1, max: 80 }),
+  body('phone').optional().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  body('address').optional().isObject().withMessage('Address must be an object'),
+  body('address.street').optional().trim().isLength({ max: 160 }),
+  body('address.barangay').optional().trim().isLength({ max: 100 }),
+  body('address.city').optional().trim().isLength({ max: 100 }),
+  body('address.province').optional().trim().isLength({ max: 100 }),
+  body('address.zipCode').optional().trim().isLength({ max: 20 }),
+  body('profileImage').optional().isURL({ protocols: ['https'], require_protocol: true })
+    .withMessage('Profile image must be a secure URL')
 ];
 
 // Incident validation rules
 exports.createIncidentValidation = [
-  body('category').isIn(['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'])
+  body('category').trim().isIn(INCIDENT_CATEGORY_CODES)
     .withMessage('Valid category is required'),
-  body('description').trim().isLength({ min: 10 }).withMessage('Description must be at least 10 characters'),
+  body('subcategory').optional().isIn(['pothole', 'crack', 'collapse', 'flooding', 'blockage', 'leak', 'outage', 'damage', 'missing', 'other'])
+    .withMessage('Invalid subcategory'),
+  body('description').trim().isLength({ min: 10, max: 2000 }).withMessage('Description must be between 10 and 2000 characters'),
+  body('location').isObject().withMessage('Location is required'),
+  body('location.type').optional().equals('Point').withMessage('Location type must be Point'),
   body('location.coordinates').isArray({ min: 2, max: 2 }).withMessage('Valid coordinates required'),
-  body('location.coordinates.*').isFloat().withMessage('Coordinates must be numbers'),
-  body('location.address.barangay').trim().notEmpty().withMessage('Barangay is required'),
+  body('location.coordinates.0').isFloat({ min: -180, max: 180 }).withMessage('Longitude must be between -180 and 180'),
+  body('location.coordinates.1').isFloat({ min: -90, max: 90 }).withMessage('Latitude must be between -90 and 90'),
+  body('location.address').isObject().withMessage('Location address is required'),
+  body('location.address.barangay').trim().isLength({ min: 1, max: 100 }).withMessage('Barangay is required'),
+  body('location.address.street').optional().trim().isLength({ max: 160 }),
+  body('location.address.city').optional().trim().isLength({ max: 100 }),
+  body('location.address.landmark').optional().trim().isLength({ max: 160 }),
+  body('images').optional().isArray({ max: 5 }).withMessage('A maximum of five evidence images is allowed'),
+  body('images.*.url').if((value, { req }) => Array.isArray(req.body.images))
+    .isURL({ protocols: ['https'], require_protocol: true })
+    .withMessage('Evidence image URL must be a secure URL'),
+  body().custom((value, { req }) => {
+    const uploadedFiles = Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files || {}).flat();
+    const suppliedImages = Array.isArray(req.body.images) ? req.body.images : [];
+
+    if (!uploadedFiles.length && !suppliedImages.length) {
+      throw new Error('At least one evidence image is required');
+    }
+    if (uploadedFiles.length + suppliedImages.length > 5) {
+      throw new Error('A maximum of five evidence images is allowed');
+    }
+    return true;
+  }),
+  body('privacyAcknowledged').custom((value, { req }) => {
+    const hasEvidence = Object.values(req.files || {}).flat().length > 0
+      || (Array.isArray(req.body.images) && req.body.images.length > 0);
+    if (req.user?.role === 'citizen' && hasEvidence && value !== true && value !== 'true') {
+      throw new Error('Privacy acknowledgement is required before submitting evidence');
+    }
+    return true;
+  }),
   body('priority').optional().isIn(['critical', 'high', 'medium', 'low'])
 ];
 
 exports.updateIncidentValidation = [
-  body('status').optional().isIn(['submitted', 'validated', 'assigned', 'in_progress', 'completed', 'verified', 'rejected', 'duplicate', 'closed']),
-  body('priority').optional().isIn(['critical', 'high', 'medium', 'low']),
-  body('notes').optional().trim(),
-  body('rejectionReason').optional().trim()
+  body('notes').trim().isLength({ min: 1, max: 2000 })
+    .withMessage('A note between 1 and 2000 characters is required')
+];
+
+const priorityRule = body('priority').isIn(['critical', 'high', 'medium', 'low'])
+  .withMessage('Priority must be critical, high, medium, or low');
+
+const jurisdictionRules = [
+  body('jurisdiction').optional().isObject().withMessage('Jurisdiction must be an object'),
+  body('jurisdiction.barangay').optional().trim().isLength({ min: 1, max: 100 })
+    .withMessage('Jurisdiction barangay must be between 1 and 100 characters'),
+  body('jurisdiction.city').optional().trim().isLength({ min: 1, max: 100 })
+    .withMessage('Jurisdiction city must be between 1 and 100 characters'),
+  body('jurisdiction.responsibility').optional().isIn(['barangay', 'city_engineering', 'utility_provider'])
+    .withMessage('Jurisdiction responsibility is invalid')
+];
+
+const routingRules = [
+  body('routing').optional().isObject().withMessage('Routing must be an object'),
+  body('routing.responsibleOrganization').optional().trim().isLength({ min: 1, max: 160 })
+    .withMessage('Responsible organization must be between 1 and 160 characters'),
+  body('routing.responsibleRole').optional().isIn(['barangay', 'city_engineering', 'utility_provider'])
+    .withMessage('Responsible organization role is invalid'),
+  body('routing.reason').optional().trim().isLength({ max: 1000 })
+    .withMessage('Routing reason cannot exceed 1000 characters'),
+  body('routing').optional().custom((routing) => {
+    if (!routing || typeof routing !== 'object' || Array.isArray(routing)) return true;
+    const organization = typeof routing.responsibleOrganization === 'string' && routing.responsibleOrganization.trim();
+    const role = typeof routing.responsibleRole === 'string' && routing.responsibleRole.trim();
+    if (Boolean(organization) !== Boolean(role)) {
+      throw new Error('Routing must include both responsibleOrganization and responsibleRole');
+    }
+    return true;
+  })
+];
+
+exports.validateIncidentDecisionValidation = [
+  priorityRule,
+  ...jurisdictionRules,
+  ...routingRules,
+  body('notes').optional().trim().isLength({ max: 2000 })
+    .withMessage('Validation notes cannot exceed 2000 characters')
+];
+
+exports.rejectIncidentDecisionValidation = [
+  body('reason').trim().isLength({ min: 2, max: 500 })
+    .withMessage('A rejection reason between 2 and 500 characters is required'),
+  body('notes').optional().trim().isLength({ max: 2000 })
+    .withMessage('Rejection notes cannot exceed 2000 characters')
+];
+
+exports.markDuplicateValidation = [
+  body('duplicateOf').isMongoId().withMessage('A valid canonical incident is required'),
+  body('reason').trim().isLength({ min: 2, max: 500 })
+    .withMessage('A duplicate reason between 2 and 500 characters is required'),
+  body('notes').optional().trim().isLength({ max: 2000 })
+    .withMessage('Duplicate notes cannot exceed 2000 characters')
+];
+
+exports.updatePriorityValidation = [priorityRule];
+
+exports.updateJurisdictionValidation = [
+  body('barangay').trim().isLength({ min: 1, max: 100 })
+    .withMessage('Barangay is required'),
+  body('city').optional().trim().isLength({ min: 1, max: 100 }),
+  body('responsibility').optional().isIn(['barangay', 'city_engineering', 'utility_provider'])
+    .withMessage('Jurisdiction responsibility is invalid')
+];
+
+exports.routeIncidentValidation = [
+  body('responsibleOrganization').trim().isLength({ min: 1, max: 160 })
+    .withMessage('Responsible organization is required'),
+  body('responsibleRole').isIn(['barangay', 'city_engineering', 'utility_provider'])
+    .withMessage('Responsible organization role is invalid'),
+  body('reason').optional().trim().isLength({ max: 1000 })
+    .withMessage('Routing reason cannot exceed 1000 characters')
+];
+
+exports.pendingValidationQuery = [
+  query('search').optional().trim().isLength({ max: 100 }),
+  query('category').optional().isIn(INCIDENT_CATEGORY_CODES)
+    .withMessage('Invalid category filter'),
+  query('barangay').optional().trim().isLength({ min: 1, max: 100 }),
+  query('hasDuplicateCandidate').optional().isBoolean()
+    .withMessage('hasDuplicateCandidate must be true or false'),
+  query('sortBy').optional().isIn(['createdAt', '-createdAt', 'priority', '-priority'])
+    .withMessage('Invalid validation queue sort'),
+  query('from').optional().isISO8601().withMessage('from must be an ISO date'),
+  query('to').optional().isISO8601().withMessage('to must be an ISO date')
 ];
 
 // Work order validation rules
@@ -63,7 +226,15 @@ exports.createWorkOrderValidation = [
 ];
 
 exports.updateWorkOrderValidation = [
-  body('status').optional().isIn(['pending', 'accepted', 'in_progress', 'completed', 'verified', 'rejected']),
+  // Completion and verification have dedicated endpoints. A field-progress
+  // update may only move active work into the in-progress state.
+  body('status').optional().isIn(['in_progress'])
+    .withMessage('Progress updates can only set status to in_progress'),
+  body('progressPercent').optional().isFloat({ min: 0, max: 100 })
+    .withMessage('Progress percent must be a number between 0 and 100')
+    .toFloat(),
+  body('stage').optional().trim().isLength({ min: 1, max: 100 })
+    .withMessage('Progress stage must be between 1 and 100 characters'),
   body('notes').optional().trim()
 ];
 
@@ -72,8 +243,16 @@ exports.paginationValidation = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   query('sort').optional().trim(),
+  query('sortBy').optional().trim().isLength({ max: 50 }),
   query('status').optional().trim(),
   query('priority').optional().trim()
+];
+
+exports.nearbyCoordinatesValidation = [
+  query('longitude').isFloat({ min: -180, max: 180 }).withMessage('Valid longitude is required'),
+  query('latitude').isFloat({ min: -90, max: 90 }).withMessage('Valid latitude is required'),
+  query('maxDistance').optional().isInt({ min: 1, max: 10000 })
+    .withMessage('Maximum distance must be between 1 and 10000 meters')
 ];
 
 // ID parameter validation

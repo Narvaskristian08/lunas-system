@@ -3,6 +3,10 @@ const Incident = require('../models/Incident');
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
+const {
+  getCurrentProgressPercent,
+  validateProgressAdvance
+} = require('../utils/workOrderProgress');
 
 // @desc    Create work order
 // @route   POST /api/v1/work-orders
@@ -24,6 +28,16 @@ exports.createWorkOrder = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Work order already exists for this incident'
+    });
+  }
+
+  // A work order is a later workflow step, but its legacy endpoint must never
+  // provide a back door around the 50% submitted-state decision service.
+  // Only an already validated report may enter that future workflow.
+  if (incidentDoc.status !== 'validated') {
+    return res.status(409).json({
+      success: false,
+      message: 'An incident must be validated before a work order can be created'
     });
   }
 
@@ -206,7 +220,7 @@ exports.acceptWorkOrder = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/work-orders/:id/progress
 // @access  Private (Repair Personnel)
 exports.updateProgress = asyncHandler(async (req, res) => {
-  const { status, notes, images, location } = req.body;
+  const { status, progressPercent, stage, notes, images, location } = req.body;
 
   const workOrder = await WorkOrder.findById(req.params.id);
 
@@ -224,25 +238,66 @@ exports.updateProgress = asyncHandler(async (req, res) => {
     });
   }
 
+  if (!['accepted', 'in_progress'].includes(workOrder.status)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Progress can only be updated for accepted or in-progress work orders'
+    });
+  }
+
+  // This is also enforced by request validation so direct controller callers
+  // cannot move a work order to completion or verification through progress.
+  if (status && status !== 'in_progress') {
+    return res.status(400).json({
+      success: false,
+      message: 'Progress updates can only set status to in_progress'
+    });
+  }
+
+  const currentProgressPercent = getCurrentProgressPercent(workOrder.progressPercent);
+  let nextProgressPercent = currentProgressPercent;
+
+  if (progressPercent !== undefined) {
+    const progressValidation = validateProgressAdvance(
+      currentProgressPercent,
+      progressPercent
+    );
+
+    if (!progressValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: progressValidation.message
+      });
+    }
+
+    nextProgressPercent = progressValidation.progressPercent;
+  }
+
+  // Recording work beyond 0% starts the repair even when a legacy client
+  // omits status. Explicit `in_progress` remains supported as before.
+  const nextStatus = status || (
+    nextProgressPercent > 0 ? 'in_progress' : workOrder.status
+  );
+
   // Add progress update
   workOrder.progressUpdates.push({
-    status: status || workOrder.status,
+    status: nextStatus,
+    progressPercent: nextProgressPercent,
+    stage,
     notes,
     images,
     location,
     updatedBy: req.user._id
   });
-
-  if (status) {
-    workOrder.status = status;
-  }
+  workOrder.progressPercent = nextProgressPercent;
+  workOrder.status = nextStatus;
 
   await workOrder.save();
 
   // Update incident status
   const incident = await Incident.findById(workOrder.incident);
-  if (incident && status) {
-    incident.status = status === 'accepted' || status === 'in_progress' ? 'in_progress' : status;
+  if (incident && nextStatus === 'in_progress' && incident.status !== 'in_progress') {
+    incident.status = 'in_progress';
     incident.statusHistory.push({
       status: incident.status,
       changedBy: req.user._id,
@@ -256,7 +311,7 @@ exports.updateProgress = asyncHandler(async (req, res) => {
     performedBy: req.user._id,
     resourceType: 'WorkOrder',
     resourceId: workOrder._id,
-    details: { status, notes },
+    details: { status: nextStatus, progressPercent: nextProgressPercent, stage, notes },
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });
@@ -297,6 +352,13 @@ exports.completeWorkOrder = asyncHandler(async (req, res) => {
     });
   }
 
+  if (getCurrentProgressPercent(workOrder.progressPercent) !== 100) {
+    return res.status(400).json({
+      success: false,
+      message: 'Work order progress must be 100% before completion can be submitted'
+    });
+  }
+
   workOrder.completionReport = {
     description,
     beforeImages,
@@ -308,7 +370,15 @@ exports.completeWorkOrder = asyncHandler(async (req, res) => {
     submittedAt: Date.now()
   };
   workOrder.status = 'completed';
+  workOrder.progressPercent = 100;
   workOrder.actualCompletionTime = Date.now();
+  workOrder.progressUpdates.push({
+    status: 'completed',
+    progressPercent: 100,
+    stage: 'completion_submitted',
+    notes: 'Work completed and report submitted',
+    updatedBy: req.user._id
+  });
 
   await workOrder.save();
 
@@ -329,6 +399,7 @@ exports.completeWorkOrder = asyncHandler(async (req, res) => {
     performedBy: req.user._id,
     resourceType: 'WorkOrder',
     resourceId: workOrder._id,
+    details: { progressPercent: workOrder.progressPercent },
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });

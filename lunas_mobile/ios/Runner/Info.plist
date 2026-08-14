@@ -24,6 +24,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>LUNAS uses the camera only when you choose to attach evidence to an infrastructure report.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LUNAS lets you select a photo as evidence for an infrastructure report.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>LUNAS uses your location to place the infrastructure issue accurately on the report.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

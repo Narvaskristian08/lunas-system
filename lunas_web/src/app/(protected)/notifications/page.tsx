@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import { NotificationsCenter } from "@/components/notifications/notifications-center";
-import { requirePermission } from "@/lib/auth/dal.server";
+import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
 
-export const metadata: Metadata = {
-  title: "Notifications",
-  description: "Review operational alerts and account notifications in LUNAS.",
-};
+export const metadata: Metadata = { title: "Notifications" };
 
-export default async function NotificationsPage() {
-  await requirePermission("notifications.view");
-  return <NotificationsCenter />;
+export default function NotificationsPage() {
+  return <MilestoneUnavailable title="Notifications are not available yet" description="Live notifications will be introduced with the later operational workflows they support." />;
 }

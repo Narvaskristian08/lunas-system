@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CircleAlert, KeyRound, LogIn, ShieldCheck } from "lucide-react";
+import { changePasswordAction } from "@/app/actions/auth";
 import { PermissionGate } from "@/components/auth/permission-gate";
 import { PasswordField } from "@/components/forms/password-field";
 import { PasswordStrength } from "@/components/forms/password-strength";
@@ -10,7 +11,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useToast } from "@/components/providers/toast-provider";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { profileService } from "@/lib/mock-api";
 import { passwordChecks } from "@/lib/utils";
 
 function ChangePasswordWorkspace() {
@@ -50,16 +50,18 @@ function ChangePasswordWorkspace() {
     setSubmitting(true);
     setServerError(undefined);
     try {
-      const result = await profileService.changePassword();
-      setSessionsRevoked(result.data.sessionsRevoked);
+      const result = await changePasswordAction({ currentPassword, newPassword });
+      if (!result.ok) {
+        setServerError(result.message ?? "We couldn’t change your password. Confirm your current password and try again.");
+        return;
+      }
+      setSessionsRevoked(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       notify({ title: "Password changed", message: "Your account security settings were updated.", tone: "success" });
-    } catch (error) {
-      setServerError(error instanceof Error && error.message === "OFFLINE"
-        ? "You’re offline. Reconnect before changing your password."
-        : "We couldn’t change your password. Confirm your current password and try again.");
+    } catch {
+      setServerError("We couldn’t change your password. Confirm your current password and try again.");
     } finally {
       setSubmitting(false);
     }

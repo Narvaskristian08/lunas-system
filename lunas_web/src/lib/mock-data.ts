@@ -24,7 +24,9 @@ const sharedUser = {
   joinedAt: "2025-11-14T09:00:00+08:00",
 };
 
-export const usersByRole: Record<UserRole, UserProfile> = {
+type PreviewRole = Exclude<UserRole, "Citizen" | "Repair Personnel">;
+
+export const usersByRole: Record<PreviewRole, UserProfile> = {
   "Barangay Official": {
     ...sharedUser,
     id: "USR-BO-0184",
@@ -34,6 +36,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
     email: "maria.santos@pantal.gov.ph",
     phone: "+63 917 824 1190",
     role: "Barangay Official",
+    backendRole: "barangay_official",
     organization: "Barangay Pantal",
     unit: "Infrastructure and Public Safety Desk",
     personnelId: "BPTL-2024-031",
@@ -48,6 +51,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
     email: "rafael.cruz@dagupan.gov.ph",
     phone: "+63 917 552 0481",
     role: "City Engineering Office",
+    backendRole: "city_engineer",
     organization: "Dagupan City Engineering Office",
     unit: "Roads and Drainage Division",
     personnelId: "CEO-ENG-027",
@@ -62,6 +66,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
     email: "ana.reyes@dagupanwater.gov.ph",
     phone: "+63 917 639 8082",
     role: "Utility Provider",
+    backendRole: "utility_provider",
     organization: "Dagupan Water District",
     unit: "Field Operations Coordination",
     personnelId: "DWD-OPS-093",
@@ -76,6 +81,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
     email: "carlo.mendoza@lunas.gov.ph",
     phone: "+63 917 300 4410",
     role: "System Administrator",
+    backendRole: "admin",
     organization: "Dagupan City Government",
     unit: "LUNAS Systems Operations",
     personnelId: "LUNAS-ADM-004",
@@ -90,6 +96,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
     email: "miguel.torres@dagupan.gov.ph",
     phone: "+63 917 482 1056",
     role: "Maintenance Coordinator",
+    backendRole: "repair_personnel",
     organization: "Dagupan City Engineering Office",
     unit: "Field Maintenance Coordination",
     personnelId: "CEO-MNT-046",
@@ -104,6 +111,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
     email: "elena.garcia@dagupan.gov.ph",
     phone: "+63 917 744 9201",
     role: "Executive Viewer",
+    backendRole: "admin",
     organization: "Dagupan City Government",
     unit: "Office of the City Administrator",
     personnelId: "OCA-EXE-012",
@@ -113,7 +121,7 @@ export const usersByRole: Record<UserRole, UserProfile> = {
 
 export const defaultUser = usersByRole["System Administrator"];
 
-export const dashboardByRole: Record<UserRole, DashboardConfig> = {
+export const dashboardByRole: Record<PreviewRole, DashboardConfig> = {
   "Barangay Official": {
     eyebrow: "Barangay Pantal · Local overview",
     title: "Good morning, Maria",

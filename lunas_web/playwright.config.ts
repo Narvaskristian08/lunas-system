@@ -13,9 +13,6 @@ export default defineConfig({
     headless: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    launchOptions: {
-      executablePath: "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    },
   },
   webServer: {
     command: "npm run start -- -p 3100",

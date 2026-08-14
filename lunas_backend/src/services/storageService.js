@@ -6,6 +6,8 @@ const crypto = require('crypto');
 // Initialize Supabase client
 let supabase = null;
 
+const isPublicBucket = () => process.env.SUPABASE_STORAGE_PUBLIC === 'true';
+
 const initializeSupabase = () => {
   if (!supabase && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
@@ -52,7 +54,7 @@ exports.uploadToStorage = async (fileBuffer, fileName, mimeType, folder = 'uploa
     const uniqueFileName = `${folder}/${timestamp}-${randomString}.${fileExtension}`;
 
     // Upload file to Supabase Storage
-    const { data, error } = await client.storage
+    const { error } = await client.storage
       .from(bucketName)
       .upload(uniqueFileName, fileBuffer, {
         contentType: mimeType,
@@ -64,13 +66,18 @@ exports.uploadToStorage = async (fileBuffer, fileName, mimeType, folder = 'uploa
       throw new Error(`Failed to upload file: ${error.message}`);
     }
 
-    // Get public URL
-    const { data: publicUrlData } = client.storage
-      .from(bucketName)
-      .getPublicUrl(uniqueFileName);
+    // Evidence buckets are private by default. A public URL is returned only
+    // when a deployment has explicitly configured a public storage bucket.
+    let url;
+    if (isPublicBucket()) {
+      const { data: publicUrlData } = client.storage
+        .from(bucketName)
+        .getPublicUrl(uniqueFileName);
+      url = publicUrlData.publicUrl;
+    }
 
     return {
-      url: publicUrlData.publicUrl,
+      url,
       path: uniqueFileName,
       key: uniqueFileName // For compatibility with other naming conventions
     };
@@ -203,6 +210,28 @@ exports.getSignedUrl = async (filePath, expiresIn = 3600) => {
     logger.error('Signed URL generation error:', error);
     throw new Error('Failed to generate signed URL');
   }
+};
+
+/**
+ * Return a viewable URL without persisting expiring signed URLs in MongoDB.
+ * Legacy rows with no storage key retain their historical URL.
+ */
+exports.getEvidenceUrl = async (filePath, legacyUrl) => {
+  if (!filePath) return legacyUrl || null;
+
+  if (isPublicBucket()) {
+    if (legacyUrl) return legacyUrl;
+
+    const client = initializeSupabase();
+    if (!client) throw new Error('Supabase Storage not initialized');
+    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
+    return client.storage.from(bucketName).getPublicUrl(filePath).data.publicUrl;
+  }
+
+  return exports.getSignedUrl(
+    filePath,
+    parseInt(process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS, 10) || 3600
+  );
 };
 
 /**

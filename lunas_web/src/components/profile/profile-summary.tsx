@@ -68,7 +68,7 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <RoleBadge role={viewer.role} />
-                  <span className="text-sm text-slate-500">{viewer.personnelId}</span>
+                  {viewer.personnelId ? <span className="text-sm text-slate-500">{viewer.personnelId}</span> : null}
                 </div>
               </div>
             </div>
@@ -94,7 +94,7 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
               <span className="break-all">{viewer.email}</span>
             </DetailRow>
             <DetailRow icon={Phone} label="Contact number">{viewer.phone ?? "Not provided"}</DetailRow>
-            <DetailRow icon={Clock3} label="Last login">{formatDateTime(viewer.lastLogin)}</DetailRow>
+            <DetailRow icon={Clock3} label="Last login">{viewer.lastLogin ? formatDateTime(viewer.lastLogin) : "Not available"}</DetailRow>
             <DetailRow icon={CalendarDays} label="Date joined">{formatDateTime(viewer.joinedAt)}</DetailRow>
           </dl>
         </Card>

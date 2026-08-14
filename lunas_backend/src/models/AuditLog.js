@@ -7,6 +7,7 @@ const auditLogSchema = new mongoose.Schema({
     enum: [
       'user_login',
       'user_logout',
+      'auth_token_refreshed',
       'user_created',
       'user_updated',
       'user_deleted',
@@ -14,6 +15,10 @@ const auditLogSchema = new mongoose.Schema({
       'incident_updated',
       'incident_validated',
       'incident_rejected',
+      'incident_marked_duplicate',
+      'incident_priority_assigned',
+      'incident_jurisdiction_updated',
+      'incident_routed',
       'incident_assigned',
       'incident_closed',
       'work_order_created',
@@ -28,7 +33,9 @@ const auditLogSchema = new mongoose.Schema({
       'file_deleted',
       'settings_changed',
       'role_changed',
-      'permission_changed'
+      'permission_changed',
+      'password_reset_requested',
+      'password_reset_completed'
     ]
   },
   performedBy: {

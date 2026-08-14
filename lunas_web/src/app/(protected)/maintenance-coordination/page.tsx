@@ -1,3 +1,5 @@
-import { MaintenanceConsole } from "@/components/maintenance/maintenance-console";
-import { requirePermission } from "@/lib/auth/dal.server";
-export default async function MaintenancePage(){await requirePermission("work_orders.manage");return <MaintenanceConsole/>}
+import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+
+export default function MaintenancePage() {
+  return <MilestoneUnavailable title="Maintenance coordination is not available yet" description="Crew coordination and repair tracking are planned for a later milestone." />;
+}

@@ -10,6 +10,6 @@ void main() {
 
     expect(find.text('LUNAS'), findsOneWidget);
     expect(find.text('Your city. Your voice. Your LUNAS.'), findsOneWidget);
-    expect(find.text('Loading...'), findsOneWidget);
+    expect(find.text('Restoring your secure session…'), findsOneWidget);
   });
 }

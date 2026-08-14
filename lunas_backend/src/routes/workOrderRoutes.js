@@ -30,7 +30,7 @@ router.route('/:id')
 
 // Work order actions
 router.post('/:id/accept', protect, authorize('repair_personnel', 'utility_provider'), mongoIdValidation, validate, acceptWorkOrder);
-router.post('/:id/progress', protect, authorize('repair_personnel', 'utility_provider'), mongoIdValidation, validate, updateProgress);
+router.post('/:id/progress', protect, authorize('repair_personnel', 'utility_provider'), mongoIdValidation, updateWorkOrderValidation, validate, updateProgress);
 router.post('/:id/complete', protect, authorize('repair_personnel', 'utility_provider'), mongoIdValidation, validate, completeWorkOrder);
 router.post('/:id/verify', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate, verifyCompletion);
 

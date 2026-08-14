@@ -1,7 +1,7 @@
 # Multi-stage build for Next.js
 
 # Stage 1: Dependencies
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Copy package files
@@ -11,7 +11,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Stage 2: Builder
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependencies from deps stage
@@ -28,7 +28,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
