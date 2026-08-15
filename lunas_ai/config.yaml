@@ -2,10 +2,10 @@
 # ML Engineering: Centralized configuration for all models
 
 models:
-  # Primary: YOLOv8s (Best for RDD2022 - 93.5% mAP)
+  # Primary: YOLOv8n trained on RDD2022 (Custom trained model)
   road_damage:
-    name: "YOLOv8s Road Damage Detection"
-    path: "models/yolov8s-road-damage.pt"
+    name: "YOLOv8n Road Damage Detection (RDD2022 Trained)"
+    path: "models/yolov8n-rdd2022-best.pt"
     type: "detection"
     classes:
       - pothole

@@ -100,7 +100,12 @@ def train(args):
     logger.info(f"Using device: {device}")
     
     # Dataset path
-    dataset_path = config.DATASET_PATH / args.dataset / 'data.yaml'
+    # If args.dataset is just a name, look in DATASET_PATH, otherwise use as-is
+    if '/' in args.dataset or args.dataset.startswith('.'):
+        dataset_path = Path(args.dataset) / 'data.yaml'
+    else:
+        dataset_path = config.DATASET_PATH / 'data.yaml'
+    
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset configuration not found: {dataset_path}")
     

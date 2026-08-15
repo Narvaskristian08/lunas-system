@@ -4,9 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -19,72 +16,79 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
-.venv/
-ENV/
 env/
+ENV/
+env.bak/
+venv.bak/
 
-# Environment
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Environment Variables
 .env
 .env.local
 
-# Models & Weights
-models/*.pt
-models/*.pth
-models/*.onnx
-models/cache/
-!models/.gitkeep
-
-# Datasets
-datasets/
-data/
-*.zip
-*.tar.gz
-
-# Training outputs
-runs/
-weights/
-checkpoints/
-*.pth.tar
-
 # Logs
-logs/
+logs/*.log
 *.log
+train_pid.txt
 
-# Cache
-cache/
-*.cache
-.cache/
+# Training Output & Cache
+runs/
+cache/inference/
+models/cache/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
+# YOLO Base Models (auto-downloaded)
+yolov8n.pt
+yolov8s.pt
+yolov8m.pt
+yolov8l.pt
+yolov8x.pt
 
-# IDE
-.vscode/
-.idea/
+# Large Datasets (users should download separately)
+datasets/**/*
+!datasets/.gitkeep
+!datasets/README.md
+
+# Temporary Files
+*.tmp
+*.bak
 *.swp
 *.swo
 *~
+
+# OS Files
 .DS_Store
+Thumbs.db
+desktop.ini
 
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
 
-# Temporary files
-tmp/
-temp/
-*.tmp
+# Model Training Artifacts
+# Keep the trained model (6MB) - team can use without retraining!
+models/cache/
+!models/yolov8n-rdd2022-best.pt
+!models/.gitkeep
 
-# Inference results
+# Test Images (except samples)
+test_images/
+uploads/
 results/
-output/
-predictions/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
