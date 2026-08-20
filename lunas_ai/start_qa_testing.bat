@@ -68,7 +68,7 @@ echo 🧪 QA Test GUI: Opening qa_test_gui.html
 echo.
 echo API Endpoints:
 echo   - Health Check: http://localhost:5001/api/v1/health
-echo   - Detection:    http://localhost:5001/api/v1/detect
+echo   - Detection:    http://localhost:5001/api/v1/detect/road-damage
 echo   - Categories:   http://localhost:5001/api/v1/categories
 echo.
 echo 📝 API Documentation: http://localhost:5001/api/v1/docs

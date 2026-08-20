@@ -579,7 +579,7 @@
 
             try {
                 const startTime = Date.now();
-                const response = await fetch(`${API_URL}/detect`, {
+                const response = await fetch(`${API_URL}/detect/road-damage`, {
                     method: 'POST',
                     body: formData
                 });
@@ -603,34 +603,40 @@
             // Show results area
             document.getElementById('resultsArea').style.display = 'block';
 
-            // Display detected image
-            if (data.annotated_image_url) {
-                document.getElementById('detectedImage').src = data.annotated_image_url;
-            }
+            // Draw annotated image with bounding boxes
+            const detections = data.detections || [];
+            drawAnnotatedImage(detections);
 
             // Update metrics
-            const detections = data.detections || [];
             const avgConf = detections.length > 0 
                 ? (detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length * 100).toFixed(1)
                 : 0;
 
+            // Get severity from summary if available
+            const severity = data.summary?.severity || 'Unknown';
+
             document.getElementById('damageCount').textContent = detections.length;
             document.getElementById('avgConfidence').textContent = `${avgConf}%`;
             document.getElementById('processingTime').textContent = `${processingTime}ms`;
-            document.getElementById('severityLevel').textContent = data.severity || 'Unknown';
+            document.getElementById('severityLevel').textContent = severity;
 
             // Display detection details
             const detailsDiv = document.getElementById('detectionDetails');
             if (detections.length === 0) {
-                detailsDiv.innerHTML = '<div class="detection-card"><h4>No damages detected</h4><p>The image appears to be clear of road damage.</p></div>';
+                detailsDiv.innerHTML = '<div class="detection-card"><h4>✅ No Damage Detected</h4><p>The road surface appears to be in good condition.</p></div>';
             } else {
-                let html = '<div class="detection-card"><h4>Detected Damages</h4>';
+                let html = '<div class="detection-card">';
+                html += `<h4>🚧 Detected Damages (${detections.length})</h4>`;
+                
+                // List all detections
                 detections.forEach((det, idx) => {
                     const conf = (det.confidence * 100).toFixed(1);
+                    const className = det.class;
+                    
                     html += `
                         <div class="detection-item">
                             <div>
-                                <strong>${idx + 1}. ${det.class}</strong>
+                                <strong>${idx + 1}. ${className}</strong>
                                 <div class="confidence-bar">
                                     <div class="confidence-fill" style="width: ${conf}%">${conf}%</div>
                                 </div>
@@ -642,13 +648,19 @@
 
                 // Add summary
                 html += '<div class="detection-card">';
-                html += '<h4>Summary</h4>';
+                html += '<h4>📊 Analysis Summary</h4>';
                 html += `<p><strong>Total Detections:</strong> ${detections.length}</p>`;
-                html += `<p><strong>Avg Confidence:</strong> ${avgConf}%</p>`;
+                html += `<p><strong>Average Confidence:</strong> ${avgConf}%</p>`;
                 html += `<p><strong>Processing Time:</strong> ${processingTime}ms</p>`;
-                html += `<p><strong>Severity:</strong> ${data.severity || 'Not specified'}</p>`;
-                if (data.suggested_category) {
-                    html += `<p><strong>Suggested Category:</strong> ${data.suggested_category}</p>`;
+                html += `<p><strong>Severity Assessment:</strong> ${severity}</p>`;
+                
+                // Show damage type counts
+                if (data.summary?.damage_counts) {
+                    html += '<p><strong>Damage Breakdown:</strong></p><ul>';
+                    for (const [type, count] of Object.entries(data.summary.damage_counts)) {
+                        html += `<li>${type}: ${count}</li>`;
+                    }
+                    html += '</ul>';
                 }
                 html += '</div>';
 
@@ -659,6 +671,68 @@
             
             // Scroll to results
             document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function drawAnnotatedImage(detections) {
+            const originalImg = document.getElementById('originalImage');
+            const detectedImg = document.getElementById('detectedImage');
+            
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Wait for image to load
+            if (originalImg.complete) {
+                drawBoxes();
+            } else {
+                originalImg.onload = drawBoxes;
+            }
+            
+            function drawBoxes() {
+                // Set canvas size to match image
+                canvas.width = originalImg.naturalWidth;
+                canvas.height = originalImg.naturalHeight;
+                
+                // Draw original image
+                ctx.drawImage(originalImg, 0, 0);
+                
+                // Draw bounding boxes
+                detections.forEach((det, idx) => {
+                    if (det.bbox) {
+                        // bbox is an object: {x1, y1, x2, y2, width, height}
+                        const bbox = det.bbox;
+                        const x1 = bbox.x1;
+                        const y1 = bbox.y1;
+                        const x2 = bbox.x2;
+                        const y2 = bbox.y2;
+                        const width = bbox.width || (x2 - x1);
+                        const height = bbox.height || (y2 - y1);
+                        
+                        // Color based on class or index
+                        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+                        const color = colors[idx % colors.length];
+                        
+                        // Draw box
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(x1, y1, width, height);
+                        
+                        // Draw label background
+                        const label = `${det.class} ${(det.confidence * 100).toFixed(0)}%`;
+                        ctx.font = '16px Arial';
+                        const textWidth = ctx.measureText(label).width;
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+                        
+                        // Draw label text
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(label, x1 + 5, y1 - 7);
+                    }
+                });
+                
+                // Set canvas as detected image
+                detectedImg.src = canvas.toDataURL();
+            }
         }
 
         function resetTest() {

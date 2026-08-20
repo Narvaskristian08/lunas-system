@@ -56,6 +56,15 @@ def create_app():
             'documentation': 'See README.md for API documentation'
         })
     
+    # Serve QA GUI
+    @app.route('/qa')
+    def qa_gui():
+        """Serve the QA testing GUI"""
+        from flask import send_file
+        import os
+        gui_path = os.path.join(os.path.dirname(__file__), 'qa_test_gui.html')
+        return send_file(gui_path)
+    
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):
