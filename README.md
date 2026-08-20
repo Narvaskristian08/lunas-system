@@ -9,6 +9,10 @@ currently implemented and documented scope is:
   validate/reject/duplicate decisions, priority, jurisdiction, responsible
   organization routing, initial SLA deadlines, audit records, and persisted
   notifications.
+- **75% — Work orders and repair progress:** one primary work order for each
+  actionable validated incident; scoped personnel assignment/reassignment,
+  accept/decline/start actions, 0/25/50/75/100 repair progress, field
+  evidence, operational SLA monitoring, and safe citizen repair visibility.
 
 The supported incident-decision workflow is:
 
@@ -19,10 +23,10 @@ submitted
 └── duplicate  → required reason + canonical incident reference
 ```
 
-Work orders, repair assignment/progress, verification, closure, full analytics,
-and production AI/redaction workflows are later milestones. Some legacy code
-for those areas remains in the repository; it is not part of the verified 25%
-or 50% acceptance flow.
+Formal completion submission, repair verification, closure, final analytics,
+and production AI/redaction workflows are later milestones. At 75%, 100%
+repair progress means **ready for completion/verification**, never verified or
+closed.
 
 ## Documentation map
 
@@ -30,6 +34,7 @@ or 50% acceptance flow.
 | --- | --- |
 | [MILESTONE_25.md](./MILESTONE_25.md) | Citizen-reporting implementation boundary. |
 | [MILESTONE_50.md](./MILESTONE_50.md) | Official-validation/routing contract and limitations. |
+| [MILESTONE_75.md](./MILESTONE_75.md) | Work-order, assignment, repair-progress, and SLA boundary. |
 | [lunas_backend/README.md](./lunas_backend/README.md) | API setup, configuration, tests, and backend checklist. |
 | [lunas_backend/API_ENDPOINTS.md](./lunas_backend/API_ENDPOINTS.md) | API endpoint reference and request examples. |
 | [lunas_mobile/README.md](./lunas_mobile/README.md) | Flutter setup and mobile checklist. |
@@ -47,6 +52,7 @@ lunas-system/
 ├── lunas_ai/       Out of scope for this documentation update
 ├── MILESTONE_25.md
 ├── MILESTONE_50.md
+├── MILESTONE_75.md
 └── docker-compose.yml
 ```
 
@@ -122,17 +128,62 @@ for a physical device or a platform-specific simulator.
 
 ## Accounts required for manual testing
 
-Public registration creates **citizen** accounts only. Before testing 50%,
+Public registration creates **citizen** accounts only. Before testing 75%,
 provision these verified, active accounts through the controlled administrative
 process used by your deployment:
 
 - one citizen;
 - one city engineer or administrator; and optionally
 - one barangay official whose configured barangay matches the citizen report.
+- one active repair-personnel account whose repair organization matches the
+  validated incident's responsible organization and whose availability is
+  available.
 
-Utility-provider accounts need a configured `utilityCompany`. They may read
-only incidents routed to that organization; their mobile/work-order workspace
-is not part of the current milestone.
+Utility-provider accounts need a configured utility-company value. They can
+manage only work orders routed to that organization. Repair workers remain the
+distinct repair-personnel role.
+
+### Optional local 50% demonstration data
+
+For a presentation, you can load fictional reports directly into a **local**
+MongoDB database. This lets you sign in on the web as an official and show the
+real dashboard and validation queue without first creating reports on mobile.
+
+1. In `lunas_backend/.env`, use the local demo database and development mode:
+
+   ```dotenv
+   NODE_ENV=development
+   # For a local MongoDB installation without authentication:
+   MONGODB_URI=mongodb://localhost:27017/lunas_demo
+   # Or for this repository's `docker compose up -d mongodb` service:
+   # MONGODB_URI=mongodb://admin:admin123@localhost:27017/lunas_demo?authSource=admin
+   ```
+
+2. Seed the data manually, then start (or restart) the backend against that
+   same database:
+
+   ```bash
+   cd lunas_backend
+   ALLOW_DEMO_SEED=true npm run seed:demo
+   npm run dev
+   ```
+
+3. Sign in on the web with either account below. The password for both is
+   `LunasDemo2026!` unless you set `DEMO_SEED_PASSWORD` locally.
+
+   - `demo.engineer@lunas.test` — City Engineer
+   - `demo.admin@lunas.test` — Administrator
+
+The seed creates six clearly labelled, fictional records: three submitted
+reports for live Validate, Reject, and Duplicate decisions; one of those has
+an advisory duplicate candidate; and one each already validated, rejected,
+and marked duplicate for the dashboard counters. It does not add real people,
+images, AI results, work orders, or repair outcomes. Re-run the command to
+restore only the labelled demo accounts and reports after a presentation.
+
+The command is deliberately blocked for production, non-local MongoDB URI
+hosts, and any database other than local `lunas_demo`. Never use it with real
+reports.
 
 ## System acceptance checklist
 

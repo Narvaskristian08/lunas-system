@@ -13,6 +13,7 @@ const supportedMobileRoles = <String>{
   'barangay_official',
   'city_engineer',
   'admin',
+  'repair_personnel',
 };
 
 const validationOfficialRoles = <String>{
@@ -31,11 +32,14 @@ bool isSupportedMobileRole(String role) => supportedMobileRoles.contains(role);
 
 bool isUtilityProviderRole(String role) => role == 'utility_provider';
 
+bool isRepairPersonnelRole(String role) => role == 'repair_personnel';
+
 /// The only authenticated entry point for each implemented mobile workspace.
 /// Keeping this decision beside the role policy prevents a successful official
 /// sign-in from being redirected into citizen reporting routes.
 String? mobileWorkspaceHome(String role) {
   if (isCitizenRole(role)) return '/citizen';
+  if (isRepairPersonnelRole(role)) return '/repair';
   if (isValidationOfficialRole(role) && !isUtilityProviderRole(role)) {
     return '/official';
   }

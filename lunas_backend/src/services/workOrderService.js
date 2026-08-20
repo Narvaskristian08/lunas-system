@@ -1,0 +1,189 @@
+const { normalizeText, getIncidentBarangay } = require('./jurisdictionService');
+
+const OFFICIAL_WORK_ORDER_ROLES = Object.freeze([
+  'barangay_official',
+  'city_engineer',
+  'utility_provider',
+  'admin'
+]);
+
+const REPAIR_PERSONNEL_ROLE = 'repair_personnel';
+
+const PROGRESS_STAGES = Object.freeze({
+  0: 'assigned',
+  25: 'site_preparation',
+  50: 'main_repair',
+  75: 'finishing',
+  100: 'ready_for_completion'
+});
+
+const REPAIR_PROGRESS_VALUES = Object.freeze(
+  Object.keys(PROGRESS_STAGES).map((value) => Number(value))
+);
+
+const ACTIVE_WORK_ORDER_STATUSES = Object.freeze(['pending', 'accepted', 'in_progress']);
+
+const objectIdString = (value) => (value?._id || value)?.toString();
+
+const sameId = (left, right) => Boolean(left && right && objectIdString(left) === objectIdString(right));
+
+const getWorkOrderBarangay = (workOrder) => normalizeText(
+  workOrder?.jurisdiction?.barangay || getIncidentBarangay(workOrder?.incident)
+);
+
+const isOfficialWorkOrderRole = (user) => Boolean(
+  user && OFFICIAL_WORK_ORDER_ROLES.includes(user.role)
+);
+
+const canManageWorkOrder = (user, workOrder) => {
+  if (!isOfficialWorkOrderRole(user) || !workOrder) return false;
+  if (['admin', 'city_engineer'].includes(user.role)) return true;
+
+  if (user.role === 'barangay_official') {
+    return getWorkOrderBarangay(workOrder) === normalizeText(user.barangay);
+  }
+
+  return user.role === 'utility_provider'
+    && normalizeText(workOrder.responsibleOrganization)
+      === normalizeText(user.utilityCompany);
+};
+
+/**
+ * Safe query scope used for server-side list/detail access. Any caller that
+ * needs to mutate an individual record also calls canManageWorkOrder after
+ * querying within this scope.
+ */
+const buildWorkOrderScope = (user) => {
+  if (!user) return { _id: null };
+  if (['admin', 'city_engineer'].includes(user.role)) return {};
+  if (user.role === 'barangay_official') {
+    const barangay = normalizeText(user.barangay);
+    return barangay ? { 'jurisdiction.barangay': barangay } : { _id: null };
+  }
+  if (user.role === 'utility_provider') {
+    const organization = normalizeText(user.utilityCompany);
+    return organization ? { responsibleOrganization: organization } : { _id: null };
+  }
+  if (user.role === REPAIR_PERSONNEL_ROLE) {
+    return { assignedTo: user._id, assignmentState: { $in: ['pending', 'accepted'] } };
+  }
+  return { _id: null };
+};
+
+const canAccessWorkOrder = (user, workOrder) => {
+  if (!user || !workOrder) return false;
+  if (user.role === REPAIR_PERSONNEL_ROLE) {
+    return sameId(workOrder.assignedTo, user._id)
+      && ['pending', 'accepted'].includes(workOrder.assignmentState);
+  }
+  return canManageWorkOrder(user, workOrder);
+};
+
+const isEligibleRepairPersonnel = (personnel, workOrder) => {
+  if (!personnel || personnel.role !== REPAIR_PERSONNEL_ROLE || !personnel.isActive) return false;
+  if (personnel.availability !== 'available') return false;
+
+  const organization = normalizeText(personnel.repairOrganization);
+  if (!organization || organization !== normalizeText(workOrder.responsibleOrganization)) {
+    return false;
+  }
+
+  // A repair worker with a barangay allocation may work only in that
+  // jurisdiction. An unallocated city-level worker may cover any barangay.
+  const workerBarangay = normalizeText(personnel.barangay);
+  return !workerBarangay || workerBarangay === getWorkOrderBarangay(workOrder);
+};
+
+const getStageForProgress = (progressPercent) => PROGRESS_STAGES[Number(progressPercent)];
+
+const validateProgressUpdate = ({ currentProgress, nextProgress, stage, notes }) => {
+  const current = Number(currentProgress || 0);
+  const next = Number(nextProgress);
+  if (!REPAIR_PROGRESS_VALUES.includes(next)) {
+    return { valid: false, message: 'Repair progress must be one of 0, 25, 50, 75, or 100' };
+  }
+  if (next <= current) {
+    return {
+      valid: false,
+      message: next === current
+        ? 'Repair progress is already recorded at this percentage'
+        : 'Repair progress cannot be lower than the current progress'
+    };
+  }
+  const expectedStage = getStageForProgress(next);
+  if (stage !== expectedStage) {
+    return { valid: false, message: `Repair stage must be '${expectedStage}' for ${next}% progress` };
+  }
+  if (next === 100 && (!String(notes || '').trim() || String(notes).trim().length < 2)) {
+    return { valid: false, message: 'A meaningful repair note is required before marking 100% progress' };
+  }
+  return { valid: true, progressPercent: next, stage: expectedStage };
+};
+
+const transitionMessage = (status, action) => {
+  const messages = {
+    accept: 'Only a pending work order can be accepted',
+    start: 'Only an accepted work order can be started',
+    progress: 'Repair progress can only be recorded after work has started',
+    assign: 'Completed work orders cannot be assigned or reassigned'
+  };
+  return messages[action] || `Work order cannot transition from ${status}`;
+};
+
+const getSlaProjection = (sla = {}, now = new Date()) => {
+  const deadline = sla.deadline ? new Date(sla.deadline) : null;
+  if (!deadline || Number.isNaN(deadline.getTime())) {
+    return {
+      deadline: null,
+      state: 'not_started',
+      isOverdue: false,
+      isApproaching: false,
+      remainingMilliseconds: null
+    };
+  }
+  const remainingMilliseconds = deadline.getTime() - now.getTime();
+  const thresholdHours = Number.parseInt(process.env.SLA_APPROACHING_THRESHOLD_HOURS, 10);
+  const thresholdMilliseconds = (Number.isFinite(thresholdHours) && thresholdHours > 0
+    ? thresholdHours
+    : 24) * 60 * 60 * 1000;
+  const isOverdue = remainingMilliseconds < 0;
+  return {
+    deadline,
+    state: isOverdue ? 'overdue' : (remainingMilliseconds <= thresholdMilliseconds ? 'approaching' : 'active'),
+    isOverdue,
+    isApproaching: !isOverdue && remainingMilliseconds <= thresholdMilliseconds,
+    remainingMilliseconds
+  };
+};
+
+const workOrderHistoryEntry = ({ type, actor, status, progressPercent, stage, notes, assignment, metadata, now = new Date() }) => ({
+  type,
+  actor: actor?._id || actor,
+  actorRole: actor?.role,
+  status,
+  progressPercent,
+  stage,
+  notes,
+  assignment,
+  metadata,
+  createdAt: now
+});
+
+module.exports = {
+  ACTIVE_WORK_ORDER_STATUSES,
+  OFFICIAL_WORK_ORDER_ROLES,
+  PROGRESS_STAGES,
+  REPAIR_PERSONNEL_ROLE,
+  REPAIR_PROGRESS_VALUES,
+  buildWorkOrderScope,
+  canAccessWorkOrder,
+  canManageWorkOrder,
+  getSlaProjection,
+  getStageForProgress,
+  isEligibleRepairPersonnel,
+  isOfficialWorkOrderRole,
+  sameId,
+  transitionMessage,
+  validateProgressUpdate,
+  workOrderHistoryEntry
+};

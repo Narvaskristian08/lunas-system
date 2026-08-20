@@ -7,6 +7,8 @@ void main() {
     expect(mobileWorkspaceHome('barangay_official'), '/official');
     expect(mobileWorkspaceHome('city_engineer'), '/official');
     expect(mobileWorkspaceHome('admin'), '/official');
+    expect(isSupportedMobileRole('repair_personnel'), isTrue);
+    expect(mobileWorkspaceHome('repair_personnel'), '/repair');
   });
 
   test('utility providers remain official accounts but fail closed on mobile', () {
@@ -16,8 +18,8 @@ void main() {
   });
 
   test('unsupported roles fail closed instead of receiving citizen routes', () {
-    expect(isSupportedMobileRole('repair_personnel'), isFalse);
-    expect(mobileWorkspaceHome('repair_personnel'), isNull);
+    expect(isSupportedMobileRole('unknown_role'), isFalse);
+    expect(mobileWorkspaceHome('unknown_role'), isNull);
     expect(mobileWorkspaceHome(''), isNull);
   });
 }

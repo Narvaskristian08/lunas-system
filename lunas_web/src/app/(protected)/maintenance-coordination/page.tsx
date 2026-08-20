@@ -1,5 +1,5 @@
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { redirect } from "next/navigation";
 
 export default function MaintenancePage() {
-  return <MilestoneUnavailable title="Maintenance coordination is not available yet" description="Crew coordination and repair tracking are planned for a later milestone." />;
+  redirect("/work-orders");
 }

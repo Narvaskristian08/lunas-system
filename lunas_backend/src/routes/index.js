@@ -9,6 +9,8 @@ const notificationRoutes = require('./notificationRoutes');
 const userRoutes = require('./userRoutes');
 const statsRoutes = require('./statsRoutes');
 const categoryRoutes = require('./categoryRoutes');
+const { getWorkOrderSummary } = require('../controllers/workOrderController');
+const { protect, authorize } = require('../middleware/auth');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -18,6 +20,12 @@ router.use('/notifications', notificationRoutes);
 router.use('/users', userRoutes);
 router.use('/stats', statsRoutes);
 router.use('/categories', categoryRoutes);
+router.get(
+  '/dashboard/work-orders-summary',
+  protect,
+  authorize('barangay_official', 'city_engineer', 'utility_provider', 'repair_personnel', 'admin'),
+  getWorkOrderSummary
+);
 
 // API info endpoint
 router.get('/', (req, res) => {

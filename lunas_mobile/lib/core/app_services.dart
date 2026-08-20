@@ -5,6 +5,7 @@ import 'package:lunas_mobile/features/auth/presentation/controllers/auth_control
 import 'package:lunas_mobile/features/reporting/data/services/category_service.dart';
 import 'package:lunas_mobile/features/reporting/data/services/evidence_service.dart';
 import 'package:lunas_mobile/features/reporting/data/services/report_service.dart';
+import 'package:lunas_mobile/features/repair/data/services/repair_service.dart';
 import 'package:lunas_mobile/features/validation/data/services/validation_service.dart';
 
 /// Application-owned services for the production mobile path.
@@ -20,6 +21,7 @@ final reportService = ReportService(apiClient: apiClient);
 final categoryService = CategoryService(apiClient: apiClient);
 final evidenceService = EvidenceService();
 final validationService = ValidationService(apiClient: apiClient);
+final repairService = RepairService(apiClient: apiClient);
 
 void configureAppServices() {
   apiClient.onAuthenticationFailure = authController.expireSession;

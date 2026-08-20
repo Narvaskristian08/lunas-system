@@ -1,5 +1,6 @@
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { redirect } from "next/navigation";
 
-export default function SlaDetailPage() {
-  return <MilestoneUnavailable title="SLA details are not available yet" description="SLA monitoring and escalation are planned for a later milestone." />;
+export default async function SlaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/work-orders/${encodeURIComponent(id)}`);
 }

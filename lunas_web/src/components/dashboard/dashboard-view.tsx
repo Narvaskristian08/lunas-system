@@ -27,21 +27,30 @@ function dashboardCopy(viewer: UserProfile) {
       recordsDescription: "Only reports you submitted are shown here.",
     };
   }
-  if (!["barangay_official", "city_engineer", "admin"].includes(viewer.backendRole)) {
+  if (viewer.backendRole === "repair_personnel") {
     return {
-      eyebrow: `${viewer.organization} · Account workspace`,
-      title: "LUNAS dashboard",
-      description: "Your operational workspace is scheduled for a later milestone. No sample incident data is displayed.",
-      recordsTitle: "Operational workspace",
-      recordsDescription: "This account does not have a validation queue in the current release.",
+      eyebrow: `${viewer.organization} · Field operations`,
+      title: "Repair dashboard",
+      description: "Live work orders and deadline state assigned to your repair account.",
+      recordsTitle: "Assigned work orders",
+      recordsDescription: "Only work orders returned by the protected assignment scope are shown.",
+    };
+  }
+  if (viewer.backendRole === "utility_provider") {
+    return {
+      eyebrow: `${viewer.organization} · Provider operations`,
+      title: "Provider work orders",
+      description: "Live maintenance activity routed to your responsible organization.",
+      recordsTitle: "Recent work orders",
+      recordsDescription: "Only records in the provider scope returned by the backend are shown.",
     };
   }
   return {
     eyebrow: `${viewer.organization} · Operations overview`,
     title: "LUNAS dashboard",
-    description: "Current incident activity from the LUNAS service, scoped to your authorized access.",
-    recordsTitle: "Recent incident activity",
-    recordsDescription: "Most recently submitted records available to your role.",
+    description: "Current validation and maintenance activity from the LUNAS service, scoped to your authorized access.",
+    recordsTitle: "Recent operational activity",
+    recordsDescription: "Recent work orders or validation records in your authorized scope.",
   };
 }
 

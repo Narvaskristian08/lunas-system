@@ -14,6 +14,7 @@ class IncidentReport {
     required this.possibleDuplicateCandidateCount,
     this.rejectionReason,
     this.duplicateReason,
+    this.repair,
   });
 
   final String id;
@@ -28,8 +29,14 @@ class IncidentReport {
   final int possibleDuplicateCandidateCount;
   final String? rejectionReason;
   final String? duplicateReason;
+  final IncidentRepairSummary? repair;
 
   String get categoryLabel => categoryFromCode(category).label;
+
+  /// Citizen-safe operational wording. Personnel, reassignment notes, SLA
+  /// internals, and field evidence are deliberately absent from this model.
+  String get currentStatusLabel => repair?.citizenStatusLabel ?? _statusLabel(status);
+  String get statusChipLabel => repair?.citizenChipLabel ?? _statusLabel(status);
 
   factory IncidentReport.fromJson(Map<String, dynamic> json) {
     final locationValue = _map(json['location']);
@@ -58,6 +65,73 @@ class IncidentReport {
           int.tryParse((json['possibleDuplicateCandidateCount'] ?? 0).toString()) ?? 0,
       rejectionReason: _text(json['rejectionReason']),
       duplicateReason: _text(json['duplicateReason']),
+      repair: _map(json['repair']).isEmpty
+          ? null
+          : IncidentRepairSummary.fromJson(_map(json['repair'])),
+    );
+  }
+}
+
+/// High-level repair state returned for the citizen's own report only.
+class IncidentRepairSummary {
+  const IncidentRepairSummary({
+    this.reference,
+    required this.status,
+    required this.progressPercent,
+    this.assignmentState,
+    this.stage,
+    required this.readyForCompletion,
+    this.updatedAt,
+  });
+
+  final String? reference;
+  final String status;
+  final int progressPercent;
+  final String? assignmentState;
+  final String? stage;
+  final bool readyForCompletion;
+  final DateTime? updatedAt;
+
+  String get citizenStatusLabel {
+    if (readyForCompletion || status == 'completed' || progressPercent == 100) {
+      return 'Repair Progress: 100% · Awaiting Verification';
+    }
+    if (status == 'in_progress' && progressPercent > 0) {
+      return 'Repair Progress: $progressPercent%';
+    }
+    if (status == 'in_progress') return 'Repair In Progress';
+    if (status == 'pending' && assignmentState == 'unassigned') {
+      return 'Work Order Created · Awaiting Assignment';
+    }
+    if (status == 'pending' && assignmentState == 'declined') {
+      return 'Work Order Awaiting Reassignment';
+    }
+    if (status == 'pending' || status == 'accepted') return 'Assigned for Repair';
+    return _statusLabel(status);
+  }
+
+  String get citizenChipLabel {
+    if (readyForCompletion || status == 'completed' || progressPercent == 100) {
+      return 'Awaiting verification';
+    }
+    if (status == 'in_progress' && progressPercent > 0) return '$progressPercent% repair';
+    if (status == 'in_progress') return 'Repair in progress';
+    if (status == 'pending' && assignmentState == 'unassigned') return 'Work order created';
+    if (status == 'pending' && assignmentState == 'declined') return 'Awaiting reassignment';
+    if (status == 'pending' || status == 'accepted') return 'Assigned for repair';
+    return _statusLabel(status);
+  }
+
+  factory IncidentRepairSummary.fromJson(Map<String, dynamic> json) {
+    final progress = int.tryParse((json['progressPercent'] ?? 0).toString()) ?? 0;
+    return IncidentRepairSummary(
+      reference: _text(json['reference'] ?? json['orderNumber']),
+      status: (json['status'] ?? 'pending').toString(),
+      progressPercent: progress.clamp(0, 100).toInt(),
+      assignmentState: _text(json['assignmentState'])?.toLowerCase(),
+      stage: _text(json['stage'] ?? json['progressStage']),
+      readyForCompletion: json['readyForCompletion'] == true,
+      updatedAt: _date(json['updatedAt']),
     );
   }
 }
@@ -141,16 +215,36 @@ class ReportStatusEvent {
     required this.status,
     required this.changedAt,
     this.notes,
+    this.progressPercent,
+    this.repairStage,
+    this.event,
   });
 
   final String status;
   final DateTime? changedAt;
   final String? notes;
+  final int? progressPercent;
+  final String? repairStage;
+  final String? event;
+
+  String get citizenLabel {
+    if (event == 'work_order_created') return 'Work Order Created';
+    if (progressPercent == 100) return 'Repair Reached 100% · Awaiting Verification';
+    if (progressPercent != null && progressPercent! > 0) {
+      return 'Repair Progress: $progressPercent%';
+    }
+    if (status == 'assigned') return 'Assigned for Repair';
+    if (status == 'in_progress') return 'Repair In Progress';
+    return _statusLabel(status);
+  }
 
   factory ReportStatusEvent.fromJson(Map<String, dynamic> json) => ReportStatusEvent(
     status: (json['status'] ?? 'submitted').toString(),
     changedAt: _date(json['changedAt'] ?? json['createdAt']),
     notes: json['notes']?.toString(),
+    progressPercent: int.tryParse((json['progressPercent'] ?? '').toString()),
+    repairStage: _text(json['repairStage'] ?? json['stage']),
+    event: _text(json['event']),
   );
 }
 
@@ -172,3 +266,10 @@ double? _double(Object? value) => value is num
 DateTime? _date(Object? value) => value == null
     ? null
     : DateTime.tryParse(value.toString())?.toLocal();
+
+String _statusLabel(String value) => value
+    .replaceAll('_', ' ')
+    .split(' ')
+    .where((part) => part.isNotEmpty)
+    .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+    .join(' ');

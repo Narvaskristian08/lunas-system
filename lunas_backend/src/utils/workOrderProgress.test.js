@@ -5,9 +5,9 @@ const {
 } = require('./workOrderProgress');
 
 describe('work-order progress helpers', () => {
-  test('normalizes valid percentages in the inclusive 0–100 range', () => {
+  test('normalizes only the supported repair-progress milestones', () => {
     expect(normalizeProgressPercent(0)).toBe(0);
-    expect(normalizeProgressPercent('65.5')).toBe(65.5);
+    expect(normalizeProgressPercent('50')).toBe(50);
     expect(normalizeProgressPercent(100)).toBe(100);
   });
 
@@ -15,6 +15,7 @@ describe('work-order progress helpers', () => {
     expect(normalizeProgressPercent('')).toBeNull();
     expect(normalizeProgressPercent(-1)).toBeNull();
     expect(normalizeProgressPercent(100.01)).toBeNull();
+    expect(normalizeProgressPercent('65.5')).toBeNull();
     expect(normalizeProgressPercent('not-a-number')).toBeNull();
   });
 
@@ -22,14 +23,18 @@ describe('work-order progress helpers', () => {
     expect(getCurrentProgressPercent(undefined)).toBe(0);
   });
 
-  test('allows progress to advance but prevents regression', () => {
-    expect(validateProgressAdvance(65, 80)).toEqual({
+  test('allows a milestone advance but prevents regression and repeats', () => {
+    expect(validateProgressAdvance(50, 75)).toEqual({
       valid: true,
-      progressPercent: 80
+      progressPercent: 75
     });
-    expect(validateProgressAdvance(65, 64)).toEqual({
+    expect(validateProgressAdvance(50, 25)).toEqual({
       valid: false,
-      message: 'Progress percent cannot be lower than the current progress'
+      message: 'Repair progress cannot be lower than the current progress'
+    });
+    expect(validateProgressAdvance(50, 50)).toEqual({
+      valid: false,
+      message: 'Repair progress is already recorded at this percentage'
     });
   });
 });

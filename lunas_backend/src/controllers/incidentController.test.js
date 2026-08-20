@@ -167,6 +167,11 @@ describe('citizen incident reporting', () => {
         status: 'submitted',
         changedAt: new Date('2026-08-11T00:00:00Z'),
         notes: 'Incident reported'
+      }, {
+        status: 'in_progress',
+        changedAt: new Date('2026-08-12T00:00:00Z'),
+        notes: 'Internal repair note that must not reach the citizen',
+        metadata: { progressPercent: 25, stage: 'site_preparation' }
       }]
     };
     let populateCalls = 0;
@@ -192,6 +197,11 @@ describe('citizen incident reporting', () => {
       data: [{
         status: 'submitted',
         changedAt: new Date('2026-08-11T00:00:00Z')
+      }, {
+        status: 'in_progress',
+        changedAt: new Date('2026-08-12T00:00:00Z'),
+        progressPercent: 25,
+        repairStage: 'site_preparation'
       }]
     });
   });

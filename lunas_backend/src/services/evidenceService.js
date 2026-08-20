@@ -111,6 +111,51 @@ exports.processAndUploadEvidence = async (files, context) => {
   }
 };
 
+/**
+ * Process field evidence for a work-order progress update. It deliberately
+ * follows the same private-storage, re-encode, EXIF-stripping and checksum
+ * path as citizen evidence, but does not perform incident AI classification.
+ */
+exports.processAndUploadRepairEvidence = async (files, { workOrderId, uploaderId }) => {
+  const uploadedKeys = [];
+  try {
+    const evidence = [];
+    for (const file of files || []) {
+      const quality = await checkImageQuality(file.buffer);
+      if (!quality.isValid) {
+        throw clientError(`Repair evidence image failed quality validation: ${quality.issues.join('; ')}`);
+      }
+
+      const preparedBuffer = await prepareEvidenceImage(file.buffer);
+      const metadata = await getImageMetadata(preparedBuffer);
+      const checksum = crypto.createHash('sha256').update(preparedBuffer).digest('hex');
+      const uploaded = await storageService.uploadToStorage(
+        preparedBuffer,
+        'repair-evidence.jpg',
+        'image/jpeg',
+        `work-orders/${workOrderId}/repair/${uploaderId}`
+      );
+      uploadedKeys.push(uploaded.key);
+      evidence.push({
+        key: uploaded.key,
+        url: uploaded.url,
+        mimeType: 'image/jpeg',
+        size: preparedBuffer.length,
+        checksum,
+        width: metadata.width,
+        height: metadata.height,
+        uploadedBy: uploaderId,
+        uploadedAt: new Date()
+      });
+    }
+    return evidence;
+  } catch (error) {
+    await Promise.allSettled(uploadedKeys.map((key) => storageService.deleteFromStorage(key)));
+    logger.error(`Repair evidence processing failed: ${error.message}`);
+    throw error;
+  }
+};
+
 exports.cleanupEvidence = async (images = []) => {
   const keys = images.map((image) => image.key).filter(Boolean);
   await Promise.allSettled(keys.map((key) => storageService.deleteFromStorage(key)));

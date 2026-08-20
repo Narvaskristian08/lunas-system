@@ -1,5 +1,6 @@
 const OneSignal = require('onesignal-node');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 const logger = require('../utils/logger');
 
 // Initialize OneSignal client
@@ -28,14 +29,25 @@ exports.createNotification = async (notificationData) => {
   try {
     const notification = await Notification.create(notificationData);
     
-    // Send push notification if recipient has device tokens
-    if (notification.recipient && notification.recipient.deviceTokens?.length > 0) {
-      await exports.sendPushNotification(
-        notification.recipient.deviceTokens.map(dt => dt.token),
-        notification.title,
-        notification.message,
-        notification.data
-      );
+    // Notification.recipient is normally an ObjectId, not a populated User.
+    // Resolve device tokens only when push delivery is configured, while the
+    // persisted in-app notification remains durable even if lookup/delivery
+    // is unavailable.
+    if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY && notification.recipient) {
+      try {
+        const recipient = await User.findById(notification.recipient).select('deviceTokens');
+        const playerIds = (recipient?.deviceTokens || []).map((device) => device.token).filter(Boolean);
+        if (playerIds.length) {
+          await exports.sendPushNotification(
+            playerIds,
+            notification.title,
+            notification.message,
+            notification.data
+          );
+        }
+      } catch (error) {
+        logger.warn(`Push recipient lookup skipped: ${error.message}`);
+      }
     }
 
     return notification;
@@ -225,6 +237,51 @@ exports.notificationTemplates = {
     type: 'work_order_assigned',
     title: 'New Work Order',
     message: `You have been assigned work order ${orderNumber}. Please review and accept.`
+  }),
+
+  workOrderReassigned: (orderNumber) => ({
+    type: 'work_order_reassigned',
+    title: 'Work Order Reassigned',
+    message: `Work order ${orderNumber} has been reassigned. Please review the current assignment.`
+  }),
+
+  workOrderAccepted: (orderNumber) => ({
+    type: 'work_order_accepted',
+    title: 'Assignment Accepted',
+    message: `Work order ${orderNumber} has been accepted by the assigned repair personnel.`
+  }),
+
+  workOrderDeclined: (orderNumber) => ({
+    type: 'work_order_declined',
+    title: 'Assignment Declined',
+    message: `Work order ${orderNumber} needs reassignment after the assigned repair personnel declined it.`,
+    priority: 'high'
+  }),
+
+  workOrderStarted: (orderNumber) => ({
+    type: 'work_order_in_progress',
+    title: 'Repair Started',
+    message: `Repair work has started for work order ${orderNumber}.`
+  }),
+
+  workOrderProgress: (orderNumber, progressPercent) => ({
+    type: 'work_order_progress',
+    title: 'Repair Progress Updated',
+    message: `Work order ${orderNumber} is now ${progressPercent}% complete.`
+  }),
+
+  workOrderSlaApproaching: (orderNumber) => ({
+    type: 'sla_approaching',
+    title: 'SLA Deadline Approaching',
+    message: `Work order ${orderNumber} is approaching its SLA deadline.`,
+    priority: 'high'
+  }),
+
+  workOrderSlaOverdue: (orderNumber) => ({
+    type: 'sla_overdue',
+    title: 'Work Order SLA Overdue',
+    message: `Work order ${orderNumber} is overdue and needs attention.`,
+    priority: 'urgent'
   }),
   
   workOrderCompleted: (orderNumber) => ({

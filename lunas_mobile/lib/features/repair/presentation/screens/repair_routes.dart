@@ -1,23 +1,12 @@
-/// Named routes for the static repair-personnel workflow.
-///
-/// Keep route registration in the application router. This file deliberately
-/// contains no router dependency so the repair UI can be integrated in either
-/// the existing [MaterialApp] routes table or a future GoRouter setup.
+/// Paths used by the authenticated repair-personnel workspace.
 abstract final class RepairRoutes {
   static const dashboard = '/repair';
-  static const workOrders = '/repair/tasks';
-  static const workOrderDetails = '/repair/work-order';
-  static const startRepair = '/repair/start';
-  static const updateProgress = '/repair/progress';
-  static const uploadEvidence = '/repair/evidence';
-  static const qualityCheck = '/repair/quality';
-  static const confirmCompletion = '/repair/confirm';
-  static const submitted = '/repair/submitted';
-  static const completed = '/repair/completed';
-  static const officialVerification = '/official/verify';
+  static const workOrders = '/repair/work-orders';
+  static const profile = '/repair/profile';
 
-  // Existing application destinations used by the repair bottom navigation.
-  static const map = '/maps';
-  static const alerts = '/notifications';
-  static const profile = '/profile';
+  static String workOrder(String id) => '$workOrders/$id';
+  static String start(String id) => '${workOrder(id)}/start';
+  static String progress(String id) => '${workOrder(id)}/progress';
+  static String evidence(String id) => '${workOrder(id)}/evidence';
+  static String location(String id) => '${workOrder(id)}/location';
 }

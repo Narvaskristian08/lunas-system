@@ -534,7 +534,12 @@ manual selection available if this request is temporarily unavailable.
 
 ---
 
-## Work Order Endpoints
+## Legacy Work-Order Endpoints (Removed at 75%)
+
+The remainder of this legacy section is retained only to describe the
+pre-75% repository state. Do **not** call its create-with-assignee,
+arbitrary-progress, `/complete`, or `/verify` endpoints: they are not
+registered by the current API and do not represent the supported workflow.
 
 ### 1. Get All Work Orders
 **GET** `/work-orders`
@@ -677,6 +682,104 @@ a completion entry to the progress history.
   }
 }
 ```
+
+---
+
+## 75% Work-Order, Assignment, and Repair API
+
+The current maintenance state machine is:
+
+```text
+unassigned pending → assigned pending → accepted → in_progress → completed
+```
+
+`completed` means **100% repair progress and ready for formal
+completion/verification**. It never verifies, approves, or closes an incident.
+
+### Create and monitor
+
+- **POST** `/incidents/:id/work-orders` — creates one unassigned, 0%
+  primary work order from a validated, routed incident in the official's
+  permitted scope. It inherits priority, jurisdiction, organization, and SLA.
+- **POST** `/work-orders` — compatibility form using
+  `{ "incident": "<id>", "instructions": "..." }`; follows the same rules.
+- **GET** `/work-orders` — scoped list with `page`, `limit`, `search`,
+  `status`, `priority`, `assignmentStatus`, `personnel`,
+  `organization`, `category`, `progress`, `slaState`, and safe
+  `sortBy` values.
+- **GET** `/work-orders/my` — current repair person's assigned work only.
+- **GET** `/work-orders/:id` — scoped operational detail.
+
+Citizens cannot call any work-order management endpoint. Repair personnel are
+restricted server-side to their own current assignments.
+
+### Assignment
+
+- **GET** `/work-orders/:id/eligible-personnel` — active,
+  organization-compatible, available repair personnel in applicable
+  jurisdiction.
+- **POST** `/work-orders/:id/assign`
+
+  ```json
+  { "assigneeId": "64def456..." }
+  ```
+
+- **POST** `/work-orders/:id/reassign`
+
+  ```json
+  {
+    "assigneeId": "64abc456...",
+    "reason": "Original worker reported an equipment conflict."
+  }
+  ```
+
+- **GET** `/work-orders/:id/assignments` — append-only assignment history.
+- **POST** `/work-orders/:id/accept` — active assigned repair personnel.
+- **POST** `/work-orders/:id/decline` — active assigned repair personnel;
+  body requires a 2–500 character `reason`, with optional `notes`.
+
+Assignment and reassignment preserve history, create audit events, persist
+in-app notifications, and return `409` on stale/conflicting operations.
+Declining preserves the work order and makes it available for reassignment.
+
+### Start, progress, and evidence
+
+- **POST** `/work-orders/:id/start` — only the active accepted assignee may
+  transition to `in_progress`.
+- **POST** `/work-orders/:id/progress` — active in-progress assignee;
+  accepts JSON or multipart `FormData` with up to five `evidence` images.
+- **POST** `/work-orders/:id/evidence` — additional in-progress field
+  evidence, multipart `evidence` images plus optional `caption` and
+  `progressUpdateId`. When supplied, `progressUpdateId` must belong to this
+  work order and the new evidence remains linked to that append-only progress
+  record.
+- **GET** `/work-orders/:id/progress` — append-only progress entries.
+
+Every progress update must use exactly one approved pair:
+
+| Repair progress | Stage |
+| --- | --- |
+| 0% | `assigned` |
+| 25% | `site_preparation` |
+| 50% | `main_repair` |
+| 75% | `finishing` |
+| 100% | `ready_for_completion` |
+
+Progress cannot regress, repeat, or use arbitrary percentages. At 100%, a
+meaningful note is required; the work order becomes `completed` and
+`readyForCompletion`. It does not trigger completion submission, SSIM/AI,
+verification, rework, or closure.
+
+### SLA and dashboard
+
+- **GET** `/work-orders/:id/sla`
+- **GET** `/work-orders/approaching-deadline`
+- **GET** `/work-orders/overdue`
+- **GET** `/dashboard/work-orders-summary`
+
+Deadline, remaining time, approaching state, and overdue state are generated
+by the backend. `runWorkOrderSlaCheck` is scheduler-invokable and records
+only one approaching and one overdue alert per active work order.
 
 ---
 

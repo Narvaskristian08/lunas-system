@@ -1,588 +1,511 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
-import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
+import 'package:lunas_mobile/features/maps/data/services/location_service.dart';
+import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 
-/// Local field-update demo for an in-progress repair.
-///
-/// The values intentionally remain in widget state until a work-order API is
-/// available. This keeps the percentage interaction usable without implying
-/// that a repair update has been persisted remotely.
+/// Submits an append-only field progress update. Percentages and stages are
+/// deliberately constrained to the approved repair sequence, which is
+/// separate from project-development percentages.
 class UpdateRepairProgressScreen extends StatefulWidget {
-  const UpdateRepairProgressScreen({super.key});
+  const UpdateRepairProgressScreen({required this.workOrderId, super.key});
+
+  final String workOrderId;
 
   @override
-  State<UpdateRepairProgressScreen> createState() =>
-      _UpdateRepairProgressScreenState();
+  State<UpdateRepairProgressScreen> createState() => _UpdateRepairProgressScreenState();
 }
 
-class _UpdateRepairProgressScreenState
-    extends State<UpdateRepairProgressScreen> {
-  static const _sitePreparationStage = 'Site preparation';
-  static const _resurfacingStage = 'Resurfacing base layer';
-  static const _finalInspectionStage = 'Final inspection';
-
+class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _percentageController;
-
-  int _progressPercent = 65;
-  String _selectedStage = _resurfacingStage;
-  String _lastUpdatedLabel = 'Last updated 10 minutes ago';
-
-  bool get _isReadyForCompletion =>
-      _progressPercent == 100 && _selectedStage == _finalInspectionStage;
-
-  String? get _completionConstraint {
-    if (_progressPercent == 100 && _selectedStage != _finalInspectionStage) {
-      return 'Select Final inspection before marking this task ready for completion.';
-    }
-    if (_selectedStage == _finalInspectionStage && _progressPercent < 100) {
-      return '${100 - _progressPercent}% remains before this task can be marked ready for completion.';
-    }
-    return null;
-  }
+  final _notesController = TextEditingController();
+  final LocationService _locationService = const LocationService();
+  bool _loading = true;
+  bool _saving = false;
+  bool _locating = false;
+  String? _error;
+  String? _locationNotice;
+  RepairWorkOrder? _workOrder;
+  EvidenceSelection? _evidence;
+  int _selectedProgress = 0;
+  double? _latitude;
+  double? _longitude;
 
   @override
   void initState() {
     super.initState();
-    _percentageController = TextEditingController(text: '$_progressPercent');
+    _load();
   }
 
   @override
   void dispose() {
-    _percentageController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
-  void _setProgressFromSlider(double value) {
-    final percentage = value.round();
-    if (percentage == _progressPercent) return;
-
+  Future<void> _load() async {
     setState(() {
-      _progressPercent = percentage;
-      _percentageController.value = TextEditingValue(
-        text: '$percentage',
-        selection: TextSelection.collapsed(offset: '$percentage'.length),
-      );
+      _loading = true;
+      _error = null;
     });
+    try {
+      final workOrder = await repairService.getWorkOrder(widget.workOrderId);
+      if (!mounted) return;
+      setState(() {
+        _workOrder = workOrder;
+        _selectedProgress = workOrder.progressPercent;
+      });
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
-  void _onPercentageChanged(String value) {
-    final percentage = int.tryParse(value);
-    if (percentage == null || percentage < 0 || percentage > 100) {
-      return;
-    }
-
-    if (percentage != _progressPercent) {
-      setState(() => _progressPercent = percentage);
+  Future<void> _pickEvidence() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from photo library'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    try {
+      final evidence = await evidenceService.pick(source);
+      if (mounted) setState(() => _evidence = evidence);
+    } on EvidenceException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not prepare that image for upload.')),
+        );
+      }
     }
   }
 
-  String? _validatePercentage(String? value) {
-    final percentage = int.tryParse(value?.trim() ?? '');
-    if (percentage == null) {
-      return 'Enter a whole number from 0 to 100.';
+  Future<void> _attachCurrentLocation() async {
+    setState(() {
+      _locating = true;
+      _locationNotice = null;
+    });
+    try {
+      final position = await _locationService.determinePosition();
+      if (!mounted) return;
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _locationNotice = 'Current coordinates will be attached to this update.';
+      });
+    } on LocationServiceException catch (_) {
+      if (mounted) {
+        setState(
+          () => _locationNotice =
+              'Location was not attached. You can submit this update without it.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _locationNotice =
+              'We could not get your location. You can submit this update without it.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
     }
-    if (percentage < 0 || percentage > 100) {
-      return 'Completion must be between 0% and 100%.';
+  }
+
+  String? _validateNotes(String? value) {
+    final notes = value?.trim() ?? '';
+    if (notes.length > 2000) return 'Notes must be 2,000 characters or fewer.';
+    if (_selectedProgress == 100 && notes.length < 10) {
+      return 'Add a meaningful completion note before marking work ready.';
     }
     return null;
   }
 
-  void _saveProgress() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    if (_progressPercent == 100 && _selectedStage != _finalInspectionStage) {
+  Future<void> _save() async {
+    final workOrder = _workOrder;
+    if (workOrder == null || !_formKey.currentState!.validate()) return;
+    if (_selectedProgress <= workOrder.progressPercent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select a repair milestone higher than the current progress.')),
+      );
+      return;
+    }
+    if (_selectedProgress == 100 && _evidence != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Select Final inspection before marking this task ready for completion.',
-          ),
+          content: Text('Upload field evidence before recording the 100% milestone.'),
         ),
       );
       return;
     }
-
-    setState(() => _lastUpdatedLabel = 'Saved just now — local demo only');
-    final completionMessage = _isReadyForCompletion
-        ? 'Progress saved locally. This task is ready for completion.'
-        : 'Progress saved locally for this UI demo.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(completionMessage)));
+    setState(() => _saving = true);
+    try {
+      final updated = await repairService.submitProgress(
+        workOrder.id,
+        progressPercent: _selectedProgress,
+        stage: repairStageForProgress(_selectedProgress),
+        notes: _notesController.text,
+        latitude: _latitude,
+        longitude: _longitude,
+        version: workOrder.version,
+      );
+      if (_evidence != null) {
+        try {
+          final progressUpdateId = updated.progressUpdates.isEmpty
+              ? null
+              : updated.progressUpdates.last.id;
+          await repairService.uploadEvidence(
+            updated.id,
+            evidence: _evidence!,
+            caption: _notesController.text,
+            progressUpdateId: progressUpdateId,
+          );
+        } on ApiException catch (error) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Progress was saved, but evidence was not uploaded: ${error.message}',
+              ),
+            ),
+          );
+          context.go(RepairRoutes.workOrder(updated.id));
+          return;
+        }
+      }
+      if (!mounted) return;
+      final message = _selectedProgress == 100
+          ? 'Progress saved. This repair is ready for completion / verification.'
+          : 'Repair progress saved.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      context.go(RepairRoutes.workOrder(updated.id));
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (error.isConflict) {
+        await _load();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This work order changed on the server. Review the latest progress before retrying.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    if (_loading) {
+      return const Scaffold(
+        body: SafeArea(
+          child: LunasStateView(
+            state: LunasViewState.loading,
+            title: 'Loading repair progress',
+            message: 'Getting the current server-confirmed repair state.',
+          ),
+        ),
+      );
+    }
+    if (_error != null || _workOrder == null) {
+      return Scaffold(
+        appBar: const RepairAppBar(title: 'Update progress', showBackButton: true),
+        body: SafeArea(
+          child: LunasStateView(
+            state: LunasViewState.error,
+            title: 'Could not update progress',
+            message: _error ?? 'This work order is unavailable.',
+            actionLabel: 'Try again',
+            onAction: _load,
+          ),
+        ),
+      );
+    }
+    final workOrder = _workOrder!;
+    if (!workOrder.canUpdateProgress) {
+      return Scaffold(
+        appBar: const RepairAppBar(title: 'Update progress', showBackButton: true),
+        body: SafeArea(
+          child: LunasStateView(
+            state: LunasViewState.empty,
+            title: 'Progress updates are unavailable',
+            message: 'Only an in-progress work order can receive a repair update.',
+            actionLabel: 'View work order',
+            onAction: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+    }
+    final stage = repairStageForProgress(_selectedProgress);
     return RepairPage(
-      appBar: const RepairAppBar(
-        title: 'Update progress',
-        showBackButton: true,
-      ),
+      appBar: const RepairAppBar(title: 'Update progress', showBackButton: true),
+      bottomActionBar: _SaveProgressActionBar(saving: _saving, onSave: _save),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'WO-2026-0142',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-              ),
+              workOrder.orderNumber,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  size: 18,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    'Pantal drainage outfall, Dagupan City',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
+            Text(workOrder.location.displayAddress),
+            const SizedBox(height: AppSpacing.lg),
+            _CurrentProgressCard(workOrder: workOrder),
             const SizedBox(height: AppSpacing.xl),
-            _ProgressSummary(
-              progressPercent: _progressPercent,
-              stage: _selectedStage,
-              lastUpdatedLabel: _lastUpdatedLabel,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Completion percentage', style: theme.textTheme.titleMedium),
+            Text('Repair progress', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Set a whole-number estimate from 0% to 100%. You can type a value or use the slider.',
-              style: theme.textTheme.bodySmall,
-            ),
+            const Text('Select the approved repair milestone. Progress cannot be reduced.'),
             const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _percentageController,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: _validatePercentage,
-              onChanged: _onPercentageChanged,
-              decoration: const InputDecoration(
-                labelText: 'Completion percentage',
-                helperText: 'Whole number between 0 and 100',
-                prefixIcon: Icon(Icons.percent_rounded),
-                suffixText: '%',
-              ),
-            ),
-            Semantics(
-              label: 'Repair completion percentage',
-              value: '$_progressPercent percent',
-              hint: 'Use the slider to adjust the completion percentage.',
-              child: Slider(
-                value: _progressPercent.toDouble(),
-                min: 0,
-                max: 100,
-                divisions: 100,
-                label: '$_progressPercent%',
-                semanticFormatterCallback: (value) =>
-                    '${value.round()} percent complete',
-                onChanged: _setProgressFromSlider,
-              ),
-            ),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Text('0%'), Text('100%')],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Repair status', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.xs),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedStage,
-              decoration: const InputDecoration(
-                labelText: 'Current repair stage',
-                helperText: 'Select the stage that matches this update.',
-                prefixIcon: Icon(Icons.handyman),
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: _sitePreparationStage,
-                  child: Text(_sitePreparationStage),
-                ),
-                DropdownMenuItem(
-                  value: _resurfacingStage,
-                  child: Text(_resurfacingStage),
-                ),
-                DropdownMenuItem(
-                  value: _finalInspectionStage,
-                  child: Text(_finalInspectionStage),
-                ),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final value in [0, 25, 50, 75, 100])
+                  ChoiceChip(
+                    label: Text('$value%'),
+                    selected: _selectedProgress == value,
+                    onSelected: value <= workOrder.progressPercent
+                        ? null
+                        : (_) => setState(() {
+                            _selectedProgress = value;
+                            if (value == 100) _evidence = null;
+                          }),
+                  ),
               ],
-              onChanged: (stage) {
-                if (stage == null) return;
-                setState(() => _selectedStage = stage);
-              },
             ),
             const SizedBox(height: AppSpacing.md),
-            _CompletionReadinessCard(
-              isReadyForCompletion: _isReadyForCompletion,
-              constraint: _completionConstraint,
+            LunasCard(
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .42),
+              child: RepairInfoRow(label: 'Repair stage', value: stage.label),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Progress notes', style: theme.textTheme.titleMedium),
+            Text('Progress notes', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.xs),
-            const TextField(
+            TextFormField(
+              controller: _notesController,
               maxLines: 4,
-              maxLength: 500,
-              decoration: InputDecoration(
-                hintText: 'Enter details about the current progress…',
-                prefixIcon: Padding(
-                  padding: EdgeInsets.only(bottom: 64),
-                  child: Icon(Icons.edit_note_rounded),
-                ),
+              maxLength: 2000,
+              textCapitalization: TextCapitalization.sentences,
+              validator: _validateNotes,
+              decoration: const InputDecoration(
+                hintText: 'Describe work performed, materials, delays, or field conditions.',
+                alignLabelWithHint: true,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Visual evidence', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.sm),
-            _EvidenceRow(
-              onUpload: () =>
-                  Navigator.pushNamed(context, RepairRoutes.uploadEvidence),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const Divider(),
+            if (_selectedProgress == 100)
+              const _FinishEvidenceNotice()
+            else
+              _EvidencePicker(
+                evidence: _evidence,
+                onPick: _saving ? null : _pickEvidence,
+                onRemove: _saving ? null : () => setState(() => _evidence = null),
+              ),
             const SizedBox(height: AppSpacing.lg),
-            RepairPrimaryButton(
-              label: _isReadyForCompletion
-                  ? 'Save & mark ready for completion'
-                  : 'Save progress',
-              icon: Icons.save_outlined,
-              onPressed: _saveProgress,
+            _LocationPicker(
+              locating: _locating,
+              locationNotice: _locationNotice,
+              hasLocation: _latitude != null && _longitude != null,
+              onAttach: _saving || _locating ? null : _attachCurrentLocation,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            RepairSecondaryButton(
-              label: 'Add or review evidence',
-              icon: Icons.add_a_photo_outlined,
-              onPressed: () =>
-                  Navigator.pushNamed(context, RepairRoutes.uploadEvidence),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressSummary extends StatelessWidget {
-  const _ProgressSummary({
-    required this.progressPercent,
-    required this.stage,
-    required this.lastUpdatedLabel,
-  });
-
-  final int progressPercent;
-  final String stage;
-  final String lastUpdatedLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return LunasCard(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 390;
-          final ring = _ProgressRing(
-            value: progressPercent / 100,
-            label: '$progressPercent%',
-          );
-          final details = Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Current completion',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  '$progressPercent% complete',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(lastUpdatedLabel, style: theme.textTheme.bodyMedium),
-              const SizedBox(height: AppSpacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: .5,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  'Stage: $stage',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (stacked) ...[
-                Center(child: ring),
-                const SizedBox(height: AppSpacing.md),
-                details,
-              ] else
-                Row(
-                  children: [
-                    ring,
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(child: details),
-                  ],
-                ),
+            if (_selectedProgress == 100) ...[
               const SizedBox(height: AppSpacing.lg),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: .62,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      child: const Icon(Icons.timer_outlined),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Estimated remaining time',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        Text(
-                          '45 minutes',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              const _ReadyForCompletionNotice(),
             ],
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CompletionReadinessCard extends StatelessWidget {
-  const _CompletionReadinessCard({
-    required this.isReadyForCompletion,
-    required this.constraint,
+class _CurrentProgressCard extends StatelessWidget {
+  const _CurrentProgressCard({required this.workOrder});
+
+  final RepairWorkOrder workOrder;
+
+  @override
+  Widget build(BuildContext context) => LunasCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Current server-confirmed progress', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          '${workOrder.progressPercent}%',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        LinearProgressIndicator(value: workOrder.progressPercent / 100),
+        const SizedBox(height: AppSpacing.sm),
+        Text(workOrder.progressStage.label),
+      ],
+    ),
+  );
+}
+
+class _EvidencePicker extends StatelessWidget {
+  const _EvidencePicker({
+    required this.evidence,
+    required this.onPick,
+    required this.onRemove,
   });
 
-  final bool isReadyForCompletion;
-  final String? constraint;
+  final EvidenceSelection? evidence;
+  final VoidCallback? onPick;
+  final VoidCallback? onRemove;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = isReadyForCompletion
-        ? AppColorsLight.success
-        : AppColorsLight.alert;
-    final title = isReadyForCompletion
-        ? 'Ready for completion'
-        : 'Not ready for completion';
-    final description = isReadyForCompletion
-        ? 'Final inspection is selected and progress is 100%. Evidence and attestation are still confirmed on the completion screen.'
-        : constraint ??
-              'Set progress to 100% during Final inspection before submitting the repair for completion.';
-
-    return Semantics(
-      liveRegion: true,
-      child: LunasCard(
-        color: color.withValues(alpha: .10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withValues(alpha: .16),
-              foregroundColor: color,
-              child: Icon(
-                isReadyForCompletion
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.pending_actions_outlined,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(description, style: theme.textTheme.bodySmall),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressRing extends StatelessWidget {
-  const _ProgressRing({required this.value, required this.label});
-
-  final double value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Current repair completion',
-      value: label,
-      child: ExcludeSemantics(
-        child: SizedBox(
-          width: 112,
-          height: 112,
-          child: Stack(
-            alignment: Alignment.center,
+  Widget build(BuildContext context) => LunasCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Field evidence', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.xs),
+        const Text('Optional JPG or PNG evidence up to 10 MB. It uploads only after progress is confirmed.'),
+        const SizedBox(height: AppSpacing.md),
+        if (evidence == null)
+          OutlinedButton.icon(
+            onPressed: onPick,
+            icon: const Icon(Icons.add_a_photo_outlined),
+            label: const Text('Select evidence'),
+          )
+        else
+          Row(
             children: [
-              CircularProgressIndicator(
-                value: value,
-                strokeWidth: 10,
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: .16),
+              const Icon(Icons.image_outlined, color: AppColorsLight.success),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text('${evidence!.filename} · ${(evidence!.byteLength / 1024).ceil()} KB'),
               ),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w800,
-                ),
+              IconButton(
+                tooltip: 'Remove selected evidence',
+                onPressed: onRemove,
+                icon: const Icon(Icons.close_rounded),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }
 
-class _EvidenceRow extends StatelessWidget {
-  const _EvidenceRow({required this.onUpload});
+class _LocationPicker extends StatelessWidget {
+  const _LocationPicker({
+    required this.locating,
+    required this.locationNotice,
+    required this.hasLocation,
+    required this.onAttach,
+  });
 
-  final VoidCallback onUpload;
+  final bool locating;
+  final String? locationNotice;
+  final bool hasLocation;
+  final VoidCallback? onAttach;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 460;
-        final preview = const RepairPlaceholderImage(
-          label: 'Latest field photo',
-          detail: 'Photo attached',
-          icon: Icons.construction_rounded,
-          height: 132,
-          accentColor: AppColorsLight.success,
-        );
-        final upload = InkWell(
-          onTap: onUpload,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          child: Container(
-            height: 132,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline,
-                style: BorderStyle.solid,
-              ),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.add_a_photo_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 30,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Upload photo',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-        if (isNarrow) {
-          return Column(
-            children: [
-              preview,
-              const SizedBox(height: AppSpacing.sm),
-              SizedBox(width: double.infinity, child: upload),
-            ],
-          );
-        }
-        return Row(
-          children: [
-            const Expanded(
-              child: RepairPlaceholderImage(
-                label: 'Latest field photo',
-                detail: 'Photo attached',
-                icon: Icons.construction_rounded,
-                height: 132,
-                accentColor: AppColorsLight.success,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: upload),
-          ],
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) => LunasCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Optional field location', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.xs),
+        const Text('LUNAS only requests current location for this explicit progress update.'),
+        const SizedBox(height: AppSpacing.md),
+        OutlinedButton.icon(
+          onPressed: onAttach,
+          icon: locating
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Icon(hasLocation ? Icons.location_on_outlined : Icons.my_location_rounded),
+          label: Text(hasLocation ? 'Location attached' : 'Attach current location'),
+        ),
+        if (locationNotice != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(locationNotice!, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ],
+    ),
+  );
+}
+
+class _FinishEvidenceNotice extends StatelessWidget {
+  const _FinishEvidenceNotice();
+
+  @override
+  Widget build(BuildContext context) => const LunasCard(
+    child: Text(
+      'If you need to add final field evidence, upload it from the work order before recording 100% progress.',
+    ),
+  );
+}
+
+class _ReadyForCompletionNotice extends StatelessWidget {
+  const _ReadyForCompletionNotice();
+
+  @override
+  Widget build(BuildContext context) => LunasCard(
+    color: AppColorsLight.success.withValues(alpha: .10),
+    child: const Text(
+      'At 100%, this repair becomes ready for formal completion / verification. LUNAS does not verify, approve, or close it in this workflow.',
+    ),
+  );
+}
+
+class _SaveProgressActionBar extends StatelessWidget {
+  const _SaveProgressActionBar({required this.saving, required this.onSave});
+
+  final bool saving;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+      ),
+      child: FilledButton.icon(
+        onPressed: saving ? null : onSave,
+        icon: saving
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.save_outlined),
+        label: Text(saving ? 'Saving progress…' : 'Save progress update'),
+      ),
+    ),
+  );
 }

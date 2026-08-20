@@ -28,6 +28,8 @@ class AuthController extends ChangeNotifier {
   bool get isSubmitting => _isSubmitting;
   bool get isCitizen => _user?.isCitizen == true;
   bool get isValidationOfficial => _user?.isValidationOfficial == true;
+  bool get isRepairPersonnel =>
+      _user != null && isRepairPersonnelRole(_user!.role);
   bool get isUtilityProvider => _user != null && isUtilityProviderRole(_user!.role);
   String? get workspaceHomePath => _user == null
       ? null

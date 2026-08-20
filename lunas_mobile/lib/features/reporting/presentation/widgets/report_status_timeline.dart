@@ -77,7 +77,7 @@ class _TimelineEvent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    humanStatus(event.status),
+                    event.citizenLabel,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.xxs),

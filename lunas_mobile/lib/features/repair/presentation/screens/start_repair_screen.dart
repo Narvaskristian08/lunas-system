@@ -1,221 +1,175 @@
 import 'package:flutter/material.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
-import 'package:lunas_mobile/core/theme/app_radius.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
+import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
 
-/// Arrival/readiness checkpoint before a repair can be marked in progress.
-class StartRepairScreen extends StatelessWidget {
-  const StartRepairScreen({super.key});
+/// Explicit start-work action. The app does not begin background personnel
+/// tracking when a repair is started.
+class StartRepairScreen extends StatefulWidget {
+  const StartRepairScreen({required this.workOrderId, super.key});
+
+  final String workOrderId;
+
+  @override
+  State<StartRepairScreen> createState() => _StartRepairScreenState();
+}
+
+class _StartRepairScreenState extends State<StartRepairScreen> {
+  bool _loading = true;
+  bool _starting = false;
+  String? _error;
+  RepairWorkOrder? _workOrder;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final workOrder = await repairService.getWorkOrder(widget.workOrderId);
+      if (mounted) setState(() => _workOrder = workOrder);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _start() async {
+    final workOrder = _workOrder;
+    if (workOrder == null) return;
+    setState(() => _starting = true);
+    try {
+      await repairService.start(
+        workOrder.id,
+        version: workOrder.version,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Repair work started.')),
+      );
+      context.go(RepairRoutes.progress(workOrder.id));
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (error.isConflict) {
+        await _load();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This work order changed on the server. Please review it again.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    if (_loading) {
+      return const Scaffold(
+        body: SafeArea(
+          child: LunasStateView(
+            state: LunasViewState.loading,
+            title: 'Loading work order',
+            message: 'Confirming that this accepted assignment can start.',
+          ),
+        ),
+      );
+    }
+    if (_error != null || _workOrder == null) {
+      return Scaffold(
+        appBar: const RepairAppBar(title: 'Start repair', showBackButton: true),
+        body: SafeArea(
+          child: LunasStateView(
+            state: LunasViewState.error,
+            title: 'Could not start repair',
+            message: _error ?? 'This work order is unavailable.',
+            actionLabel: 'Try again',
+            onAction: _load,
+          ),
+        ),
+      );
+    }
+    final workOrder = _workOrder!;
     return RepairPage(
-      appBar: const RepairAppBar(showBackButton: true),
-      bottomActionBar: _StartRepairActionBar(
-        onConfirm: () =>
-            Navigator.pushNamed(context, RepairRoutes.updateProgress),
-        onCancel: () => Navigator.of(context).maybePop(),
-      ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        AppSpacing.lg,
-        AppSpacing.xl,
-        AppSpacing.xxxl,
+      appBar: const RepairAppBar(title: 'Start repair', showBackButton: true),
+      bottomActionBar: _StartActionBar(
+        starting: _starting,
+        canStart: workOrder.canStart,
+        onStart: _start,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.assignment_outlined,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Work order readiness', style: theme.textTheme.titleMedium),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
           Text(
-            '#WO-2026-0142',
-            style: theme.textTheme.headlineLarge?.copyWith(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-            ),
+            workOrder.orderNumber,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.md),
           LunasCard(
             child: Column(
-              children: [
-                Text('SCHEDULED START', style: theme.textTheme.labelSmall),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  '08:45 AM',
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    fontSize: 42,
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                const RepairStatusChip(
-                  label: 'Current GPS location verified',
-                  color: AppColorsLight.success,
-                  icon: Icons.verified_outlined,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          LunasCard(
-            padding: EdgeInsets.zero,
-            child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(width: 4, color: AppColorsLight.critical),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Incident summary',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                            const RepairStatusChip(
-                              label: 'High priority',
-                              color: AppColorsLight.critical,
-                              icon: Icons.warning_amber_rounded,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text('Location', style: theme.textTheme.bodySmall),
-                        const SizedBox(height: AppSpacing.xs),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: theme.colorScheme.primary,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                'A.B. Fernandez Ave., Barangay IV, Dagupan City',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const RepairPlaceholderImage(
-                          label: 'Incident location',
-                          detail: 'Verify the location before beginning work.',
-                          icon: Icons.location_searching,
-                          height: 126,
-                          accentColor: AppColorsLight.critical,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text('Hazard type', style: theme.textTheme.bodySmall),
-                        const SizedBox(height: AppSpacing.xs),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.add_road_rounded,
-                              color: AppColorsLight.critical,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                'Road-surface damage. Secure the work zone before applying the cold patch.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                Text('Confirm site', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.sm),
+                Text(workOrder.location.displayAddress),
+                const SizedBox(height: AppSpacing.md),
+                Text(workOrder.description.isEmpty ? 'No citizen description was returned.' : workOrder.description),
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          if (!workOrder.canStart) ...[
+            const SizedBox(height: AppSpacing.lg),
+            const Text('This work order is no longer in the accepted state. Refresh the detail page before taking another action.'),
+          ],
         ],
       ),
     );
   }
 }
 
-class _StartRepairActionBar extends StatelessWidget {
-  const _StartRepairActionBar({
-    required this.onConfirm,
-    required this.onCancel,
+class _StartActionBar extends StatelessWidget {
+  const _StartActionBar({
+    required this.starting,
+    required this.canStart,
+    required this.onStart,
   });
 
-  final VoidCallback onConfirm;
-  final VoidCallback onCancel;
+  final bool starting;
+  final bool canStart;
+  final VoidCallback onStart;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          border: Border(
-            top: BorderSide(color: theme.colorScheme.outlineVariant),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: onConfirm,
-                icon: const Icon(Icons.play_circle_outline_rounded),
-                label: const Text('Confirm arrival & start repair'),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton(
-                onPressed: onCancel,
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primaryContainer
-                      .withValues(alpha: .45),
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
-                ),
-                child: const Text('Cancel'),
-              ),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
       ),
-    );
-  }
+      child: FilledButton.icon(
+        onPressed: starting || !canStart ? null : onStart,
+        icon: starting
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.play_circle_outline_rounded),
+        label: Text(starting ? 'Starting repair…' : 'Confirm and start repair'),
+      ),
+    ),
+  );
 }

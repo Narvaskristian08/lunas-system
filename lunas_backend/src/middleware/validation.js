@@ -219,23 +219,84 @@ exports.pendingValidationQuery = [
 
 // Work order validation rules
 exports.createWorkOrderValidation = [
-  body('incident').isMongoId().withMessage('Valid incident ID is required'),
-  body('assignedTo').isMongoId().withMessage('Valid user ID is required'),
-  body('priority').isIn(['critical', 'high', 'medium', 'low']).withMessage('Valid priority is required'),
-  body('instructions').optional().trim()
+  body().custom((value, { req }) => {
+    if (!req.params.id && !req.params.incidentId && !req.body.incident) {
+      throw new Error('Valid incident ID is required');
+    }
+    return true;
+  }),
+  body('incident').optional().isMongoId().withMessage('Valid incident ID is required'),
+  body('instructions').optional().trim().isLength({ max: 4000 })
+    .withMessage('Instructions cannot exceed 4000 characters')
 ];
 
 exports.updateWorkOrderValidation = [
-  // Completion and verification have dedicated endpoints. A field-progress
-  // update may only move active work into the in-progress state.
-  body('status').optional().isIn(['in_progress'])
-    .withMessage('Progress updates can only set status to in_progress'),
-  body('progressPercent').optional().isFloat({ min: 0, max: 100 })
-    .withMessage('Progress percent must be a number between 0 and 100')
-    .toFloat(),
-  body('stage').optional().trim().isLength({ min: 1, max: 100 })
-    .withMessage('Progress stage must be between 1 and 100 characters'),
-  body('notes').optional().trim()
+  body('progressPercent').isIn([0, 25, 50, 75, 100])
+    .withMessage('Repair progress must be 0, 25, 50, 75, or 100').toInt(),
+  body('stage').isIn(['assigned', 'site_preparation', 'main_repair', 'finishing', 'ready_for_completion'])
+    .withMessage('Repair stage is invalid'),
+  body('notes').optional().trim().isLength({ max: 2000 })
+    .withMessage('Progress notes cannot exceed 2000 characters'),
+  body('location').optional().custom((value) => {
+    if (typeof value === 'string') {
+      try {
+        JSON.parse(value);
+        return true;
+      } catch (_error) {
+        throw new Error('Location must be valid JSON');
+      }
+    }
+    if (!value || !value.coordinates) return true;
+    if (!Array.isArray(value.coordinates) || value.coordinates.length !== 2) {
+      throw new Error('Location must contain longitude and latitude');
+    }
+    return true;
+  })
+];
+
+exports.assignWorkOrderValidation = [
+  body().custom((value, { req }) => {
+    const assigneeId = req.body.assigneeId || req.body.assignedTo;
+    if (!assigneeId || !/^[a-f\d]{24}$/i.test(String(assigneeId))) {
+      throw new Error('A valid repair personnel ID is required');
+    }
+    return true;
+  })
+];
+
+exports.reassignWorkOrderValidation = [
+  ...exports.assignWorkOrderValidation,
+  body('reason').trim().isLength({ min: 2, max: 500 })
+    .withMessage('A reassignment reason between 2 and 500 characters is required')
+];
+
+exports.declineWorkOrderValidation = [
+  body('reason').trim().isLength({ min: 2, max: 500 })
+    .withMessage('A decline reason between 2 and 500 characters is required'),
+  body('notes').optional().trim().isLength({ max: 2000 })
+    .withMessage('Decline notes cannot exceed 2000 characters')
+];
+
+exports.repairEvidenceValidation = [
+  body('caption').optional().trim().isLength({ max: 500 })
+    .withMessage('Evidence caption cannot exceed 500 characters'),
+  body('progressUpdateId').optional().isMongoId()
+    .withMessage('Progress update reference is invalid')
+];
+
+exports.workOrderQueryValidation = [
+  query('status').optional().isIn(['pending', 'accepted', 'in_progress', 'completed']),
+  query('priority').optional().isIn(['critical', 'high', 'medium', 'low']),
+  query('assignmentStatus').optional().isIn(['unassigned', 'pending', 'accepted', 'declined']),
+  query('progress').optional().isIn(['0', '25', '50', '75', '100']),
+  query('slaState').optional().isIn(['approaching', 'overdue']),
+  query('sortBy').optional().isIn([
+    'newest', 'oldest', 'deadline', '-deadline', 'priority', '-priority', 'progress', '-progress'
+  ]),
+  query('search').optional().trim().isLength({ max: 100 }),
+  query('category').optional().isIn(INCIDENT_CATEGORY_CODES),
+  query('personnel').optional().isMongoId(),
+  query('organization').optional().trim().isLength({ min: 1, max: 160 })
 ];
 
 // Query validation

@@ -100,6 +100,13 @@ export interface ValidationIncident {
     deadline?: string;
     state?: string;
   };
+  workOrder?: {
+    id: string;
+    reference?: string;
+    status?: string;
+    progressPercent?: number;
+    stage?: string;
+  };
   rejectionReason?: string;
   duplicateOf?: { id?: string; reportNumber?: string } | string;
 }
@@ -284,6 +291,18 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       routedBy: asString(routing.routedBy),
     } : undefined,
     sla: normalizeSla(source.sla),
+    workOrder: (() => {
+      const workOrder = asRecord(source.workOrder);
+      const workOrderId = normalizedId(workOrder);
+      if (!workOrderId) return undefined;
+      return {
+        id: workOrderId,
+        reference: asString(workOrder.reference) ?? asString(workOrder.orderNumber),
+        status: asString(workOrder.status),
+        progressPercent: asNumber(workOrder.progressPercent),
+        stage: asString(workOrder.stage) ?? asString(workOrder.progressStage),
+      };
+    })(),
     rejectionReason: asString(source.rejectionReason),
     duplicateOf: (() => {
       const duplicateOf = source.duplicateOf;

@@ -51,9 +51,11 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
       ('all', 'All'),
       ('submitted', 'Submitted'),
       ('validated', 'Validated'),
+      ('assigned', 'Assigned for repair'),
       ('rejected', 'Rejected'),
       ('duplicate', 'Marked duplicate'),
       ('in_progress', 'In progress'),
+      ('completed', 'Awaiting verification'),
       ('closed', 'Closed'),
     ];
     return CitizenScaffold(

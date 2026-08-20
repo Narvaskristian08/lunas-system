@@ -1,5 +1,6 @@
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { redirect } from "next/navigation";
 
-export default function RepairPage() {
-  return <MilestoneUnavailable title="Repair details are not available yet" description="Repair completion and verification workflows are planned for a later milestone." />;
+export default async function RepairPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/work-orders/${encodeURIComponent(id)}`);
 }

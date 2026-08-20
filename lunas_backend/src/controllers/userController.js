@@ -70,7 +70,17 @@ exports.getUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/v1/users/:id
 // @access  Private (Admin only)
 exports.updateUser = asyncHandler(async (req, res) => {
-  const { role, isActive, isVerified, barangay, expertise, utilityCompany } = req.body;
+  const {
+    role,
+    isActive,
+    isVerified,
+    barangay,
+    expertise,
+    utilityCompany,
+    repairOrganization,
+    repairTeam,
+    availability
+  } = req.body;
 
   let user = await User.findById(req.params.id);
 
@@ -112,6 +122,14 @@ exports.updateUser = asyncHandler(async (req, res) => {
   if (barangay) updates.barangay = barangay;
   if (expertise) updates.expertise = expertise;
   if (typeof utilityCompany !== 'undefined') updates.utilityCompany = normalizedUtilityCompany;
+  if (typeof repairOrganization !== 'undefined') updates.repairOrganization = repairOrganization;
+  if (typeof repairTeam !== 'undefined') updates.repairTeam = repairTeam;
+  if (typeof availability !== 'undefined') {
+    if (!['available', 'assigned', 'unavailable', 'off_duty'].includes(availability)) {
+      return res.status(400).json({ success: false, message: 'Invalid personnel availability state' });
+    }
+    updates.availability = availability;
+  }
 
   user = await User.findByIdAndUpdate(req.params.id, updates, {
     new: true,
@@ -181,7 +199,9 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
   if (barangay) filter.barangay = barangay;
   if (expertise) filter.expertise = expertise;
 
-  const personnel = await User.find(filter).select('-password');
+  const personnel = await User.find(filter).select(
+    'firstName lastName role repairOrganization repairTeam availability barangay expertise isActive'
+  );
 
   res.status(200).json({
     success: true,

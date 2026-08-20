@@ -61,6 +61,28 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other']
   }],
+  // Repair staffing is intentionally lightweight for the 75% milestone. It
+  // supports assignment eligibility without pretending to be an HR scheduler.
+  repairOrganization: {
+    type: String,
+    trim: true,
+    maxlength: 160,
+    required: function() {
+      return this.role === 'repair_personnel';
+    }
+  },
+  repairTeam: {
+    type: String,
+    trim: true,
+    maxlength: 120
+  },
+  availability: {
+    type: String,
+    enum: ['available', 'assigned', 'unavailable', 'off_duty'],
+    default: function() {
+      return this.role === 'repair_personnel' ? 'available' : undefined;
+    }
+  },
   profileImage: String,
   isVerified: {
     type: Boolean,
@@ -106,6 +128,7 @@ const userSchema = new mongoose.Schema({
 // Index for better query performance
 userSchema.index({ role: 1 });
 userSchema.index({ barangay: 1 });
+userSchema.index({ role: 1, repairOrganization: 1, availability: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -149,6 +172,10 @@ userSchema.methods.toPublicJSON = function() {
     role: this.role,
     address: this.address,
     barangay: this.barangay,
+    utilityCompany: this.utilityCompany,
+    repairOrganization: this.repairOrganization,
+    repairTeam: this.repairTeam,
+    availability: this.availability,
     profileImage: this.profileImage,
     isVerified: this.isVerified,
     isActive: this.isActive,

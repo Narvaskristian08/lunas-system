@@ -104,6 +104,8 @@ class _OfficialDashboardScreenState extends State<OfficialDashboardScreen> {
         ),
         const SizedBox(height: AppSpacing.xl),
         _QueueCallout(onOpenQueue: () => context.go('/official/validation')),
+        const SizedBox(height: AppSpacing.md),
+        _WorkOrderCallout(onOpenWorkOrders: () => context.go('/official/work-orders')),
         const SizedBox(height: AppSpacing.xxl),
         Text('Your validation summary', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
@@ -198,6 +200,39 @@ class _QueueCallout extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: AppColorsLight.brandBase,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _WorkOrderCallout extends StatelessWidget {
+  const _WorkOrderCallout({required this.onOpenWorkOrders});
+
+  final VoidCallback onOpenWorkOrders;
+
+  @override
+  Widget build(BuildContext context) => LunasCard(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.assignment_outlined),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Work-order monitoring', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.xxs),
+              const Text('Review server-scoped repair status and SLA warnings. This mobile view is read-only.'),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: onOpenWorkOrders,
+                icon: const Icon(Icons.arrow_forward_rounded),
+                label: const Text('Open work orders'),
+              ),
+            ],
           ),
         ),
       ],

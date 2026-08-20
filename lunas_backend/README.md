@@ -64,6 +64,24 @@ Read the milestone records before planning later work:
 - Audit records for validation, rejection, duplicate, priority, jurisdiction,
   and routing actions.
 
+### 75% — work orders, assignment, and repair progress
+
+- A validated, routed incident creates one unassigned 0% primary work order.
+- Assignment eligibility checks active repair-personnel role, repair
+  organization, availability, and applicable jurisdiction; historical
+  assignments are retained for decline and reassignment.
+- Repair personnel can accept or decline an assignment, explicitly start work,
+  submit only 25/50/75/100 forward progress, add notes, attach private field
+  evidence, and mark repair at 100% ready for verification.
+- Work-order list/detail, dashboard summary, timeline, evidence, SLA
+  approaching/overdue state, notifications, audit events, and server-side
+  ownership/scope checks are implemented.
+- The scheduler-invokable SLA checker is duplicate-safe. In-process cron stays
+  opt-in through the SLA automation environment setting.
+
+At this milestone, a work order completed at 100% is ready for later formal
+completion and verification. It is never automatically verified or closed.
+
 ## Requirements
 
 - Node.js **18+** and npm **9+**
@@ -148,6 +166,7 @@ completed `.env` file or expose service-role credentials to web/mobile clients.
 | Push (optional) | `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, `ONESIGNAL_USER_AUTH_KEY` | In-app notifications persist without these values; push delivery does not. |
 | AI (disabled by default) | `AI_SERVICE_URL`, `AI_SERVICE_TIMEOUT`, `AI_SERVICE_ENABLED`, `AI_EVIDENCE_ANALYSIS_ENABLED` | Do not enable without a real approved model and validation plan. |
 | Duplicate hints | `DUPLICATE_WINDOW_HOURS`, `DUPLICATE_RADIUS_METERS` | Advisory matching only; never performs an automatic decision. |
+| Local demo seed (optional) | `ALLOW_DEMO_SEED`, `DEMO_SEED_PASSWORD` | Manual presentation-only seed. It runs only against local MongoDB database `lunas_demo`; leave disabled otherwise. |
 
 `SUPABASE_ANON_KEY`, `GOOGLE_MAPS_API_KEY`, and SMTP placeholders remain in
 the template for existing platform integrations. They are not substitutes for
@@ -164,6 +183,7 @@ Run commands from `lunas_backend/`.
 | Run backend tests | `npm test` |
 | Run tests without coverage noise | `npm test -- --runInBand --silent` |
 | Run ESLint | `npm run lint` |
+| Load local presentation data | `ALLOW_DEMO_SEED=true npm run seed:demo` |
 
 The test suite exercises authentication, controlled incident transitions,
 jurisdiction scope, SLA initialization, evidence behavior, validation
@@ -185,6 +205,48 @@ Public `POST /auth/register` always creates a citizen. Provision official
 accounts through an authenticated administrator using `PUT /users/:id` or by
 an approved secure administrative setup process. A barangay official needs a
 matching `barangay`; a utility provider needs a matching `utilityCompany`.
+
+### Local presentation accounts and reports
+
+For a local 25%/50% presentation only, `npm run seed:demo` can create
+fictional, server-backed data without a mobile report submission. It is not a
+production account-provisioning method.
+
+Before running it, set `NODE_ENV=development` and set `MONGODB_URI` to a local
+database named `lunas_demo`. Use one of these local connection strings:
+
+```dotenv
+# Local MongoDB without authentication
+MONGODB_URI=mongodb://localhost:27017/lunas_demo
+
+# This repository's `docker compose up -d mongodb` service
+# MONGODB_URI=mongodb://admin:admin123@localhost:27017/lunas_demo?authSource=admin
+```
+
+Then run:
+
+```bash
+ALLOW_DEMO_SEED=true npm run seed:demo
+```
+
+The command refuses production mode, non-local MongoDB URI hosts, any database
+other than local `lunas_demo`, and runs without the explicit
+`ALLOW_DEMO_SEED=true` opt-in. It only resets its own `demo.*@lunas.test` accounts and
+`LUNAS-DEMO-*` reports; it never clears the database.
+
+Use either of these web logins after seeding:
+
+| Account | Role | Password |
+| --- | --- | --- |
+| `demo.engineer@lunas.test` | City Engineer | `LunasDemo2026!` by default |
+| `demo.admin@lunas.test` | Administrator | `LunasDemo2026!` by default |
+
+Set `DEMO_SEED_PASSWORD` before seeding if a different local-only password is
+needed. The seed creates three submitted reports for live decisions, including
+one advisory duplicate candidate, plus one validated, one rejected, and one
+duplicate report so the official dashboard has visible counters. The records
+are fictional and have no evidence, AI result, work order, repair, or closure
+data. Re-run the seed to restore its initial state after a demonstration.
 
 ## Workflow and API overview
 
@@ -287,6 +349,11 @@ Supabase bucket. Use at least these accounts:
 
 Record report IDs, timestamps, account roles, and unexpected responses for
 each failed item. Do not use production personal evidence for testing.
+
+For a quick local web demonstration, the guarded `seed:demo` command creates
+the City Engineer/Admin and fictional report set described above. It is useful
+for the 50% queue and dashboard, but it does not replace evidence, storage,
+notification, or cross-account acceptance testing.
 
 ### Environment and service readiness
 
@@ -411,18 +478,17 @@ each failed item. Do not use production personal evidence for testing.
 | Maps/geographic boundaries | A map key can improve clients, but no authoritative Dagupan boundary dataset is bundled or fabricated. Jurisdiction is manually confirmed and audited. |
 | Organization registry | Not included. City engineers/admins manually enter the accountable organization; provider visibility requires an exact `utilityCompany` match. |
 | AI/redaction models | Not included/approved in this milestone. AI fields remain unavailable unless a deployed, tested model is explicitly enabled. |
-| SLA automation | Scheduler is opt-in and intentionally disabled by default. Deadline initialization is the accepted 50% capability. |
+| SLA automation | Work-order approaching/overdue checks are implemented as an invokable service. The in-process cron monitor is opt-in; configure an external scheduler or set the explicit automation flag. |
 
 ## Deferred work
 
-The following are outside the verified 25%/50% handoff, even if legacy models
-or endpoints are present in the repository:
+The following are outside the verified 75% handoff:
 
-- work-order assignment and provider/repair-personnel operations
-- accept/decline, repair progress percentage, repair evidence, completion,
-  verification, and closure
-- approved reminder/escalation policy and operational SLA automation
-- full analytics/reporting and production operations dashboards
+- formal completion submission package and before/after comparison
+- SSIM or AI-assisted repair verification recommendation
+- official repair verification approval/rejection and additional-work request
+- rework/reopen workflow, final incident closure, and final analytics
+- full organizational staffing/scheduling and authoritative organization registry
 - authoritative jurisdiction/boundary and organization-registry integrations
 - production AI hazard classification and privacy-redaction models
 

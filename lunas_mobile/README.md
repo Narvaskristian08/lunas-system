@@ -1,9 +1,10 @@
 # LUNAS Mobile
 
 The LUNAS mobile app is the Flutter client for the implemented 25% citizen
-reporting milestone and 50% official validation and routing milestone. It uses
-the LUNAS backend as the source of truth: it does not generate demo incidents,
-make local workflow decisions, or bypass backend role and jurisdiction checks.
+reporting, 50% official validation/routing, and 75% repair-personnel workflow.
+It uses the LUNAS backend as the source of truth: it does not generate demo
+incidents, make local workflow decisions, or bypass backend role and
+jurisdiction checks.
 
 This README covers the mobile platform only. For the overall delivery status,
 see [the 25% milestone](../MILESTONE_25.md), [the 50% milestone](../MILESTONE_50.md),
@@ -39,7 +40,8 @@ The implemented official mobile workspace is available to these roles:
 | `city_engineer` | Validation dashboard, queue, review, and decisions | City-wide |
 | `admin` | Validation dashboard, queue, review, and decisions | City-wide |
 | `utility_provider` | Deliberately unavailable in mobile for this milestone | Routed incidents only on the backend |
-| `repair_personnel` and other roles | Deliberately unavailable in mobile | No 25%/50% mobile workspace |
+| `repair_personnel` | Repair dashboard, assigned work orders, field progress and evidence | Active assignment only |
+| Other roles | Deliberately unavailable in mobile | No implemented mobile workspace |
 
 An eligible official can:
 
@@ -67,6 +69,32 @@ organization; it does not create a work order or assign repair personnel.
 The official workspace starts at `/official`. Its live validation routes are
 `/official/validation` and `/official/validation/:id`.
 
+### 75%: repair personnel
+
+An authenticated `repair_personnel` account starts at `/repair`. The server
+scopes every dashboard count, list record, detail record, and action to the
+current personnel assignment. The mobile workspace supports live work-order
+summary/list/detail, accept/decline/start actions, append-only progress at
+`25`, `50`, `75`, or `100`, explicit optional field location, and JPG/PNG
+field evidence while repair is in progress.
+
+Citizens also see only the server-provided high-level repair state on their
+own reports: assigned for repair, in progress, 25/50/75% progress, or 100%
+awaiting verification. Personnel details, reassignment notes, field evidence,
+and internal SLA notes are not shown in that citizen view.
+
+At `100%`, the app records only that the repair is ready for formal completion
+verification. It has no verification, approval, closure, AI-quality, or fake
+completion route, and it never starts background personnel location tracking.
+
+The live repair routes are `/repair`, `/repair/work-orders`,
+`/repair/work-orders/:id`, and the ID-scoped `start`, `progress`, `evidence`,
+and `location` routes beneath that work order.
+
+Eligible officials can also open `/official/work-orders` for a concise,
+server-scoped read-only monitor. It deliberately offers no assignment,
+reassignment, verification, or closure action.
+
 ## Architecture and key locations
 
 ```text
@@ -81,6 +109,7 @@ lib/
     reporting/                          Citizen report creation and report history
     maps/                               Map picker, GPS, and reverse geocoding
     validation/                         Official dashboard, queue, review, decisions
+    repair/                             Repair models, API service, and field workflow
 test/                                   Unit and widget tests
 ```
 
@@ -95,7 +124,10 @@ requests include:
   `/incidents/:id/duplicate-candidates`, `/incidents/:id/sla`,
   `/incidents/:id/validate`, `/incidents/:id/reject`, and
   `/incidents/:id/mark-duplicate`; and
-- official summary: `/stats/validation-summary`.
+- official summary: `/stats/validation-summary`; and
+- repair workflow: `/dashboard/work-orders-summary`, `/work-orders/my`,
+  `/work-orders/:id`, and the `accept`, `decline`, `start`, `progress`, and
+  `evidence` actions beneath a work order.
 
 Refer to the backend API documentation for request bodies, authorization, and
 error contracts. Do not treat navigation guards as the security boundary; every
@@ -212,6 +244,7 @@ flutter devices
 flutter test test/auth_role_policy_test.dart
 flutter test test/incident_report_test.dart
 flutter test test/validation_models_test.dart
+flutter test test/repair_models_test.dart
 
 # Build only after the API and Maps configuration are set for the target.
 flutter build apk --release \
@@ -223,9 +256,9 @@ included unit/model/widget tests, not a live mobile-to-backend acceptance flow.
 
 ## Manual acceptance-test checklist
 
-Use distinct, disposable test accounts and record the report number created by
-each scenario. Complete this checklist against a real backend and storage
-environment before signing off the 25% and 50% mobile work.
+Use distinct, disposable test accounts and record the report/work-order number
+created by each scenario. Complete this checklist against a real backend and
+storage environment before signing off the applicable mobile work.
 
 ### Test environment and accounts
 
@@ -324,6 +357,29 @@ environment before signing off the 25% and 50% mobile work.
   request receives a conflict and the mobile app refreshes to the true status.
 - [ ] Verify a decided report no longer presents validation action buttons.
 
+### Repair personnel workflow (75%)
+
+- [ ] Sign in as an active `repair_personnel` account and verify it opens
+  `/repair`; it must not reach citizen or official routes.
+- [ ] Verify the dashboard summary and task list contain only server-assigned
+  work orders for that account, including pagination and status filtering.
+- [ ] Open a work order and verify incident evidence, incident map pin,
+  assignment state, SLA deadline/warning, repair evidence, and progress history
+  match the server response.
+- [ ] Accept a pending assignment, then start it; verify a stale action receives
+  a conflict and the client reloads the current record.
+- [ ] Decline a pending assignment without a reason (must fail), then with a
+  reason (must persist and remove it from the assignee's active list).
+- [ ] Record an allowed next milestone with its required stage; confirm the app
+  rejects a lower/equal or non-discrete percentage before claiming success.
+- [ ] Add a field location only through an explicit progress action and verify
+  denying permission does not block the update.
+- [ ] Upload a valid JPG/PNG image while repair is in progress; verify it
+  appears from the server after refresh and a failed upload is not presented as
+  successful.
+- [ ] Record `100%` with a meaningful note and verify the app shows only the
+  ready-for-completion state, with no verify, approve, or close control.
+
 ### Authorization, privacy, and resilience
 
 - [ ] As a citizen, try to access `/official` and an official validation URL;
@@ -366,8 +422,8 @@ backend remains authoritative for evidence acceptance and access control.
 
 - The `utility_provider` mobile workspace is intentionally unavailable until
   routed-incident and work-order functionality is implemented.
-- Repair assignment, repair updates, verification, closure, and operational
-  escalation are deferred beyond the 50% milestone.
+- Formal repair verification, approval, closure, reassignment management, and
+  operational escalation remain outside the 75% mobile workflow.
 - The map picker does not claim or enforce an invented Dagupan boundary polygon;
   authoritative jurisdiction-boundary data remains a backend/data dependency.
 - Android Maps configuration is included. iOS Maps SDK key wiring still needs
@@ -375,8 +431,8 @@ backend remains authoritative for evidence acceptance and access control.
 - There is no automated live end-to-end mobile test suite yet; use the manual
   checklist above with real backend services.
 - Files under historical design/catalog feature folders are not a substitute for
-  the live routes listed in this README. Validate the actual citizen and
-  official routes described above.
+  the live routes listed in this README. Validate the actual citizen, official,
+  and repair routes described above.
 
 ## Troubleshooting
 
@@ -388,7 +444,7 @@ backend remains authoritative for evidence acceptance and access control.
 | Evidence upload fails | Verify backend multipart handling, storage credentials/bucket policy, image type/size, and device connectivity. |
 | Official queue is empty | Confirm the account role and barangay/organization fields, that matching reports are still `submitted`, and that the backend scope permits access. |
 | Decision shows a conflict | Another official has already decided the submitted report. Refresh the incident and use the server’s current state. |
-| A user sees the role-unavailable screen | That role has no implemented mobile workspace in the 25%/50% scope; do not route it into a different role’s workflow. |
+| A user sees the role-unavailable screen | That role has no implemented mobile workspace; do not route it into a different role’s workflow. |
 
 ## Handoff checklist
 

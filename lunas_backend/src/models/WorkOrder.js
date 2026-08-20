@@ -1,17 +1,8 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 
-const workOrderSchema = new mongoose.Schema({
-  orderNumber: {
-    type: String,
-    unique: true,
-    required: true
-  },
-  incident: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Incident',
-    required: true
-  },
-  assignedTo: {
+const assignmentSchema = new mongoose.Schema({
+  assignee: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -21,149 +12,192 @@ const workOrderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  assignedAt: {
-    type: Date,
-    default: Date.now
-  },
+  assignedAt: { type: Date, default: Date.now },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'in_progress', 'completed', 'verified', 'rejected'],
+    enum: ['pending', 'accepted', 'declined', 'reassigned'],
     default: 'pending'
+  },
+  acceptedAt: Date,
+  declinedAt: Date,
+  declineReason: { type: String, trim: true, maxlength: 500 },
+  declineNotes: { type: String, trim: true, maxlength: 2000 },
+  endedAt: Date,
+  endedReason: { type: String, trim: true, maxlength: 500 },
+  active: { type: Boolean, default: true }
+}, { _id: true });
+
+const historySchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: [
+      'created', 'assigned', 'reassigned', 'accepted', 'declined', 'started',
+      'progress', 'evidence_uploaded', 'ready_for_completion', 'sla_approaching', 'sla_overdue'
+    ],
+    required: true
+  },
+  status: { type: String, trim: true, maxlength: 40 },
+  progressPercent: { type: Number, min: 0, max: 100 },
+  stage: { type: String, trim: true, maxlength: 80 },
+  notes: { type: String, trim: true, maxlength: 2000 },
+  actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  actorRole: { type: String, trim: true, maxlength: 50 },
+  assignment: { type: mongoose.Schema.Types.ObjectId },
+  metadata: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, default: Date.now }
+}, { _id: true });
+
+const evidenceSchema = new mongoose.Schema({
+  key: { type: String, required: true, trim: true },
+  url: String,
+  mimeType: { type: String, required: true },
+  size: { type: Number, required: true, min: 0 },
+  checksum: { type: String, required: true },
+  width: Number,
+  height: Number,
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  uploadedAt: { type: Date, default: Date.now },
+  progressUpdate: { type: mongoose.Schema.Types.ObjectId },
+  caption: { type: String, trim: true, maxlength: 500 }
+}, { _id: true });
+
+const progressSchema = new mongoose.Schema({
+  previousPercent: { type: Number, required: true, min: 0, max: 100 },
+  progressPercent: { type: Number, required: true, min: 0, max: 100 },
+  stage: { type: String, required: true, trim: true, maxlength: 80 },
+  notes: { type: String, trim: true, maxlength: 2000 },
+  evidence: [{ type: mongoose.Schema.Types.ObjectId }],
+  location: {
+    type: {
+      type: String,
+      enum: ['Point']
+    },
+    coordinates: {
+      type: [Number],
+      validate: {
+        validator: (coordinates) => !coordinates || (
+          coordinates.length === 2
+          && coordinates[0] >= -180 && coordinates[0] <= 180
+          && coordinates[1] >= -90 && coordinates[1] <= 90
+        ),
+        message: 'Repair location must contain valid longitude and latitude'
+      }
+    }
+  },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  updatedAt: { type: Date, default: Date.now }
+}, { _id: true });
+
+const workOrderSchema = new mongoose.Schema({
+  orderNumber: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  // One durable primary maintenance task represents a validated incident in
+  // the 75% workflow. Its assignment and progress records are append-only
+  // subdocuments, not fields that overwrite operational history.
+  incident: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Incident',
+    required: true,
+    unique: true
+  },
+  responsibleOrganization: { type: String, required: true, trim: true, maxlength: 160 },
+  responsibleRole: {
+    type: String,
+    enum: ['barangay', 'city_engineering', 'utility_provider'],
+    required: true
+  },
+  jurisdiction: {
+    barangay: { type: String, trim: true, maxlength: 100 },
+    city: { type: String, trim: true, maxlength: 100, default: 'Dagupan City' }
   },
   priority: {
     type: String,
     enum: ['critical', 'high', 'medium', 'low'],
     required: true
   },
-  // Current repair completion percentage. This is the canonical value used
-  // for the work order; individual updates retain the historical snapshots.
+  status: {
+    type: String,
+    // The final two legacy values are retained only so existing persisted
+    // rows can still be read. The 75% transition service never creates them.
+    enum: ['pending', 'accepted', 'in_progress', 'completed', 'verified', 'rejected'],
+    default: 'pending'
+  },
+  assignmentState: {
+    type: String,
+    enum: ['unassigned', 'pending', 'accepted', 'declined'],
+    default: 'unassigned'
+  },
+  currentAssignment: { type: mongoose.Schema.Types.ObjectId },
+  assignments: { type: [assignmentSchema], default: [] },
+  // These denormalized values make secure assignee-scoped queries efficient.
+  // Assignment history remains the source of truth.
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedAt: Date,
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  acceptedAt: Date,
+  startedAt: Date,
+  readyForCompletionAt: Date,
+  // Existing records may use these old field names. Do not use them for new
+  // verification/closure behavior in this milestone.
+  actualStartTime: Date,
+  actualCompletionTime: Date,
+  instructions: { type: String, trim: true, maxlength: 4000 },
   progressPercent: {
     type: Number,
     default: 0,
-    min: [0, 'Progress percent cannot be less than 0'],
-    max: [100, 'Progress percent cannot be greater than 100']
+    enum: [0, 25, 50, 75, 100]
   },
-  estimatedCompletionTime: Date,
-  actualStartTime: Date,
-  actualCompletionTime: Date,
-  instructions: String,
-  materials: [{
-    name: String,
-    quantity: Number,
-    unit: String,
-    cost: Number
-  }],
-  progressUpdates: [{
-    status: String,
-    progressPercent: {
-      type: Number,
-      min: [0, 'Progress percent cannot be less than 0'],
-      max: [100, 'Progress percent cannot be greater than 100']
-    },
-    // A repair milestone such as "site preparation" or "asphalt filling".
-    // It is intentionally distinct from the work-order workflow status.
-    stage: {
-      type: String,
-      trim: true,
-      maxlength: [100, 'Progress stage cannot exceed 100 characters']
-    },
-    notes: String,
-    images: [{
-      url: String,
-      key: String
-    }],
-    location: {
-      type: {
-        type: String,
-        enum: ['Point']
-      },
-      coordinates: [Number]
-    },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    updatedAt: { type: Date, default: Date.now }
-  }],
-  completionReport: {
-    description: String,
-    beforeImages: [{
-      url: String,
-      key: String
-    }],
-    afterImages: [{
-      url: String,
-      key: String
-    }],
-    workPerformed: String,
-    materialsUsed: [{
-      name: String,
-      quantity: Number,
-      unit: String
-    }],
-    laborHours: Number,
-    totalCost: Number,
-    submittedAt: Date
+  progressStage: {
+    type: String,
+    enum: ['assigned', 'site_preparation', 'main_repair', 'finishing', 'ready_for_completion'],
+    default: 'assigned'
   },
-  verification: {
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    verifiedAt: Date,
-    status: { type: String, enum: ['approved', 'rejected', 'needs_revision'] },
-    aiScore: Number,
-    aiAnalysis: {
-      similarity: Number,
-      improvementDetected: Boolean,
-      notes: String
-    },
-    notes: String,
-    rejectionReason: String
-  },
-  signature: {
-    data: String, // Ed25519 signature
-    timestamp: Date,
-    publicKey: String
-  },
+  progressUpdates: { type: [progressSchema], default: [] },
+  repairEvidence: { type: [evidenceSchema], default: [] },
+  history: { type: [historySchema], default: [] },
   sla: {
+    targetResolutionTime: Number,
+    startedAt: Date,
     deadline: Date,
+    state: {
+      type: String,
+      enum: ['not_started', 'active', 'approaching', 'overdue', 'met'],
+      default: 'not_started'
+    },
     isOverdue: { type: Boolean, default: false },
-    remindersSent: { type: Number, default: 0 }
+    approachingNotifiedAt: Date,
+    overdueNotifiedAt: Date
   },
-  rejectionReason: String,
-  cancelledBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  cancelledAt: Date,
-  cancellationReason: String
+  // Optimistic concurrency is used by every controlled mutation.
+  version: { type: Number, default: 0 }
 }, {
-  timestamps: true
+  timestamps: true,
+  optimisticConcurrency: true
 });
 
-// Indexes
-workOrderSchema.index({ incident: 1 });
-workOrderSchema.index({ assignedTo: 1 });
-workOrderSchema.index({ status: 1 });
-workOrderSchema.index({ priority: 1 });
-workOrderSchema.index({ createdAt: -1 });
+workOrderSchema.index({ assignedTo: 1, status: 1, updatedAt: -1 });
+workOrderSchema.index({ responsibleOrganization: 1, status: 1, updatedAt: -1 });
+workOrderSchema.index({ 'jurisdiction.barangay': 1, status: 1, updatedAt: -1 });
+workOrderSchema.index({ priority: 1, 'sla.deadline': 1 });
+workOrderSchema.index({ 'sla.deadline': 1, status: 1 });
+workOrderSchema.index({ 'assignments.assignee': 1, 'assignments.active': 1 });
 
-// Generate the required order number before Mongoose validates the document.
-// A pre-save hook runs after validation, which would reject a newly created
-// work order before this value could be assigned.
+// Generate a human-readable, collision-resistant reference before validation.
+// Counting existing documents is not safe when two officials create work
+// orders at the same time. The unique index remains the database backstop.
 workOrderSchema.pre('validate', async function(next) {
   if (!this.orderNumber) {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const count = await mongoose.model('WorkOrder').countDocuments();
-    this.orderNumber = `WO-${year}${month}-${String(count + 1).padStart(6, '0')}`;
+    const suffix = crypto.randomBytes(6).toString('hex').toUpperCase();
+    this.orderNumber = `WO-${year}${month}-${suffix}`;
   }
   next();
 });
-
-// Method to check if work order is overdue
-workOrderSchema.methods.checkSLAStatus = function() {
-  if (this.sla.deadline && new Date() > this.sla.deadline) {
-    this.sla.isOverdue = true;
-    return true;
-  }
-  return false;
-};
 
 module.exports = mongoose.model('WorkOrder', workOrderSchema);

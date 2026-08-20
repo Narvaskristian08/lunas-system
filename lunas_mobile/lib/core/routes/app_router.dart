@@ -12,6 +12,15 @@ import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashb
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/citizen_profile_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/assigned_work_orders_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/official_work_orders_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/repair_dashboard_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/repair_profile_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/repair_work_order_location_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/start_repair_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_progress_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/upload_repair_evidence_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
@@ -47,6 +56,7 @@ final GoRouter appRouter = GoRouter(
     final isPublic = publicLocations.contains(location);
     final isCitizenLocation = _isCitizenLocation(location);
     final isOfficialLocation = _isOfficialLocation(location);
+    final isRepairLocation = _isRepairLocation(location);
     switch (authController.status) {
       case AuthStatus.initializing:
         return location == '/splash' ? null : '/splash';
@@ -73,6 +83,9 @@ final GoRouter appRouter = GoRouter(
         // every backend request also enforces role and jurisdiction scope.
         if (authController.isCitizen) {
           return isCitizenLocation ? null : home;
+        }
+        if (authController.isRepairPersonnel) {
+          return isRepairLocation ? null : home;
         }
         if (authController.isValidationOfficial) {
           return isOfficialLocation ? null : home;
@@ -181,6 +194,52 @@ final GoRouter appRouter = GoRouter(
       path: '/official/profile',
       builder: (_, _) => const OfficialProfileScreen(),
     ),
+    GoRoute(
+      path: '/official/work-orders',
+      builder: (_, _) => const OfficialWorkOrdersScreen(),
+    ),
+    GoRoute(
+      path: '/repair',
+      builder: (_, _) => const RepairDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/repair/work-orders',
+      builder: (_, _) => const AssignedWorkOrdersScreen(),
+    ),
+    GoRoute(
+      path: '/repair/work-orders/:id/start',
+      builder: (_, state) => StartRepairScreen(
+        workOrderId: state.pathParameters['id'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/repair/work-orders/:id/progress',
+      builder: (_, state) => UpdateRepairProgressScreen(
+        workOrderId: state.pathParameters['id'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/repair/work-orders/:id/evidence',
+      builder: (_, state) => UploadRepairEvidenceScreen(
+        workOrderId: state.pathParameters['id'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/repair/work-orders/:id/location',
+      builder: (_, state) => RepairWorkOrderLocationScreen(
+        workOrderId: state.pathParameters['id'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/repair/work-orders/:id',
+      builder: (_, state) => WorkOrderDetailsScreen(
+        workOrderId: state.pathParameters['id'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/repair/profile',
+      builder: (_, _) => const RepairProfileScreen(),
+    ),
   ],
   errorBuilder: (_, state) => Scaffold(
     body: Center(child: Text('Page not found: ${state.uri.path}')),
@@ -195,6 +254,9 @@ bool _isCitizenLocation(String location) =>
 
 bool _isOfficialLocation(String location) =>
     location == '/official' || location.startsWith('/official/');
+
+bool _isRepairLocation(String location) =>
+    location == '/repair' || location.startsWith('/repair/');
 
 class _MissingRouteDataScreen extends StatelessWidget {
   const _MissingRouteDataScreen({required this.message});

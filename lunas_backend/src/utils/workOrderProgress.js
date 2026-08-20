@@ -1,5 +1,6 @@
 const MIN_PROGRESS_PERCENT = 0;
 const MAX_PROGRESS_PERCENT = 100;
+const { REPAIR_PROGRESS_VALUES } = require('../services/workOrderService');
 
 /**
  * Parse a supplied progress percentage without silently accepting empty or
@@ -12,7 +13,8 @@ const normalizeProgressPercent = (value) => {
 
   const progressPercent = Number(value);
   if (!Number.isFinite(progressPercent)) return null;
-  if (progressPercent < MIN_PROGRESS_PERCENT || progressPercent > MAX_PROGRESS_PERCENT) {
+  if (progressPercent < MIN_PROGRESS_PERCENT || progressPercent > MAX_PROGRESS_PERCENT
+    || !REPAIR_PROGRESS_VALUES.includes(progressPercent)) {
     return null;
   }
 
@@ -31,14 +33,16 @@ const validateProgressAdvance = (currentValue, requestedValue) => {
   if (progressPercent === null) {
     return {
       valid: false,
-      message: 'Progress percent must be a number between 0 and 100'
+      message: 'Repair progress must be one of 0, 25, 50, 75, or 100'
     };
   }
 
-  if (progressPercent < currentProgressPercent) {
+  if (progressPercent <= currentProgressPercent) {
     return {
       valid: false,
-      message: 'Progress percent cannot be lower than the current progress'
+      message: progressPercent === currentProgressPercent
+        ? 'Repair progress is already recorded at this percentage'
+        : 'Repair progress cannot be lower than the current progress'
     };
   }
 

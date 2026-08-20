@@ -120,7 +120,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ReportStatusChip(label: humanStatus(report.status)),
+                        ReportStatusChip(label: report.statusChipLabel),
                         const SizedBox(height: AppSpacing.md),
                         Text(report.categoryLabel, style: Theme.of(context).textTheme.headlineSmall),
                         const SizedBox(height: AppSpacing.xxs),
@@ -139,6 +139,10 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
+                  if (report.repair != null) ...[
+                    _CitizenRepairProgressCard(repair: report.repair!),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
                   if (_decisionReason(report) != null) ...[
                     Text('Official update', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: AppSpacing.sm),
@@ -231,6 +235,66 @@ String? _decisionReason(IncidentReport report) => switch (report.status) {
   'duplicate' => report.duplicateReason,
   _ => null,
 };
+
+class _CitizenRepairProgressCard extends StatelessWidget {
+  const _CitizenRepairProgressCard({required this.repair});
+
+  final IncidentRepairSummary repair;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isReady = repair.readyForCompletion || repair.progressPercent == 100;
+    return LunasCard(
+      color: isReady
+          ? theme.colorScheme.tertiaryContainer
+          : theme.colorScheme.primaryContainer.withValues(alpha: .55),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isReady ? Icons.pending_actions_outlined : Icons.construction_outlined,
+                color: isReady
+                    ? theme.colorScheme.onTertiaryContainer
+                    : theme.colorScheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Maintenance progress',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(repair.citizenStatusLabel, style: theme.textTheme.bodyLarge),
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(value: repair.progressPercent / 100),
+          if (repair.reference != null || repair.updatedAt != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              [
+                if (repair.reference != null) 'Work order ${repair.reference}',
+                if (repair.updatedAt != null) 'Updated ${formatReportDateTime(repair.updatedAt)}',
+              ].join(' · '),
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+          if (isReady) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'The field repair is ready for formal completion and verification. It has not been verified or closed yet.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _CitizenDecisionReason extends StatelessWidget {
   const _CitizenDecisionReason({required this.status, required this.reason});

@@ -30,6 +30,14 @@ void main() {
           'notes': 'Incident reported',
         },
       ],
+      'repair': {
+        'reference': 'WO-202608-ABC123',
+        'status': 'in_progress',
+        'progressPercent': 50,
+        'stage': 'main_repair',
+        'readyForCompletion': false,
+        'updatedAt': '2026-08-12T08:00:00.000Z',
+      },
       'possibleDuplicateCandidateCount': 1,
     });
 
@@ -41,6 +49,33 @@ void main() {
     expect(report.images.single.privacyProcessingApplied, isFalse);
     expect(report.statusHistory.single.status, 'submitted');
     expect(report.possibleDuplicateCandidateCount, 1);
+    expect(report.repair?.progressPercent, 50);
+    expect(report.currentStatusLabel, 'Repair Progress: 50%');
+    expect(report.statusChipLabel, '50% repair');
+  });
+
+  test('keeps 100 percent repair visibility high level and awaiting verification', () {
+    final report = IncidentReport.fromJson({
+      'id': 'incident-ready',
+      'status': 'completed',
+      'location': {'coordinates': [120.3333, 16.0433]},
+      'repair': {
+        'status': 'completed',
+        'progressPercent': 100,
+        'readyForCompletion': true,
+      },
+      'statusHistory': [
+        {
+          'status': 'completed',
+          'progressPercent': 100,
+          'repairStage': 'ready_for_completion',
+        },
+      ],
+    });
+
+    expect(report.currentStatusLabel, 'Repair Progress: 100% · Awaiting Verification');
+    expect(report.statusChipLabel, 'Awaiting verification');
+    expect(report.statusHistory.single.citizenLabel, contains('Awaiting Verification'));
   });
 
   test('keeps only the permitted server-provided decision reason for citizens', () {

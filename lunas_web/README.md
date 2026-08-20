@@ -1,7 +1,8 @@
 # LUNAS Web
 
 The LUNAS web application is the browser workspace for authenticated accounts.
-It provides the web-facing parts of the completed 25% and 50% milestones:
+It provides the web-facing parts of the completed 25%, 50%, and 75%
+milestones:
 
 - **25% citizen-reporting foundation:** real backend sign-in, encrypted
   server-side session handling, protected routes, account/profile management,
@@ -10,21 +11,28 @@ It provides the web-facing parts of the completed 25% and 50% milestones:
 - **50% official validation and routing:** a live, jurisdiction-scoped command
   center where authorized officials review submitted reports and make one
   controlled decision: validate and route, reject, or mark duplicate.
+- **75% maintenance operations:** a real work-order command center for
+  authorized officials and providers, plus the repair-personnel assignment,
+  progress, field-evidence, and backend-SLA workflow. A repair at 100% is
+  ready for later formal completion and verification; it is not closed here.
 
 The web app is a Next.js BFF (backend-for-frontend), not a mock-data preview.
 It talks to the existing Express API from the server, so backend access and
 refresh tokens are never placed in browser JavaScript, local storage, or
-session storage.
+session storage. For a local presentation, the backend can seed fictional
+records into MongoDB; those remain real server-backed records, not browser
+fixtures.
 
 > **Current boundary:** citizens submit reports from the mobile application.
-> The web app displays their real report status. Work orders, repair progress,
-> repair verification/closure, provider operations, SLA escalation automation,
-> full analytics, and an approved AI/redaction integration are later
-> milestones.
+> The web app displays their real report status and repair progress. Formal
+> repair completion packages, verification approval/rejection, rework, closure,
+> automated SLA escalation, full analytics, and an approved AI/redaction
+> integration remain later scope.
 
 For the complete cross-platform milestone contract, read
-[MILESTONE_25.md](../MILESTONE_25.md) and
-[MILESTONE_50.md](../MILESTONE_50.md).
+[MILESTONE_25.md](../MILESTONE_25.md),
+[MILESTONE_50.md](../MILESTONE_50.md), and
+[MILESTONE_75.md](../MILESTONE_75.md).
 
 ## Contents
 
@@ -91,6 +99,37 @@ Authorized officials use `/validation-routing` and
 Validation starts the configured SLA deadline. Routing records accountability
 only; it does **not** create a work order or assign repair personnel.
 
+### Work-order command center (75%)
+
+Authorized operational roles use `/work-orders`, `/work-orders/:id`, and
+`/sla` to work from the server-backed maintenance queue. The primary path is:
+
+```text
+validated + routed incident → create unassigned work order (0%)
+  → assign / pending acceptance → accepted → in progress
+  → 25% site preparation → 50% main repair → 75% finishing
+  → 100% ready for formal completion / verification
+```
+
+- Create one work order from a validated, routed incident; creation does not
+  silently assign personnel.
+- Search, filter, sort, paginate, and inspect scoped work orders using real
+  API results, including priority, organization, current assignee,
+  assignment/progress state, and backend-calculated SLA state.
+- Assign an eligible repair person, or reassign with a required reason, while
+  retaining the assignment history returned by the API.
+- Let only the assigned repair person accept or decline (with a reason), start
+  work, report the allowed discrete progress values, add notes, and upload
+  JPG/PNG repair evidence.
+- Display signed citizen and repair evidence URLs, an append-oriented timeline,
+  SLA deadline/remaining time, and safe unavailable, empty, and conflict
+  states. A stale transition is refreshed after the API's `409` response.
+
+The server controls the repair lifecycle and stages: `0` assigned, `25` site
+preparation, `50` main repair, `75` finishing, and `100` ready for completion.
+The UI intentionally has no verification, approval, rejection, rework, or
+closure control at this milestone.
+
 ## Roles and access boundaries
 
 The permission map in `src/lib/permissions.ts` controls browser presentation
@@ -104,8 +143,8 @@ every request.
 | `barangay_official` | Dashboard and official validation/review screens. | Assigned barangay only. |
 | `city_engineer` | Dashboard and official validation/review screens. | City-wide. |
 | `admin` | Dashboard and official validation/review screens. | City-wide. |
-| `utility_provider` | Account/dashboard boundary only; no provider operation workspace is presented. | Routed-record access belongs to the API; provider repair work is later scope. |
-| `repair_personnel` | Account/dashboard boundary only; no repair workspace is presented. | No validation queue. |
+| `utility_provider` | Dashboard plus scoped work-order and SLA command-center views; may create, assign, and reassign only records routed to its organization. | Routed organization only. |
+| `repair_personnel` | Dashboard plus own-assignment work orders; may accept, decline, start, report allowed repair progress, and upload repair evidence. | Own active/current assignments only; no validation queue or official assignment controls. |
 
 No geographic boundary data is fabricated. Officials manually confirm the
 report's barangay/jurisdiction, and that choice is auditable in the backend.
@@ -150,6 +189,21 @@ Browser
   It uses a conditional submitted-state update, so one report cannot receive
   two conflicting decisions.
 
+### Work-order handling
+
+- `src/lib/work-orders.server.ts` normalizes only the work-order fields needed
+  by each queue/detail screen and gets signed evidence URLs from the API; it
+  does not fabricate repair records in the browser.
+- `src/app/actions/work-orders.ts` requires a server-side permission and
+  backend role before every mutation. It uses the nested incident endpoint for
+  work-order creation and the work-order endpoints for assignment, repair
+  transitions, and multipart evidence upload.
+- The API remains authoritative for incident state, assignment ownership,
+  organization/jurisdiction scope, discrete progress values, no-regression
+  rules, evidence validation/storage, SLA state, and stale-update conflicts.
+- Client controls are only affordances. A hidden or modified browser request
+  cannot grant a role or bypass the backend state machine.
+
 ### Data-protection expectations
 
 - Do not add access/refresh tokens to `localStorage`, `sessionStorage`, URL
@@ -159,6 +213,8 @@ Browser
   report details, or internal official notes to a citizen.
 - Use the API's signed evidence URLs; do not construct storage URLs in the
   browser.
+- Do not surface repair-personnel contacts, internal reassignment reasons,
+  repair evidence, or internal SLA notes in a citizen-facing view.
 - Treat evidence, precise locations, account information, reset tokens, and
   verification codes as sensitive data.
 
@@ -167,8 +223,9 @@ Browser
 - Node.js **20.9.0 or later** (required by the installed Next.js version).
 - npm (the committed `package-lock.json` is used by `npm ci`).
 - A reachable LUNAS Express backend with MongoDB configured.
-- Test accounts created by an administrator; this web app does not provide
-  demo credentials or role switching.
+- Test accounts created by an administrator, or the guarded local backend
+  seed described below. The browser never pre-fills credentials or offers role
+  switching.
 - Supabase Storage or the configured private evidence provider when testing
   actual evidence/signed URLs.
 - Chromium installed for Playwright end-to-end checks.
@@ -229,6 +286,43 @@ npm install
 npm run dev
 ```
 
+### Optional local 50% demonstration data
+
+To show the official dashboard and review flow without creating reports on a
+mobile device, use the backend's guarded local seed before starting the web
+app. In `lunas_backend/.env`, set `NODE_ENV=development` and use a local
+database named `lunas_demo`:
+
+```dotenv
+# Local MongoDB without authentication
+MONGODB_URI=mongodb://localhost:27017/lunas_demo
+
+# This repository's `docker compose up -d mongodb` service
+# MONGODB_URI=mongodb://admin:admin123@localhost:27017/lunas_demo?authSource=admin
+```
+
+Then run:
+
+```bash
+cd lunas_backend
+ALLOW_DEMO_SEED=true npm run seed:demo
+```
+
+The seed is blocked for production, non-local MongoDB URI hosts, and databases
+other than local `lunas_demo`. It creates only fictional records and may be
+re-run to restore them. Sign in at the normal web login form with either:
+
+| Account | Role | Password |
+| --- | --- | --- |
+| `demo.engineer@lunas.test` | City Engineer | `LunasDemo2026!` by default |
+| `demo.admin@lunas.test` | Administrator | `LunasDemo2026!` by default |
+
+Set `DEMO_SEED_PASSWORD` before running the seed if you changed the local
+password. The web app does not display these credentials or change roles for
+you. The data includes three submitted reports for live decisions, one
+advisory duplicate candidate, and one of each decided status for the dashboard
+summary. It intentionally has no real citizen details or evidence images.
+
 Then start the web application:
 
 ```bash
@@ -241,7 +335,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The root redirects into
 the authenticated application flow; sign in with a real account created in
-the backend.
+the backend or the local-only seeded account above.
 
 For a production-like local run:
 
@@ -270,13 +364,15 @@ require the API and its datastore.
 | `/help` | Support guidance without a fake ticket workflow. | Authenticated account |
 | `/validation-routing` | Pending validation queue. | Barangay official, city engineer, administrator |
 | `/validation-routing/:id` | Official report review and decision screen. | Same, plus API record scope |
+| `/work-orders` | Scoped maintenance queue with real filters, pagination, and dashboard summary. | Barangay official, city engineer, utility provider, repair personnel, administrator; API scope applies |
+| `/work-orders/:id` | Work-order detail, timeline, SLA, evidence, and role-specific action controls. | Same, plus API record/assignment scope |
+| `/sla` | SLA-focused view of the live work-order queue. | Same as `/work-orders` |
 | `/incidents`, `/incidents/:id` | Compatibility redirects to the validation routes. | Same as destination |
 
-Several older routes intentionally show a **Milestone Unavailable** boundary,
-including `/reports`, `/notifications`, `/work-orders`, `/repairs`, `/sla`,
-and later operations screens. They are not evidence that those workflows are
-implemented. Do not use them as acceptance-test substitutes for
-`/validation-routing`.
+`/repairs`, `/maintenance-coordination`, and their legacy detail paths redirect
+to the supported work-order command center. Older `/reports` and
+`/notifications` routes still retain their explicit unavailable boundary; they
+are not evidence of an implemented report workspace or notification center.
 
 ### API calls used by the web platform
 
@@ -293,10 +389,17 @@ behavior:
 | Official dashboard | `GET /stats/validation-summary`, `GET /incidents/pending-validation?limit=5` |
 | Validation queue/detail | `GET /incidents/pending-validation`, `GET /incidents/:id`, `GET /incidents/:id/history`, `GET /incidents/:id/duplicate-candidates`, `GET /incidents/:id/sla` |
 | Controlled decisions | `POST /incidents/:id/validate`, `POST /incidents/:id/reject`, `POST /incidents/:id/mark-duplicate` |
+| Work-order queue/detail | `GET /work-orders`, `GET /work-orders/:id`, `GET /work-orders/:id/assignments`, `GET /work-orders/:id/progress`, `GET /work-orders/:id/sla`, `GET /dashboard/work-orders-summary` |
+| Work-order staffing | `GET /work-orders/:id/eligible-personnel`, `POST /work-orders/:id/assign`, `POST /work-orders/:id/reassign` |
+| Repair-assignment actions | `POST /work-orders/:id/accept`, `POST /work-orders/:id/decline`, `POST /work-orders/:id/start`, `POST /work-orders/:id/progress`, `POST /work-orders/:id/evidence` |
+| Work-order creation | `POST /incidents/:id/work-orders` from a validated, routed incident (the compatibility `POST /work-orders` route is not used by the web flow). |
 
-The queue passes `page`, `limit`, `search`, `category`, `barangay`,
-`hasDuplicateCandidate`, `sortBy`, `from`, and `to` to the backend. The
-complete public contract and payload examples are in
+The validation queue passes `page`, `limit`, `search`, `category`, `barangay`,
+`hasDuplicateCandidate`, `sortBy`, `from`, and `to`. The work-order queue
+passes its documented `page`, `limit`, `search`, `status`, `priority`,
+`assignmentStatus`, `progress`, `slaState`, `personnel`, `organization`,
+`category`, and `sortBy` filters. The complete public contract and payload
+examples are in
 [lunas_backend/API_ENDPOINTS.md](../lunas_backend/API_ENDPOINTS.md).
 
 ## Testing checklist
@@ -315,16 +418,20 @@ authorized.
 - [ ] The backend's `CORS_ORIGIN` includes the web origin where applicable.
 - [ ] Test accounts exist for: one citizen, one barangay official assigned to
   Barangay A, another barangay official assigned to Barangay B, one city
-  engineer or administrator, and a utility-provider/repair account.
+  engineer or administrator, and a utility-provider/repair account. For a
+  local presentation, `ALLOW_DEMO_SEED=true npm run seed:demo` creates a city
+  engineer, administrator, Pantal official, and fictional reporters instead.
 - [ ] Test reports exist: one submitted report in Barangay A, one submitted
   report in Barangay B, two similar submitted reports for duplicate testing,
-  and one report with private evidence if evidence storage is configured.
+  and one report with private evidence if evidence storage is configured. The
+  local seed supplies fictional queue/dashboard records but intentionally no
+  evidence image.
 - [ ] No tester is using a real resident's sensitive report or image.
 
 ### Browser: authentication, sessions, and profile
 
-- [ ] Open `/login`; confirm no seeded/demo credentials or role-preview
-  controls are displayed.
+- [ ] Open `/login`; confirm local demo credentials are not pre-filled and no
+  role-preview controls are displayed.
 - [ ] Submit empty and invalid credentials; confirm useful field feedback is
   shown without revealing whether an account exists.
 - [ ] Sign in with each authorized test account and confirm the dashboard
@@ -352,7 +459,7 @@ authorized.
   protected routes redirect to `/maintenance`; remove it and confirm normal
   access returns.
 
-### Browser: citizen outcome checks (25% + 50%)
+### Browser: citizen outcome checks (25% + 50% + 75%)
 
 - [ ] Sign in as the citizen and confirm the dashboard lists only reports
   submitted by that citizen.
@@ -365,6 +472,10 @@ authorized.
 - [ ] After an official marks a report duplicate, confirm the citizen's
   API/mobile view exposes the permitted duplicate reason but not the canonical
   reporter's identity, private evidence, or internal notes.
+- [ ] After a work order is assigned, started, and progressed, refresh the
+  citizen-safe view and confirm it exposes only the permitted high-level
+  repair state/progress, not staff details, internal notes, evidence, or SLA
+  internals.
 - [ ] Directly open `/validation-routing` as a citizen; confirm the web app
   denies access and the API also rejects any attempted official action.
 
@@ -387,8 +498,9 @@ authorized.
   available and clearly indicates unavailable location data when it is not.
 - [ ] Confirm duplicate candidates are described as advisory; no report is
   automatically marked duplicate.
-- [ ] Confirm utility-provider and repair-personnel accounts see the truthful
-  later-workspace boundary, not an invented validation queue or sample data.
+- [ ] Confirm utility-provider and repair-personnel accounts cannot open the
+  official validation queue, but can use only their scoped live work-order
+  workspace—not an invented queue or sample data.
 
 ### Browser: controlled decisions
 
@@ -414,6 +526,41 @@ authorized.
   first decision.
 - [ ] Refresh the detail and queue after every decision. Confirm no duplicate
   status-history/audit entries were created by refreshes or double-clicks.
+
+### Browser: work orders, assignment, and repair progress
+
+- [ ] With an authorized official/provider, open a validated and routed
+  incident detail. Create its work order once and confirm a duplicate create
+  receives the backend's safe conflict/error rather than creating a second
+  record.
+- [ ] Open `/work-orders` and verify search, priority, assignment, progress,
+  SLA, sorting, pagination, clear-filter, loading, empty, and API-error
+  states use server results. Check that scope does not expand through query
+  parameters.
+- [ ] Open `/sla` and confirm the displayed deadline, remaining time,
+  approaching, and overdue state come from the backend projection rather than
+  a browser-calculated authoritative status.
+- [ ] On an unassigned work order, confirm only backend-eligible active repair
+  personnel are shown. Assign one person; confirm the row/detail reflect
+  pending acceptance and the assignment timeline is preserved.
+- [ ] Reassign an active/pending assignment. Confirm a reason is required and
+  the previous assignment is retained as history rather than overwritten.
+- [ ] Sign in as the selected repair person. Confirm only own scoped work
+  orders are visible. Accept or decline an assignment; verify decline requires
+  a reason and that an official can subsequently reassign it.
+- [ ] Start an accepted work order, then submit only 25%, 50%, 75%, and 100%
+  progress. Confirm the displayed stages are site preparation, main repair,
+  finishing, and ready for completion. Confirm progress cannot regress.
+- [ ] At 100%, require a meaningful repair note and confirm the UI says ready
+  for formal completion/verification. It must not present a verify, reject,
+  rework, or close action.
+- [ ] Upload one or more JPEG/PNG repair images. Confirm the signed image is
+  visible to authorized operational users, raw storage keys are absent, and
+  invalid MIME types/extensions, more than five files, and files over 10 MB
+  are rejected before or by the API.
+- [ ] Open the same work order in two sessions and perform competing
+  assignment/progress actions. Confirm the stale action reports a conflict and
+  refreshes instead of overwriting the newer server state.
 
 ### API and authorization checks
 
@@ -446,6 +593,24 @@ response body, and affected database/audit record for the acceptance log.
   data.
 - [ ] Confirm citizen, provider, repair, or wrong-barangay tokens cannot make
   an official decision even if a browser request is modified manually.
+- [ ] `POST /incidents/:id/work-orders` accepts only a validated, routed
+  incident in the caller's server scope, creates one initial unassigned 0%
+  work order, and safely rejects a duplicate or invalid lifecycle request.
+- [ ] `GET /work-orders`, detail, assignments, progress, SLA, and summary
+  endpoints enforce role, organization, barangay, and own-assignment scope.
+- [ ] Assignment/reassignment accepts only eligible active repair personnel;
+  reassignment records its required reason and does not erase history.
+- [ ] Repair-personnel tokens can act only on their own current assignment.
+  Verify accept, decline, start, progress, and evidence endpoints reject an
+  unassigned or wrong-user request.
+- [ ] Progress accepts only the documented discrete non-regressing sequence
+  and returns `409` for stale/conflicting transitions. A 100% transition must
+  leave the incident/work order awaiting later verification, not closed.
+- [ ] Repair-evidence upload enforces JPEG/PNG, count/size limits, private
+  storage, metadata stripping/checksum behavior, and authorized signed URLs.
+- [ ] `GET /dashboard/work-orders-summary` and each work-order SLA response
+  return only the caller's scoped counts/statuses. Confirm no scheduled SLA
+  action is implied unless backend automation is explicitly enabled.
 
 ### Browser quality and recovery
 
@@ -505,17 +670,19 @@ backend, MongoDB, private storage, and role-scoped test records.
 
 ## Known limits and deferred work
 
-The following are intentionally not complete in the web platform at the 50%
+The following are intentionally not complete in the web platform at the 75%
 milestone:
 
 - Citizen report creation/evidence capture in the browser (the 25% submission
   flow is mobile).
-- Work-order creation, assignment, repair-personnel operations, repair
-  evidence/progress, completion, verification, and closure.
-- A utility-provider repair workspace or provider queue in the browser.
+- Formal repair-completion package submission, before/after comparison, SSIM,
+  AI repair recommendations, official verification approval/rejection,
+  additional-work requests, rework/reopen, closure, and final-resolution
+  analytics. A 100% repair remains ready for later verification.
 - Live notifications center, full analytics, and SLA reminder/escalation UI.
-- Automated SLA escalation. The SLA deadline is initialized on validation;
-  backend automation remains explicitly opt-in and later scope.
+- Automated SLA escalation. The web displays the backend's SLA projection;
+  any backend scheduler remains explicitly opt-in through deployment
+  configuration.
 - Authoritative geographic boundaries, organization registry validation, and
   map-provider enhancements.
 - Approved AI hazard classification or face/license-plate redaction. The app
@@ -523,9 +690,9 @@ milestone:
 - End-to-end browser automation for authenticated, multi-role validation
   scenarios. Those need stable test identities and live test infrastructure.
 
-Older compatibility/stub routes remain in the source tree, but they are not a
-claim that those later workflows are ready. Keep acceptance testing focused on
-the supported routes and state machine documented above.
+Older compatibility routes redirect to the supported work-order command
+center where applicable. Keep acceptance testing focused on the supported
+routes and state machine documented above.
 
 ## Troubleshooting
 
@@ -534,7 +701,7 @@ the supported routes and state machine documented above.
 | Login reports that LUNAS is unavailable | Confirm the backend is running, `LUNAS_API_URL` is reachable from the Next.js server, and its API path resolves to `/api/v1`. |
 | Production build/session fails with secret error | Set a non-empty, high-entropy `LUNAS_SESSION_SECRET`; restart all web instances using the same intended secret. |
 | Browser repeatedly returns to login | Check the encrypted cookie is not blocked, the system clock is accurate, the refresh token is valid, and the proxy can reach `/auth/refresh`. |
-| Official sees no reports | Confirm there are `submitted` reports in that account's backend scope and verify the official's barangay/role assignment in the backend. |
+| Official sees no reports | Confirm there are `submitted` reports in that account's backend scope and verify the official's barangay/role assignment in the backend. For the local demo, run the guarded backend seed against `lunas_demo`, then sign in as the seeded city engineer/admin. |
 | Evidence does not load | Check the private storage configuration and signed URL generation in the backend. Do not make the bucket public as a workaround. |
 | A decision conflicts | This is expected when another official already decided the report. Refresh/reload the record and do not retry a different decision blindly. |
 | Playwright cannot launch Chromium | Run `npx playwright install chromium`, then rebuild before `npm run test:e2e`. |
@@ -551,4 +718,9 @@ the supported routes and state machine documented above.
 | `src/app/actions/validation.ts` | Server actions for validate, reject, and mark duplicate. |
 | `src/components/validation/` | Queue filters, pagination, review, confirmation, and conflict UI. |
 | `src/app/(protected)/validation-routing/` | Official command-center routes. |
+| `src/lib/work-orders.server.ts` | Server-only work-order queue/detail/SLA normalization and backend queries. |
+| `src/lib/work-order-progress.ts` | Shared 0/25/50/75/100 repair-stage map. |
+| `src/app/actions/work-orders.ts` | Server actions for creation, assignment, repair progress, and evidence. |
+| `src/components/work-orders/` | Work-order queue, detail, timeline, SLA, evidence, and action UI. |
+| `src/app/(protected)/work-orders/`, `src/app/(protected)/sla/` | Live maintenance command-center routes. |
 | `tests/shared-screens.spec.ts` | Current Playwright public/protected-route smoke coverage. |

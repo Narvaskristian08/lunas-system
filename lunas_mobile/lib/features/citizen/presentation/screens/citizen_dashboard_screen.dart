@@ -73,7 +73,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
           ),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Report an infrastructure concern and follow its verified status here.',
+            'Report an infrastructure concern and follow its current maintenance status here.',
           ),
           const SizedBox(height: AppSpacing.xl),
           _ReportCallout(onCreate: () => context.push('/reports/new')),
@@ -282,7 +282,7 @@ class _ReportListCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            ReportStatusChip(label: humanStatus(report.status)),
+            ReportStatusChip(label: report.statusChipLabel),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -292,6 +292,16 @@ class _ReportListCard extends StatelessWidget {
           report.location.displayAddress,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+        if (report.repair != null) ...[
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            report.repair!.citizenStatusLabel,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ],
     ),
   );

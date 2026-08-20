@@ -62,7 +62,14 @@ const safeEvidenceForCitizen = async (image) => {
 // fields below; official history has the richer note and actor metadata.
 const serializeStatusHistoryForCitizen = (history = []) => history.map((entry) => ({
   status: entry.status,
-  changedAt: entry.changedAt
+  changedAt: entry.changedAt,
+  // Repair percentage and readiness are safe high-level information. Internal
+  // notes, actor identities, reassignment reasons, and escalation metadata
+  // remain deliberately absent from citizen responses.
+  ...(entry.metadata?.progressPercent !== undefined
+    ? { progressPercent: entry.metadata.progressPercent, repairStage: entry.metadata.stage }
+    : {}),
+  ...(entry.metadata?.event === 'work_order_created' ? { event: 'work_order_created' } : {})
 }));
 
 const serializeIncidentForCitizen = async (incident) => {
@@ -84,6 +91,18 @@ const serializeIncidentForCitizen = async (incident) => {
     rejectionReason: source.status === 'rejected' ? source.rejectionReason : undefined,
     duplicateReason: source.status === 'duplicate' ? source.duplicateReason : undefined,
     statusHistory: serializeStatusHistoryForCitizen(source.statusHistory || []),
+    repair: source.workOrder && typeof source.workOrder === 'object'
+      ? {
+        reference: source.workOrder.orderNumber,
+        status: source.workOrder.status,
+        assignmentState: source.workOrder.assignmentState,
+        progressPercent: source.workOrder.progressPercent,
+        stage: source.workOrder.progressStage,
+        readyForCompletion: source.workOrder.status === 'completed'
+          && source.workOrder.progressPercent === 100,
+        updatedAt: source.workOrder.updatedAt
+      }
+      : undefined,
     possibleDuplicateCandidateCount: source.duplicateDetection?.candidateCount || 0
   };
 };
@@ -158,6 +177,16 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
     sla: source.sla,
     validatedAt: source.validatedAt,
     validatedBy: safeReporterForOfficial(source.validatedBy),
+    workOrder: source.workOrder && typeof source.workOrder === 'object'
+      ? {
+        id: source.workOrder._id?.toString?.() || source.workOrder._id,
+        reference: source.workOrder.orderNumber,
+        status: source.workOrder.status,
+        assignmentState: source.workOrder.assignmentState,
+        progressPercent: source.workOrder.progressPercent,
+        stage: source.workOrder.progressStage
+      }
+      : source.workOrder ? { id: source.workOrder.toString() } : undefined,
     ...(includeHistory ? {
       statusHistory: (source.statusHistory || []).map((entry) => ({
         status: entry.status,
@@ -333,6 +362,7 @@ exports.getIncidents = asyncHandler(async (req, res) => {
     .populate('reporter', 'firstName lastName')
     .populate('assignedTo', 'firstName lastName role')
     .populate('validatedBy', 'firstName lastName')
+    .populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt')
     .sort(safeSortBy)
     .limit(numericLimit)
     .skip((numericPage - 1) * numericLimit);
@@ -376,6 +406,9 @@ const findIncidentForRead = async (req, res) => {
     .populate('reporter', 'firstName lastName')
     .populate('validatedBy', 'firstName lastName')
     .populate('duplicateOf', 'reportNumber');
+  if (incident && typeof incident.populate === 'function') {
+    await incident.populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt');
+  }
 
   if (!incident) {
     // A scoped query intentionally does not reveal whether a private report
@@ -409,15 +442,15 @@ exports.getIncidentHistory = asyncHandler(async (req, res) => {
   const incident = await findIncidentForRead(req, res);
   if (!incident) return;
 
-  const data = (incident.statusHistory || []).map((entry) => ({
-    status: entry.status,
-    changedAt: entry.changedAt,
-    ...(req.user.role !== 'citizen' ? {
+  const data = req.user.role === 'citizen'
+    ? serializeStatusHistoryForCitizen(incident.statusHistory || [])
+    : (incident.statusHistory || []).map((entry) => ({
+      status: entry.status,
+      changedAt: entry.changedAt,
       notes: entry.notes,
       actorRole: entry.actorRole,
       metadata: entry.metadata
-    } : {})
-  }));
+    }));
 
   res.status(200).json({ success: true, data });
 });
@@ -434,7 +467,8 @@ const findScopedIncident = async (req, id = req.params.id, populate = true) => {
   return query
     .populate('reporter', 'firstName lastName')
     .populate('validatedBy', 'firstName lastName')
-    .populate('duplicateOf', 'reportNumber');
+    .populate('duplicateOf', 'reportNumber')
+    .populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt');
 };
 
 const respondNotFound = (res) => {

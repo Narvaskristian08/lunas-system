@@ -19,6 +19,7 @@ const {
   getNearbyIncidents,
   deleteIncident
 } = require('../controllers/incidentController');
+const { createWorkOrder } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
 const { uploadIncidentEvidence } = require('../middleware/upload');
 const { parseIncidentPayload } = require('../middleware/parseIncidentPayload');
@@ -32,6 +33,7 @@ const {
   updatePriorityValidation,
   updateJurisdictionValidation,
   routeIncidentValidation,
+  createWorkOrderValidation,
   pendingValidationQuery,
   paginationValidation,
   mongoIdValidation,
@@ -73,7 +75,20 @@ router.route('/')
     createIncidentValidation,
     validate,
     createIncident
-  );
+);
+
+// A work order is created from a validated, routed incident. Keep this nested
+// route next to incident operations while the detailed maintenance API stays
+// under /work-orders.
+router.post(
+  '/:id/work-orders',
+  protect,
+  authorize('barangay_official', 'city_engineer', 'utility_provider', 'admin'),
+  mongoIdValidation,
+  createWorkOrderValidation,
+  validate,
+  createWorkOrder
+);
 
 router.route('/:id')
   .get(protect, mongoIdValidation, validate, getIncident)

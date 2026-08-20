@@ -131,22 +131,40 @@ docker-compose --profile dev up -d
 
 ---
 
-## Step 6: Create First User
+## Step 6: Create a Citizen Account
 
 ```bash
 curl -X POST http://localhost:5000/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "firstName": "Admin",
+    "firstName": "Citizen",
     "lastName": "User",
-    "email": "admin@lunas.com",
+    "email": "citizen@lunas.test",
     "phone": "09123456789",
-    "password": "Admin@123",
-    "role": "admin"
+    "password": "CitizenDemo2026!"
   }'
 ```
 
-You should receive a JWT token in the response!
+Public registration always creates a citizen account. It cannot create an
+administrator or city engineer.
+
+### Optional: show the 50% official workflow with ready demo data
+
+For the current 50% web demonstration, use the guarded backend seed described
+in the root and backend READMEs. It creates fictional reports plus City
+Engineer/Admin logins, so no mobile report submission is needed.
+
+The Docker backend runs in production mode and deliberately refuses the seed.
+Use the documented local backend setup with `NODE_ENV=development`, a local
+`lunas_demo` database, then run:
+
+```bash
+cd lunas_backend
+ALLOW_DEMO_SEED=true npm run seed:demo
+```
+
+Sign in at the web login form with `demo.engineer@lunas.test` or
+`demo.admin@lunas.test`; the default local password is `LunasDemo2026!`.
 
 ---
 

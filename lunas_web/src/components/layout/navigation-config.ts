@@ -1,8 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CircleGauge,
+  ClipboardList,
   ClipboardCheck,
   HelpCircle,
+  Timer,
   UserRound,
 } from "lucide-react";
 import type { Permission } from "@/types";
@@ -23,6 +25,13 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Official review",
     items: [{ label: "Pending validation", href: "/validation-routing", icon: ClipboardCheck, permission: "reports.view" }],
+  },
+  {
+    label: "Maintenance operations",
+    items: [
+      { label: "Work orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view" },
+      { label: "SLA monitor", href: "/sla", icon: Timer, permission: "sla.view" },
+    ],
   },
   {
     label: "Account",

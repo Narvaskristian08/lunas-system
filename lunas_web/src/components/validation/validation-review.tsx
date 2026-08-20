@@ -4,8 +4,10 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ExternalLink, FileImage, MapPin, Route, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardPlus, ExternalLink, FileImage, MapPin, Route, ShieldCheck, XCircle } from "lucide-react";
+import { createWorkOrderAction } from "@/app/actions/work-orders";
 import { markDuplicateAction, rejectIncidentAction, validateIncidentAction } from "@/app/actions/validation";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Badge, StatusBadge } from "@/components/ui/badge";
@@ -131,12 +133,17 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
   const [routingReason, setRoutingReason] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [workOrderInstructions, setWorkOrderInstructions] = useState("");
   const [duplicateOf, setDuplicateOf] = useState(incident.duplicateCandidates[0]?.id ?? "");
   const [confirm, setConfirm] = useState(false);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
   const canDecide = viewer.permissions.includes("reports.validate") && incident.status === "submitted";
+  const canCreateWorkOrder = viewer.permissions.includes("work_orders.manage")
+    && ["barangay_official", "city_engineer", "utility_provider", "admin"].includes(viewer.backendRole)
+    && incident.status === "validated"
+    && !incident.workOrder?.id;
 
   const duplicateOptions = useMemo(() => incident.duplicateCandidates.map((candidate) => ({ value: candidate.id, label: `${candidate.reportNumber} · ${candidate.location?.address.barangay ?? "location unavailable"}` })), [incident.duplicateCandidates]);
 
@@ -178,6 +185,22 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
   };
 
   const decisionTitle = decision === "validate" ? "Validate report" : decision === "reject" ? "Reject report" : "Mark report as duplicate";
+  const createWorkOrder = () => {
+    startTransition(async () => {
+      const result = await createWorkOrderAction({ incidentId: incident.id, instructions: workOrderInstructions });
+      if (!result.ok) {
+        setError(result.message);
+        if (result.conflict) router.refresh();
+        return;
+      }
+      setMessage(result.message);
+      if (result.workOrderId) {
+        router.push(`/work-orders/${encodeURIComponent(result.workOrderId)}`);
+        return;
+      }
+      router.refresh();
+    });
+  };
   return (
     <div className="mx-auto max-w-[1480px]">
       <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -214,6 +237,8 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
               <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and route</> : decision === "reject" ? <><XCircle className="size-4" /> Reject report</> : <><Route className="size-4" /> Mark duplicate</>}</Button>
             </form> : <div className="p-5 text-sm text-slate-600">No decision controls are available for this report.</div>}
           </Card>
+          {canCreateWorkOrder ? <Card className="overflow-hidden"><CardHeader title="Create work order" description="This validated, routed incident is eligible for one primary active work order." /><div className="space-y-4 p-5"><p className="text-sm leading-6 text-slate-600">Creating a work order preserves the citizen report and its evidence, starts repair progress at 0%, and makes the task available for assignment.</p><label className="block text-sm font-semibold text-slate-800">Work instructions <span className="font-normal text-slate-500">(optional)</span><textarea value={workOrderInstructions} onChange={(event) => setWorkOrderInstructions(event.target.value)} maxLength={4000} className={`${fieldClass()} min-h-24 py-2`} placeholder="Add operational instructions for the assigned repair team" /></label><Button type="button" className="w-full" disabled={pending} loading={pending} loadingLabel="Creating…" onClick={createWorkOrder}><ClipboardPlus className="size-4" />Create work order</Button></div></Card> : null}
+          {incident.workOrder?.id ? <Card className="overflow-hidden"><CardHeader title="Work order" description="This incident already has its primary maintenance work order." /><div className="p-5"><p className="font-semibold text-slate-950">{incident.workOrder.reference ?? "Work order created"}</p><p className="mt-1 text-sm text-slate-600">{incident.workOrder.progressPercent !== undefined ? `${incident.workOrder.progressPercent}% · ` : ""}{incident.workOrder.status?.replaceAll("_", " ") ?? "Operational status available"}</p><Link href={`/work-orders/${encodeURIComponent(incident.workOrder.id)}`} className="mt-4 inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Open work order <Route className="ml-1 size-4" /></Link></div></Card> : null}
         </aside>
       </div>
 
