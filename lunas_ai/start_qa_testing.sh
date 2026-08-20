@@ -16,7 +16,7 @@ if [ ! -d "venv" ]; then
 fi
 
 # Activate virtual environment
-echo "✅ Activating virtual environment..."
+echo " Activating virtual environment..."
 source venv/bin/activate
 
 # Check if trained model exists
@@ -25,22 +25,22 @@ if [ ! -f "models/yolov8n-rdd2022-best.pt" ]; then
     echo "Checking for trained weights..."
     
     if [ -f "../runs/detect/runs/train/rdd2022_yolov8n_small/weights/best.pt" ]; then
-        echo "✅ Found trained model, copying..."
+        echo " Found trained model, copying..."
         cp ../runs/detect/runs/train/rdd2022_yolov8n_small/weights/best.pt models/yolov8n-rdd2022-best.pt
-        echo "✅ Model copied successfully!"
+        echo " Model copied successfully!"
     else
-        echo "❌ Trained model not found! Please train the model first."
+        echo " Trained model not found! Please train the model first."
         exit 1
     fi
 fi
 
 # Check model size
 MODEL_SIZE=$(ls -lh models/yolov8n-rdd2022-best.pt | awk '{print $5}')
-echo "✅ Using trained model: yolov8n-rdd2022-best.pt ($MODEL_SIZE)"
+echo " Using trained model: yolov8n-rdd2022-best.pt ($MODEL_SIZE)"
 echo ""
 
 # Start the API server in background
-echo "🚀 Starting AI API server on http://localhost:5001"
+echo " Starting AI API server on http://localhost:5001"
 python app.py &
 API_PID=$!
 
@@ -50,19 +50,19 @@ sleep 5
 
 # Check if server started successfully
 if curl -s http://localhost:5001/api/v1/health > /dev/null; then
-    echo "✅ API server is running (PID: $API_PID)"
+    echo " API server is running (PID: $API_PID)"
 else
-    echo "❌ Failed to start API server"
+    echo " Failed to start API server"
     kill $API_PID 2>/dev/null
     exit 1
 fi
 
 echo ""
 echo "=========================================="
-echo "✅ QA Testing Environment Ready!"
+echo " QA Testing Environment Ready!"
 echo "=========================================="
 echo ""
-echo "📊 API Server: http://localhost:5001"
+echo " API Server: http://localhost:5001"
 echo "🧪 QA Test GUI: Open qa_test_gui.html in your browser"
 echo ""
 echo "To open the GUI:"
@@ -75,7 +75,7 @@ echo "  - Health Check: http://localhost:5001/api/v1/health"
 echo "  - Detection:    http://localhost:5001/api/v1/detect"
 echo "  - Categories:   http://localhost:5001/api/v1/categories"
 echo ""
-echo "📝 API Documentation: http://localhost:5001/api/v1/docs"
+echo " API Documentation: http://localhost:5001/api/v1/docs"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo "=========================================="
