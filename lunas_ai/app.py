@@ -23,8 +23,16 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = config.MAX_REQUEST_SIZE
     app.config['JSON_SORT_KEYS'] = False
     
-    # CORS
-    CORS(app, origins=config.ALLOWED_ORIGINS)
+    # CORS - Allow all origins for local QA testing
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type"],
+            "supports_credentials": False
+        }
+    })
     
     # Register blueprints
     app.register_blueprint(api, url_prefix='/api/v1')

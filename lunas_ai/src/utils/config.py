@@ -68,7 +68,8 @@ class Config:
         
         # Security
         self.MAX_REQUEST_SIZE = int(os.getenv('MAX_REQUEST_SIZE', 10485760))
-        self.ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+        # Allow all origins for local QA testing (file://, localhost, etc.)
+        self.ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*').split(',')
         self.API_KEY = os.getenv('API_KEY', None)
         
         # Logging

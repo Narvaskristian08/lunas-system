@@ -477,7 +477,11 @@
                 
                 if (data.status === 'healthy') {
                     updateStatus('apiStatus', 'green', 'apiStatusText', 'Online ✓');
-                    updateStatus('modelStatus', 'green', 'modelStatusText', `${data.model} loaded ✓`);
+                    // Fix: loaded_models is an array, join them or show first
+                    const modelName = data.loaded_models && data.loaded_models.length > 0 
+                        ? data.loaded_models.join(', ') 
+                        : 'Unknown';
+                    updateStatus('modelStatus', 'green', 'modelStatusText', `${modelName} loaded ✓`);
                 } else {
                     updateStatus('apiStatus', 'red', 'apiStatusText', 'Offline');
                     updateStatus('modelStatus', 'red', 'modelStatusText', 'Not loaded');
