@@ -43,14 +43,20 @@ echo.
 
 REM Start the API server in background
 echo 🚀 Starting AI API server on http://localhost:5001
-start /B python app.py
+start /B python app.py > nul 2>&1
 
 REM Wait for server to start
 echo ⏳ Waiting for server to start...
-timeout /t 5 /nobreak >nul
+timeout /t 8 /nobreak >nul
 
-REM Check if server started (simplified for Windows)
-echo ✅ API server starting...
+REM Check if server started successfully
+curl -s http://localhost:5001/api/v1/health >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✅ API server is running
+) else (
+    echo ⚠️  Server may still be starting...
+    echo    Check http://localhost:5001/api/v1/health manually
+)
 
 echo.
 echo ==========================================
@@ -74,9 +80,15 @@ echo.
 REM Open the GUI in default browser (Windows)
 start qa_test_gui.html
 
-echo GUI opened in browser!
-echo Server is running... Press Ctrl+C to stop
+echo.
+echo ✅ GUI opened in browser!
+echo 🔄 Server is running... Press Ctrl+C to stop
+echo.
+echo ⚠️  DO NOT CLOSE THIS WINDOW - Server will stop if you do!
 echo.
 
-REM Keep window open
-pause
+REM Keep the script running (server runs in background)
+REM Press Ctrl+C to stop the server
+:loop
+timeout /t 60 /nobreak >nul
+goto loop
