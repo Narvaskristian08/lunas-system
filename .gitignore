@@ -1,0 +1,7 @@
+# YOLO Training Artifacts (257MB - exclude from repo)
+# Training outputs are stored here when running from project root
+runs/
+
+# OS Files
+.DS_Store
+.vscode/
