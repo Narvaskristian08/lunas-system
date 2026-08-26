@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LUNAS AI - QA Testing Interface</title>
+    <title>LUNAS AI - QA Testing Interface (All Models)</title>
     <style>
         * {
             margin: 0;
@@ -350,8 +350,10 @@
     <div class="container">
         <div class="header">
             <h1>🌙 LUNAS AI</h1>
-            <p>Quality Assurance Testing Interface</p>
-            <p style="font-size: 0.9em; opacity: 0.8; margin-top: 10px;">YOLOv8n trained on RDD2022 dataset</p>
+            <p>Quality Assurance Testing Interface - Unified Detection</p>
+            <p style="font-size: 0.9em; opacity: 0.8; margin-top: 10px;">
+                🔧 RDD2022 | 🏗️ Road Collapse | 🌿 Environmental Hazards (10 hazard types)
+            </p>
         </div>
 
         <div class="content">
@@ -368,7 +370,7 @@
                 </div>
                 <div class="status-item">
                     <div class="status-dot orange"></div>
-                    <span><strong>Trained Model:</strong> yolov8n-rdd2022-best.pt (6.0 MB)</span>
+                    <span><strong>Trained Models:</strong> 3 models (RDD2022, Road Collapse, Environmental Hazards) - 18MB total</span>
                 </div>
             </div>
 
@@ -579,7 +581,7 @@
 
             try {
                 const startTime = Date.now();
-                const response = await fetch(`${API_URL}/detect/road-damage`, {
+                const response = await fetch(`${API_URL}/detect/all-hazards`, {
                     method: 'POST',
                     body: formData
                 });
@@ -632,11 +634,24 @@
                 detections.forEach((det, idx) => {
                     const conf = (det.confidence * 100).toFixed(1);
                     const className = det.class;
+                    const model = det.model || 'Unknown';
+                    const category = det.category || 'Road Damage';
+                    const severity = det.severity || 'moderate';
+                    
+                    // Color based on severity
+                    let severityColor = '#ffc107'; // moderate - yellow
+                    if (severity === 'critical') severityColor = '#dc3545'; // red
+                    else if (severity === 'high') severityColor = '#fd7e14'; // orange
+                    else if (severity === 'low') severityColor = '#28a745'; // green
                     
                     html += `
                         <div class="detection-item">
                             <div>
-                                <strong>${idx + 1}. ${className}</strong>
+                                <strong>${idx + 1}. ${className.replace(/_/g, ' ').toUpperCase()}</strong>
+                                <div style="font-size: 0.85em; color: #6c757d; margin-top: 3px;">
+                                    📦 Model: ${model} | 🏷️ ${category} | 
+                                    <span style="color: ${severityColor}; font-weight: bold;">⚠️ ${severity.toUpperCase()}</span>
+                                </div>
                                 <div class="confidence-bar">
                                     <div class="confidence-fill" style="width: ${conf}%">${conf}%</div>
                                 </div>
@@ -652,9 +667,32 @@
                 html += `<p><strong>Total Detections:</strong> ${detections.length}</p>`;
                 html += `<p><strong>Average Confidence:</strong> ${avgConf}%</p>`;
                 html += `<p><strong>Processing Time:</strong> ${processingTime}ms</p>`;
-                html += `<p><strong>Severity Assessment:</strong> ${severity}</p>`;
                 
-                // Show damage type counts
+                // Show breakdown by model
+                if (data.by_model) {
+                    html += '<p><strong>By Model:</strong></p><ul>';
+                    html += `<li>🔧 RDD2022 (Road Damage): ${data.by_model.rdd2022 || 0}</li>`;
+                    html += `<li>🏗️ Road Collapse: ${data.by_model.road_collapse || 0}</li>`;
+                    html += `<li>🌿 Environmental Hazards: ${data.by_model.environmental_hazards || 0}</li>`;
+                    html += '</ul>';
+                }
+                
+                // Show severity assessment
+                if (data.severity_level) {
+                    let severityBadge = '';
+                    if (data.severity_level === 'critical') severityBadge = '<span style="background: #dc3545; color: white; padding: 5px 15px; border-radius: 20px;">🚨 CRITICAL</span>';
+                    else if (data.severity_level === 'high') severityBadge = '<span style="background: #fd7e14; color: white; padding: 5px 15px; border-radius: 20px;">⚠️ HIGH</span>';
+                    else if (data.severity_level === 'moderate') severityBadge = '<span style="background: #ffc107; color: black; padding: 5px 15px; border-radius: 20px;">⚠️ MODERATE</span>';
+                    else severityBadge = '<span style="background: #28a745; color: white; padding: 5px 15px; border-radius: 20px;">✅ LOW</span>';
+                    
+                    html += `<p><strong>Overall Severity:</strong> ${severityBadge}</p>`;
+                }
+                
+                if (data.requires_urgent_action) {
+                    html += '<p style="color: #dc3545; font-weight: bold;">⚠️ URGENT ACTION REQUIRED!</p>';
+                }
+                
+                // Show damage type counts (if available from old API)
                 if (data.summary?.damage_counts) {
                     html += '<p><strong>Damage Breakdown:</strong></p><ul>';
                     for (const [type, count] of Object.entries(data.summary.damage_counts)) {

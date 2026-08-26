@@ -189,6 +189,228 @@ class DetectionService:
                 'total_detections': 0
             }
     
+    def detect_road_collapse(
+        self,
+        image: Image.Image,
+        confidence: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Detect critical infrastructure failures (bridge/road collapse)
+        
+        Args:
+            image: PIL Image object
+            confidence: Confidence threshold (optional)
+            
+        Returns:
+            Dictionary with collapse detection results
+        """
+        try:
+            # Load model
+            model = self.model_manager.load_model('road_collapse')
+            
+            # Get model config
+            model_config = config.get_model_config('road_collapse')
+            conf_threshold = confidence or model_config.get('confidence_threshold', 0.30)
+            iou_threshold = model_config.get('iou_threshold', 0.45)
+            
+            # Run inference
+            logger.info("Running road collapse detection...")
+            results = model.predict(
+                source=image,
+                conf=conf_threshold,
+                iou=iou_threshold,
+                max_det=config.MAX_DETECTIONS,
+                device=self.model_manager.device,
+                verbose=False
+            )
+            
+            # Parse results
+            detections = self._parse_detection_results(results[0], model_config)
+            
+            # All collapses are critical severity
+            for detection in detections:
+                detection['severity'] = 'critical'
+                detection['priority'] = 'emergency'
+            
+            return {
+                'success': True,
+                'model': 'road_collapse',
+                'detections': detections,
+                'summary': self._create_summary(detections),
+                'total_detections': len(detections),
+                'critical_alert': len(detections) > 0
+            }
+            
+        except Exception as e:
+            logger.error(f"Road collapse detection failed: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'detections': [],
+                'total_detections': 0,
+                'critical_alert': False
+            }
+    
+    def detect_environmental_hazards(
+        self,
+        image: Image.Image,
+        confidence: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Detect environmental and urban hazards
+        
+        Args:
+            image: PIL Image object
+            confidence: Confidence threshold (optional)
+            
+        Returns:
+            Dictionary with environmental hazard detections
+        """
+        try:
+            # Load model
+            model = self.model_manager.load_model('environmental_hazards')
+            
+            # Get model config
+            model_config = config.get_model_config('environmental_hazards')
+            conf_threshold = confidence or model_config.get('confidence_threshold', 0.25)
+            iou_threshold = model_config.get('iou_threshold', 0.45)
+            
+            # Run inference
+            logger.info("Running environmental hazards detection...")
+            results = model.predict(
+                source=image,
+                conf=conf_threshold,
+                iou=iou_threshold,
+                max_det=config.MAX_DETECTIONS,
+                device=self.model_manager.device,
+                verbose=False
+            )
+            
+            # Parse results
+            detections = self._parse_detection_results(results[0], model_config)
+            
+            # Assign severity based on hazard type
+            for detection in detections:
+                hazard_type = detection['class']
+                if hazard_type in ['fire_source', 'open_manhole']:
+                    detection['severity'] = 'high'
+                    detection['priority'] = 'urgent'
+                elif hazard_type == 'fallen_tree':
+                    detection['severity'] = 'moderate'
+                    detection['priority'] = 'high'
+                else:  # garbage_pileup
+                    detection['severity'] = 'low'
+                    detection['priority'] = 'medium'
+            
+            return {
+                'success': True,
+                'model': 'environmental_hazards',
+                'detections': detections,
+                'summary': self._create_summary(detections),
+                'total_detections': len(detections)
+            }
+            
+        except Exception as e:
+            logger.error(f"Environmental hazards detection failed: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'detections': [],
+                'total_detections': 0
+            }
+    
+    def detect_all_hazards(
+        self,
+        image: Image.Image,
+        confidence: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Run ALL 3 models and combine detections
+        - RDD2022: Road damage (cracks, potholes)
+        - Road Collapse: Critical failures
+        - Environmental Hazards: Urban hazards
+        
+        Args:
+            image: PIL Image object
+            confidence: Confidence threshold (optional)
+            
+        Returns:
+            Combined detection results from all models
+        """
+        logger.info("Running unified detection across all 3 models...")
+        
+        all_detections = []
+        model_results = {}
+        
+        # Run RDD2022 model
+        try:
+            rdd_result = self.detect_road_damage(image, confidence)
+            model_results['road_damage'] = rdd_result
+            if rdd_result['success']:
+                for det in rdd_result['detections']:
+                    det['model'] = 'RDD2022'
+                    det['category'] = 'Road Damage'
+                    all_detections.append(det)
+        except Exception as e:
+            logger.error(f"RDD2022 detection failed: {e}")
+            model_results['road_damage'] = {'success': False, 'error': str(e)}
+        
+        # Run Road Collapse model
+        try:
+            collapse_result = self.detect_road_collapse(image, confidence)
+            model_results['road_collapse'] = collapse_result
+            if collapse_result['success']:
+                for det in collapse_result['detections']:
+                    det['model'] = 'Road Collapse'
+                    det['category'] = 'Critical Infrastructure'
+                    all_detections.append(det)
+        except Exception as e:
+            logger.error(f"Road collapse detection failed: {e}")
+            model_results['road_collapse'] = {'success': False, 'error': str(e)}
+        
+        # Run Environmental Hazards model
+        try:
+            env_result = self.detect_environmental_hazards(image, confidence)
+            model_results['environmental_hazards'] = env_result
+            if env_result['success']:
+                for det in env_result['detections']:
+                    det['model'] = 'Environmental Hazards'
+                    det['category'] = 'Environmental/Urban'
+                    all_detections.append(det)
+        except Exception as e:
+            logger.error(f"Environmental hazards detection failed: {e}")
+            model_results['environmental_hazards'] = {'success': False, 'error': str(e)}
+        
+        # Sort by confidence (highest first)
+        all_detections.sort(key=lambda x: x['confidence'], reverse=True)
+        
+        # Create summary
+        summary = self._create_unified_summary(all_detections)
+        
+        # Determine severity level
+        has_critical = any(d.get('severity') == 'critical' for d in all_detections)
+        has_high = any(d.get('severity') == 'high' for d in all_detections)
+        
+        return {
+            'success': True,
+            'detections': all_detections,
+            'total_detections': len(all_detections),
+            'summary': summary,
+            'by_model': {
+                'rdd2022': len([d for d in all_detections if d.get('model') == 'RDD2022']),
+                'road_collapse': len([d for d in all_detections if d.get('model') == 'Road Collapse']),
+                'environmental_hazards': len([d for d in all_detections if d.get('model') == 'Environmental Hazards'])
+            },
+            'by_category': {
+                'road_damage': len([d for d in all_detections if d.get('category') == 'Road Damage']),
+                'critical_infrastructure': len([d for d in all_detections if d.get('category') == 'Critical Infrastructure']),
+                'environmental_urban': len([d for d in all_detections if d.get('category') == 'Environmental/Urban'])
+            },
+            'severity_level': 'critical' if has_critical else 'high' if has_high else 'moderate',
+            'requires_urgent_action': has_critical,
+            'model_results': model_results
+        }
+    
     def comprehensive_detection(
         self,
         image: Image.Image,
@@ -396,6 +618,24 @@ class DetectionService:
         # Build summary
         parts = [f"{count} {name}(s)" for name, count in class_counts.items()]
         return f"Detected: {', '.join(parts)}"
+    
+    def _create_unified_summary(self, detections: List[Dict[str, Any]]) -> str:
+        """Create unified summary across all models"""
+        if not detections:
+            return "No hazards detected across all models"
+        
+        # Group by category
+        by_category = {}
+        for d in detections:
+            category = d.get('category', 'Unknown')
+            by_category[category] = by_category.get(category, 0) + 1
+        
+        # Build summary
+        parts = []
+        for category, count in by_category.items():
+            parts.append(f"{count} {category}")
+        
+        return f"Found {len(detections)} total hazard(s): {', '.join(parts)}"
     
     def _suggest_subcategory(
         self,

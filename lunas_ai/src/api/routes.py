@@ -250,6 +250,50 @@ def comprehensive_detection():
         }), 500
 
 
+@api.route('/detect/all-hazards', methods=['POST'])
+def detect_all_hazards():
+    """
+    Unified detection using ALL 3 models:
+    - RDD2022: Road damage (cracks, potholes)
+    - Road Collapse: Critical infrastructure failures
+    - Environmental Hazards: Urban hazards (trees, fire, garbage, manholes)
+    
+    Returns combined detections from all models
+    """
+    start_time = time.time()
+    
+    try:
+        # Validate image
+        file = request.files.get('image')
+        is_valid, error, image = validate_image(file)
+        
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'error': error
+            }), 400
+        
+        # Get optional confidence threshold
+        confidence = request.form.get('confidence', type=float)
+        
+        # Run unified detection across all 3 models
+        result = detection_service.detect_all_hazards(image, confidence)
+        
+        # Add timing
+        result['processing_time'] = round(time.time() - start_time, 3)
+        
+        logger.info(f"Unified detection completed in {result['processing_time']}s - Found {result['total_detections']} hazards")
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Unified detection failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @api.route('/ping', methods=['GET'])
 def ping():
     """Simple ping endpoint"""
