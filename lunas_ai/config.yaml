@@ -30,7 +30,7 @@ models:
     classes:
       - bridge_collapse
       - road_collapse
-    confidence_threshold: 0.30
+    confidence_threshold: 0.60
     iou_threshold: 0.45
     input_size: 640
     preprocessing:

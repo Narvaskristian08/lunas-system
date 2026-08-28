@@ -88,6 +88,7 @@ desktop.ini
 # Keep BOTH trained models (6MB each) - team can use without retraining!
 models/cache/
 models/*.zip
+src/models/*.zip
 !models/yolov8n-rdd2022-best.pt
 !models/yolov8n-road-collapse-best.pt
 !models/yolov8n-env-hazards-best.pt

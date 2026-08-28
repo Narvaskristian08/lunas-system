@@ -325,19 +325,20 @@ class DetectionService:
         confidence: Optional[float] = None
     ) -> Dict[str, Any]:
         """
-        Run ALL 3 models and combine detections
+        Run detection models and combine detections
         - RDD2022: Road damage (cracks, potholes)
-        - Road Collapse: Critical failures
         - Environmental Hazards: Urban hazards
+        
+        Note: Road Collapse model disabled due to high false positive rate
         
         Args:
             image: PIL Image object
             confidence: Confidence threshold (optional)
             
         Returns:
-            Combined detection results from all models
+            Combined detection results
         """
-        logger.info("Running unified detection across all 3 models...")
+        logger.info("Running unified detection (RDD2022 + Environmental Hazards)...")
         
         all_detections = []
         model_results = {}
@@ -354,19 +355,6 @@ class DetectionService:
         except Exception as e:
             logger.error(f"RDD2022 detection failed: {e}")
             model_results['road_damage'] = {'success': False, 'error': str(e)}
-        
-        # Run Road Collapse model
-        try:
-            collapse_result = self.detect_road_collapse(image, confidence)
-            model_results['road_collapse'] = collapse_result
-            if collapse_result['success']:
-                for det in collapse_result['detections']:
-                    det['model'] = 'Road Collapse'
-                    det['category'] = 'Critical Infrastructure'
-                    all_detections.append(det)
-        except Exception as e:
-            logger.error(f"Road collapse detection failed: {e}")
-            model_results['road_collapse'] = {'success': False, 'error': str(e)}
         
         # Run Environmental Hazards model
         try:
@@ -398,12 +386,10 @@ class DetectionService:
             'summary': summary,
             'by_model': {
                 'rdd2022': len([d for d in all_detections if d.get('model') == 'RDD2022']),
-                'road_collapse': len([d for d in all_detections if d.get('model') == 'Road Collapse']),
                 'environmental_hazards': len([d for d in all_detections if d.get('model') == 'Environmental Hazards'])
             },
             'by_category': {
                 'road_damage': len([d for d in all_detections if d.get('category') == 'Road Damage']),
-                'critical_infrastructure': len([d for d in all_detections if d.get('category') == 'Critical Infrastructure']),
                 'environmental_urban': len([d for d in all_detections if d.get('category') == 'Environmental/Urban'])
             },
             'severity_level': 'critical' if has_critical else 'high' if has_high else 'moderate',

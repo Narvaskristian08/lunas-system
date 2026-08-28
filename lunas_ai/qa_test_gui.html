@@ -352,7 +352,7 @@
             <h1>🌙 LUNAS AI</h1>
             <p>Quality Assurance Testing Interface - Unified Detection</p>
             <p style="font-size: 0.9em; opacity: 0.8; margin-top: 10px;">
-                🔧 RDD2022 | 🏗️ Road Collapse | 🌿 Environmental Hazards (10 hazard types)
+                🔧 RDD2022 | 🌿 Environmental Hazards (8 hazard types)
             </p>
         </div>
 
@@ -370,7 +370,7 @@
                 </div>
                 <div class="status-item">
                     <div class="status-dot orange"></div>
-                    <span><strong>Trained Models:</strong> 3 models (RDD2022, Road Collapse, Environmental Hazards) - 18MB total</span>
+                    <span><strong>Trained Models:</strong> 2 models (RDD2022, Environmental Hazards) - 12MB total</span>
                 </div>
             </div>
 
@@ -672,7 +672,6 @@
                 if (data.by_model) {
                     html += '<p><strong>By Model:</strong></p><ul>';
                     html += `<li>🔧 RDD2022 (Road Damage): ${data.by_model.rdd2022 || 0}</li>`;
-                    html += `<li>🏗️ Road Collapse: ${data.by_model.road_collapse || 0}</li>`;
                     html += `<li>🌿 Environmental Hazards: ${data.by_model.environmental_hazards || 0}</li>`;
                     html += '</ul>';
                 }
