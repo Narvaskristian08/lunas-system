@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUNAS AI - QA Testing Interface (All Models)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-dot.green {
+            background: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+
+        .status-dot.red {
+            background: #dc3545;
+        }
+
+        .status-dot.orange {
+            background: #fd7e14;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        .results-area {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .image-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .image-container {
+            position: relative;
+        }
+
+        .image-container img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .image-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .detection-results {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .detection-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .detection-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .detection-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detection-item:last-child {
+            border-bottom: none;
+        }
+
+        .confidence-bar {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .metric-label {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .test-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .test-image-card {
+            cursor: pointer;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .test-image-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .test-image-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .test-image-label {
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9em;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌙 LUNAS AI</h1>
+            <p>Quality Assurance Testing Interface - Unified Detection</p>
+            <p style="font-size: 0.9em; opacity: 0.8; margin-top: 10px;">
+                🔧 RDD2022 | 🌿 Environmental Hazards (8 hazard types)
+            </p>
+        </div>
+
+        <div class="content">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <h3 style="margin-bottom: 15px;">System Status</h3>
+                <div class="status-item">
+                    <div class="status-dot" id="apiStatus"></div>
+                    <span><strong>API Server:</strong> <span id="apiStatusText">Checking...</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="modelStatus"></div>
+                    <span><strong>Model:</strong> <span id="modelStatusText">Checking...</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot orange"></div>
+                    <span><strong>Trained Models:</strong> 2 models (RDD2022, Environmental Hazards) - 12MB total</span>
+                </div>
+            </div>
+
+            <!-- Alert Area -->
+            <div id="alertArea"></div>
+
+            <!-- Upload Section -->
+            <div class="test-section">
+                <h2>📤 Upload Test Image</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📷</div>
+                    <h3>Drag & Drop Image Here</h3>
+                    <p style="margin: 15px 0; color: #6c757d;">or</p>
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        Choose File
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*">
+                    <p style="margin-top: 20px; color: #6c757d; font-size: 0.9em;">
+                        Supported: JPG, PNG, JPEG • Max 10MB
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn" id="detectBtn" onclick="runDetection()" disabled>
+                        🔍 Run Detection
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetTest()">
+                        🔄 Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loadingArea">
+                <div class="spinner"></div>
+                <h3>Analyzing image...</h3>
+                <p style="color: #6c757d; margin-top: 10px;">This may take a few seconds</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-area" id="resultsArea">
+                <div class="test-section">
+                    <h2>📊 Detection Results</h2>
+                    
+                    <div class="image-preview">
+                        <div class="image-container">
+                            <span class="image-label">Original Image</span>
+                            <img id="originalImage" alt="Original">
+                        </div>
+                        <div class="image-container">
+                            <span class="image-label">Detected Damages</span>
+                            <img id="detectedImage" alt="Detected">
+                        </div>
+                    </div>
+
+                    <div class="metrics">
+                        <div class="metric-card">
+                            <div class="metric-value" id="damageCount">0</div>
+                            <div class="metric-label">Damages Detected</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="avgConfidence">0%</div>
+                            <div class="metric-label">Avg Confidence</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="processingTime">0ms</div>
+                            <div class="metric-label">Processing Time</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="severityLevel">-</div>
+                            <div class="metric-label">Severity</div>
+                        </div>
+                    </div>
+
+                    <div class="detection-results" id="detectionDetails">
+                        <!-- Detection details will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Images Section -->
+            <div class="test-section">
+                <h2>🖼️ Sample Test Images</h2>
+                <p style="color: #6c757d; margin-bottom: 15px;">Click on any sample image to test</p>
+                <div class="test-images" id="sampleImages">
+                    <!-- Sample images will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5001/api/v1';
+        let selectedFile = null;
+
+        // Check API status on load
+        window.addEventListener('load', () => {
+            checkAPIStatus();
+            setupUploadHandlers();
+        });
+
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    updateStatus('apiStatus', 'green', 'apiStatusText', 'Online ✓');
+                    // Fix: loaded_models is an array, join them or show first
+                    const modelName = data.loaded_models && data.loaded_models.length > 0 
+                        ? data.loaded_models.join(', ') 
+                        : 'Unknown';
+                    updateStatus('modelStatus', 'green', 'modelStatusText', `${modelName} loaded ✓`);
+                } else {
+                    updateStatus('apiStatus', 'red', 'apiStatusText', 'Offline');
+                    updateStatus('modelStatus', 'red', 'modelStatusText', 'Not loaded');
+                    showAlert('API server is offline. Please start the server: python app.py', 'error');
+                }
+            } catch (error) {
+                updateStatus('apiStatus', 'red', 'apiStatusText', 'Cannot connect');
+                updateStatus('modelStatus', 'red', 'modelStatusText', 'Cannot check');
+                showAlert('Cannot connect to API server. Make sure it\'s running on http://localhost:5001', 'error');
+            }
+        }
+
+        function updateStatus(dotId, color, textId, text) {
+            const dot = document.getElementById(dotId);
+            dot.className = `status-dot ${color}`;
+            document.getElementById(textId).textContent = text;
+        }
+
+        function showAlert(message, type) {
+            const alertArea = document.getElementById('alertArea');
+            const alertClass = type === 'error' ? 'alert-error' : type === 'warning' ? 'alert-warning' : 'alert-success';
+            alertArea.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            setTimeout(() => { alertArea.innerHTML = ''; }, 5000);
+        }
+
+        function setupUploadHandlers() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            // File input
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showAlert('Please select a valid image file', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showAlert('Image size must be less than 10MB', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('detectBtn').disabled = false;
+            
+            // Preview image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('originalImage').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            showAlert(`Image "${file.name}" loaded successfully! Click "Run Detection" to analyze.`, 'success');
+        }
+
+        async function runDetection() {
+            if (!selectedFile) {
+                showAlert('Please select an image first', 'warning');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingArea').style.display = 'block';
+            document.getElementById('resultsArea').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('confidence', '0.25');
+            formData.append('save_output', 'true');
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}/detect/all-hazards`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                const processingTime = Date.now() - startTime;
+
+                if (data.success) {
+                    displayResults(data, processingTime);
+                } else {
+                    showAlert(`Detection failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}. Make sure the API server is running.`, 'error');
+            } finally {
+                document.getElementById('loadingArea').style.display = 'none';
+            }
+        }
+
+        function displayResults(data, processingTime) {
+            // Show results area
+            document.getElementById('resultsArea').style.display = 'block';
+
+            // Draw annotated image with bounding boxes
+            const detections = data.detections || [];
+            drawAnnotatedImage(detections);
+
+            // Update metrics
+            const avgConf = detections.length > 0 
+                ? (detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length * 100).toFixed(1)
+                : 0;
+
+            // Get severity from summary if available
+            const severity = data.summary?.severity || 'Unknown';
+
+            document.getElementById('damageCount').textContent = detections.length;
+            document.getElementById('avgConfidence').textContent = `${avgConf}%`;
+            document.getElementById('processingTime').textContent = `${processingTime}ms`;
+            document.getElementById('severityLevel').textContent = severity;
+
+            // Display detection details
+            const detailsDiv = document.getElementById('detectionDetails');
+            if (detections.length === 0) {
+                detailsDiv.innerHTML = '<div class="detection-card"><h4>✅ No Damage Detected</h4><p>The road surface appears to be in good condition.</p></div>';
+            } else {
+                let html = '<div class="detection-card">';
+                html += `<h4>🚧 Detected Damages (${detections.length})</h4>`;
+                
+                // List all detections
+                detections.forEach((det, idx) => {
+                    const conf = (det.confidence * 100).toFixed(1);
+                    const className = det.class;
+                    const model = det.model || 'Unknown';
+                    const category = det.category || 'Road Damage';
+                    const severity = det.severity || 'moderate';
+                    
+                    // Color based on severity
+                    let severityColor = '#ffc107'; // moderate - yellow
+                    if (severity === 'critical') severityColor = '#dc3545'; // red
+                    else if (severity === 'high') severityColor = '#fd7e14'; // orange
+                    else if (severity === 'low') severityColor = '#28a745'; // green
+                    
+                    html += `
+                        <div class="detection-item">
+                            <div>
+                                <strong>${idx + 1}. ${className.replace(/_/g, ' ').toUpperCase()}</strong>
+                                <div style="font-size: 0.85em; color: #6c757d; margin-top: 3px;">
+                                    📦 Model: ${model} | 🏷️ ${category} | 
+                                    <span style="color: ${severityColor}; font-weight: bold;">⚠️ ${severity.toUpperCase()}</span>
+                                </div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: ${conf}%">${conf}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                // Add summary
+                html += '<div class="detection-card">';
+                html += '<h4>📊 Analysis Summary</h4>';
+                html += `<p><strong>Total Detections:</strong> ${detections.length}</p>`;
+                html += `<p><strong>Average Confidence:</strong> ${avgConf}%</p>`;
+                html += `<p><strong>Processing Time:</strong> ${processingTime}ms</p>`;
+                
+                // Show breakdown by model
+                if (data.by_model) {
+                    html += '<p><strong>By Model:</strong></p><ul>';
+                    html += `<li>🔧 RDD2022 (Road Damage): ${data.by_model.rdd2022 || 0}</li>`;
+                    html += `<li>🌿 Environmental Hazards: ${data.by_model.environmental_hazards || 0}</li>`;
+                    html += '</ul>';
+                }
+                
+                // Show severity assessment
+                if (data.severity_level) {
+                    let severityBadge = '';
+                    if (data.severity_level === 'critical') severityBadge = '<span style="background: #dc3545; color: white; padding: 5px 15px; border-radius: 20px;">🚨 CRITICAL</span>';
+                    else if (data.severity_level === 'high') severityBadge = '<span style="background: #fd7e14; color: white; padding: 5px 15px; border-radius: 20px;">⚠️ HIGH</span>';
+                    else if (data.severity_level === 'moderate') severityBadge = '<span style="background: #ffc107; color: black; padding: 5px 15px; border-radius: 20px;">⚠️ MODERATE</span>';
+                    else severityBadge = '<span style="background: #28a745; color: white; padding: 5px 15px; border-radius: 20px;">✅ LOW</span>';
+                    
+                    html += `<p><strong>Overall Severity:</strong> ${severityBadge}</p>`;
+                }
+                
+                if (data.requires_urgent_action) {
+                    html += '<p style="color: #dc3545; font-weight: bold;">⚠️ URGENT ACTION REQUIRED!</p>';
+                }
+                
+                // Show damage type counts (if available from old API)
+                if (data.summary?.damage_counts) {
+                    html += '<p><strong>Damage Breakdown:</strong></p><ul>';
+                    for (const [type, count] of Object.entries(data.summary.damage_counts)) {
+                        html += `<li>${type}: ${count}</li>`;
+                    }
+                    html += '</ul>';
+                }
+                html += '</div>';
+
+                detailsDiv.innerHTML = html;
+            }
+
+            showAlert('Detection completed successfully!', 'success');
+            
+            // Scroll to results
+            document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function drawAnnotatedImage(detections) {
+            const originalImg = document.getElementById('originalImage');
+            const detectedImg = document.getElementById('detectedImage');
+            
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Wait for image to load
+            if (originalImg.complete) {
+                drawBoxes();
+            } else {
+                originalImg.onload = drawBoxes;
+            }
+            
+            function drawBoxes() {
+                // Set canvas size to match image
+                canvas.width = originalImg.naturalWidth;
+                canvas.height = originalImg.naturalHeight;
+                
+                // Draw original image
+                ctx.drawImage(originalImg, 0, 0);
+                
+                // Draw bounding boxes
+                detections.forEach((det, idx) => {
+                    if (det.bbox) {
+                        // bbox is an object: {x1, y1, x2, y2, width, height}
+                        const bbox = det.bbox;
+                        const x1 = bbox.x1;
+                        const y1 = bbox.y1;
+                        const x2 = bbox.x2;
+                        const y2 = bbox.y2;
+                        const width = bbox.width || (x2 - x1);
+                        const height = bbox.height || (y2 - y1);
+                        
+                        // Color based on class or index
+                        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+                        const color = colors[idx % colors.length];
+                        
+                        // Draw box
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(x1, y1, width, height);
+                        
+                        // Draw label background
+                        const label = `${det.class} ${(det.confidence * 100).toFixed(0)}%`;
+                        ctx.font = '16px Arial';
+                        const textWidth = ctx.measureText(label).width;
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+                        
+                        // Draw label text
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(label, x1 + 5, y1 - 7);
+                    }
+                });
+                
+                // Set canvas as detected image
+                detectedImg.src = canvas.toDataURL();
+            }
+        }
+
+        function resetTest() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('detectBtn').disabled = true;
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('alertArea').innerHTML = '';
+            showAlert('Test reset. Upload a new image to continue.', 'success');
+        }
+    </script>
+</body>
+</html>

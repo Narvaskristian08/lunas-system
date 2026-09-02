@@ -1,0 +1,28 @@
+C4Context
+    title System Context Diagram - LUNAS Infrastructure Maintenance System
+
+    Person(citizen, "Citizen", "Reports infrastructure issues and tracks repairs")
+    Person(repair, "Repair Personnel", "Receives and completes assigned work orders")
+    Person(barangay, "Barangay Official", "Validates reports and assigns local maintenance")
+    Person(engineer, "City Engineer", "Manages city-wide infrastructure and work orders")
+    Person(utility, "Utility Provider", "Handles utility-related incidents")
+    Person(admin, "System Admin", "Manages users, SLA rules, and system configuration")
+
+    System(lunas, "LUNAS System", "AI-Assisted Urban Infrastructure Maintenance and Monitoring System with Automated SLA Management")
+
+    System_Ext(maps, "Google Maps API", "Provides geolocation and mapping services")
+    System_Ext(onesignal, "OneSignal", "Delivers push notifications to mobile users")
+    System_Ext(supabase, "Supabase", "Cloud storage for images and real-time data sync")
+
+    Rel(citizen, lunas, "Reports incidents, tracks progress", "HTTPS")
+    Rel(repair, lunas, "Receives work orders, updates progress", "HTTPS")
+    Rel(barangay, lunas, "Validates reports, assigns work", "HTTPS")
+    Rel(engineer, lunas, "Manages city-wide incidents", "HTTPS")
+    Rel(utility, lunas, "Handles utility repairs", "HTTPS")
+    Rel(admin, lunas, "Configures system and users", "HTTPS")
+
+    Rel(lunas, maps, "Validates locations, displays maps", "HTTPS/JSON")
+    Rel(lunas, onesignal, "Sends push notifications", "REST API")
+    Rel(lunas, supabase, "Stores/retrieves images", "REST API")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")

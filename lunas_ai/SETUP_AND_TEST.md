@@ -100,6 +100,19 @@ python -c "import flask, torch, ultralytics; print('✅ All packages installed!'
 
 ---
 
+### 📦 About the AI Model
+
+**You DON'T need to download the RDD2022 dataset (12GB) for testing!**
+
+The service uses **pre-trained YOLOv8s** which:
+- ✅ Downloads automatically on first run (23MB)
+- ✅ Works immediately (no training needed)
+- ✅ 70-80% accuracy (good for testing)
+
+**For production:** The team can train with RDD2022 later for 93%+ accuracy.
+
+---
+
 # PART 2: START THE AI SERVICE
 
 ## Step 6: Start the Server

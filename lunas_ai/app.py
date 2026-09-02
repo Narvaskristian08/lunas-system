@@ -23,8 +23,16 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = config.MAX_REQUEST_SIZE
     app.config['JSON_SORT_KEYS'] = False
     
-    # CORS
-    CORS(app, origins=config.ALLOWED_ORIGINS)
+    # CORS - Allow all origins for local QA testing
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type"],
+            "supports_credentials": False
+        }
+    })
     
     # Register blueprints
     app.register_blueprint(api, url_prefix='/api/v1')
@@ -43,10 +51,20 @@ def create_app():
                 'detect_road_damage': '/api/v1/detect/road-damage',
                 'detect_cracks': '/api/v1/detect/cracks',
                 'detect_privacy': '/api/v1/detect/privacy',
+                'detect_all_hazards': '/api/v1/detect/all-hazards',
                 'comprehensive': '/api/v1/detect/comprehensive'
             },
             'documentation': 'See README.md for API documentation'
         })
+    
+    # Serve QA GUI
+    @app.route('/qa')
+    def qa_gui():
+        """Serve the QA testing GUI"""
+        from flask import send_file
+        import os
+        gui_path = os.path.join(os.path.dirname(__file__), 'qa_test_gui.html')
+        return send_file(gui_path)
     
     # Error handlers
     @app.errorhandler(404)

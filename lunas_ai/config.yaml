@@ -2,10 +2,10 @@
 # ML Engineering: Centralized configuration for all models
 
 models:
-  # Primary: YOLOv8s (Best for RDD2022 - 93.5% mAP)
+  # Primary: YOLOv8n trained on RDD2022 (Custom trained model)
   road_damage:
-    name: "YOLOv8s Road Damage Detection"
-    path: "models/yolov8s-road-damage.pt"
+    name: "YOLOv8n Road Damage Detection (RDD2022 Trained)"
+    path: "models/yolov8n-rdd2022-best.pt"
     type: "detection"
     classes:
       - pothole
@@ -21,6 +21,40 @@ models:
       normalize: true
       resize: true
     notes: "Trained on RDD2022 dataset - optimized for Philippine roads"
+  
+  # Road Collapse: Critical infrastructure failures
+  road_collapse:
+    name: "YOLOv8n Road Collapse Detection"
+    path: "models/yolov8n-road-collapse-best.pt"
+    type: "detection"
+    classes:
+      - bridge_collapse
+      - road_collapse
+    confidence_threshold: 0.60
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Detects critical structural failures - bridge and road collapses"
+  
+  # Environmental Hazards: Urban safety hazards
+  environmental_hazards:
+    name: "YOLOv8n Environmental Hazards Detection"
+    path: "models/yolov8n-env-hazards-best.pt"
+    type: "detection"
+    classes:
+      - fallen_tree
+      - fire_source
+      - garbage_pileup
+      - open_manhole
+    confidence_threshold: 0.25
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Detects environmental and urban safety hazards"
     
   crack_segmentation:
     name: "YOLOv8n-seg Crack Segmentation"
