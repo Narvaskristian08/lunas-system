@@ -102,6 +102,7 @@ class ValidationIncident {
     this.priorityAssignedAt,
     this.aiSuggestedCategory,
     this.aiConfidence,
+    this.aiAnalysis,
     this.jurisdiction,
     this.jurisdictionResponsibility,
     this.responsibleOrganization,
@@ -131,6 +132,7 @@ class ValidationIncident {
   final DateTime? priorityAssignedAt;
   final String? aiSuggestedCategory;
   final double? aiConfidence;
+  final AiAnalysis? aiAnalysis;
   final String? jurisdiction;
   final String? jurisdictionResponsibility;
   final String? responsibleOrganization;
@@ -248,6 +250,7 @@ class ValidationIncident {
         source['aiSuggestedCategory'] ?? ai['hazardType'] ?? ai['category'],
       ),
       aiConfidence: _double(ai['confidence'] ?? source['aiConfidence']),
+      aiAnalysis: ai.isEmpty ? null : AiAnalysis.fromJson(ai),
       jurisdiction: _organizationName(jurisdictionValue),
       jurisdictionResponsibility: _text(
         source['jurisdictionResponsibility'] ?? jurisdiction['responsibility'],

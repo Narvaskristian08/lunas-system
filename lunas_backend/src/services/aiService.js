@@ -203,22 +203,45 @@ exports.detectPrivacyConcerns = async (imageBuffer) => {
  * @param {String} category - Incident category
  * @returns {Promise<Object>} Comprehensive detection results
  */
-exports.comprehensiveDetection = async (imageBuffer, category = 'road_pavement') => {
+exports.comprehensiveDetection = async (imageBuffer, category = '') => {
+  const canonicalCategory = String(category || '').trim().toLowerCase();
+  const supportedCategories = new Set(['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other']);
+  if (!supportedCategories.has(canonicalCategory)) {
+    return {
+      success: true,
+      enabled: AI_SERVICE_ENABLED,
+      aiEnabled: AI_SERVICE_ENABLED,
+      category: canonicalCategory,
+      analysisStatus: 'unavailable',
+      modelAvailable: false,
+      requiresManualReview: true,
+      advisoryOnly: true
+    };
+  }
+
   if (!AI_SERVICE_ENABLED) {
     return {
-      success: false,
+      success: true,
       enabled: false,
-      category: category,
-      requires_manual_review: true
+      aiEnabled: false,
+      category: canonicalCategory,
+      analysisStatus: 'unavailable',
+      modelAvailable: false,
+      requires_manual_review: true,
+      advisory_only: true,
+      findings: []
     };
   }
 
   try {
     const form = new FormData();
-    form.append('image', imageBuffer, 'incident.jpg');
-    form.append('category', category);
+    form.append('image', imageBuffer, {
+      filename: 'incident.webp',
+      contentType: 'image/webp'
+    });
+    form.append('category', canonicalCategory);
 
-    logger.info(`Running comprehensive AI detection for category: ${category}`);
+    logger.info(`Running comprehensive AI detection for category: ${canonicalCategory}`);
     
     const response = await axios.post(
       `${AI_SERVICE_URL}/api/v1/detect/comprehensive`,
@@ -234,7 +257,9 @@ exports.comprehensiveDetection = async (imageBuffer, category = 'road_pavement')
     return {
       ...response.data,
       enabled: true,
-      success: true
+      aiEnabled: true,
+      category: canonicalCategory,
+      success: response.data.success !== false
     };
 
   } catch (error) {
@@ -243,7 +268,11 @@ exports.comprehensiveDetection = async (imageBuffer, category = 'road_pavement')
     return {
       success: false,
       enabled: true,
-      category: category,
+      aiEnabled: true,
+      category: canonicalCategory,
+      analysisStatus: 'failed',
+      modelAvailable: false,
+      findings: [],
       error: error.message,
       requires_manual_review: true
     };
@@ -258,46 +287,71 @@ exports.comprehensiveDetection = async (imageBuffer, category = 'road_pavement')
  * @param {String} category - Incident category
  * @returns {Promise<Object>} AI analysis results
  */
-exports.analyzeIncidentImage = async (imageBuffer, category = 'road') => {
+exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
   try {
-    // Map LUNAS categories to AI categories
-    const categoryMap = {
-      'road': 'road_pavement',
-      'drainage': 'drainage_sewage',
-      'electrical': 'street_lighting',
-      'water': 'water_supply',
-      'gas': 'water_supply',
-      'streetlight': 'street_lighting',
-      'other': 'road_pavement'
-    };
+    const canonicalCategory = String(category || '').trim().toLowerCase();
+    const result = await this.comprehensiveDetection(imageBuffer, canonicalCategory);
+    const rawFindings = Array.isArray(result.findings)
+      ? result.findings
+      : Array.isArray(result.detections) ? result.detections : [];
+    const findings = rawFindings
+      .filter((finding) => finding && typeof finding === 'object')
+      .map((finding) => ({
+        label: typeof finding.label === 'string' ? finding.label : finding.class,
+        confidence: finding.confidence,
+        bbox: finding.bbox
+      }))
+      .filter((finding) => finding.label && finding.bbox)
+      .slice(0, 50);
 
-    const aiCategory = categoryMap[category] || 'road_pavement';
-
-    // Run comprehensive detection
-    const result = await this.comprehensiveDetection(imageBuffer, aiCategory);
-
-    if (!result.success) {
+    if (!result.success || result.analysis_status === 'failed' || result.analysisStatus === 'failed') {
       logger.warn('AI detection failed or disabled, using manual classification');
       return {
+        success: false,
+        category: canonicalCategory,
+        analysisStatus: 'failed',
         detected: false,
         confidence: 0,
+        findings: [],
+        modelAvailable: false,
         requiresManualReview: true,
         aiEnabled: result.enabled || false,
         error: result.error
       };
     }
 
+    if (result.analysis_status === 'unavailable' || result.analysisStatus === 'unavailable' || result.model_available === false) {
+      return {
+        success: true,
+        category: canonicalCategory,
+        analysisStatus: 'unavailable',
+        detected: false,
+        confidence: 0,
+        findings: [],
+        modelAvailable: false,
+        requiresManualReview: true,
+        advisoryOnly: true,
+        aiEnabled: result.aiEnabled ?? result.enabled ?? false
+      };
+    }
+
     // Extract relevant information
     const aiAnalysis = {
-      detected: result.confidence_score > 0.5,
-      confidence: result.confidence_score,
-      suggestion: result.ai_suggestion,
-      requiresManualReview: result.requires_manual_review,
+      success: true,
+      category: canonicalCategory,
+      analysisStatus: 'completed',
+      modelAvailable: true,
+      detected: findings.length > 0,
+      confidence: Number(result.confidence_score) || 0,
+      suggestion: result.ai_suggestion || findings[0]?.label,
+      findings,
+      // Keep the manual-only invariant even if the AI service returns a
+      // high-confidence result that claims review is unnecessary.
+      requiresManualReview: true,
       aiEnabled: true,
       detections: {
-        road_damage: result.road_damage?.total_detections || 0,
-        cracks: result.cracks?.total_detections || 0,
-        privacy_concerns: result.privacy?.has_privacy_concerns || false
+        road_damage: canonicalCategory === 'road' ? findings.length : 0,
+        cracks: findings.filter((finding) => String(finding.label).toLowerCase().includes('crack')).length
       },
       processing_time: result.processing_time
     };
@@ -317,6 +371,10 @@ exports.analyzeIncidentImage = async (imageBuffer, category = 'road') => {
     return {
       detected: false,
       confidence: 0,
+      category: String(category || '').trim().toLowerCase(),
+      analysisStatus: 'failed',
+      modelAvailable: false,
+      findings: [],
       requiresManualReview: true,
       aiEnabled: false,
       error: error.message

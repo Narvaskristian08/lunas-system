@@ -65,13 +65,36 @@ const incidentSchema = new mongoose.Schema({
       acknowledgedByReporter: { type: Boolean, default: false },
       detectedRegions: { type: Number, default: 0 },
       processedAt: Date
-    }
+    },
+    aiFindings: [{
+      label: { type: String, maxlength: 100 },
+      confidence: { type: Number, min: 0, max: 1 },
+      bbox: {
+        x1: { type: Number, min: 0, max: 1 },
+        y1: { type: Number, min: 0, max: 1 },
+        x2: { type: Number, min: 0, max: 1 },
+        y2: { type: Number, min: 0, max: 1 }
+      }
+    }]
   }],
   aiAnalysis: {
+    analysisStatus: {
+      type: String,
+      enum: ['completed', 'unavailable', 'failed']
+    },
+    category: String,
+    modelAvailable: { type: Boolean, default: false },
     detected: { type: Boolean, default: false },
     hazardType: String,
     confidence: Number,
+    detections: {
+      roadDamage: { type: Number, default: 0 },
+      cracks: { type: Number, default: 0 }
+    },
+    findingsCount: { type: Number, default: 0 },
     needsPrivacyMasking: { type: Boolean, default: false },
+    requiresManualReview: { type: Boolean, default: true },
+    advisoryOnly: { type: Boolean, default: true },
     processedAt: Date
   },
   priority: {

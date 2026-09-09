@@ -55,7 +55,7 @@ class DetectionService:
             )
             
             # Parse results
-            detections = self._parse_detection_results(results[0], model_config)
+            detections = self._parse_detection_results(results[0], model_config, image)
             
             # Calculate severity
             detections = self._estimate_severity(detections, image)
@@ -110,7 +110,7 @@ class DetectionService:
             )
             
             # Parse segmentation results
-            detections = self._parse_segmentation_results(results[0], model_config)
+            detections = self._parse_segmentation_results(results[0], model_config, image)
             
             return {
                 'success': True,
@@ -162,7 +162,7 @@ class DetectionService:
             )
             
             # Parse results
-            detections = self._parse_detection_results(results[0], model_config)
+            detections = self._parse_detection_results(results[0], model_config, image)
             
             # Filter to privacy-relevant classes
             privacy_classes = ['person', 'car', 'truck', 'bus', 'motorcycle']
@@ -225,7 +225,7 @@ class DetectionService:
             )
             
             # Parse results
-            detections = self._parse_detection_results(results[0], model_config)
+            detections = self._parse_detection_results(results[0], model_config, image)
             
             # All collapses are critical severity
             for detection in detections:
@@ -287,7 +287,7 @@ class DetectionService:
             )
             
             # Parse results
-            detections = self._parse_detection_results(results[0], model_config)
+            detections = self._parse_detection_results(results[0], model_config, image)
             
             # Assign severity based on hazard type
             for detection in detections:
@@ -400,7 +400,7 @@ class DetectionService:
     def comprehensive_detection(
         self,
         image: Image.Image,
-        category: str = 'road_pavement'
+        category: str = ''
     ) -> Dict[str, Any]:
         """
         Run comprehensive detection based on category
@@ -412,61 +412,54 @@ class DetectionService:
         Returns:
             Combined detection results
         """
+        category = str(category or '').strip().lower()
+        assigned_model = config.get_category_model(category)
         logger.info(f"Running comprehensive detection for category: {category}")
-        
+
         results = {
             'category': category,
-            'road_damage': None,
-            'cracks': None,
-            'privacy': None,
+            'model_available': bool(assigned_model),
+            'model': assigned_model,
+            'detections': [],
             'ai_suggestion': None,
             'confidence_score': 0.0,
-            'requires_manual_review': True
+            'requires_manual_review': True,
+            'advisory_only': True,
+            'analysis_status': 'completed' if assigned_model else 'unavailable'
         }
-        
-        # Category-specific detection
-        if category in ['road_pavement', 'Road/Pavement', 'ROAD']:
-            results['road_damage'] = self.detect_road_damage(image)
-            results['cracks'] = self.detect_cracks(image)
-            
-            # AI suggestion
-            results['ai_suggestion'] = self._suggest_subcategory(
-                results['road_damage'],
-                results['cracks']
-            )
-            
-            # Calculate overall confidence
-            results['confidence_score'] = self._calculate_confidence(
-                results['road_damage'],
-                results['cracks']
-            )
-            
-        elif category in ['drainage_sewage', 'Drainage/Sewage', 'DRAIN']:
-            results['road_damage'] = self.detect_road_damage(image)
-            # Filter to manholes and sewer covers only
-            if results['road_damage']['success']:
-                detections = results['road_damage']['detections']
-                filtered = [
-                    d for d in detections 
-                    if d['class'] in ['manhole', 'sewer_cover']
-                ]
-                results['road_damage']['detections'] = filtered
-                results['road_damage']['total_detections'] = len(filtered)
-            
-            results['confidence_score'] = self._calculate_confidence(results['road_damage'])
-        
-        # Always check privacy
-        results['privacy'] = self.detect_privacy_concerns(image)
-        
-        # Determine if manual review needed
-        results['requires_manual_review'] = results['confidence_score'] < 0.7
-        
+
+        if not assigned_model:
+            return results
+
+        if assigned_model == 'road_damage':
+            model_result = self.detect_road_damage(image)
+        elif assigned_model == 'environmental_hazards':
+            model_result = self.detect_environmental_hazards(image)
+        else:
+            # A category assignment must be explicitly implemented here. Do
+            # not fall through to a model assigned to another category.
+            results['model_available'] = False
+            results['analysis_status'] = 'unavailable'
+            results['model'] = None
+            return results
+
+        if not model_result.get('success'):
+            results['model_available'] = False
+            results['analysis_status'] = 'failed'
+            results['model'] = None
+            results['error'] = 'Assigned category model could not be used'
+            return results
+
+        results['detections'] = model_result.get('detections', [])
+        results['ai_suggestion'] = results['detections'][0].get('class') if results['detections'] else None
+        results['confidence_score'] = self._calculate_confidence(model_result)
         return results
     
     def _parse_detection_results(
         self,
         result,
-        model_config: Dict[str, Any]
+        model_config: Dict[str, Any],
+        image: Image.Image
     ) -> List[Dict[str, Any]]:
         """Parse YOLO detection results"""
         detections = []
@@ -493,14 +486,7 @@ class DetectionService:
                 'class': class_name,
                 'class_id': class_id,
                 'confidence': round(confidence, 3),
-                'bbox': {
-                    'x1': round(bbox[0], 2),
-                    'y1': round(bbox[1], 2),
-                    'x2': round(bbox[2], 2),
-                    'y2': round(bbox[3], 2),
-                    'width': round(bbox[2] - bbox[0], 2),
-                    'height': round(bbox[3] - bbox[1], 2)
-                },
+                'bbox': self._normalized_bbox(bbox, image),
                 'area': round((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]), 2)
             })
         
@@ -509,7 +495,8 @@ class DetectionService:
     def _parse_segmentation_results(
         self,
         result,
-        model_config: Dict[str, Any]
+        model_config: Dict[str, Any],
+        image: Image.Image
     ) -> List[Dict[str, Any]]:
         """Parse YOLO segmentation results"""
         detections = []
@@ -544,17 +531,24 @@ class DetectionService:
                 'class': class_name,
                 'class_id': class_id,
                 'confidence': round(confidence, 3),
-                'bbox': {
-                    'x1': round(bbox[0], 2),
-                    'y1': round(bbox[1], 2),
-                    'x2': round(bbox[2], 2),
-                    'y2': round(bbox[3], 2)
-                },
+                'bbox': self._normalized_bbox(bbox, image),
                 'mask_polygon': mask_polygon,
                 'mask_available': mask_polygon is not None
             })
         
         return detections
+
+    def _normalized_bbox(self, bbox: List[float], image: Image.Image) -> Dict[str, float]:
+        """Return a safe 0..1 bounding box for client-side image overlays."""
+        width = max(float(image.width), 1.0)
+        height = max(float(image.height), 1.0)
+        x1, y1, x2, y2 = bbox
+        return {
+            'x1': round(max(0.0, min(1.0, x1 / width)), 4),
+            'y1': round(max(0.0, min(1.0, y1 / height)), 4),
+            'x2': round(max(0.0, min(1.0, x2 / width)), 4),
+            'y2': round(max(0.0, min(1.0, y2 / height)), 4)
+        }
     
     def _estimate_severity(
         self,

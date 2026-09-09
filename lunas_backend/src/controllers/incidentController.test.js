@@ -18,8 +18,17 @@ jest.mock('../services/evidenceService', () => ({
 jest.mock('../services/storageService', () => ({ getEvidenceUrl: jest.fn() }));
 
 const Incident = require('../models/Incident');
+const { createAuditLog } = require('../utils/auditLogger');
 const { findPossibleDuplicateCandidates } = require('../services/duplicateDetectionService');
-const { createIncident, getIncident, getIncidentHistory, getMyIncidents } = require('./incidentController');
+const evidenceService = require('../services/evidenceService');
+const {
+  createIncident,
+  getIncident,
+  getIncidentHistory,
+  getMyIncidents,
+  serializeIncidentForCitizen,
+  serializeIncidentForOfficial
+} = require('./incidentController');
 
 const createResponse = () => {
   const response = {};
@@ -130,6 +139,129 @@ describe('citizen incident reporting', () => {
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+  });
+
+  test('stores advisory AI analysis and records its status without changing official decisions', async () => {
+    evidenceService.getUploadedEvidenceFiles.mockReturnValue([{
+      buffer: Buffer.from('prepared-image'),
+      originalname: 'evidence.jpg',
+      mimetype: 'image/jpeg'
+    }]);
+    evidenceService.processAndUploadEvidence.mockResolvedValue({
+      images: [{ key: 'incidents/citizen/evidence.jpg', url: 'https://storage.example/evidence.jpg' }],
+      aiAnalysis: {
+        analysisStatus: 'completed',
+        detected: true,
+        hazardType: 'pothole',
+        confidence: 0.92,
+        detections: { roadDamage: 1, cracks: 0 },
+        findings: [{ label: 'pothole', confidence: 0.92, bbox: { x1: 0.1, y1: 0.2, x2: 0.7, y2: 0.8 } }],
+        requiresManualReview: true,
+        advisoryOnly: true,
+        processedAt: new Date('2026-08-11T00:00:00Z')
+      }
+    });
+
+    let payload;
+    Incident.create.mockImplementation(async (document) => {
+      payload = document;
+      return {
+        ...document,
+        _id: '507f191e810c19729de860ea',
+        reportNumber: 'LUNAS-202608-000003',
+        createdAt: new Date('2026-08-11T00:00:00Z'),
+        updatedAt: new Date('2026-08-11T00:00:00Z'),
+        toObject() { return { ...document, _id: this._id, reportNumber: this.reportNumber }; }
+      };
+    });
+
+    const req = {
+      body: {
+        category: 'road',
+        description: 'A large pothole is causing a hazard for motorists.',
+        location: {
+          type: 'Point',
+          coordinates: ['120.3387', '16.0433'],
+          address: { barangay: 'Poblacion Oeste', city: 'Dagupan City' }
+        }
+      },
+      files: {},
+      user: { _id: '507f191e810c19729de860aa', role: 'citizen' },
+      ip: '127.0.0.1',
+      headers: {}
+    };
+
+    await createIncident(req, createResponse(), jest.fn());
+
+    expect(payload.aiAnalysis).toEqual(expect.objectContaining({
+      analysisStatus: 'completed',
+      requiresManualReview: true,
+      advisoryOnly: true
+    }));
+    expect(payload.category).toBe('road');
+    expect(payload.priority).toBe('medium');
+    expect(payload.status).toBe('submitted');
+    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'ai_analysis_completed',
+      details: expect.objectContaining({
+        analysisStatus: 'completed',
+        requiresManualReview: true,
+        advisoryOnly: true
+      })
+    }));
+  });
+
+  test('exposes safe AI assistance to citizens and enriched details to officials', async () => {
+    const incident = {
+      _id: '507f191e810c19729de860ea',
+      reportNumber: 'LUNAS-202608-000004',
+      category: 'road',
+      description: 'A large pothole is causing a hazard for motorists.',
+      status: 'submitted',
+      priority: 'medium',
+      location: { coordinates: [120.3387, 16.0433], address: { barangay: 'Poblacion Oeste' } },
+      images: [],
+      aiAnalysis: {
+        analysisStatus: 'completed',
+        detected: true,
+        hazardType: 'pothole',
+        confidence: 0.92,
+        detections: { roadDamage: 1, cracks: 0 },
+        requiresManualReview: false,
+        advisoryOnly: false,
+        processedAt: new Date('2026-08-11T00:00:00Z')
+      }
+    };
+
+    const official = await serializeIncidentForOfficial(incident);
+    const citizen = await serializeIncidentForCitizen(incident);
+
+    expect(official.aiAnalysis).toEqual({
+      analysisStatus: 'completed',
+      category: undefined,
+      modelAvailable: true,
+      detected: true,
+      hazardType: 'pothole',
+      confidence: 0.92,
+      detections: { roadDamage: 1, cracks: 0 },
+      findingsCount: 0,
+      findings: [],
+      requiresManualReview: true,
+      advisoryOnly: true,
+      processedAt: new Date('2026-08-11T00:00:00Z')
+    });
+    expect(citizen.aiAnalysis).toEqual({
+      analysisStatus: 'completed',
+      category: undefined,
+      modelAvailable: true,
+      detected: true,
+      hazardType: 'pothole',
+      confidence: 0.92,
+      findingsCount: 0,
+      requiresManualReview: true,
+      advisoryOnly: true,
+      processedAt: new Date('2026-08-11T00:00:00Z')
+    });
   });
 
   test('returns an ordered, valid empty My Reports response', async () => {

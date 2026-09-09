@@ -225,18 +225,32 @@ def comprehensive_detection():
         if not is_valid:
             return jsonify({
                 'success': False,
-                'error': error
+                'error': error,
+                'requires_manual_review': True
             }), 400
         
-        # Get category
-        category = request.form.get('category', 'road_pavement')
+        # The caller must provide one of the canonical web/mobile category
+        # codes. The detection service owns the category-to-model mapping.
+        category = request.form.get('category', '').strip().lower()
+        allowed_categories = {
+            'road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'
+        }
+        if category not in allowed_categories:
+            return jsonify({
+                'success': False,
+                'error': 'A canonical incident category is required',
+                'requires_manual_review': True
+            }), 400
         
         # Run comprehensive detection
         result = detection_service.comprehensive_detection(image, category)
         
         # Add timing and metadata
         result['processing_time'] = round(time.time() - start_time, 3)
-        result['success'] = True
+        # Unsupported categories are successfully evaluated as unavailable;
+        # inference failures remain failures so the backend can report them as
+        # advisory-service errors without changing the incident workflow.
+        result['success'] = result.get('analysis_status') != 'failed'
         
         logger.info(f"Comprehensive detection ({category}) completed in {result['processing_time']}s")
         
@@ -246,7 +260,8 @@ def comprehensive_detection():
         logger.error(f"Comprehensive detection failed: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'requires_manual_review': True
         }), 500
 
 
@@ -260,38 +275,11 @@ def detect_all_hazards():
     
     Returns combined detections from all models
     """
-    start_time = time.time()
-    
-    try:
-        # Validate image
-        file = request.files.get('image')
-        is_valid, error, image = validate_image(file)
-        
-        if not is_valid:
-            return jsonify({
-                'success': False,
-                'error': error
-            }), 400
-        
-        # Get optional confidence threshold
-        confidence = request.form.get('confidence', type=float)
-        
-        # Run unified detection across all 3 models
-        result = detection_service.detect_all_hazards(image, confidence)
-        
-        # Add timing
-        result['processing_time'] = round(time.time() - start_time, 3)
-        
-        logger.info(f"Unified detection completed in {result['processing_time']}s - Found {result['total_detections']} hazards")
-        
-        return jsonify(result), 200
-        
-    except Exception as e:
-        logger.error(f"Unified detection failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    return jsonify({
+        'success': False,
+        'error': 'Unified multi-model detection is disabled. Submit a canonical category to /detect/comprehensive.',
+        'requires_manual_review': True
+    }), 410
 
 
 @api.route('/ping', methods=['GET'])

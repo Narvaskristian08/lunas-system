@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const logger = require('./logger');
 
-const permittedFormats = () => (process.env.ALLOWED_IMAGE_FORMATS || 'jpeg,png')
+const permittedFormats = () => (process.env.ALLOWED_IMAGE_FORMATS || 'jpeg,png,webp')
   .split(',')
   .map((format) => format.trim().toLowerCase())
   .filter(Boolean);
@@ -89,16 +89,21 @@ exports.checkImageQuality = async (imageBuffer) => {
 /**
  * Normalize evidence before storage. Re-encoding strips EXIF/GPS and other
  * unnecessary metadata while correcting orientation and bounding dimensions.
+ * The backend owns the format conversion so every stored evidence image uses
+ * the same WebP storage contract regardless of the mobile/web upload format.
  */
 exports.prepareEvidenceImage = async (imageBuffer) => {
   try {
     const maxWidth = parseInt(process.env.EVIDENCE_MAX_WIDTH, 10) || 1920;
-    const quality = parseInt(process.env.EVIDENCE_JPEG_QUALITY, 10) || 82;
+    const quality = parseInt(
+      process.env.EVIDENCE_WEBP_QUALITY || process.env.EVIDENCE_JPEG_QUALITY,
+      10
+    ) || 82;
 
     return await sharp(imageBuffer, { failOn: 'error' })
       .rotate()
       .resize(maxWidth, null, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality, mozjpeg: true })
+      .webp({ quality, effort: 4 })
       .toBuffer();
   } catch (error) {
     logger.error(`Evidence normalization failed: ${error.message}`);

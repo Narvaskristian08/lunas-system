@@ -176,10 +176,13 @@ class _EmptyEvidenceState extends StatelessWidget {
         color: Theme.of(context).colorScheme.primary,
       ),
       const SizedBox(height: AppSpacing.lg),
-      Text('Add one clear image', style: Theme.of(context).textTheme.headlineSmall),
+      Text(
+        'Add one clear image',
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
       const SizedBox(height: AppSpacing.sm),
       const Text(
-        'Show the issue and its surroundings. JPG and PNG images up to 10 MB are supported.',
+        'Show the issue and its surroundings. JPG, PNG, and WebP images up to 10 MB are supported.',
         textAlign: TextAlign.center,
       ),
       const SizedBox(height: AppSpacing.xxl),

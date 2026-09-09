@@ -211,6 +211,13 @@ class _ValidationIncidentDetailScreenState
             onDuplicate: () => _openDecision(ValidationDecisionType.duplicate),
           ),
           const SizedBox(height: AppSpacing.xl),
+          if (incident.aiAnalysis != null) ...[
+            _Section(
+              title: 'AI assistance',
+              child: AiAssistanceCard(analysis: incident.aiAnalysis),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
           _Section(
             title: 'Evidence',
             child: _EvidenceSection(images: incident.images),
@@ -414,7 +421,12 @@ class _EvidenceSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _EvidenceViewerTrigger(url: evidence.url),
+                _EvidenceViewerTrigger(
+                  url: evidence.url,
+                  findings: evidence.aiFindings,
+                  width: evidence.width,
+                  height: evidence.height,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 if (evidence.qualityStatus != null)
                   Text(
@@ -514,8 +526,16 @@ class _LocationReview extends StatelessWidget {
 }
 
 class _EvidenceViewerTrigger extends StatelessWidget {
-  const _EvidenceViewerTrigger({required this.url});
+  const _EvidenceViewerTrigger({
+    required this.url,
+    this.findings = const [],
+    this.width,
+    this.height,
+  });
   final String url;
+  final List<AiFinding> findings;
+  final int? width;
+  final int? height;
 
   Future<void> _open(BuildContext context) async {
     if (!url.startsWith('http')) return;
@@ -529,10 +549,11 @@ class _EvidenceViewerTrigger extends StatelessWidget {
                 child: InteractiveViewer(
                   minScale: 0.8,
                   maxScale: 4,
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const _EvidenceUnavailable(),
+                  child: RemoteEvidencePreview(
+                    url: url,
+                    findings: findings,
+                    width: width,
+                    height: height,
                   ),
                 ),
               ),
@@ -561,25 +582,11 @@ class _EvidenceViewerTrigger extends StatelessWidget {
     child: InkWell(
       onTap: url.startsWith('http') ? () => _open(context) : null,
       borderRadius: BorderRadius.circular(12),
-      child: RemoteEvidencePreview(url: url),
-    ),
-  );
-}
-
-class _EvidenceUnavailable extends StatelessWidget {
-  const _EvidenceUnavailable();
-
-  @override
-  Widget build(BuildContext context) => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.image_not_supported_outlined, size: 48),
-          SizedBox(height: AppSpacing.sm),
-          Text('Evidence preview unavailable'),
-        ],
+      child: RemoteEvidencePreview(
+        url: url,
+        findings: findings,
+        width: width,
+        height: height,
       ),
     ),
   );

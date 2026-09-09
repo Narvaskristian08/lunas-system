@@ -76,6 +76,7 @@ services:
       AI_SERVICE_URL: http://lunas-ai:5001
       AI_SERVICE_TIMEOUT: 30000
       AI_SERVICE_ENABLED: true
+      AI_EVIDENCE_ANALYSIS_ENABLED: true
       
       # CORS - Allow web frontend
       CORS_ORIGIN: http://localhost:3000,http://web:3000

@@ -15,7 +15,8 @@ class CitizenReportDetailScreen extends StatefulWidget {
   final String reportId;
 
   @override
-  State<CitizenReportDetailScreen> createState() => _CitizenReportDetailScreenState();
+  State<CitizenReportDetailScreen> createState() =>
+      _CitizenReportDetailScreenState();
 }
 
 class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
@@ -78,7 +79,10 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
     }
     if (_error != null || _report == null) {
       return Scaffold(
-        appBar: const LunasAppBar(title: 'Report details', showBackButton: true),
+        appBar: const LunasAppBar(
+          title: 'Report details',
+          showBackButton: true,
+        ),
         body: SafeArea(
           top: false,
           child: LunasStateView(
@@ -122,7 +126,10 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                       children: [
                         ReportStatusChip(label: report.statusChipLabel),
                         const SizedBox(height: AppSpacing.md),
-                        Text(report.categoryLabel, style: Theme.of(context).textTheme.headlineSmall),
+                        Text(
+                          report.categoryLabel,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
                         const SizedBox(height: AppSpacing.xxs),
                         SelectableText(
                           report.reportNumber,
@@ -144,7 +151,10 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                     const SizedBox(height: AppSpacing.xl),
                   ],
                   if (_decisionReason(report) != null) ...[
-                    Text('Official update', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Official update',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     _CitizenDecisionReason(
                       status: report.status,
@@ -165,28 +175,51 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xl),
                   ],
+                  if (report.aiAnalysis != null) ...[
+                    AiAssistanceCard(analysis: report.aiAnalysis),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
                   if (report.images.isNotEmpty) ...[
-                    Text('Evidence', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Evidence',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     for (final evidence in report.images) ...[
-                      RemoteEvidencePreview(url: evidence.url),
+                      RemoteEvidencePreview(
+                        url: evidence.url,
+                        width: evidence.width,
+                        height: evidence.height,
+                        findings: evidence.aiFindings,
+                      ),
                       const SizedBox(height: AppSpacing.sm),
                       _EvidenceProcessingStatus(evidence: evidence),
                     ],
                     const SizedBox(height: AppSpacing.xl),
                   ] else ...[
-                    Text('Evidence', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Evidence',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     const LunasCard(
-                      child: Text('No evidence metadata was returned for this report.'),
+                      child: Text(
+                        'No evidence metadata was returned for this report.',
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                   ],
-                  Text('Description', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Description',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   LunasCard(child: Text(report.description)),
                   const SizedBox(height: AppSpacing.xl),
-                  Text('Location', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Location',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   LunasCard(
                     child: Row(
@@ -199,7 +232,8 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(report.location.displayAddress),
-                              if (report.location.latitude != null && report.location.longitude != null) ...[
+                              if (report.location.latitude != null &&
+                                  report.location.longitude != null) ...[
                                 const SizedBox(height: AppSpacing.xxs),
                                 Text(
                                   '${report.location.latitude!.toStringAsFixed(6)}, ${report.location.longitude!.toStringAsFixed(6)}',
@@ -213,10 +247,16 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  Text('Status history', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Status history',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   if (_historyNotice != null) ...[
-                    Text(_historyNotice!, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      _historyNotice!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
                   LunasCard(child: ReportStatusTimeline(events: history)),
@@ -255,7 +295,9 @@ class _CitizenRepairProgressCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                isReady ? Icons.pending_actions_outlined : Icons.construction_outlined,
+                isReady
+                    ? Icons.pending_actions_outlined
+                    : Icons.construction_outlined,
                 color: isReady
                     ? theme.colorScheme.onTertiaryContainer
                     : theme.colorScheme.primary,
@@ -264,7 +306,9 @@ class _CitizenRepairProgressCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Maintenance progress',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -278,7 +322,8 @@ class _CitizenRepairProgressCard extends StatelessWidget {
             Text(
               [
                 if (repair.reference != null) 'Work order ${repair.reference}',
-                if (repair.updatedAt != null) 'Updated ${formatReportDateTime(repair.updatedAt)}',
+                if (repair.updatedAt != null)
+                  'Updated ${formatReportDateTime(repair.updatedAt)}',
               ].join(' · '),
               style: theme.textTheme.bodySmall,
             ),
@@ -323,7 +368,9 @@ class _CitizenDecisionReason extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isRejected ? 'Report not validated' : 'Report marked as a duplicate',
+                  isRejected
+                      ? 'Report not validated'
+                      : 'Report marked as a duplicate',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -347,7 +394,8 @@ class _EvidenceProcessingStatus extends StatelessWidget {
     final privacyStatus = evidence.privacyProcessingStatus;
     final privacyText = privacyStatus == null
         ? 'Privacy-processing status was not returned for this evidence.'
-        : evidence.privacyProcessingApplied == true || evidence.isPrivacyMasked == true
+        : evidence.privacyProcessingApplied == true ||
+              evidence.isPrivacyMasked == true
         ? 'Server privacy processing: ${humanStatus(privacyStatus)}.'
         : privacyStatus == 'not_available'
         ? 'Server privacy redaction is not available for this evidence.'

@@ -66,7 +66,7 @@ class WorkspaceSelectorScreen extends StatelessWidget {
             icon: Icons.person_outline_rounded,
             title: 'Citizen portal',
             description:
-                'Create reports, confirm AI suggestions, and track repair updates.',
+                'Create reports, send evidence, and track repair updates.',
             accent: AppColorsLight.brandBase,
             onTap: () => Navigator.pushNamedAndRemoveUntil(
               context,

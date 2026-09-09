@@ -5,7 +5,7 @@ const crypto = require('crypto');
 // Configure multer for memory storage (for cloud upload)
 const storage = multer.memoryStorage();
 
-const allowedTypes = () => (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg')
+const allowedTypes = () => (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/jpg,image/webp')
   .split(',')
   .map((type) => type.trim())
   .filter(Boolean);
@@ -13,7 +13,8 @@ const allowedTypes = () => (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/
 const allowedExtensionsByMimeType = {
   'image/jpeg': ['.jpeg', '.jpg'],
   'image/jpg': ['.jpeg', '.jpg'],
-  'image/png': ['.png']
+  'image/png': ['.png'],
+  'image/webp': ['.webp']
 };
 
 // File filter

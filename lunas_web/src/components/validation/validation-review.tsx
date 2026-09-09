@@ -6,14 +6,14 @@
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ClipboardPlus, ExternalLink, FileImage, MapPin, Route, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardPlus, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
 import { createWorkOrderAction } from "@/app/actions/work-orders";
 import { markDuplicateAction, rejectIncidentAction, validateIncidentAction } from "@/app/actions/validation";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import type { ValidationIncident, ValidationPriority } from "@/lib/validation.server";
+import type { ValidationAiFinding, ValidationIncident, ValidationPriority } from "@/lib/validation.server";
 import { formatDateTime } from "@/lib/utils";
 import type { Severity, UserProfile } from "@/types";
 
@@ -50,6 +50,46 @@ function fieldClass() {
   return "mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70";
 }
 
+function confidencePercent(value: number | undefined) {
+  if (value === undefined) return undefined;
+  return Math.round((value <= 1 ? value : value / 100) * 100);
+}
+
+function AiAssistance({ incident }: { incident: ValidationIncident }) {
+  const analysis = incident.aiAnalysis;
+  const status = analysis?.analysisStatus ?? "unavailable";
+  const confidence = confidencePercent(analysis?.confidence);
+  const statusLabel = status === "completed" ? "Analysis completed" : status === "failed" ? "Analysis failed" : "Analysis unavailable";
+  const statusTone: Severity = status === "completed" ? "information" : "warning";
+  const findingsCount = analysis?.findingsCount ?? incident.images.reduce((total, image) => total + image.aiFindings.length, 0);
+
+  return (
+    <Card className="overflow-hidden border-brand-200">
+      <CardHeader title="AI assistance" description="Advisory screening from the server. It cannot change category, priority, routing, duplicate status, incident status, work orders, or closure." />
+      <div className="space-y-4 p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={statusTone}><Sparkles className="mr-1 inline size-3.5" aria-hidden="true" />{statusLabel}</Badge>
+          <span className="text-sm font-bold text-brand-800">AI assistance only</span>
+        </div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-950">
+          Manual review required
+        </div>
+        {status === "completed" ? (
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div><dt className="text-slate-600">Advisory hazard</dt><dd className="font-semibold text-slate-950">{analysis?.hazardType ? titleCase(analysis.hazardType) : "No hazard suggested"}</dd></div>
+            <div><dt className="text-slate-600">Confidence</dt><dd className="font-semibold text-slate-950">{confidence !== undefined ? `${confidence}%` : "Not available"}</dd></div>
+            <div><dt className="text-slate-600">Image highlights</dt><dd className="font-semibold text-slate-950">{findingsCount}</dd></div>
+            <div><dt className="text-slate-600">Category model</dt><dd className="font-semibold text-slate-950">{analysis?.modelAvailable === false ? "Manual review only" : "Available"}</dd></div>
+          </dl>
+        ) : (
+          <p className="text-sm leading-6 text-slate-600">The report remains available for official validation. AI availability does not affect submission or the official decision workflow.</p>
+        )}
+        {analysis?.processedAt ? <p className="text-xs text-slate-500">Processed {formatDateTime(analysis.processedAt)}</p> : null}
+      </div>
+    </Card>
+  );
+}
+
 function Coordinates({ incident }: { incident: ValidationIncident }) {
   const [longitude, latitude] = incident.location.coordinates;
   const coordinateText = typeof longitude === "number" && typeof latitude === "number"
@@ -76,16 +116,37 @@ function Coordinates({ incident }: { incident: ValidationIncident }) {
 }
 
 function Evidence({ incident }: { incident: ValidationIncident }) {
+  const renderFinding = (finding: ValidationAiFinding, index: number) => {
+    const confidence = confidencePercent(finding.confidence);
+    return (
+      <div
+        key={`${finding.label}-${index}`}
+        className="absolute border-2 border-amber-400 bg-amber-300/15"
+        style={{
+          left: `${finding.bbox.x1 * 100}%`,
+          top: `${finding.bbox.y1 * 100}%`,
+          width: `${(finding.bbox.x2 - finding.bbox.x1) * 100}%`,
+          height: `${(finding.bbox.y2 - finding.bbox.y1) * 100}%`,
+        }}
+      >
+        <span className="absolute -top-6 left-0 whitespace-nowrap rounded bg-slate-950 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          {titleCase(finding.label)}{confidence !== undefined ? ` · ${confidence}%` : ""}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Evidence review" description="Only privacy-processed evidence URLs from the protected API are displayed." />
+      <CardHeader title="Evidence review" description="Evidence URLs are supplied by the protected API; the processing status is shown below." />
       <div className="grid gap-3 p-5 sm:grid-cols-2">
         {incident.images.length ? incident.images.map((image, index) => (
           <div key={`${image.url ?? "evidence"}-${index}`} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-            {image.url ? <a href={image.url} target="_blank" rel="noreferrer" className="block aspect-[4/3] bg-slate-100"><img src={image.url} alt={`Submitted evidence ${index + 1}`} className="size-full object-cover" /></a> : <div className="flex aspect-[4/3] items-center justify-center text-slate-500"><FileImage className="size-8" aria-hidden="true" /></div>}
+            {image.url ? <a href={image.url} target="_blank" rel="noreferrer" className="block bg-slate-100" style={{ aspectRatio: image.width && image.height ? `${image.width} / ${image.height}` : "4 / 3" }}><div className="relative size-full"><img src={image.url} alt={`Submitted evidence ${index + 1}`} className="size-full object-contain" />{image.aiFindings.map(renderFinding)}</div></a> : <div className="flex aspect-[4/3] items-center justify-center text-slate-500"><FileImage className="size-8" aria-hidden="true" /></div>}
             <div className="flex flex-wrap gap-2 border-t border-slate-200 px-3 py-2.5 text-xs text-slate-600">
               {image.quality?.status ? <Badge tone={image.quality.status === "passed" ? "success" : "neutral"}>Quality: {titleCase(image.quality.status)}</Badge> : null}
               {image.privacyProcessing?.status ? <Badge tone={image.privacyProcessing.applied ? "success" : "warning"}>Privacy: {titleCase(image.privacyProcessing.status)}</Badge> : null}
+              {image.aiFindings.length ? <Badge tone="warning">AI highlights: {image.aiFindings.length}</Badge> : null}
             </div>
           </div>
         )) : <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">No evidence preview is currently available.</div>}
@@ -214,6 +275,7 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-6">
           <Evidence incident={incident} />
+          <AiAssistance incident={incident} />
           <Card className="overflow-hidden"><CardHeader title="Citizen report" description={incident.createdAt ? `Submitted ${formatDateTime(incident.createdAt)}` : "Submission time unavailable"} /><div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{titleCase(incident.category)}</Badge>{incident.subcategory ? <Badge>{titleCase(incident.subcategory)}</Badge> : null}{incident.aiAnalysis?.hazardType ? <Badge tone="neutral">AI suggestion: {titleCase(incident.aiAnalysis.hazardType)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{incident.description}</p></div></Card>
           <Coordinates incident={incident} />
           <ValidationRoutingSummary incident={incident} />

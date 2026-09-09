@@ -100,7 +100,7 @@ def train_env_hazards():
         
         if best_model_path.exists():
             # Copy to models directory
-            output_path = Path("models/yolov8n-env-hazards-best.pt")
+            output_path = Path("models/other/environmentalhazard/yolov8n-env-hazards-best.pt")
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
             import shutil

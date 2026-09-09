@@ -12,16 +12,80 @@ const clientError = (message) => {
 
 const shouldRunAiAnalysis = () => process.env.AI_EVIDENCE_ANALYSIS_ENABLED === 'true';
 
-const normalizeAiAnalysis = (analysis) => {
-  if (!analysis || analysis.aiEnabled !== true || typeof analysis.confidence !== 'number') {
-    return null;
+const toDetectionCount = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? Math.max(0, Math.round(numericValue)) : 0;
+};
+
+const clampUnit = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? Math.max(0, Math.min(1, numericValue)) : null;
+};
+
+const normalizeFinding = (finding) => {
+  if (!finding || typeof finding !== 'object') return null;
+  const label = typeof finding.label === 'string'
+    ? finding.label
+    : typeof finding.class === 'string' ? finding.class : null;
+  const bbox = finding.bbox && typeof finding.bbox === 'object' ? finding.bbox : null;
+  if (!label || !bbox) return null;
+  const normalizedBox = {};
+  for (const key of ['x1', 'y1', 'x2', 'y2']) {
+    const value = clampUnit(bbox[key]);
+    if (value === null) return null;
+    normalizedBox[key] = value;
   }
+  if (normalizedBox.x2 < normalizedBox.x1 || normalizedBox.y2 < normalizedBox.y1) return null;
+  return {
+    label: label.trim().slice(0, 100),
+    confidence: clampUnit(finding.confidence) ?? 0,
+    bbox: normalizedBox
+  };
+};
+
+const normalizeAiAnalysis = (analysis) => {
+  const hasError = typeof analysis?.error === 'string' && analysis.error.trim().length > 0;
+  const failed = hasError || (analysis?.success === false && analysis?.aiEnabled === true);
+  const explicitlyUnavailable = analysis?.analysisStatus === 'unavailable'
+    || analysis?.analysis_status === 'unavailable'
+    || analysis?.modelAvailable === false;
+  const explicitlyFailed = analysis?.analysisStatus === 'failed'
+    || analysis?.analysis_status === 'failed';
+  const completed = analysis?.aiEnabled === true
+    && analysis?.success !== false
+    && !failed
+    && !explicitlyUnavailable
+    && !explicitlyFailed
+    && typeof analysis.confidence === 'number'
+    && Number.isFinite(analysis.confidence);
+  const suggestedHazard = analysis?.suggestion ?? analysis?.hazardType;
+  const findings = (Array.isArray(analysis?.findings) ? analysis.findings : [])
+    .map(normalizeFinding)
+    .filter(Boolean)
+    .slice(0, 50);
+  const analysisStatus = completed ? 'completed' : (failed || explicitlyFailed ? 'failed' : 'unavailable');
 
   return {
-    detected: Boolean(analysis.detected),
-    hazardType: typeof analysis.suggestion === 'string' ? analysis.suggestion.slice(0, 100) : undefined,
-    confidence: Math.max(0, Math.min(1, analysis.confidence)),
-    needsPrivacyMasking: Boolean(analysis.detections?.privacy_concerns),
+    analysisStatus,
+    category: typeof analysis?.category === 'string' ? analysis.category.slice(0, 40) : undefined,
+    modelAvailable: completed,
+    detected: completed && analysis?.detected === true,
+    hazardType: completed
+      ? (typeof suggestedHazard === 'string'
+        ? suggestedHazard.slice(0, 100)
+        : findings[0]?.label || null)
+      : null,
+    confidence: completed ? Math.max(0, Math.min(1, analysis.confidence)) : 0,
+    findings,
+    findingsCount: findings.length,
+    detections: {
+      roadDamage: toDetectionCount(analysis?.detections?.roadDamage ?? analysis?.detections?.road_damage),
+      cracks: toDetectionCount(analysis?.detections?.cracks)
+    },
+    needsPrivacyMasking: completed && Boolean(analysis?.detections?.privacy_concerns),
+    // This invariant is intentionally owned by the backend, regardless of AI output.
+    requiresManualReview: true,
+    advisoryOnly: true,
     processedAt: new Date()
   };
 };
@@ -32,23 +96,28 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
     throw clientError(`Evidence image failed quality validation: ${quality.issues.join('; ')}`);
   }
 
-  // Sharp re-encodes to JPEG, which strips EXIF/GPS metadata and avoids
+  // Sharp re-encodes to WebP, which strips EXIF/GPS metadata and avoids
   // retaining the original, unprocessed upload in storage.
   const preparedBuffer = await prepareEvidenceImage(file.buffer);
   const preparedMetadata = await getImageMetadata(preparedBuffer);
   const checksum = crypto.createHash('sha256').update(preparedBuffer).digest('hex');
 
-  let aiAnalysis = null;
+  let aiAnalysis;
   if (shouldRunAiAnalysis()) {
-    // The existing AI service is only trusted when it returns a real result.
-    // A missing model/service simply leaves manual category selection intact.
-    aiAnalysis = normalizeAiAnalysis(await aiService.analyzeIncidentImage(preparedBuffer, category));
+    try {
+      aiAnalysis = normalizeAiAnalysis(await aiService.analyzeIncidentImage(preparedBuffer, category));
+    } catch (error) {
+      // AI is advisory. A service failure must never prevent evidence storage.
+      aiAnalysis = normalizeAiAnalysis({ error: error?.message || 'AI analysis failed' });
+    }
+  } else {
+    aiAnalysis = normalizeAiAnalysis();
   }
 
   const uploaded = await storageService.uploadToStorage(
     preparedBuffer,
-    'evidence.jpg',
-    'image/jpeg',
+    'evidence.webp',
+    'image/webp',
     `incidents/${reporterId}`
   );
 
@@ -60,7 +129,7 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
       key: uploaded.key,
       uploadedAt: new Date(),
       isPrivacyMasked: false,
-      mimeType: 'image/jpeg',
+      mimeType: 'image/webp',
       size: preparedBuffer.length,
       checksum,
       width: preparedMetadata.width,
@@ -69,6 +138,7 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
         status: 'passed',
         issues: []
       },
+      aiFindings: aiAnalysis.findings,
       // No face/license-plate detector capable of producing a redacted image
       // is configured in this backend. This truthful state prevents clients
       // from claiming that redaction happened when it did not.
@@ -79,6 +149,33 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
         processedAt: new Date()
       }
     }
+  };
+};
+
+const mergeAiAnalyses = (analyses = []) => {
+  const completed = analyses.filter((analysis) => analysis?.analysisStatus === 'completed');
+  const failed = analyses.some((analysis) => analysis?.analysisStatus === 'failed');
+  const findings = analyses.flatMap((analysis) => analysis?.findings || []).slice(0, 50);
+  const first = analyses.find((analysis) => analysis?.category) || {};
+  return {
+    analysisStatus: completed.length ? 'completed' : (failed ? 'failed' : 'unavailable'),
+    category: first.category,
+    modelAvailable: completed.length > 0,
+    detected: completed.some((analysis) => analysis.detected),
+    hazardType: completed.find((analysis) => analysis.hazardType)?.hazardType || null,
+    confidence: completed.length
+      ? Math.max(...completed.map((analysis) => Number(analysis.confidence) || 0))
+      : 0,
+    findings,
+    findingsCount: findings.length,
+    detections: {
+      roadDamage: analyses.reduce((sum, analysis) => sum + toDetectionCount(analysis?.detections?.roadDamage), 0),
+      cracks: analyses.reduce((sum, analysis) => sum + toDetectionCount(analysis?.detections?.cracks), 0)
+    },
+    needsPrivacyMasking: false,
+    requiresManualReview: true,
+    advisoryOnly: true,
+    processedAt: new Date()
   };
 };
 
@@ -102,7 +199,7 @@ exports.processAndUploadEvidence = async (files, context) => {
 
     return {
       images: results.map((result) => result.evidence),
-      aiAnalysis: results.map((result) => result.aiAnalysis).find(Boolean) || null
+      aiAnalysis: mergeAiAnalyses(results.map((result) => result.aiAnalysis))
     };
   } catch (error) {
     await Promise.allSettled(uploadedKeys.map((key) => storageService.deleteFromStorage(key)));
@@ -131,15 +228,15 @@ exports.processAndUploadRepairEvidence = async (files, { workOrderId, uploaderId
       const checksum = crypto.createHash('sha256').update(preparedBuffer).digest('hex');
       const uploaded = await storageService.uploadToStorage(
         preparedBuffer,
-        'repair-evidence.jpg',
-        'image/jpeg',
+        'repair-evidence.webp',
+        'image/webp',
         `work-orders/${workOrderId}/repair/${uploaderId}`
       );
       uploadedKeys.push(uploaded.key);
       evidence.push({
         key: uploaded.key,
         url: uploaded.url,
-        mimeType: 'image/jpeg',
+        mimeType: 'image/webp',
         size: preparedBuffer.length,
         checksum,
         width: metadata.width,
@@ -160,3 +257,6 @@ exports.cleanupEvidence = async (images = []) => {
   const keys = images.map((image) => image.key).filter(Boolean);
   await Promise.allSettled(keys.map((key) => storageService.deleteFromStorage(key)));
 };
+
+exports.normalizeAiAnalysis = normalizeAiAnalysis;
+exports.mergeAiAnalyses = mergeAiAnalyses;

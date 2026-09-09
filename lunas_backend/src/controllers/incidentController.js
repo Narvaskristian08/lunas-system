@@ -25,6 +25,66 @@ const {
 } = require('../services/evidenceService');
 const logger = require('../utils/logger');
 
+const clampUnit = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? Math.max(0, Math.min(1, numericValue)) : null;
+};
+
+const safeAiFinding = (finding) => {
+  if (!finding || typeof finding !== 'object') return null;
+  const label = typeof finding.label === 'string'
+    ? finding.label.trim().slice(0, 100)
+    : null;
+  const bbox = finding.bbox && typeof finding.bbox === 'object' ? finding.bbox : null;
+  if (!label || !bbox) return null;
+  const normalizedBox = {};
+  for (const key of ['x1', 'y1', 'x2', 'y2']) {
+    const value = clampUnit(bbox[key]);
+    if (value === null) return null;
+    normalizedBox[key] = value;
+  }
+  if (normalizedBox.x2 < normalizedBox.x1 || normalizedBox.y2 < normalizedBox.y1) return null;
+  return {
+    label,
+    confidence: clampUnit(finding.confidence) ?? 0,
+    bbox: normalizedBox
+  };
+};
+
+const safeAiFindings = (findings = []) => (Array.isArray(findings) ? findings : [])
+  .map(safeAiFinding)
+  .filter(Boolean)
+  .slice(0, 50);
+
+const safeAiAnalysis = (analysis, evidenceFindings = []) => {
+  if (!analysis || typeof analysis !== 'object') return undefined;
+  const status = ['completed', 'unavailable', 'failed'].includes(analysis.analysisStatus)
+    ? analysis.analysisStatus
+    : 'unavailable';
+  const findings = safeAiFindings(analysis.findings);
+  const storedFindingsCount = Number(analysis.findingsCount);
+  const evidenceFindingsCount = evidenceFindings.reduce(
+    (total, image) => total + safeAiFindings(image?.aiFindings).length,
+    0
+  );
+  return {
+    analysisStatus: status,
+    category: typeof analysis.category === 'string' ? analysis.category.slice(0, 40) : undefined,
+    modelAvailable: status === 'completed' && analysis.modelAvailable !== false,
+    detected: status === 'completed' && analysis.detected === true,
+    hazardType: status === 'completed' && typeof analysis.hazardType === 'string'
+      ? analysis.hazardType.slice(0, 100)
+      : null,
+    confidence: status === 'completed' ? clampUnit(analysis.confidence) ?? 0 : 0,
+    findingsCount: Number.isFinite(storedFindingsCount)
+      ? Math.max(0, Math.round(storedFindingsCount))
+      : Math.max(findings.length, evidenceFindingsCount),
+    requiresManualReview: true,
+    advisoryOnly: true,
+    processedAt: analysis.processedAt || null
+  };
+};
+
 const safeEvidenceForCitizen = async (image) => {
   const source = image.toObject ? image.toObject() : image;
   let url = source.url || null;
@@ -47,6 +107,7 @@ const safeEvidenceForCitizen = async (image) => {
     mimeType: source.mimeType,
     width: source.width,
     height: source.height,
+    aiFindings: safeAiFindings(source.aiFindings),
     quality: source.quality ? { status: source.quality.status } : undefined,
     privacyProcessing: source.privacyProcessing ? {
       status: source.privacyProcessing.status,
@@ -91,6 +152,9 @@ const serializeIncidentForCitizen = async (incident) => {
     rejectionReason: source.status === 'rejected' ? source.rejectionReason : undefined,
     duplicateReason: source.status === 'duplicate' ? source.duplicateReason : undefined,
     statusHistory: serializeStatusHistoryForCitizen(source.statusHistory || []),
+    // Citizens receive only the same category-relevant advisory summary that
+    // an official sees; it cannot be used as an operational decision.
+    aiAnalysis: safeAiAnalysis(source.aiAnalysis, source.images || []),
     repair: source.workOrder && typeof source.workOrder === 'object'
       ? {
         reference: source.workOrder.orderNumber,
@@ -130,6 +194,9 @@ const safeDuplicateReference = (duplicateOf) => {
 
 const serializeIncidentForOfficial = async (incident, { includeHistory = true, includeCandidates = false } = {}) => {
   const source = incident.toObject ? incident.toObject() : incident;
+  const aiAnalysis = source.aiAnalysis;
+  const hasConfidence = typeof aiAnalysis?.confidence === 'number' && Number.isFinite(aiAnalysis.confidence);
+  const analysisStatus = aiAnalysis?.analysisStatus || (hasConfidence ? 'completed' : 'unavailable');
   const images = await Promise.all((source.images || []).map(safeEvidenceForCitizen));
   const duplicateCandidates = includeCandidates
     ? (source.duplicateCandidates || []).map((candidate) => ({
@@ -157,10 +224,23 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
     createdAt: source.createdAt,
     updatedAt: source.updatedAt,
     reporter: safeReporterForOfficial(source.reporter),
-    aiAnalysis: source.aiAnalysis ? {
-      detected: Boolean(source.aiAnalysis.detected),
-      hazardType: source.aiAnalysis.hazardType,
-      confidence: source.aiAnalysis.confidence
+    aiAnalysis: aiAnalysis ? {
+      analysisStatus,
+      detected: Boolean(aiAnalysis.detected),
+      hazardType: aiAnalysis.hazardType || null,
+      confidence: hasConfidence ? aiAnalysis.confidence : 0,
+      category: typeof aiAnalysis.category === 'string' ? aiAnalysis.category : undefined,
+      modelAvailable: analysisStatus === 'completed' && aiAnalysis.modelAvailable !== false,
+      detections: {
+        roadDamage: Number(aiAnalysis.detections?.roadDamage) || 0,
+        cracks: Number(aiAnalysis.detections?.cracks) || 0
+      },
+      findingsCount: Number(aiAnalysis.findingsCount) || safeAiFindings(aiAnalysis.findings).length,
+      findings: safeAiFindings(aiAnalysis.findings),
+      // Force the manual-only contract at the official API boundary too.
+      requiresManualReview: true,
+      advisoryOnly: true,
+      processedAt: aiAnalysis.processedAt || null
     } : undefined,
     possibleDuplicateCandidateCount: source.duplicateDetection?.candidateCount || (source.duplicateCandidates || []).length,
     duplicateCandidates,
@@ -299,6 +379,33 @@ exports.createIncident = asyncHandler(async (req, res) => {
         resourceType: 'Incident',
         resourceId: incident._id,
         details: { evidenceCount: uploadedImages.length },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+    }
+
+    if (incident.aiAnalysis) {
+      const requestedAnalysisStatus = incident.aiAnalysis.analysisStatus;
+      const analysisStatus = ['completed', 'unavailable', 'failed'].includes(requestedAnalysisStatus)
+        ? requestedAnalysisStatus
+        : 'unavailable';
+      await createAuditLog({
+        action: `ai_analysis_${analysisStatus}`,
+        performedBy: req.user._id,
+        resourceType: 'Incident',
+        resourceId: incident._id,
+        status: analysisStatus === 'failed' ? 'warning' : 'success',
+        details: {
+          analysisStatus,
+          requiresManualReview: true,
+          advisoryOnly: true,
+          hazardType: incident.aiAnalysis.hazardType || null,
+          confidence: Number(incident.aiAnalysis.confidence) || 0,
+          detections: {
+            roadDamage: Number(incident.aiAnalysis.detections?.roadDamage) || 0,
+            cracks: Number(incident.aiAnalysis.detections?.cracks) || 0
+          }
+        },
         ipAddress: req.ip,
         userAgent: req.headers['user-agent']
       });

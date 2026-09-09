@@ -5,7 +5,7 @@ models:
   # Primary: YOLOv8n trained on RDD2022 (Custom trained model)
   road_damage:
     name: "YOLOv8n Road Damage Detection (RDD2022 Trained)"
-    path: "models/yolov8n-rdd2022-best.pt"
+    path: "models/road/rdd/yolov8n-rdd2022-best.pt"
     type: "detection"
     classes:
       - pothole
@@ -25,7 +25,7 @@ models:
   # Road Collapse: Critical infrastructure failures
   road_collapse:
     name: "YOLOv8n Road Collapse Detection"
-    path: "models/yolov8n-road-collapse-best.pt"
+    path: "models/road/roadcollapse/best.pt"
     type: "detection"
     classes:
       - bridge_collapse
@@ -41,7 +41,7 @@ models:
   # Environmental Hazards: Urban safety hazards
   environmental_hazards:
     name: "YOLOv8n Environmental Hazards Detection"
-    path: "models/yolov8n-env-hazards-best.pt"
+    path: "models/other/environmentalhazard/yolov8n-env-hazards-best.pt"
     type: "detection"
     classes:
       - fallen_tree
@@ -87,49 +87,16 @@ models:
       normalize: true
       resize: true
 
-categories:
-  road_pavement:
-    display_name: "Road/Pavement"
-    models:
-      - road_damage
-      - crack_segmentation
-    priority: high
-    
-  drainage_sewage:
-    display_name: "Drainage/Sewage"
-    models:
-      - road_damage
-    priority: high
-    
-  street_lighting:
-    display_name: "Street Lighting"
-    models: []
-    priority: medium
-    manual_review: true
-    
-  water_supply:
-    display_name: "Water Supply"
-    models: []
-    priority: high
-    manual_review: true
-    
-  signage:
-    display_name: "Signage"
-    models: []
-    priority: low
-    manual_review: true
-    
-  public_facilities:
-    display_name: "Public Facilities"
-    models: []
-    priority: medium
-    manual_review: true
-    
-  trees_vegetation:
-    display_name: "Trees/Vegetation"
-    models: []
-    priority: low
-    manual_review: true
+category_models:
+  # These keys are the canonical category codes shared by the web, mobile,
+  # and backend incident APIs. A null value is intentionally manual-only.
+  road: road_damage
+  drainage: null
+  electrical: null
+  water: null
+  gas: null
+  streetlight: null
+  other: environmental_hazards
 
 severity_estimation:
   pothole:

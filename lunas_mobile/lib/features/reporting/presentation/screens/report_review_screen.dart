@@ -87,7 +87,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ReviewRow(label: 'Category', value: widget.draft.category.label),
+                  _ReviewRow(
+                    label: 'Category',
+                    value: widget.draft.category.label,
+                  ),
                   const Divider(height: AppSpacing.xl),
                   _ReviewRow(label: 'Barangay', value: widget.draft.barangay),
                   const Divider(height: AppSpacing.xl),
@@ -96,7 +99,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     value: widget.draft.location.coordinates,
                   ),
                   const Divider(height: AppSpacing.xl),
-                  _ReviewRow(label: 'Location', value: widget.draft.location.address),
+                  _ReviewRow(
+                    label: 'Location',
+                    value: widget.draft.location.address,
+                  ),
                 ],
               ),
             ),
@@ -105,7 +111,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Description', style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    'Description',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(widget.draft.description),
                 ],
@@ -125,7 +134,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'AI hazard suggestions and automatic privacy redaction are not available because no approved model asset is installed. Your selected category will be submitted for official review.',
+                      'LUNAS may provide server-side AI assistance after you submit this image. AI assistance is advisory only; an authorized official must manually review your report.',
                     ),
                   ),
                 ],
@@ -139,8 +148,11 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 controlAffinity: ListTileControlAffinity.leading,
                 onChanged: _submitting
                     ? null
-                    : (value) => setState(() => _acknowledgedPrivacy = value ?? false),
-                title: const Text('I reviewed this image for private information.'),
+                    : (value) =>
+                          setState(() => _acknowledgedPrivacy = value ?? false),
+                title: const Text(
+                  'I reviewed this image for private information.',
+                ),
                 subtitle: const Text(
                   'I understand LUNAS cannot confirm faces or license plates were redacted in this build.',
                 ),

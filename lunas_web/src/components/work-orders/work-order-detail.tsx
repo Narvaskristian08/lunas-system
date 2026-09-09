@@ -198,7 +198,7 @@ function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; o
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Add field evidence" description="JPEG or PNG images only; upload confirmation comes from the server." />
+      <CardHeader title="Add field evidence" description="JPEG, PNG, or WebP images; upload confirmation comes from the server." />
       <form onSubmit={(event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -212,7 +212,7 @@ function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; o
       }} className="space-y-3 p-5">
         <input type="hidden" name="workOrderId" value={workOrder.id} />
         <label className="block text-sm font-semibold text-slate-800">Evidence images
-          <input name="evidence" type="file" multiple accept="image/jpeg,image/jpg,image/png,.jpg,.jpeg,.png" onChange={(event) => setSelectedCount(event.currentTarget.files?.length ?? 0)} className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800 hover:file:bg-brand-100" required />
+          <input name="evidence" type="file" multiple accept="image/jpeg,image/jpg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onChange={(event) => setSelectedCount(event.currentTarget.files?.length ?? 0)} className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800 hover:file:bg-brand-100" required />
         </label>
         <p className="text-xs leading-5 text-slate-600">{selectedCount ? `${selectedCount} image${selectedCount === 1 ? "" : "s"} selected.` : "Up to five images, 10 MB each. EXIF/privacy processing and storage validation happen on the backend."}</p>
         <label className="block text-sm font-semibold text-slate-800">Caption <span className="font-normal text-slate-500">(optional)</span>

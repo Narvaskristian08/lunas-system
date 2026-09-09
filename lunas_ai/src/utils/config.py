@@ -97,6 +97,11 @@ class Config:
     def get_category_config(self, category_name: str) -> Dict[str, Any]:
         """Get configuration for a specific category"""
         return self.config.get('categories', {}).get(category_name, {})
+
+    def get_category_model(self, category_name: str):
+        """Return the explicitly assigned model for a canonical category."""
+        category = str(category_name or '').strip().lower()
+        return self.config.get('category_models', {}).get(category)
     
     def get_device(self) -> str:
         """Auto-detect best available device"""

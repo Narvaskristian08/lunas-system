@@ -30,6 +30,7 @@ export interface ValidationEvidence {
   mimeType?: string;
   width?: number;
   height?: number;
+  aiFindings: ValidationAiFinding[];
   quality?: { status?: string; issues?: string[] };
   privacyProcessing?: { status?: string; applied?: boolean; acknowledgedByReporter?: boolean };
 }
@@ -48,6 +49,14 @@ export interface ValidationHistoryEntry {
   status: string;
   changedAt?: string;
   notes?: string;
+}
+
+export type ValidationAiAnalysisStatus = "completed" | "unavailable" | "failed";
+
+export interface ValidationAiFinding {
+  label: string;
+  confidence: number;
+  bbox: { x1: number; y1: number; x2: number; y2: number };
 }
 
 export interface DuplicateCandidate {
@@ -76,9 +85,21 @@ export interface ValidationIncident {
   images: ValidationEvidence[];
   evidenceThumbnail?: string | null;
   aiAnalysis?: {
+    analysisStatus?: ValidationAiAnalysisStatus;
+    category?: string;
+    modelAvailable?: boolean;
     detected?: boolean;
     hazardType?: string;
     confidence?: number;
+    findingsCount?: number;
+    findings?: ValidationAiFinding[];
+    detections?: {
+      roadDamage: number;
+      cracks: number;
+    };
+    requiresManualReview: true;
+    advisoryOnly: true;
+    processedAt?: string;
   };
   duplicateCandidateCount: number;
   duplicateCandidates: DuplicateCandidate[];
@@ -147,6 +168,23 @@ function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+function normalizeFinding(value: unknown): ValidationAiFinding | null {
+  const source = asRecord(value);
+  const bbox = asRecord(source.bbox);
+  const values = ["x1", "y1", "x2", "y2"].map((key) => asNumber(bbox[key]));
+  const label = asString(source.label);
+  if (!label || values.some((number) => number === undefined)) return null;
+  const [x1, y1, x2, y2] = values as number[];
+  const clamp = (number: number) => Math.max(0, Math.min(1, number));
+  const normalized = { x1: clamp(x1), y1: clamp(y1), x2: clamp(x2), y2: clamp(y2) };
+  if (normalized.x2 < normalized.x1 || normalized.y2 < normalized.y1) return null;
+  return {
+    label: label.slice(0, 100),
+    confidence: clamp(asNumber(source.confidence) ?? 0),
+    bbox: normalized,
+  };
+}
+
 function normalizedId(value: unknown): string {
   const record = asRecord(value);
   return asString(value) ?? asString(record.id) ?? asString(record._id) ?? "";
@@ -179,6 +217,10 @@ function normalizeEvidence(value: unknown): ValidationEvidence {
     mimeType: asString(source.mimeType),
     width: asNumber(source.width),
     height: asNumber(source.height),
+    aiFindings: asArray(source.aiFindings)
+      .map(normalizeFinding)
+      .filter((finding): finding is ValidationAiFinding => finding !== null)
+      .slice(0, 50),
     quality: Object.keys(quality).length ? {
       status: asString(quality.status),
       issues: asArray(quality.issues).map(asString).filter((item): item is string => Boolean(item)),
@@ -247,6 +289,8 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
   const directCandidates = asArray(source.duplicateCandidates)
     .map(normalizeCandidate)
     .filter((candidate): candidate is DuplicateCandidate => candidate !== null);
+  const aiAnalysis = asRecord(source.aiAnalysis);
+  const aiStatus = asString(aiAnalysis.analysisStatus);
   return {
     id,
     reportNumber: asString(source.reportNumber) ?? `Report ${id.slice(-6)}`,
@@ -262,10 +306,32 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
     location: normalizeLocation(source.location),
     images: asArray(source.images).map(normalizeEvidence),
     evidenceThumbnail: asString(source.evidenceThumbnail) ?? asString(source.thumbnailUrl) ?? null,
-    aiAnalysis: Object.keys(asRecord(source.aiAnalysis)).length ? {
-      detected: asRecord(source.aiAnalysis).detected === true,
-      hazardType: asString(asRecord(source.aiAnalysis).hazardType),
-      confidence: asNumber(asRecord(source.aiAnalysis).confidence),
+    aiAnalysis: Object.keys(aiAnalysis).length ? {
+      analysisStatus: aiStatus === "completed" || aiStatus === "unavailable" || aiStatus === "failed"
+        ? aiStatus
+        : undefined,
+      category: asString(aiAnalysis.category),
+      modelAvailable: aiStatus === "completed"
+        ? aiAnalysis.modelAvailable !== false
+        : aiAnalysis.modelAvailable === true,
+      detected: aiAnalysis.detected === true,
+      hazardType: asString(aiAnalysis.hazardType),
+      confidence: asNumber(aiAnalysis.confidence),
+      findingsCount: asNumber(aiAnalysis.findingsCount),
+      findings: asArray(aiAnalysis.findings)
+        .map(normalizeFinding)
+        .filter((finding): finding is ValidationAiFinding => finding !== null)
+        .slice(0, 50),
+      detections: {
+        roadDamage: asNumber(asRecord(aiAnalysis.detections).roadDamage)
+          ?? asNumber(asRecord(aiAnalysis.detections).road_damage)
+          ?? 0,
+        cracks: asNumber(asRecord(aiAnalysis.detections).cracks) ?? 0,
+      },
+      // The official interface never treats AI output as a decision.
+      requiresManualReview: true,
+      advisoryOnly: true,
+      processedAt: asString(aiAnalysis.processedAt),
     } : undefined,
     duplicateCandidateCount: asNumber(source.possibleDuplicateCandidateCount)
       ?? asNumber(asRecord(source.duplicateDetection).candidateCount)

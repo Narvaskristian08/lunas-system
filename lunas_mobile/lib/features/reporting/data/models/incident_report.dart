@@ -12,6 +12,7 @@ class IncidentReport {
     required this.images,
     required this.statusHistory,
     required this.possibleDuplicateCandidateCount,
+    this.aiAnalysis,
     this.rejectionReason,
     this.duplicateReason,
     this.repair,
@@ -27,6 +28,7 @@ class IncidentReport {
   final List<ReportEvidence> images;
   final List<ReportStatusEvent> statusHistory;
   final int possibleDuplicateCandidateCount;
+  final AiAnalysis? aiAnalysis;
   final String? rejectionReason;
   final String? duplicateReason;
   final IncidentRepairSummary? repair;
@@ -35,19 +37,26 @@ class IncidentReport {
 
   /// Citizen-safe operational wording. Personnel, reassignment notes, SLA
   /// internals, and field evidence are deliberately absent from this model.
-  String get currentStatusLabel => repair?.citizenStatusLabel ?? _statusLabel(status);
-  String get statusChipLabel => repair?.citizenChipLabel ?? _statusLabel(status);
+  String get currentStatusLabel =>
+      repair?.citizenStatusLabel ?? _statusLabel(status);
+  String get statusChipLabel =>
+      repair?.citizenChipLabel ?? _statusLabel(status);
 
   factory IncidentReport.fromJson(Map<String, dynamic> json) {
     final locationValue = _map(json['location']);
-    final imageValues = json['images'] is List ? json['images'] as List : const [];
+    final imageValues = json['images'] is List
+        ? json['images'] as List
+        : const [];
     final historyValues = json['statusHistory'] is List
         ? json['statusHistory'] as List
         : const [];
     return IncidentReport(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
-      reportNumber: (json['reportNumber'] ?? json['referenceNumber'] ?? 'Pending reference')
-          .toString(),
+      reportNumber:
+          (json['reportNumber'] ??
+                  json['referenceNumber'] ??
+                  'Pending reference')
+              .toString(),
       category: (json['category'] ?? 'other').toString(),
       description: (json['description'] ?? '').toString(),
       status: (json['status'] ?? 'submitted').toString(),
@@ -55,14 +64,26 @@ class IncidentReport {
       location: IncidentLocation.fromJson(locationValue),
       images: imageValues
           .whereType<Map>()
-          .map((value) => ReportEvidence.fromJson(Map<String, dynamic>.from(value)))
+          .map(
+            (value) =>
+                ReportEvidence.fromJson(Map<String, dynamic>.from(value)),
+          )
           .toList(growable: false),
       statusHistory: historyValues
           .whereType<Map>()
-          .map((value) => ReportStatusEvent.fromJson(Map<String, dynamic>.from(value)))
+          .map(
+            (value) =>
+                ReportStatusEvent.fromJson(Map<String, dynamic>.from(value)),
+          )
           .toList(growable: false),
       possibleDuplicateCandidateCount:
-          int.tryParse((json['possibleDuplicateCandidateCount'] ?? 0).toString()) ?? 0,
+          int.tryParse(
+            (json['possibleDuplicateCandidateCount'] ?? 0).toString(),
+          ) ??
+          0,
+      aiAnalysis: _map(json['aiAnalysis']).isEmpty
+          ? null
+          : AiAnalysis.fromJson(_map(json['aiAnalysis'])),
       rejectionReason: _text(json['rejectionReason']),
       duplicateReason: _text(json['duplicateReason']),
       repair: _map(json['repair']).isEmpty
@@ -106,7 +127,8 @@ class IncidentRepairSummary {
     if (status == 'pending' && assignmentState == 'declined') {
       return 'Work Order Awaiting Reassignment';
     }
-    if (status == 'pending' || status == 'accepted') return 'Assigned for Repair';
+    if (status == 'pending' || status == 'accepted')
+      return 'Assigned for Repair';
     return _statusLabel(status);
   }
 
@@ -114,16 +136,21 @@ class IncidentRepairSummary {
     if (readyForCompletion || status == 'completed' || progressPercent == 100) {
       return 'Awaiting verification';
     }
-    if (status == 'in_progress' && progressPercent > 0) return '$progressPercent% repair';
+    if (status == 'in_progress' && progressPercent > 0)
+      return '$progressPercent% repair';
     if (status == 'in_progress') return 'Repair in progress';
-    if (status == 'pending' && assignmentState == 'unassigned') return 'Work order created';
-    if (status == 'pending' && assignmentState == 'declined') return 'Awaiting reassignment';
-    if (status == 'pending' || status == 'accepted') return 'Assigned for repair';
+    if (status == 'pending' && assignmentState == 'unassigned')
+      return 'Work order created';
+    if (status == 'pending' && assignmentState == 'declined')
+      return 'Awaiting reassignment';
+    if (status == 'pending' || status == 'accepted')
+      return 'Assigned for repair';
     return _statusLabel(status);
   }
 
   factory IncidentRepairSummary.fromJson(Map<String, dynamic> json) {
-    final progress = int.tryParse((json['progressPercent'] ?? 0).toString()) ?? 0;
+    final progress =
+        int.tryParse((json['progressPercent'] ?? 0).toString()) ?? 0;
     return IncidentRepairSummary(
       reference: _text(json['reference'] ?? json['orderNumber']),
       status: (json['status'] ?? 'pending').toString(),
@@ -174,8 +201,9 @@ class IncidentLocation {
     return IncidentLocation(
       longitude: coordinates.isNotEmpty ? _double(coordinates.first) : null,
       latitude: coordinates.length > 1 ? _double(coordinates[1]) : null,
-      address: (address['street'] ?? address['displayName'] ?? address['address'])
-          ?.toString(),
+      address:
+          (address['street'] ?? address['displayName'] ?? address['address'])
+              ?.toString(),
       barangay: address['barangay']?.toString(),
       city: address['city']?.toString(),
     );
@@ -189,6 +217,9 @@ class ReportEvidence {
     this.qualityStatus,
     this.privacyProcessingStatus,
     this.privacyProcessingApplied,
+    this.width,
+    this.height,
+    this.aiFindings = const [],
   });
 
   final String url;
@@ -196,17 +227,124 @@ class ReportEvidence {
   final String? qualityStatus;
   final String? privacyProcessingStatus;
   final bool? privacyProcessingApplied;
+  final int? width;
+  final int? height;
+  final List<AiFinding> aiFindings;
 
   factory ReportEvidence.fromJson(Map<String, dynamic> json) {
     final privacy = _map(json['privacyProcessing']);
     final quality = _map(json['quality']);
+    final rawFindings = json['aiFindings'] is List
+        ? json['aiFindings'] as List
+        : const [];
     return ReportEvidence(
       url: (json['url'] ?? json['signedUrl'] ?? '').toString(),
       isPrivacyMasked: json['isPrivacyMasked'] as bool?,
       qualityStatus: quality['status']?.toString(),
       privacyProcessingStatus: privacy['status']?.toString(),
       privacyProcessingApplied: privacy['applied'] as bool?,
+      width: _int(json['width']),
+      height: _int(json['height']),
+      aiFindings: rawFindings
+          .whereType<Map>()
+          .map(
+            (value) => AiFinding.tryFromJson(Map<String, dynamic>.from(value)),
+          )
+          .whereType<AiFinding>()
+          .toList(growable: false),
     );
+  }
+}
+
+class AiAnalysis {
+  const AiAnalysis({
+    required this.status,
+    required this.category,
+    required this.modelAvailable,
+    required this.detected,
+    required this.confidence,
+    required this.findingsCount,
+    required this.requiresManualReview,
+    required this.advisoryOnly,
+    this.hazardType,
+    this.processedAt,
+  });
+
+  final String status;
+  final String? category;
+  final bool modelAvailable;
+  final bool detected;
+  final double confidence;
+  final int findingsCount;
+  final bool requiresManualReview;
+  final bool advisoryOnly;
+  final String? hazardType;
+  final DateTime? processedAt;
+
+  factory AiAnalysis.fromJson(Map<String, dynamic> json) => AiAnalysis(
+    status: (json['analysisStatus'] ?? 'unavailable').toString(),
+    category: _text(json['category']),
+    modelAvailable: json['modelAvailable'] == true,
+    detected: json['detected'] == true,
+    confidence: (_double(json['confidence']) ?? 0).clamp(0, 1).toDouble(),
+    findingsCount: _int(json['findingsCount']) ?? 0,
+    requiresManualReview: true,
+    advisoryOnly: true,
+    hazardType: _text(json['hazardType']),
+    processedAt: _date(json['processedAt']),
+  );
+}
+
+class AiFinding {
+  const AiFinding({
+    required this.label,
+    required this.confidence,
+    required this.bbox,
+  });
+
+  final String label;
+  final double confidence;
+  final AiBoundingBox bbox;
+
+  static AiFinding? tryFromJson(Map<String, dynamic> json) {
+    final label = _text(json['label']);
+    final bbox = AiBoundingBox.tryFromJson(_map(json['bbox']));
+    if (label == null || bbox == null) return null;
+    return AiFinding(
+      label: label,
+      confidence: (_double(json['confidence']) ?? 0).clamp(0, 1).toDouble(),
+      bbox: bbox,
+    );
+  }
+}
+
+class AiBoundingBox {
+  const AiBoundingBox({
+    required this.x1,
+    required this.y1,
+    required this.x2,
+    required this.y2,
+  });
+
+  final double x1;
+  final double y1;
+  final double x2;
+  final double y2;
+
+  static AiBoundingBox? tryFromJson(Map<String, dynamic> json) {
+    final values = [
+      json['x1'],
+      json['y1'],
+      json['x2'],
+      json['y2'],
+    ].map(_double).toList(growable: false);
+    if (values.any((value) => value == null)) return null;
+    final x1 = values[0]!.clamp(0, 1).toDouble();
+    final y1 = values[1]!.clamp(0, 1).toDouble();
+    final x2 = values[2]!.clamp(0, 1).toDouble();
+    final y2 = values[3]!.clamp(0, 1).toDouble();
+    if (x2 < x1 || y2 < y1) return null;
+    return AiBoundingBox(x1: x1, y1: y1, x2: x2, y2: y2);
   }
 }
 
@@ -229,7 +367,8 @@ class ReportStatusEvent {
 
   String get citizenLabel {
     if (event == 'work_order_created') return 'Work Order Created';
-    if (progressPercent == 100) return 'Repair Reached 100% · Awaiting Verification';
+    if (progressPercent == 100)
+      return 'Repair Reached 100% · Awaiting Verification';
     if (progressPercent != null && progressPercent! > 0) {
       return 'Repair Progress: $progressPercent%';
     }
@@ -238,14 +377,17 @@ class ReportStatusEvent {
     return _statusLabel(status);
   }
 
-  factory ReportStatusEvent.fromJson(Map<String, dynamic> json) => ReportStatusEvent(
-    status: (json['status'] ?? 'submitted').toString(),
-    changedAt: _date(json['changedAt'] ?? json['createdAt']),
-    notes: json['notes']?.toString(),
-    progressPercent: int.tryParse((json['progressPercent'] ?? '').toString()),
-    repairStage: _text(json['repairStage'] ?? json['stage']),
-    event: _text(json['event']),
-  );
+  factory ReportStatusEvent.fromJson(Map<String, dynamic> json) =>
+      ReportStatusEvent(
+        status: (json['status'] ?? 'submitted').toString(),
+        changedAt: _date(json['changedAt'] ?? json['createdAt']),
+        notes: json['notes']?.toString(),
+        progressPercent: int.tryParse(
+          (json['progressPercent'] ?? '').toString(),
+        ),
+        repairStage: _text(json['repairStage'] ?? json['stage']),
+        event: _text(json['event']),
+      );
 }
 
 Map<String, dynamic> _map(Object? value) => value is Map<String, dynamic>
@@ -259,13 +401,14 @@ String? _text(Object? value) {
   return text == null || text.isEmpty ? null : text;
 }
 
-double? _double(Object? value) => value is num
-    ? value.toDouble()
-    : double.tryParse(value?.toString() ?? '');
+double? _double(Object? value) =>
+    value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '');
 
-DateTime? _date(Object? value) => value == null
-    ? null
-    : DateTime.tryParse(value.toString())?.toLocal();
+int? _int(Object? value) =>
+    value is num ? value.toInt() : int.tryParse(value?.toString() ?? '');
+
+DateTime? _date(Object? value) =>
+    value == null ? null : DateTime.tryParse(value.toString())?.toLocal();
 
 String _statusLabel(String value) => value
     .replaceAll('_', ' ')

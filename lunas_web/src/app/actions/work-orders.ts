@@ -21,7 +21,7 @@ const officialRoles = new Set<OfficialRole>([
   "admin",
 ]);
 
-const allowedEvidenceTypes = new Set(["image/jpeg", "image/jpg", "image/png"]);
+const allowedEvidenceTypes = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const maxEvidenceFiles = 5;
 const maxEvidenceBytes = 10 * 1024 * 1024;
 
@@ -267,8 +267,8 @@ export async function uploadRepairEvidenceAction(formData: FormData): Promise<Wo
     if (files.length > maxEvidenceFiles) return { ok: false, message: `Upload no more than ${maxEvidenceFiles} images at once.` };
     for (const file of files) {
       const extension = file.name.split(".").pop()?.toLowerCase();
-      if (!allowedEvidenceTypes.has(file.type) || !["jpg", "jpeg", "png"].includes(extension ?? "")) {
-        return { ok: false, message: "Repair evidence must be a JPEG or PNG image with a matching file extension." };
+      if (!allowedEvidenceTypes.has(file.type) || !["jpg", "jpeg", "png", "webp"].includes(extension ?? "")) {
+        return { ok: false, message: "Repair evidence must be a JPEG, PNG, or WebP image with a matching file extension." };
       }
       if (file.size < 1 || file.size > maxEvidenceBytes) {
         return { ok: false, message: "Each repair evidence image must be no larger than 10 MB." };

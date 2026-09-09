@@ -70,14 +70,14 @@ class ModelManager:
         try:
             logger.info(f"Loading model: {model_name} from {full_path}")
             
-            # Check if model file exists
-            if not full_path.exists():
-                logger.warning(f"Model file not found: {full_path}")
-                logger.info(f"Downloading pre-trained model: {model_name}")
-                # Ultralytics will auto-download from hub
-                model_path_str = full_path.name  # Use just filename for auto-download
-            else:
-                model_path_str = str(full_path)
+            # Missing category models are a manual-review state. Never ask
+            # Ultralytics to download a similarly named model because that
+            # would violate strict category routing and the no-install rule.
+            if not full_path.is_file():
+                logger.warning(f"Configured model file not found: {full_path}")
+                raise FileNotFoundError(f"Configured model file not found: {full_path}")
+
+            model_path_str = str(full_path)
             
             # Load model
             model = YOLO(model_path_str)

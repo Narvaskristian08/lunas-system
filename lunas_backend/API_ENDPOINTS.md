@@ -258,11 +258,12 @@ Logout revokes the account's currently issued sessions; an optional
 | `description` | 10–2,000 character citizen description |
 | `location` | JSON string with GeoJSON-style `Point`, `[longitude, latitude]`, and address/barangay |
 | `privacyAcknowledged` | Required `true` for citizen evidence while a real face/plate detector is unavailable |
-| `evidence` | One to five JPG/PNG images, each at most the configured size (10 MB by default) |
+| `evidence` | One to five JPG/PNG/WebP images, each at most the configured size (10 MB by default) |
 
-The backend decodes and validates the image, re-encodes it to remove EXIF
-metadata, generates the object key/checksum, and stores evidence through the
-configured storage provider. It ignores a citizen-supplied priority and begins
+The backend decodes and validates the image, re-encodes it to WebP to remove
+EXIF metadata and reduce storage size, generates the object key/checksum, and
+stores evidence through the configured storage provider. It ignores a
+citizen-supplied priority and begins
 the report in `submitted`; it does not accept a client-declared AI result.
 
 Example multipart location field:
@@ -352,9 +353,14 @@ reports.
 
 Each item includes only operationally necessary fields: report number,
 category/description, submitted location, signed evidence thumbnail, status,
-submitted time, advisory duplicate count, and safe AI suggestion metadata when
-available. It does not expose citizen email, phone, account internals, or
-storage keys.
+submitted time, advisory duplicate count, and safe AI assistance metadata when
+available. AI metadata includes `analysisStatus`, `hazardType`, `confidence`,
+ normalized detection counts, per-image normalized bounding boxes,
+ `requiresManualReview: true`, and `advisoryOnly: true`. AI runs only the model
+ assigned to the incident's canonical category; unsupported categories remain
+ manual-review only. AI never changes category, priority, routing, duplicate
+status, incident status, work orders, or closure. It does not expose citizen
+email, phone, account internals, raw model errors, or storage keys.
 
 ### 7. Review Advisory Duplicate Candidates
 **GET** `/incidents/:id/duplicate-candidates`

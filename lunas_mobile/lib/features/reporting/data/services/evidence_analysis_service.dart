@@ -5,8 +5,10 @@ abstract interface class EvidenceAnalysisService {
   Future<EvidenceAnalysisResult> analyze(XFile image);
 }
 
-/// Truthful fallback until an approved on-device model asset is delivered.
-/// It never infers a category and never reports privacy redaction as complete.
+/// Compatibility fallback for the mobile evidence model boundary.
+///
+/// The current mobile flow never runs a model. Hazard assistance belongs to
+/// the backend, and the official web workflow always requires manual review.
 class UnavailableEvidenceAnalysisService implements EvidenceAnalysisService {
   const UnavailableEvidenceAnalysisService();
 

@@ -20,7 +20,7 @@ from src.utils.config import config
 
 def train_road_collapse():
     """Train YOLOv8n on road collapse dataset"""
-    
+
     logger.info("="*80)
     logger.info("LUNAS AI - Road Collapse Model Training")
     logger.info("="*80)
@@ -63,7 +63,7 @@ def train_road_collapse():
         'momentum': 0.937,
         'weight_decay': 0.0005,
         'warmup_epochs': 3.0,
-        
+
         # Augmentation
         'hsv_h': 0.015,
         'hsv_s': 0.7,
@@ -90,7 +90,7 @@ def train_road_collapse():
     try:
         # Train the model
         results = model.train(**train_config)
-        
+
         logger.info("="*80)
         logger.info("Training completed successfully!")
         logger.info("="*80)
@@ -100,7 +100,7 @@ def train_road_collapse():
         
         if best_model_path.exists():
             # Copy to models directory
-            output_path = Path("models/yolov8n-road-collapse-best.pt")
+            output_path = Path("models/road/roadcollapse/best.pt")
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
             import shutil
@@ -139,11 +139,10 @@ if __name__ == '__main__':
     logger.info(f"Training started at: {datetime.now()}")
     success = train_road_collapse()
     logger.info(f"Training finished at: {datetime.now()}")
-    
+
     if success:
         logger.info("✅ Training completed successfully!")
         sys.exit(0)
     else:
         logger.error("❌ Training failed!")
         sys.exit(1)
-        
