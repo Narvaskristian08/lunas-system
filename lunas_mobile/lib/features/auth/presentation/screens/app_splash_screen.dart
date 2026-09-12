@@ -20,12 +20,28 @@ class AppSplashScreen extends StatelessWidget {
       child: Column(
         children: [
           const Spacer(flex: 4),
-          const LunasBrand(centered: true, large: true),
+          const LunasBrand(
+            centered: true,
+            large: true,
+            showTitle: false,
+            showSubtitle: false,
+          ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            failed ? 'Could not restore your session.' : 'Your city. Your voice. Your LUNAS.',
+            'LUNAS',
+            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+              color: AppColorsLight.brandBase,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            failed
+                ? 'Could not restore your session.'
+                : 'AI-Assisted Urban Infrastructure\nMaintenance and Monitoring System',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
           ),
           const Spacer(flex: 3),
           if (failed) ...[
@@ -48,7 +64,33 @@ class AppSplashScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             const Text('Restoring your secure session…'),
           ],
-          const Spacer(),
+          const Spacer(flex: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.verified_outlined, size: 18),
+              const SizedBox(width: AppSpacing.xs),
+              Flexible(
+                child: Text(
+                  'Government Standard Infrastructure Secure',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xxs,
+            ),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text('v1.0.0'),
+          ),
         ],
       ),
     );

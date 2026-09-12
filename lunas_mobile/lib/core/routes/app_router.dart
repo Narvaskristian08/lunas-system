@@ -8,6 +8,7 @@ import 'package:lunas_mobile/features/auth/presentation/screens/citizen_registra
 import 'package:lunas_mobile/features/auth/presentation/screens/password_recovery_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/reset_password_with_token_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/role_unavailable_screen.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashboard_screen.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
@@ -29,6 +30,8 @@ import 'package:lunas_mobile/features/reporting/presentation/screens/citizen_rep
 import 'package:lunas_mobile/features/reporting/presentation/screens/evidence_picker_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/my_reports_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/new_citizen_report_screen.dart';
+import 'package:lunas_mobile/features/stitch_auth/presentation/screens/registration_type_screen.dart';
+import 'package:lunas_mobile/features/stitch_auth/presentation/screens/official_role_selection_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_review_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_submitted_screen.dart';
 import 'package:lunas_mobile/features/validation/presentation/screens/official_dashboard_screen.dart';
@@ -48,8 +51,11 @@ final GoRouter appRouter = GoRouter(
   redirect: (context, state) {
     final location = state.uri.path;
     const publicLocations = {
+      '/onboarding',
       '/login',
       '/register',
+      '/registration/type',
+      '/registration/official-role',
       '/forgot-password',
       '/reset-password',
     };
@@ -75,7 +81,9 @@ final GoRouter appRouter = GoRouter(
         }
         final home = authController.workspaceHomePath;
         if (home == null) return '/role-unavailable';
-        if (isPublic || location == '/splash' || location == '/role-unavailable') {
+        if (isPublic ||
+            location == '/splash' ||
+            location == '/role-unavailable') {
           return home;
         }
         // A citizen may never use an official URL, and an official may never
@@ -95,7 +103,16 @@ final GoRouter appRouter = GoRouter(
   },
   routes: [
     GoRoute(path: '/splash', builder: (_, _) => const AppSplashScreen()),
+    GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (_, _) => const CitizenLoginScreen()),
+    GoRoute(
+      path: '/registration/type',
+      builder: (_, _) => const RegistrationTypeScreen(),
+    ),
+    GoRoute(
+      path: '/registration/official-role',
+      builder: (_, _) => const OfficialRoleSelectionScreen(),
+    ),
     GoRoute(
       path: '/register',
       builder: (_, _) => const CitizenRegistrationScreen(),
@@ -118,10 +135,7 @@ final GoRouter appRouter = GoRouter(
       path: '/citizen',
       builder: (_, _) => const CitizenDashboardScreen(),
     ),
-    GoRoute(
-      path: '/reports',
-      builder: (_, _) => const MyReportsScreen(),
-    ),
+    GoRoute(path: '/reports', builder: (_, _) => const MyReportsScreen()),
     GoRoute(
       path: '/reports/new',
       builder: (_, _) => const NewCitizenReportScreen(),
@@ -133,7 +147,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/reports/categories',
       builder: (_, state) => CategoryPickerScreen(
-        selected: state.extra is CategoryOption ? state.extra as CategoryOption : null,
+        selected: state.extra is CategoryOption
+            ? state.extra as CategoryOption
+            : null,
       ),
     ),
     GoRoute(
@@ -168,14 +184,10 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/reports/:id',
-      builder: (_, state) => CitizenReportDetailScreen(
-        reportId: state.pathParameters['id'] ?? '',
-      ),
+      builder: (_, state) =>
+          CitizenReportDetailScreen(reportId: state.pathParameters['id'] ?? ''),
     ),
-    GoRoute(
-      path: '/profile',
-      builder: (_, _) => const CitizenProfileScreen(),
-    ),
+    GoRoute(path: '/profile', builder: (_, _) => const CitizenProfileScreen()),
     GoRoute(
       path: '/official',
       builder: (_, _) => const OfficialDashboardScreen(),
@@ -198,19 +210,15 @@ final GoRouter appRouter = GoRouter(
       path: '/official/work-orders',
       builder: (_, _) => const OfficialWorkOrdersScreen(),
     ),
-    GoRoute(
-      path: '/repair',
-      builder: (_, _) => const RepairDashboardScreen(),
-    ),
+    GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
     GoRoute(
       path: '/repair/work-orders',
       builder: (_, _) => const AssignedWorkOrdersScreen(),
     ),
     GoRoute(
       path: '/repair/work-orders/:id/start',
-      builder: (_, state) => StartRepairScreen(
-        workOrderId: state.pathParameters['id'] ?? '',
-      ),
+      builder: (_, state) =>
+          StartRepairScreen(workOrderId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
       path: '/repair/work-orders/:id/progress',
@@ -232,18 +240,16 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/repair/work-orders/:id',
-      builder: (_, state) => WorkOrderDetailsScreen(
-        workOrderId: state.pathParameters['id'] ?? '',
-      ),
+      builder: (_, state) =>
+          WorkOrderDetailsScreen(workOrderId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
       path: '/repair/profile',
       builder: (_, _) => const RepairProfileScreen(),
     ),
   ],
-  errorBuilder: (_, state) => Scaffold(
-    body: Center(child: Text('Page not found: ${state.uri.path}')),
-  ),
+  errorBuilder: (_, state) =>
+      Scaffold(body: Center(child: Text('Page not found: ${state.uri.path}'))),
 );
 
 bool _isCitizenLocation(String location) =>

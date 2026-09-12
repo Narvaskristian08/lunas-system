@@ -4,6 +4,7 @@ import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_text_field.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
+import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -14,11 +15,12 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController(text: 'Alex Dela Cruz');
-  final _email = TextEditingController(text: 'alex.delacruz@example.com');
-  final _phone = TextEditingController(text: '9171234567');
-  final _address = TextEditingController(text: 'Barangay 5, LUNAS City');
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
+  final _address = TextEditingController();
   bool _saving = false;
+  bool _initialized = false;
 
   @override
   void dispose() {
@@ -31,18 +33,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final auth = AuthScope.of(context);
+    final parts = _name.text.trim().split(RegExp(r'\s+'));
+    final firstName = parts.isEmpty ? '' : parts.first;
+    final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
     setState(() => _saving = true);
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    final success = await auth.updateProfile(
+      firstName: firstName,
+      lastName: lastName,
+      phone: _phone.text.replaceAll(RegExp(r'\s+'), ''),
+      address: _address.text.trim(),
+    );
     if (!mounted) return;
     setState(() => _saving = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Profile updated.')));
-    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Profile updated.'
+              : auth.message ?? 'Could not update profile.',
+        ),
+      ),
+    );
+    if (success) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      final user = AuthScope.of(context).user;
+      _name.text = user?.fullName ?? '';
+      _email.text = user?.email ?? '';
+      _phone.text = user?.phone ?? '';
+      _address.text = user?.address?['street']?.toString() ?? '';
+      _initialized = true;
+    }
     return Scaffold(
       appBar: const LunasAppBar(
         title: 'Edit Profile',
@@ -104,7 +129,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       label: 'Mobile Number',
                       prefixIcon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
-                      validator: (value) => (value?.trim().length ?? 0) == 10
+                      validator: (value) =>
+                          RegExp(r'^(\+639|09)\d{9}$').hasMatch(
+                            value?.replaceAll(RegExp(r'\s+'), '') ?? '',
+                          )
                           ? null
                           : 'Enter a valid mobile number',
                     ),

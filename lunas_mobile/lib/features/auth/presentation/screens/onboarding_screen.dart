@@ -1,148 +1,113 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
-import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final _pageController = PageController();
-  int _currentPage = 0;
-
-  static const _pages = [
-    (
-      icon: Icons.add_location_alt_outlined,
-      title: 'Report issues that matter',
-      description:
-          'Send verified reports with photos and location details directly to your local government.',
-    ),
-    (
-      icon: Icons.track_changes_rounded,
-      title: 'Track every update',
-      description:
-          'Follow your report from validation and assignment through repair and resolution.',
-    ),
-    (
-      icon: Icons.groups_2_outlined,
-      title: 'Build a safer community',
-      description:
-          'Help residents and city teams work together for cleaner, safer, more responsive streets.',
-    ),
-  ];
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _continue() {
-    if (_currentPage == _pages.length - 1) {
-      Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AuthLayout(
-      showBrand: false,
-      scrollable: false,
-      child: Column(
-        children: [
-          Row(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FF),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.xxl,
+          ),
+          child: Column(
             children: [
-              const LunasBrand(showSubtitle: false),
-              const Spacer(),
-              TextButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/login'),
-                child: const Text('Skip'),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: () => _showUnavailable(context, 'Language selection'),
+                  tooltip: 'Language',
+                  icon: const Icon(Icons.language_rounded, size: 18),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const LunasBrand(
+                centered: true,
+                large: true,
+                showSubtitle: false,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Text(
+                  'Report infrastructure concerns and track their resolution.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              LunasButton(
+                label: 'Log In',
+                icon: Icons.login_rounded,
+                onPressed: () => context.go('/login'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => context.go('/registration/type'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF9AF29A),
+                    foregroundColor: const Color(0xFF164B21),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Create Account'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                height: 176,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFDCEBFA), Color(0xFFB9D8EE)],
+                  ),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.location_city_rounded,
+                    size: 64,
+                    color: AppColorsLight.brandBase,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              TextButton.icon(
+                onPressed: () => _showUnavailable(context, 'About LUNAS'),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                label: const Text('Learn About LUNAS'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                '© 2024 LUNAS Urban Infrastructure Management',
+                style: Theme.of(context).textTheme.labelSmall,
               ),
             ],
           ),
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _pages.length,
-              onPageChanged: (value) => setState(() => _currentPage = value),
-              itemBuilder: (context, index) {
-                final page = _pages[index];
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 190,
-                      height: 190,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF3FC),
-                        borderRadius: AppRadius.card,
-                      ),
-                      child: Icon(
-                        page.icon,
-                        color: AppColorsLight.brandBase,
-                        size: 82,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxxl),
-                    Text(
-                      page.title,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineLarge
-                          ?.copyWith(fontSize: 28, fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      page.description,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(height: 1.6),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              _pages.length,
-              (index) => AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: index == _currentPage ? 26 : 8,
-                height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  color: index == _currentPage
-                      ? AppColorsLight.brandBase
-                      : AppColorsLight.divider,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          LunasButton(
-            label: _currentPage == _pages.length - 1
-                ? 'Get Started'
-                : 'Continue',
-            onPressed: _continue,
-            icon: Icons.arrow_forward_rounded,
-          ),
-        ],
+        ),
       ),
+    );
+  }
+
+  void _showUnavailable(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$feature is not available in this build.')),
     );
   }
 }

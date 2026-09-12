@@ -106,9 +106,12 @@ class _CitizenRegistrationPersonalInfoScreenState
           LunasButton(
             label: 'Continue to Account Security',
             icon: Icons.arrow_forward_rounded,
-            onPressed: () => Navigator.pushNamed(
-              context,
-              '/registration/citizen/credentials',
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Use the supported citizen registration form to create an account.',
+                ),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),

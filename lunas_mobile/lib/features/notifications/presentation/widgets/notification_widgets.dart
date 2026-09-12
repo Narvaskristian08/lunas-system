@@ -87,6 +87,29 @@ class NotificationCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item.color.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    switch (item.kind) {
+                      NotificationKind.update => 'UPDATE',
+                      NotificationKind.activity => 'ACTIVITY',
+                      NotificationKind.alert => 'ALERT',
+                    },
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: item.color,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   item.message,
                   maxLines: 2,

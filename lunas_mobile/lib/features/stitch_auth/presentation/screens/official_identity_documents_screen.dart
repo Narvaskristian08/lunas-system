@@ -21,18 +21,23 @@ class _OfficialIdentityDocumentsScreenState
   final Set<_DocumentType> _readyDocuments = {};
 
   void _markReady(_DocumentType document, String action) {
-    setState(() => _readyDocuments.add(document));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '$action selected for ${document.label}. Placeholder marked ready.',
+          '$action for ${document.label} is unavailable until document upload is connected.',
         ),
       ),
     );
   }
 
   void _continue() {
-    Navigator.pushNamed(context, '/registration/pending');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Official registration cannot be submitted from this mobile build.',
+        ),
+      ),
+    );
   }
 
   @override

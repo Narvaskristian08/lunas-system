@@ -58,7 +58,7 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Your personnel registration has been submitted for department verification. We will notify you when an authorized administrator finishes the review.',
+                    'Official registration and document review are not connected in this mobile build. No application has been submitted.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
                   ),
@@ -69,7 +69,7 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
                         const _StatusRow(
                           icon: Icons.history_rounded,
                           label: 'Status',
-                          value: 'Pending Review',
+                          value: 'Preview only',
                           color: AppColorsLight.alert,
                         ),
                         const Padding(
@@ -81,7 +81,7 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
                         const _StatusRow(
                           icon: Icons.tag_rounded,
                           label: 'Reference',
-                          value: 'REG-2026-00421',
+                          value: 'Not generated',
                           color: AppColorsLight.brandBase,
                         ),
                         const Padding(
@@ -118,7 +118,7 @@ class RegistrationPendingApprovalScreen extends StatelessWidget {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            'Official access remains unavailable until a city administrator verifies the role and identity documents.',
+                            'Official access remains unavailable until a supported registration and verification service is connected.',
                             style: theme.textTheme.bodySmall,
                           ),
                         ),

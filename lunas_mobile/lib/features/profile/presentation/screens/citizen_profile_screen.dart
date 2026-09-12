@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/citizen_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
-import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
+import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 
 class CitizenProfileScreen extends StatefulWidget {
   const CitizenProfileScreen({super.key});
@@ -51,7 +51,11 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(success ? 'Profile updated.' : auth.message ?? 'Could not update profile.'),
+        content: Text(
+          success
+              ? 'Profile updated.'
+              : auth.message ?? 'Could not update profile.',
+        ),
       ),
     );
   }
@@ -61,7 +65,9 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
-        content: const Text('Your secure session will be removed from this device.'),
+        content: const Text(
+          'Your secure session will be removed from this device.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -95,80 +101,72 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LunasCard(
+            ProfileHero(
+              name: user?.fullName ?? 'Citizen',
+              email: user?.email ?? '',
+              role: 'Citizen account',
+              initials: avatarInitial,
+              imageUrl: user?.profileImage,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ProfileSection(
+              title: 'Account details',
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 35,
-                    child: Text(
-                      avatarInitial,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
+                  TextFormField(
+                    controller: _firstNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'First name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter your first name.'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(user?.fullName ?? 'Citizen', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(user?.email ?? '', style: Theme.of(context).textTheme.bodySmall),
+                  TextFormField(
+                    controller: _lastNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'Last name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter your last name.'
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile number',
+                    ),
+                    validator: (value) =>
+                        RegExp(
+                          r'^(\+639|09)\d{9}$',
+                        ).hasMatch(value?.replaceAll(RegExp(r'\s+'), '') ?? '')
+                        ? null
+                        : 'Enter a valid Philippine mobile number.',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _addressController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Address (optional)',
+                      hintText: 'Street or area only',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  LunasButton(
+                    label: 'Save profile',
+                    isLoading: auth.isSubmitting,
+                    onPressed: auth.isSubmitting ? null : _save,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
-                  Chip(
-                    avatar: const Icon(Icons.person_outline_rounded, size: 18),
-                    label: const Text('Citizen account'),
+                  OutlinedButton.icon(
+                    onPressed: auth.isSubmitting ? null : _confirmLogout,
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Sign out'),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Account details', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _firstNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'First name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your first name.'
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _lastNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Last name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your last name.'
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Mobile number'),
-              validator: (value) =>
-                  RegExp(r'^(\+639|09)\d{9}$').hasMatch(
-                    value?.replaceAll(RegExp(r'\s+'), '') ?? '',
-                  )
-                  ? null
-                  : 'Enter a valid Philippine mobile number.',
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _addressController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Address (optional)',
-                hintText: 'Street or area only',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            LunasButton(
-              label: 'Save profile',
-              isLoading: auth.isSubmitting,
-              onPressed: auth.isSubmitting ? null : _save,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: auth.isSubmitting ? null : _confirmLogout,
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign out'),
             ),
           ],
         ),

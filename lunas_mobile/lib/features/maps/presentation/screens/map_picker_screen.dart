@@ -217,6 +217,15 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
+                            'Selected location',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: .5,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
                             selected?.address ??
                                 'Tap anywhere on the map to place a pin.',
                             style: theme.textTheme.titleMedium,

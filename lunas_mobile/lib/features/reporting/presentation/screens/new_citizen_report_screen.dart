@@ -9,6 +9,7 @@ import 'package:lunas_mobile/features/reporting/data/models/category_option.dart
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class NewCitizenReportScreen extends StatefulWidget {
   const NewCitizenReportScreen({super.key});
@@ -83,9 +84,9 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
     context.push('/reports/review', extra: draft);
   }
 
-  void _showRequired(String message) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
+  void _showRequired(String message) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -108,11 +109,15 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const ReportProgressIndicator(current: 1),
+              const SizedBox(height: AppSpacing.xl),
               _StepLabel(number: '1', label: 'Evidence'),
               const SizedBox(height: AppSpacing.sm),
               LunasCard(
                 onTap: _chooseEvidence,
-                padding: _evidence == null ? const EdgeInsets.all(AppSpacing.lg) : EdgeInsets.zero,
+                padding: _evidence == null
+                    ? const EdgeInsets.all(AppSpacing.lg)
+                    : EdgeInsets.zero,
                 child: _evidence == null
                     ? const Row(
                         children: [
@@ -134,7 +139,10 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          LocalEvidencePreview(evidence: _evidence!, height: 170),
+                          LocalEvidencePreview(
+                            evidence: _evidence!,
+                            height: 170,
+                          ),
                           Padding(
                             padding: const EdgeInsets.all(AppSpacing.md),
                             child: Row(
@@ -208,7 +216,9 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_location?.address ?? 'Choose and confirm location'),
+                          Text(
+                            _location?.address ?? 'Choose and confirm location',
+                          ),
                           if (_location != null) ...[
                             const SizedBox(height: AppSpacing.xxs),
                             Text(

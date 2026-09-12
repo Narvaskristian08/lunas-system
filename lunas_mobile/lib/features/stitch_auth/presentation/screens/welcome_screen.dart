@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -89,14 +90,14 @@ class WelcomeScreen extends StatelessWidget {
                     LunasButton(
                       label: 'Log In',
                       icon: Icons.login_rounded,
-                      onPressed: () => Navigator.pushNamed(context, '/login'),
+                      onPressed: () => context.go('/login'),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () =>
-                            Navigator.pushNamed(context, '/registration/type'),
+                            context.go('/registration/type'),
                         icon: const Icon(Icons.person_add_alt_1_outlined),
                         label: const Text('Create Account'),
                       ),

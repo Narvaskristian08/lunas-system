@@ -279,10 +279,11 @@ class AdminStatusPill extends StatelessWidget {
             const SizedBox(width: AppSpacing.xxs),
           ],
           Text(
-            label,
+            label.toUpperCase(),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w700,
+              letterSpacing: .35,
             ),
           ),
         ],

@@ -26,7 +26,9 @@ class MyApp extends StatelessWidget {
         routerConfig: appRouter,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
+        // Stitch is authored as a light-first experience. Keep the mobile
+        // app deterministic regardless of the host OS appearance setting.
+        themeMode: ThemeMode.light,
       ),
     );
   }

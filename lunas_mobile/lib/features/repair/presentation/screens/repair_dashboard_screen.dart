@@ -110,7 +110,9 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        const Text('Review assignments, update field progress, and watch SLA deadlines.'),
+        const Text(
+          'Review assignments, update field progress, and watch SLA deadlines.',
+        ),
         const SizedBox(height: AppSpacing.xl),
         _RepairMetrics(summary: summary),
         if (summary.overdue > 0 || summary.approachingDeadline > 0) ...[
@@ -196,7 +198,7 @@ class _RepairMetrics extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 560 ? 3 : 2;
+        final columns = constraints.maxWidth >= 600 ? 3 : 2;
         final width =
             (constraints.maxWidth - (AppSpacing.sm * (columns - 1))) / columns;
         return Wrap(
@@ -237,7 +239,7 @@ class _SlaNotice extends StatelessWidget {
     final isOverdue = overdue > 0;
     final color = isOverdue ? AppColorsLight.critical : AppColorsLight.alert;
     final message = isOverdue
-        ? '$overdue assigned work order${overdue == 1 ? ' is' : 's are'} overdue.'
+        ? 'CRITICAL: SLA Breach Risk\n$overdue assigned work order${overdue == 1 ? ' is' : 's are'} overdue.'
         : '$approaching assigned work order${approaching == 1 ? ' is' : 's are'} approaching the SLA deadline.';
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -251,8 +253,16 @@ class _SlaNotice extends StatelessWidget {
         children: [
           Icon(Icons.warning_amber_rounded, color: color),
           const SizedBox(width: AppSpacing.sm),
-          Expanded(child: Text(message)),
-          TextButton(onPressed: onOpenTasks, child: const Text('Open')),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: color,
+                fontWeight: isOverdue ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(onPressed: onOpenTasks, child: const Text('Open tasks')),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -17,7 +18,7 @@ class _RegistrationTypeScreenState extends State<RegistrationTypeScreen> {
 
   void _continue() {
     final route = switch (_type) {
-      _RegistrationType.citizen => '/registration/citizen/personal',
+      _RegistrationType.citizen => '/register',
       _RegistrationType.official => '/registration/official-role',
       null => null,
     };
@@ -27,7 +28,7 @@ class _RegistrationTypeScreenState extends State<RegistrationTypeScreen> {
       );
       return;
     }
-    Navigator.pushNamed(context, route);
+    context.go(route);
   }
 
   @override
@@ -89,7 +90,7 @@ class _RegistrationTypeScreenState extends State<RegistrationTypeScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/login'),
+            onPressed: () => context.go('/login'),
             child: const Text('Already have an account? Log in'),
           ),
         ],

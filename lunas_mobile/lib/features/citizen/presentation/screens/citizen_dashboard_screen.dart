@@ -66,17 +66,43 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Hello${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
+            'Good morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
             style: Theme.of(
               context,
             ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Report an infrastructure concern and follow its current maintenance status here.',
-          ),
+          const Text('Keep an eye on the infrastructure issues you reported.'),
           const SizedBox(height: AppSpacing.xl),
+          _ActiveReportSummary(reports: _reports),
+          const SizedBox(height: AppSpacing.md),
           _ReportCallout(onCreate: () => context.push('/reports/new')),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _DashboardAction(
+                  icon: Icons.map_outlined,
+                  title: 'View Map',
+                  subtitle: 'Nearby issues',
+                  onTap: () => context.push('/reports/location'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _DashboardAction(
+                  icon: Icons.insights_outlined,
+                  title: 'City Insights',
+                  subtitle: 'Coming soon',
+                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('City insights are not available yet.'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.xxl),
           if (_loading)
             const LunasStateView(
@@ -95,8 +121,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
               compact: true,
             )
           else ...[
-            _ReportSummary(reports: _reports),
-            const SizedBox(height: AppSpacing.xxl),
             Row(
               children: [
                 Expanded(
@@ -151,42 +175,47 @@ class _ReportCallout extends StatelessWidget {
       ),
       borderRadius: AppRadius.card,
     ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Icon(Icons.campaign_outlined, color: Colors.white, size: 30),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Spot an infrastructure problem?',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Report Hazard',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Submit a new civic issue',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: .9),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Add clear evidence, confirm the location, and submit it for official review.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: .9),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: AppColorsLight.brandBase,
-          ),
+        const SizedBox(width: AppSpacing.md),
+        IconButton.filledTonal(
+          tooltip: 'Start a report',
           onPressed: onCreate,
-          icon: const Icon(Icons.add_a_photo_outlined),
-          label: const Text('Start a report'),
+          icon: const Icon(Icons.add_rounded),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: .18),
+            foregroundColor: Colors.white,
+          ),
         ),
       ],
     ),
   );
 }
 
-class _ReportSummary extends StatelessWidget {
-  const _ReportSummary({required this.reports});
+class _ActiveReportSummary extends StatelessWidget {
+  const _ActiveReportSummary({required this.reports});
   final List<IncidentReport> reports;
 
   @override
@@ -194,55 +223,79 @@ class _ReportSummary extends StatelessWidget {
     final active = reports
         .where((report) => !{'closed', 'rejected'}.contains(report.status))
         .length;
-    final submitted = reports
-        .where((report) => report.status == 'submitted')
-        .length;
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: [
-        _SummaryCard(
-          label: 'Loaded reports',
-          value: '${reports.length}',
-          icon: Icons.assignment_outlined,
-        ),
-        _SummaryCard(
-          label: 'Awaiting review',
-          value: '$submitted',
-          icon: Icons.rate_review_outlined,
-        ),
-        _SummaryCard(
-          label: 'Active',
-          value: '$active',
-          icon: Icons.pending_actions_outlined,
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE1EAFF),
+        borderRadius: AppRadius.card,
+        border: Border.all(color: const Color(0xFFD1DDF7)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Reports',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '$active active incident${active == 1 ? '' : 's'} requiring attention',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColorsLight.info,
+            child: Text(
+              '$active',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.value,
+class _DashboardAction extends StatelessWidget {
+  const _DashboardAction({
     required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
   });
-  final String label;
-  final String value;
+
   final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 160,
-    child: LunasCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: AppSpacing.md),
-          Text(value, style: Theme.of(context).textTheme.headlineSmall),
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ],
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xFFE1EAFF),
+    borderRadius: AppRadius.card,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.card,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColorsLight.brandBase, size: 28),
+            const SizedBox(height: AppSpacing.md),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
       ),
     ),
   );

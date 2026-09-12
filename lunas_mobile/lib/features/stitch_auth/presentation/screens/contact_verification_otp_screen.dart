@@ -12,7 +12,13 @@ class ContactVerificationOtpScreen extends StatelessWidget {
   const ContactVerificationOtpScreen({super.key});
 
   void _verify(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Contact verification is not connected to an OTP endpoint yet.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -90,7 +96,9 @@ class ContactVerificationOtpScreen extends StatelessWidget {
               TextButton(
                 onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('A new sample verification code was sent.'),
+                    content: Text(
+                      'Resend is unavailable until OTP delivery is connected.',
+                    ),
                   ),
                 ),
                 child: const Text('Resend Code'),

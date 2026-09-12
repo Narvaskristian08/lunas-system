@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
-import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/official_scaffold.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
+import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 
 class OfficialProfileScreen extends StatefulWidget {
   const OfficialProfileScreen({super.key});
@@ -52,7 +52,11 @@ class _OfficialProfileScreenState extends State<OfficialProfileScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(saved ? 'Account details updated.' : auth.message ?? 'Could not update account details.'),
+        content: Text(
+          saved
+              ? 'Account details updated.'
+              : auth.message ?? 'Could not update account details.',
+        ),
       ),
     );
   }
@@ -62,7 +66,9 @@ class _OfficialProfileScreenState extends State<OfficialProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
-        content: const Text('Your secure session will be removed from this device.'),
+        content: const Text(
+          'Your secure session will be removed from this device.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -95,86 +101,77 @@ class _OfficialProfileScreenState extends State<OfficialProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LunasCard(
+            ProfileHero(
+              name: user?.fullName ?? 'Official',
+              email: user?.email ?? '',
+              role: roleLabel(user?.role ?? 'official'),
+              initials: firstInitial,
+              imageUrl: user?.profileImage,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (user?.barangay?.trim().isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Text('Assigned barangay: ${user!.barangay}'),
+              ),
+            ProfileSection(
+              title: 'Account details',
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 35,
-                    child: Text(
-                      firstInitial,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
+                  TextFormField(
+                    controller: _firstNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'First name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter your first name.'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(user?.fullName ?? 'Official', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(user?.email ?? '', style: Theme.of(context).textTheme.bodySmall),
-                  const SizedBox(height: AppSpacing.sm),
-                  Chip(
-                    avatar: const Icon(Icons.verified_user_outlined, size: 18),
-                    label: Text(roleLabel(user?.role ?? 'official')),
+                  TextFormField(
+                    controller: _lastNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'Last name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter your last name.'
+                        : null,
                   ),
-                  if (user?.barangay?.trim().isNotEmpty == true) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Assigned barangay: ${user!.barangay}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile number',
                     ),
-                  ],
+                    validator: (value) =>
+                        RegExp(
+                          r'^(\+639|09)\d{9}$',
+                        ).hasMatch(value?.replaceAll(RegExp(r'\s+'), '') ?? '')
+                        ? null
+                        : 'Enter a valid Philippine mobile number.',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _addressController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Office address (optional)',
+                      hintText: 'Street or area only',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  LunasButton(
+                    label: 'Save account details',
+                    isLoading: auth.isSubmitting,
+                    onPressed: auth.isSubmitting ? null : _save,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton.icon(
+                    onPressed: auth.isSubmitting ? null : _confirmLogout,
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Sign out'),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Account details', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _firstNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'First name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your first name.'
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _lastNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Last name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your last name.'
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Mobile number'),
-              validator: (value) => RegExp(r'^(\+639|09)\d{9}$').hasMatch(
-                value?.replaceAll(RegExp(r'\s+'), '') ?? '',
-              )
-                  ? null
-                  : 'Enter a valid Philippine mobile number.',
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _addressController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Office address (optional)',
-                hintText: 'Street or area only',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            LunasButton(
-              label: 'Save account details',
-              isLoading: auth.isSubmitting,
-              onPressed: auth.isSubmitting ? null : _save,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: auth.isSubmitting ? null : _confirmLogout,
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign out'),
             ),
           ],
         ),

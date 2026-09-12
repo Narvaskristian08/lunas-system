@@ -4,12 +4,17 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
+import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = AuthScope.of(context).user;
+    final initials = user?.firstName.trim().isNotEmpty == true
+        ? user!.firstName.trim()[0].toUpperCase()
+        : '?';
     return LunasAppScaffold(
       title: 'Profile',
       subtitle: 'Your LUNAS citizen account',
@@ -28,21 +33,21 @@ class ProfileScreen extends StatelessWidget {
           LunasCard(
             child: Column(
               children: [
-                const ProfileAvatar(),
+                ProfileAvatar(initials: initials, imageUrl: user?.profileImage),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Alex Dela Cruz',
+                  user?.fullName ?? 'Citizen',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontSize: 25,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
-                  'alex.delacruz@example.com',
+                  user?.email ?? '',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                const Row(
+                  Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
@@ -51,7 +56,11 @@ class ProfileScreen extends StatelessWidget {
                       color: AppColorsLight.success,
                     ),
                     SizedBox(width: AppSpacing.xs),
-                    Text('Verified Citizen'),
+                    Text(
+                      user?.isVerified == true
+                          ? 'Verified Citizen'
+                          : 'Citizen account',
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),

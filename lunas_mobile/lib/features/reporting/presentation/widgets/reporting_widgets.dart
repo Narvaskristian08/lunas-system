@@ -15,9 +15,54 @@ class ReportSectionTitle extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          child: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
         ),
         trailing ?? const SizedBox.shrink(),
+      ],
+    );
+  }
+}
+
+class ReportProgressIndicator extends StatelessWidget {
+  const ReportProgressIndicator({
+    required this.current,
+    this.total = 4,
+    super.key,
+  });
+  final int current;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Step $current of $total',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${(current / total * 100).round()}%',
+              style: theme.textTheme.labelMedium,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: LinearProgressIndicator(value: current / total, minHeight: 8),
+        ),
       ],
     );
   }

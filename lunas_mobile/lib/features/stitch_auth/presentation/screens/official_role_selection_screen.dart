@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -24,7 +25,7 @@ class _OfficialRoleSelectionScreenState
       );
       return;
     }
-    Navigator.pushNamed(context, '/registration/official-documents');
+    context.go('/role-unavailable');
   }
 
   @override
@@ -71,9 +72,9 @@ class _OfficialRoleSelectionScreenState
           ),
           const SizedBox(height: AppSpacing.xxl),
           LunasButton(
-            label: 'Continue to Identity Documents',
+            label: 'Continue',
             icon: Icons.arrow_forward_rounded,
-            onPressed: _continue,
+            onPressed: _role == null ? null : _continue,
           ),
         ],
       ),

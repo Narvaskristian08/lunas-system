@@ -125,7 +125,13 @@ class _CitizenRegistrationCredentialsScreenState
           LunasButton(
             label: 'Continue to Verification',
             icon: Icons.verified_user_outlined,
-            onPressed: () => Navigator.pushNamed(context, '/registration/otp'),
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'OTP verification is not connected; use the supported registration form.',
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(

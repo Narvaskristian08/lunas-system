@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
-import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 
 /// Account and secure-session controls for the repair workspace. Profile edits
 /// continue to use the established authenticated account flow.
@@ -49,7 +49,11 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(saved ? 'Account details updated.' : auth.message ?? 'Could not update account details.'),
+        content: Text(
+          saved
+              ? 'Account details updated.'
+              : auth.message ?? 'Could not update account details.',
+        ),
       ),
     );
   }
@@ -59,7 +63,9 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
-        content: const Text('Your secure session will be removed from this device.'),
+        content: const Text(
+          'Your secure session will be removed from this device.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -84,78 +90,79 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
         ? user!.firstName.trim().substring(0, 1).toUpperCase()
         : '?';
     return RepairPage(
-      appBar: const RepairAppBar(title: 'Repair account', subtitle: 'Profile and secure session'),
+      appBar: const RepairAppBar(
+        title: 'Repair account',
+        subtitle: 'Profile and secure session',
+      ),
       selectedNavigationIndex: 2,
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LunasCard(
+            ProfileHero(
+              name: user?.fullName ?? 'Repair personnel',
+              email: user?.email ?? '',
+              role: roleLabel(user?.role ?? 'repair_personnel'),
+              initials: initial,
+              imageUrl: user?.profileImage,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (user?.barangay?.trim().isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Text('Assigned barangay: ${user!.barangay}'),
+              ),
+            ProfileSection(
+              title: 'Account details',
+              icon: Icons.engineering_outlined,
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 34,
-                    child: Text(initial, style: Theme.of(context).textTheme.headlineSmall),
+                  TextFormField(
+                    controller: _firstNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'First name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter your first name.'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(user?.fullName ?? 'Repair personnel', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(user?.email ?? '', style: Theme.of(context).textTheme.bodySmall),
-                  const SizedBox(height: AppSpacing.sm),
-                  Chip(
-                    avatar: const Icon(Icons.engineering_outlined, size: 18),
-                    label: Text(roleLabel(user?.role ?? 'repair_personnel')),
+                  TextFormField(
+                    controller: _lastNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'Last name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter your last name.'
+                        : null,
                   ),
-                  if (user?.barangay?.trim().isNotEmpty == true) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text('Assigned barangay: ${user!.barangay}'),
-                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile number',
+                    ),
+                    validator: (value) =>
+                        RegExp(
+                          r'^(\+639|09)\d{9}$',
+                        ).hasMatch(value?.replaceAll(RegExp(r'\s+'), '') ?? '')
+                        ? null
+                        : 'Enter a valid Philippine mobile number.',
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton.icon(
+                    onPressed: auth.isSubmitting ? null : _save,
+                    icon: const Icon(Icons.save_outlined),
+                    label: const Text('Save account details'),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton.icon(
+                    onPressed: auth.isSubmitting ? null : _signOut,
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Sign out'),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Account details', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _firstNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'First name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your first name.'
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _lastNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Last name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your last name.'
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Mobile number'),
-              validator: (value) => RegExp(r'^(\+639|09)\d{9}$').hasMatch(
-                value?.replaceAll(RegExp(r'\s+'), '') ?? '',
-              )
-                  ? null
-                  : 'Enter a valid Philippine mobile number.',
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton.icon(
-              onPressed: auth.isSubmitting ? null : _save,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Save account details'),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: auth.isSubmitting ? null : _signOut,
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign out'),
             ),
           ],
         ),

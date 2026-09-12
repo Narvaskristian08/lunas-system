@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
+import 'package:lunas_mobile/core/widgets/lunas_text_field.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
@@ -33,9 +34,9 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
       password: _passwordController.text,
     );
     if (!success && mounted && auth.message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.message!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(auth.message!)));
     }
   }
 
@@ -43,98 +44,198 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
   Widget build(BuildContext context) {
     final auth = AuthScope.of(context);
     return AuthLayout(
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const AuthHeading(
-              title: 'Welcome to LUNAS',
-              description:
-                  'Sign in to access your secure LUNAS workspace.',
+      showBrand: false,
+      child: Column(
+        children: [
+          const LunasBrand(
+            centered: true,
+            large: true,
+            showTitle: false,
+            showSubtitle: false,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'Welcome Back',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              color: const Color(0xFF111C2D),
+              fontWeight: FontWeight.w800,
             ),
-            const SizedBox(height: AppSpacing.xxl),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.username, AutofillHints.email],
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Email address',
-                prefixIcon: Icon(Icons.email_outlined),
-              ),
-              validator: validateEmail,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Sign in to manage your city assets and utility infrastructure.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF424752),
+              height: 1.45,
             ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              autofillHints: const [AutofillHints.password],
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  onPressed: () => setState(
-                    () => _obscurePassword = !_obscurePassword,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          AuthPanel(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  LunasTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    hint: 'name@agency.gov',
+                    prefixIcon: Icons.person_outline_rounded,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    validator: validateEmail,
                   ),
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                  const SizedBox(height: AppSpacing.md),
+                  LunasTextField(
+                    controller: _passwordController,
+                    label: 'Password',
+                    hint: 'Enter your password',
+                    prefixIcon: Icons.lock_outline_rounded,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _submit(),
+                    suffixIcon: IconButton(
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                      tooltip: _obscurePassword
+                          ? 'Show password'
+                          : 'Hide password',
+                    ),
+                    validator: (value) => (value?.isEmpty ?? true)
+                        ? 'Enter your password.'
+                        : null,
                   ),
-                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Checkbox(
+                            value: true,
+                            onChanged: null,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'Secure session',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: auth.isSubmitting
+                              ? null
+                              : () => context.push('/forgot-password'),
+                          child: const Text('Forgot Password?'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (auth.message != null) ...[
+                    AuthMessage(message: auth.message!),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                  LunasButton(
+                    label: 'Log In',
+                    icon: Icons.login_rounded,
+                    isLoading: auth.isSubmitting,
+                    onPressed: auth.isSubmitting ? null : _submit,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const _AuthDivider(),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showUnavailable('Agency SSO'),
+                          icon: const Icon(Icons.business_outlined, size: 16),
+                          label: const Text('Agency SSO'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showUnavailable('Passkey'),
+                          icon: const Icon(Icons.vpn_key_outlined, size: 16),
+                          label: const Text('Passkey'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
               ),
-              validator: (value) => (value?.isEmpty ?? true)
-                  ? 'Enter your password.'
-                  : null,
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Don't have an account?",
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              TextButton(
                 onPressed: auth.isSubmitting
                     ? null
-                    : () => context.push('/forgot-password'),
-                child: const Text('Forgot password?'),
+                    : () => context.push('/registration/type'),
+                child: const Text('Create Account'),
               ),
-            ),
-            if (auth.message != null) ...[
-              AuthMessage(message: auth.message!),
-              const SizedBox(height: AppSpacing.md),
             ],
-            LunasButton(
-              label: 'Sign in',
-              isLoading: auth.isSubmitting,
-              onPressed: auth.isSubmitting ? null : _submit,
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('New to LUNAS?'),
-                TextButton(
-                  onPressed: auth.isSubmitting
-                      ? null
-                      : () => context.push('/register'),
-                  child: const Text('Create a citizen account'),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.hero),
+          Text(
+            '© 2026 LUNAS Utility Management System. Proprietary and Confidential.',
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: const Color(0xFF7B8494)),
+          ),
+        ],
       ),
+    );
+  }
+
+  void _showUnavailable(String method) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$method sign-in is not available yet.')),
     );
   }
 }
 
+class _AuthDivider extends StatelessWidget {
+  const _AuthDivider();
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(child: Divider(color: Color(0xFFD9DEE8))),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        child: Text(
+          'OR CONTINUE WITH',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: const Color(0xFF7B8494),
+            letterSpacing: .4,
+          ),
+        ),
+      ),
+      const Expanded(child: Divider(color: Color(0xFFD9DEE8))),
+    ],
+  );
+}
+
 class AuthMessage extends StatelessWidget {
-  const AuthMessage({
-    required this.message,
-    this.isError = true,
-    super.key,
-  });
+  const AuthMessage({required this.message, this.isError = true, super.key});
   final String message;
   final bool isError;
 

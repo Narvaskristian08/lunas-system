@@ -233,11 +233,11 @@ class RepairStatusChip extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
           ],
           Text(
-            label,
+            label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w800,
-              letterSpacing: .1,
+              letterSpacing: .35,
             ),
           ),
         ],
@@ -433,7 +433,9 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
     RepairWorkOrderStatus.accepted => AppColorsLight.success,
     RepairWorkOrderStatus.inProgress => AppColorsLight.alert,
     RepairWorkOrderStatus.completed => AppColorsLight.success,
-    RepairWorkOrderStatus.unknown => Theme.of(context).colorScheme.onSurfaceVariant,
+    RepairWorkOrderStatus.unknown => Theme.of(
+      context,
+    ).colorScheme.onSurfaceVariant,
   };
 
   String _slaLabel() {
@@ -483,9 +485,8 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             workOrder.orderNumber,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontFamily: 'RobotoMono',
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontFamily: 'RobotoMono'),
                           ),
                         ),
                         RepairStatusChip(
@@ -514,7 +515,9 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
                       color: slaColor,
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    LinearProgressIndicator(value: workOrder.progressPercent / 100),
+                    LinearProgressIndicator(
+                      value: workOrder.progressPercent / 100,
+                    ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       '${workOrder.progressPercent}% · ${workOrder.progressStage.label}',
@@ -531,7 +534,10 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
                           color: statusColor,
                         ),
                         const Spacer(),
-                        TextButton(onPressed: onTap, child: const Text('View details')),
+                        TextButton(
+                          onPressed: onTap,
+                          child: const Text('View details'),
+                        ),
                       ],
                     ),
                   ],

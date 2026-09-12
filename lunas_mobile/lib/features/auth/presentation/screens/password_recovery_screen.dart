@@ -4,6 +4,7 @@ import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
+import 'package:lunas_mobile/core/widgets/lunas_text_field.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 
@@ -52,40 +53,49 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
 
   @override
   Widget build(BuildContext context) => AuthLayout(
+    showBrand: false,
     showBackButton: true,
-    child: Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const AuthHeading(
-            title: 'Reset your password',
-            description:
-                'Enter your email address. We will use the secure reset service if it is available.',
+    child: Column(
+      children: [
+        const LunasBrand(centered: true),
+        const SizedBox(height: AppSpacing.xxl),
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AuthHeading(
+                title: 'Reset your password',
+                description:
+                    'Enter your email address. We will use the secure reset service if it is available.',
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              LunasTextField(
+                controller: _emailController,
+                label: 'Email Address',
+                hint: 'name@example.com',
+                prefixIcon: Icons.alternate_email_rounded,
+                keyboardType: TextInputType.emailAddress,
+                validator: validateEmail,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (_message != null) ...[
+                AuthMessage(message: _message!, isError: !_sent),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              LunasButton(
+                label: 'Request reset link',
+                isLoading: _sending,
+                onPressed: _sending ? null : _submit,
+              ),
+              TextButton(
+                onPressed: () => context.go('/login'),
+                child: const Text('Return to sign in'),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.xxl),
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email address'),
-            validator: validateEmail,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          if (_message != null) ...[
-            AuthMessage(message: _message!, isError: !_sent),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          LunasButton(
-            label: 'Request reset link',
-            isLoading: _sending,
-            onPressed: _sending ? null : _submit,
-          ),
-          TextButton(
-            onPressed: () => context.go('/login'),
-            child: const Text('Return to sign in'),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }

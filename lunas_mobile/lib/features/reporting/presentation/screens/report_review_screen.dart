@@ -8,6 +8,7 @@ import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class ReportReviewScreen extends StatefulWidget {
   const ReportReviewScreen({required this.draft, super.key});
@@ -81,6 +82,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const ReportProgressIndicator(current: 4),
+            const SizedBox(height: AppSpacing.xl),
             LocalEvidencePreview(evidence: widget.draft.evidence, height: 220),
             const SizedBox(height: AppSpacing.md),
             LunasCard(

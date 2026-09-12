@@ -39,55 +39,58 @@ class AnalyticsLayout extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.sm,
-                AppSpacing.xl,
-                0,
-              ),
-              child: Row(
-                children: [
-                  for (final destination in destinations)
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.xs),
-                      child: ChoiceChip(
-                        label: Text(destination.$1),
-                        selected: activeRoute == destination.$2,
-                        onSelected: (_) {
-                          if (activeRoute != destination.$2) {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              destination.$2,
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
+        child: Container(
+          color: Theme.of(context).colorScheme.surface,
+          child: Column(
+            children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.xl,
+                  AppSpacing.sm,
                   AppSpacing.xl,
-                  AppSpacing.xl,
-                  AppSpacing.hero,
+                  0,
                 ),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 820),
-                    child: child,
+                child: Row(
+                  children: [
+                    for (final destination in destinations)
+                      Padding(
+                        padding: const EdgeInsets.only(right: AppSpacing.xs),
+                        child: ChoiceChip(
+                          label: Text(destination.$1),
+                          selected: activeRoute == destination.$2,
+                          onSelected: (_) {
+                            if (activeRoute != destination.$2) {
+                              Navigator.pushReplacementNamed(
+                                context,
+                                destination.$2,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.xl,
+                    AppSpacing.xl,
+                    AppSpacing.hero,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 820),
+                      child: child,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -234,6 +237,9 @@ class LunasBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (values.isEmpty || labels.isEmpty) {
+      return const Center(child: Text('No chart data available'));
+    }
     final maxValue = values.reduce(math.max);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,

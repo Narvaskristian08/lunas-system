@@ -320,8 +320,8 @@ class StitchDocumentCard extends StatelessWidget {
   final String description;
   final IconData icon;
   final bool isReady;
-  final VoidCallback onCapture;
-  final VoidCallback onUpload;
+  final VoidCallback? onCapture;
+  final VoidCallback? onUpload;
   final String? note;
 
   @override
@@ -377,7 +377,7 @@ class StitchDocumentCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    isReady ? 'Placeholder attached' : description,
+                    isReady ? 'Document attached' : description,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall,
                   ),

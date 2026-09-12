@@ -2,25 +2,136 @@ import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 
 class ProfileAvatar extends StatelessWidget {
-  const ProfileAvatar({this.radius = 46, super.key});
+  const ProfileAvatar({
+    this.radius = 46,
+    this.initials,
+    this.imageUrl,
+    super.key,
+  });
   final double radius;
+  final String? initials;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: radius,
       backgroundColor: const Color(0xFFDCEBFA),
-      child: Text(
-        'AD',
-        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-          color: AppColorsLight.brandBase,
-          fontWeight: FontWeight.w800,
-        ),
+      backgroundImage: imageUrl != null && imageUrl!.isNotEmpty
+          ? NetworkImage(imageUrl!)
+          : null,
+      child: imageUrl != null && imageUrl!.isNotEmpty
+          ? null
+          : Text(
+              initials ?? 'AD',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                color: AppColorsLight.brandBase,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+    );
+  }
+}
+
+class ProfileHero extends StatelessWidget {
+  const ProfileHero({
+    required this.name,
+    required this.email,
+    required this.role,
+    this.initials,
+    this.imageUrl,
+    super.key,
+  });
+  final String name;
+  final String email;
+  final String role;
+  final String? initials;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LunasCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          ProfileAvatar(radius: 38, initials: initials, imageUrl: imageUrl),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  email,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  avatar: const Icon(Icons.verified_user_outlined, size: 16),
+                  label: Text(role),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class ProfileSection extends StatelessWidget {
+  const ProfileSection({
+    required this.title,
+    required this.child,
+    this.icon = Icons.person_outline_rounded,
+    super.key,
+  });
+  final String title;
+  final Widget child;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => LunasCard(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.md,
+      AppSpacing.md,
+      AppSpacing.md,
+      AppSpacing.lg,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        const Divider(height: 1),
+        const SizedBox(height: AppSpacing.md),
+        child,
+      ],
+    ),
+  );
 }
 
 class ProfileMenuTile extends StatelessWidget {

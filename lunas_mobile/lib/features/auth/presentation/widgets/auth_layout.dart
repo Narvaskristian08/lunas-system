@@ -70,7 +70,19 @@ class AuthLayout extends StatelessWidget {
       ),
     );
 
-    return Scaffold(backgroundColor: Colors.white, body: body);
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(-.55, -.75),
+            radius: 1.35,
+            colors: [Color(0xFFE9F0FF), Color(0xFFF9F9FF)],
+          ),
+        ),
+        child: body,
+      ),
+    );
   }
 }
 
@@ -79,12 +91,14 @@ class LunasBrand extends StatelessWidget {
     this.centered = false,
     this.large = false,
     this.showSubtitle = true,
+    this.showTitle = true,
     super.key,
   });
 
   final bool centered;
   final bool large;
   final bool showSubtitle;
+  final bool showTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -94,16 +108,17 @@ class LunasBrand extends StatelessWidget {
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       children: [
-        Text(
-          'LUNAS',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: AppColorsLight.brandBase,
-            fontSize: large ? 24 : 19,
-            fontWeight: FontWeight.w800,
-            letterSpacing: large ? 3.2 : 2.2,
+        if (showTitle)
+          Text(
+            'LUNAS',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppColorsLight.brandBase,
+              fontSize: large ? 30 : 19,
+              fontWeight: FontWeight.w800,
+              letterSpacing: large ? 1.2 : 2.2,
+            ),
           ),
-        ),
-        if (showSubtitle)
+        if (showTitle && showSubtitle)
           Text(
             'URBAN INFRASTRUCTURE',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -129,20 +144,17 @@ class LunasBrand extends StatelessWidget {
           ),
         ],
       ),
-      child: Image.asset(
-        'assets/icons/lunas_logo.png',
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) =>
-            const Icon(Icons.location_city_rounded, color: Colors.white),
-      ),
+      child: const _LunasGlyph(),
     );
     if (centered) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           mark,
-          const SizedBox(height: AppSpacing.sm),
-          title,
+          if (showTitle) ...[
+            const SizedBox(height: AppSpacing.sm),
+            title,
+          ],
         ],
       );
     }
@@ -150,9 +162,67 @@ class LunasBrand extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         mark,
-        const SizedBox(width: AppSpacing.sm),
-        title,
+        if (showTitle) ...[
+          const SizedBox(width: AppSpacing.sm),
+          title,
+        ],
       ],
+    );
+  }
+}
+
+class _LunasGlyph extends StatelessWidget {
+  const _LunasGlyph();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox.square(
+        dimension: 28,
+        child: GridView.count(
+          crossAxisCount: 2,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
+          children: List.generate(
+            4,
+            (_) => DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 3),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AuthPanel extends StatelessWidget {
+  const AuthPanel({required this.child, this.padding, super.key});
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding ?? const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE4E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14001B3D),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }
