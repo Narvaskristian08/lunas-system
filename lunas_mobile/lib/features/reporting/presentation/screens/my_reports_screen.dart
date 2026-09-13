@@ -61,7 +61,6 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     return CitizenScaffold(
       title: 'My reports',
       subtitle: 'Only reports submitted by your account',
-      selectedIndex: 1,
       actions: [
         IconButton(
           onPressed: _loading ? null : _load,
@@ -108,12 +107,16 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           else if (filtered.isEmpty)
             LunasStateView(
               state: LunasViewState.empty,
-              title: _reports.isEmpty ? 'No reports yet' : 'No matching reports',
+              title: _reports.isEmpty
+                  ? 'No reports yet'
+                  : 'No matching reports',
               message: _reports.isEmpty
                   ? 'Start a report when you see an infrastructure concern.'
                   : 'Choose another status to see other reports.',
               actionLabel: _reports.isEmpty ? 'Create report' : null,
-              onAction: _reports.isEmpty ? () => context.push('/reports/new') : null,
+              onAction: _reports.isEmpty
+                  ? () => context.push('/reports/new')
+                  : null,
             )
           else
             ...filtered.map(

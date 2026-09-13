@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/core/widgets/citizen_bottom_navigation.dart';
 import 'package:lunas_mobile/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/app_splash_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
@@ -12,6 +13,7 @@ import 'package:lunas_mobile/features/auth/presentation/screens/onboarding_scree
 import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashboard_screen.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
+import 'package:lunas_mobile/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/citizen_profile_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/assigned_work_orders_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/official_work_orders_screen.dart';
@@ -131,63 +133,79 @@ final GoRouter appRouter = GoRouter(
       path: '/role-unavailable',
       builder: (_, _) => const RoleUnavailableScreen(),
     ),
-    GoRoute(
-      path: '/citizen',
-      builder: (_, _) => const CitizenDashboardScreen(),
-    ),
-    GoRoute(path: '/reports', builder: (_, _) => const MyReportsScreen()),
-    GoRoute(
-      path: '/reports/new',
-      builder: (_, _) => const NewCitizenReportScreen(),
-    ),
-    GoRoute(
-      path: '/reports/evidence',
-      builder: (_, _) => const EvidencePickerScreen(),
-    ),
-    GoRoute(
-      path: '/reports/categories',
-      builder: (_, state) => CategoryPickerScreen(
-        selected: state.extra is CategoryOption
-            ? state.extra as CategoryOption
-            : null,
+    ShellRoute(
+      builder: (context, state, child) => Scaffold(
+        body: child,
+        bottomNavigationBar: const CitizenBottomNavigation(),
       ),
+      routes: [
+        GoRoute(
+          path: '/citizen',
+          builder: (_, _) => const CitizenDashboardScreen(),
+        ),
+        GoRoute(path: '/reports', builder: (_, _) => const MyReportsScreen()),
+        GoRoute(
+          path: '/reports/new',
+          builder: (_, _) => const NewCitizenReportScreen(),
+        ),
+        GoRoute(
+          path: '/reports/evidence',
+          builder: (_, _) => const EvidencePickerScreen(),
+        ),
+        GoRoute(
+          path: '/reports/categories',
+          builder: (_, state) => CategoryPickerScreen(
+            selected: state.extra is CategoryOption
+                ? state.extra as CategoryOption
+                : null,
+          ),
+        ),
+        GoRoute(
+          path: '/reports/location',
+          builder: (_, state) => MapPickerScreen(
+            initialLocation: state.extra is SelectedLocation
+                ? state.extra as SelectedLocation
+                : null,
+          ),
+        ),
+        GoRoute(
+          path: '/reports/review',
+          builder: (_, state) {
+            final draft = state.extra;
+            return draft is CitizenReportDraft
+                ? ReportReviewScreen(draft: draft)
+                : const _MissingRouteDataScreen(
+                    message: 'Start a new report before reviewing it.',
+                  );
+          },
+        ),
+        GoRoute(
+          path: '/reports/submitted',
+          builder: (_, state) {
+            final report = state.extra;
+            return report is IncidentReport
+                ? ReportSubmittedScreen(report: report)
+                : const _MissingRouteDataScreen(
+                    message: 'The submitted report could not be opened.',
+                  );
+          },
+        ),
+        GoRoute(
+          path: '/reports/:id',
+          builder: (_, state) => CitizenReportDetailScreen(
+            reportId: state.pathParameters['id'] ?? '',
+          ),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (_, _) => const CitizenProfileScreen(),
+        ),
+        GoRoute(
+          path: '/notifications',
+          builder: (_, _) => const NotificationsScreen(),
+        ),
+      ],
     ),
-    GoRoute(
-      path: '/reports/location',
-      builder: (_, state) => MapPickerScreen(
-        initialLocation: state.extra is SelectedLocation
-            ? state.extra as SelectedLocation
-            : null,
-      ),
-    ),
-    GoRoute(
-      path: '/reports/review',
-      builder: (_, state) {
-        final draft = state.extra;
-        return draft is CitizenReportDraft
-            ? ReportReviewScreen(draft: draft)
-            : const _MissingRouteDataScreen(
-                message: 'Start a new report before reviewing it.',
-              );
-      },
-    ),
-    GoRoute(
-      path: '/reports/submitted',
-      builder: (_, state) {
-        final report = state.extra;
-        return report is IncidentReport
-            ? ReportSubmittedScreen(report: report)
-            : const _MissingRouteDataScreen(
-                message: 'The submitted report could not be opened.',
-              );
-      },
-    ),
-    GoRoute(
-      path: '/reports/:id',
-      builder: (_, state) =>
-          CitizenReportDetailScreen(reportId: state.pathParameters['id'] ?? ''),
-    ),
-    GoRoute(path: '/profile', builder: (_, _) => const CitizenProfileScreen()),
     GoRoute(
       path: '/official',
       builder: (_, _) => const OfficialDashboardScreen(),
@@ -255,6 +273,7 @@ final GoRouter appRouter = GoRouter(
 bool _isCitizenLocation(String location) =>
     location == '/citizen' ||
     location == '/profile' ||
+    location == '/notifications' ||
     location == '/reports' ||
     location.startsWith('/reports/');
 

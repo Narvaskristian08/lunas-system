@@ -53,7 +53,6 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     return CitizenScaffold(
       title: 'LUNAS',
       subtitle: 'Citizen reporting',
-      selectedIndex: 0,
       actions: [
         IconButton(
           onPressed: _loading ? null : _loadReports,

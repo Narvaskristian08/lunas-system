@@ -94,7 +94,6 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     return CitizenScaffold(
       title: 'Profile',
       subtitle: 'Your LUNAS citizen account',
-      selectedIndex: 2,
       showReportFab: false,
       body: Form(
         key: _formKey,

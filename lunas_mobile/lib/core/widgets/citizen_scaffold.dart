@@ -9,7 +9,6 @@ class CitizenScaffold extends StatelessWidget {
   const CitizenScaffold({
     required this.title,
     required this.body,
-    required this.selectedIndex,
     this.subtitle,
     this.actions,
     this.floatingActionButton,
@@ -21,7 +20,6 @@ class CitizenScaffold extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget body;
-  final int selectedIndex;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
   final bool showReportFab;
@@ -55,45 +53,14 @@ class CitizenScaffold extends StatelessWidget {
         ),
       ),
     ),
-    floatingActionButton: floatingActionButton ?? (showReportFab
-        ? FloatingActionButton.extended(
-          onPressed: () => context.push('/reports/new'),
-          icon: const Icon(Icons.add_a_photo_outlined),
-          label: const Text('New report'),
-        )
-        : null),
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: (index) {
-        switch (index) {
-          case 0:
-            context.go('/citizen');
-            break;
-          case 1:
-            context.go('/reports');
-            break;
-          case 2:
-            context.go('/profile');
-            break;
-        }
-      },
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.assignment_outlined),
-          selectedIcon: Icon(Icons.assignment_rounded),
-          label: 'My reports',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline_rounded),
-          selectedIcon: Icon(Icons.person_rounded),
-          label: 'Profile',
-        ),
-      ],
-    ),
+    floatingActionButton:
+        floatingActionButton ??
+        (showReportFab
+            ? FloatingActionButton.extended(
+                onPressed: () => context.push('/reports/new'),
+                icon: const Icon(Icons.add_a_photo_outlined),
+                label: const Text('New report'),
+              )
+            : null),
   );
 }
