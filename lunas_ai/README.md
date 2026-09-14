@@ -269,6 +269,24 @@ The web category is the routing authority. Mobile and web submit images to the
 backend; neither contains model files or calls the AI service directly. AI
 results are display guidance only and never replace the official decision.
 
+### 7. Category QA Endpoints
+
+For quick testing, the backend also exposes fixed category endpoints. They
+accept an image only; the backend selects the assigned model and never accepts
+a `.pt` path from the caller:
+
+```bash
+curl -X POST http://localhost:5001/api/v1/detect/drainage \
+  -F "image=@/path/to/drainage-photo.jpg"
+
+curl -X POST http://localhost:5001/api/v1/detect/electrical \
+  -F "image=@/path/to/electrical-photo.jpg"
+```
+
+Both return `analysis_status`, `model_available`, labels, confidence values,
+normalized `bbox` coordinates, `advisory_only: true`, and
+`requires_manual_review: true`. Unsupported categories remain manual review.
+
 ---
 
 ## 🧪 Testing the API

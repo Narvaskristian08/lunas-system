@@ -58,3 +58,59 @@ def test_unsupported_category_is_manual_only_and_does_not_load_a_fallback():
     assert result["requires_manual_review"] is True
     assert result["advisory_only"] is True
     assert loaded == []
+
+
+def test_fixed_qa_endpoints_route_by_category_without_exposing_model_paths(monkeypatch):
+    from io import BytesIO
+
+    from app import create_app
+    from src.api import routes
+
+    calls = []
+
+    def fake_detection(image, category):
+        calls.append(category)
+        return {
+            "success": True,
+            "category": category,
+            "model": "backend-selected",
+            "analysis_status": "completed",
+            "model_available": True,
+            "detections": [],
+            "requires_manual_review": True,
+            "advisory_only": True,
+        }
+
+    monkeypatch.setattr(routes.detection_service, "comprehensive_detection", fake_detection)
+    client = create_app().test_client()
+
+    for endpoint, expected_category in (
+        ("/api/v1/detect/drainage", "drainage"),
+        ("/api/v1/detect/electrical", "electrical"),
+    ):
+        image = BytesIO(b"not-an-image")
+        response = client.post(
+            endpoint,
+            data={
+                "image": (image, "test.jpg"),
+                "category": "electrical" if expected_category == "drainage" else "drainage",
+            },
+            content_type="multipart/form-data",
+        )
+        # The endpoint must still validate image contents before routing.
+        assert response.status_code == 400
+
+        from PIL import Image
+
+        image = BytesIO()
+        Image.new("RGB", (8, 8), "gray").save(image, format="JPEG")
+        image.seek(0)
+        response = client.post(
+            endpoint,
+            data={"image": (image, "test.jpg")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 200
+        assert response.get_json()["category"] == expected_category
+
+    assert calls == ["drainage", "electrical"]
