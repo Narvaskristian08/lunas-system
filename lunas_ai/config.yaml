@@ -99,6 +99,23 @@ models:
       normalize: true
       resize: true
     notes: "Damage-only boxes from Power Equipment transmission faults and Cable Damage; advisory only"
+
+  # Surface drainage issues: visible water and blocked drainage channels only.
+  surface_drainage:
+    name: "YOLOv8n Surface Drainage Issue Detection"
+    path: "models/drainage/surfacedrainage/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - standing_water
+      - blocked_surface_drain
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Public-data QA model for standing water and blocked surface drains; advisory/manual review only"
     
   crack_segmentation:
     name: "YOLOv8n-seg Crack Segmentation"
@@ -135,7 +152,7 @@ category_models:
   # These keys are the canonical category codes shared by the web, mobile,
   # and backend incident APIs. A null value is intentionally manual-only.
   road: road_damage
-  drainage: null
+  drainage: surface_drainage
   electrical: electrical_damage
   water: null
   gas: null
