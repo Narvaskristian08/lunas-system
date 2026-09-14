@@ -59,7 +59,7 @@ class OnboardingScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => context.go('/registration/type'),
+                  onPressed: () => context.go('/register'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.primary,
                     side: BorderSide(color: theme.colorScheme.primary),

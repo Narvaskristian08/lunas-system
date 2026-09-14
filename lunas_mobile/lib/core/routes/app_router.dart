@@ -34,8 +34,6 @@ import 'package:lunas_mobile/features/reporting/presentation/screens/citizen_rep
 import 'package:lunas_mobile/features/reporting/presentation/screens/evidence_picker_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/my_reports_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/new_citizen_report_screen.dart';
-import 'package:lunas_mobile/features/stitch_auth/presentation/screens/registration_type_screen.dart';
-import 'package:lunas_mobile/features/stitch_auth/presentation/screens/official_role_selection_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_review_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_submitted_screen.dart';
 import 'package:lunas_mobile/features/validation/presentation/screens/official_dashboard_screen.dart';
@@ -58,8 +56,6 @@ final GoRouter appRouter = GoRouter(
       '/onboarding',
       '/login',
       '/register',
-      '/registration/type',
-      '/registration/official-role',
       '/forgot-password',
       '/reset-password',
     };
@@ -109,14 +105,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/splash', builder: (_, _) => const AppSplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (_, _) => const CitizenLoginScreen()),
-    GoRoute(
-      path: '/registration/type',
-      builder: (_, _) => const RegistrationTypeScreen(),
-    ),
-    GoRoute(
-      path: '/registration/official-role',
-      builder: (_, _) => const OfficialRoleSelectionScreen(),
-    ),
     GoRoute(
       path: '/register',
       builder: (_, _) => const CitizenRegistrationScreen(),

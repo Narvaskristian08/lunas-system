@@ -20,11 +20,6 @@ class StitchScreenCatalogScreen extends StatelessWidget {
       _CatalogEntry('forgot_password', 'Forgot password', '/forgot-password'),
       _CatalogEntry('reset_password', 'Reset password', '/reset-password'),
       _CatalogEntry(
-        'select_registration_type',
-        'Registration type',
-        '/registration/type',
-      ),
-      _CatalogEntry(
         'citizen_registration_personal_info',
         'Citizen personal details',
         '/registration/citizen/personal',
@@ -38,21 +33,6 @@ class StitchScreenCatalogScreen extends StatelessWidget {
         'contact_verification_otp',
         'Contact verification',
         '/registration/otp',
-      ),
-      _CatalogEntry(
-        'official_role_selection',
-        'Official role selection',
-        '/registration/official-role',
-      ),
-      _CatalogEntry(
-        'official_identity_documents',
-        'Official documents',
-        '/registration/official-documents',
-      ),
-      _CatalogEntry(
-        'registration_pending_approval',
-        'Pending approval',
-        '/registration/pending',
       ),
     ]),
     _CatalogGroup('Citizen reporting', [

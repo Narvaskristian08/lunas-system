@@ -96,8 +96,7 @@ class WelcomeScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () =>
-                            context.go('/registration/type'),
+                        onPressed: () => context.go('/register'),
                         icon: const Icon(Icons.person_add_alt_1_outlined),
                         label: const Text('Create Account'),
                       ),

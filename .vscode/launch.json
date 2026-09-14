@@ -1,14 +1,24 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Open qa_test_gui.html",
-            "file": "/Users/deb/Desktop/lunas-system/lunas_ai/qa_test_gui.html"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Open qa_test_gui.html",
+      "file": "/Users/deb/Desktop/lunas-system/lunas_ai/qa_test_gui.html"
+    },
+    {
+      "name": "LUNAS Web (Chrome :3000)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "program": "${workspaceFolder}/lunas_mobile/lib/main.dart",
+      "cwd": "${workspaceFolder}/lunas_mobile",
+      "toolArgs": [
+        "--web-port",
+        "3000",
+        "--dart-define=LUNAS_API_BASE_URL=http://localhost:5000/api/v1"
+      ]
+    }
+  ]
 }

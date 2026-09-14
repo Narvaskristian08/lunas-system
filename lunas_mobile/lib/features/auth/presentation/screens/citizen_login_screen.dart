@@ -187,7 +187,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
               TextButton(
                 onPressed: auth.isSubmitting
                     ? null
-                    : () => context.push('/registration/type'),
+                    : () => context.push('/register'),
                 child: const Text('Create Account'),
               ),
             ],
