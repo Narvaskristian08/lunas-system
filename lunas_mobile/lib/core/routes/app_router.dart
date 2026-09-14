@@ -11,6 +11,8 @@ import 'package:lunas_mobile/features/auth/presentation/screens/reset_password_w
 import 'package:lunas_mobile/features/auth/presentation/screens/role_unavailable_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashboard_screen.dart';
+import 'package:lunas_mobile/features/citizen/presentation/screens/my_drafts_screen.dart';
+import 'package:lunas_mobile/features/citizen_extra/presentation/screens/report_timeline_screen.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/screens/notifications_screen.dart';
@@ -71,7 +73,7 @@ final GoRouter appRouter = GoRouter(
       case AuthStatus.restoreFailed:
         return location == '/splash' || isPublic ? null : '/splash';
       case AuthStatus.unauthenticated:
-        return isPublic ? null : '/login';
+        return isPublic ? null : '/onboarding';
       case AuthStatus.roleUnavailable:
         return location == '/role-unavailable' ? null : '/role-unavailable';
       case AuthStatus.authenticated:
@@ -189,6 +191,16 @@ final GoRouter appRouter = GoRouter(
                     message: 'The submitted report could not be opened.',
                   );
           },
+        ),
+        GoRoute(
+          path: '/reports/drafts',
+          builder: (_, _) => const MyDraftsScreen(),
+        ),
+        GoRoute(
+          path: '/reports/:id/timeline',
+          builder: (_, state) => ReportTimelineScreen(
+            reportId: state.pathParameters['id'] ?? '',
+          ),
         ),
         GoRoute(
           path: '/reports/:id',

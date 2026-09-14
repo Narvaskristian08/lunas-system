@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -15,22 +16,9 @@ class MyDraftsScreen extends StatefulWidget {
 }
 
 class _MyDraftsScreenState extends State<MyDraftsScreen> {
-  final List<_CitizenDraft> _drafts = [
-    const _CitizenDraft(
-      title: 'Sidewalk crack',
-      description:
-          'Large crack on the pedestrian path near the public market entrance.',
-      location: 'M. H. del Pilar Street, Dagupan City',
-      edited: 'Last edited 2 hours ago',
-    ),
-    const _CitizenDraft(
-      title: 'Broken streetlight',
-      description:
-          'Streetlight is completely out, making the area very dark at night.',
-      location: 'Bonuan Gueset, Dagupan City',
-      edited: 'Last edited yesterday',
-    ),
-  ];
+  // Draft persistence is not part of the current integration-test contract.
+  // Keep the honest empty state instead of presenting fabricated reports.
+  final List<_CitizenDraft> _drafts = [];
 
   void _removeDraft(_CitizenDraft draft) {
     setState(() => _drafts.remove(draft));
@@ -55,7 +43,7 @@ class _MyDraftsScreenState extends State<MyDraftsScreen> {
               _DraftCard(
                 draft: draft,
                 onDelete: () => _removeDraft(draft),
-                onContinue: () => Navigator.pushNamed(context, '/reports/new'),
+                onContinue: () => context.push('/reports/new'),
               ),
               const SizedBox(height: AppSpacing.md),
             ],
@@ -73,7 +61,7 @@ class _MyDraftsScreenState extends State<MyDraftsScreen> {
           ],
           _EmptyDraftState(
             isPrimary: _drafts.isEmpty,
-            onCreate: () => Navigator.pushNamed(context, '/reports/new'),
+            onCreate: () => context.push('/reports/new'),
           ),
         ],
       ),

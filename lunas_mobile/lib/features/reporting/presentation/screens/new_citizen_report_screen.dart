@@ -10,6 +10,7 @@ import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_dra
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
+import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_flow_widgets.dart';
 
 class NewCitizenReportScreen extends StatefulWidget {
   const NewCitizenReportScreen({super.key});
@@ -91,8 +92,8 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
-      title: 'New report',
-      subtitle: 'Add evidence, location, and report details',
+      title: 'Report Incident',
+      subtitle: 'Details',
       showBackButton: true,
     ),
     body: SafeArea(
@@ -109,8 +110,10 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const ReportProgressIndicator(current: 1),
+              const ReportProgressIndicator(current: 1, total: 3),
               const SizedBox(height: AppSpacing.xl),
+              Text('Step 1 of 3: Details', style: Theme.of(context).textTheme.labelMedium),
+              const SizedBox(height: AppSpacing.sm),
               _StepLabel(number: '1', label: 'Evidence'),
               const SizedBox(height: AppSpacing.sm),
               LunasCard(
@@ -156,6 +159,19 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                           ),
                         ],
                       ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              CitizenAccentCard(
+                accent: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .45),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.auto_awesome_outlined, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Expanded(child: Text('AI Hazard Detection\nYour evidence may receive advisory category and severity assistance after submission.')),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.xxl),
               _StepLabel(number: '2', label: 'Issue details'),
@@ -252,7 +268,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
               ),
               const SizedBox(height: AppSpacing.xxl),
               LunasButton(
-                label: 'Review report',
+                label: 'Continue to Location',
                 icon: Icons.fact_check_outlined,
                 onPressed: _review,
               ),

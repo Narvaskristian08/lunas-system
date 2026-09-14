@@ -19,6 +19,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   bool _loading = true;
   String? _error;
   String _filter = 'all';
+  String _query = '';
   List<IncidentReport> _reports = const [];
 
   @override
@@ -44,19 +45,22 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filter == 'all'
-        ? _reports
-        : _reports.where((report) => report.status == _filter).toList();
+    final filtered = _reports.where((report) {
+      final matchesFilter = switch (_filter) {
+        'active' => !{'closed', 'rejected', 'duplicate'}.contains(report.status),
+        'resolved' => {'closed', 'completed'}.contains(report.status),
+        'in_progress' => report.status == 'in_progress',
+        _ => true,
+      };
+      final haystack = '${report.reportNumber} ${report.categoryLabel} '
+          '${report.description} ${report.location.displayAddress}'.toLowerCase();
+      return matchesFilter && haystack.contains(_query.trim().toLowerCase());
+    }).toList();
     final filterOptions = <(String, String)>[
       ('all', 'All'),
-      ('submitted', 'Submitted'),
-      ('validated', 'Validated'),
-      ('assigned', 'Assigned for repair'),
-      ('rejected', 'Rejected'),
-      ('duplicate', 'Marked duplicate'),
-      ('in_progress', 'In progress'),
-      ('completed', 'Awaiting verification'),
-      ('closed', 'Closed'),
+      ('active', 'Active'),
+      ('resolved', 'Resolved'),
+      ('in_progress', 'In Progress'),
     ];
     return CitizenScaffold(
       title: 'My reports',
@@ -69,9 +73,19 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
         ),
         const SizedBox(width: AppSpacing.sm),
       ],
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+          if (!_loading && _error == null) ...[
+            TextField(
+              onChanged: (value) => setState(() => _query = value),
+              decoration: const InputDecoration(
+                hintText: 'Search reports by ID, type, or location',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (!_loading && _error == null && _reports.isNotEmpty)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,

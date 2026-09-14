@@ -66,8 +66,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
-      title: 'Review report',
-      subtitle: 'Check the details before submitting',
+      title: 'Confirm Details',
+      subtitle: 'Review before submitting your report',
       showBackButton: true,
     ),
     body: SafeArea(
@@ -82,7 +82,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ReportProgressIndicator(current: 4),
+            const ReportProgressIndicator(current: 3, total: 3),
             const SizedBox(height: AppSpacing.xl),
             LocalEvidencePreview(evidence: widget.draft.evidence, height: 220),
             const SizedBox(height: AppSpacing.md),
@@ -170,7 +170,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
             ],
             const SizedBox(height: AppSpacing.lg),
             LunasButton(
-              label: 'Submit report',
+              label: 'Submit Report',
               icon: Icons.send_rounded,
               isLoading: _submitting,
               onPressed: _submitting ? null : _submit,

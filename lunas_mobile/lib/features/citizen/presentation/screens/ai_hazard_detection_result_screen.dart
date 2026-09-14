@@ -1,187 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
-import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
-import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_flow_widgets.dart';
+import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 
-/// Presents an AI suggestion after a citizen captures a hazard photo.
-///
-/// The citizen must still verify the suggested classification before a report
-/// can be submitted; this screen deliberately does not present AI output as a
-/// final decision.
+/// Displays server-authored AI assistance when a real report is available.
+/// No placeholder classification is shown when the backend has no result.
 class AiHazardDetectionResultScreen extends StatelessWidget {
-  const AiHazardDetectionResultScreen({super.key});
+  const AiHazardDetectionResultScreen({this.report, super.key});
+  final IncidentReport? report;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final analysis = report?.aiAnalysis;
     return Scaffold(
-      appBar: const LunasAppBar(
-        title: 'Detection Result',
-        subtitle: 'Review the AI suggestion before continuing',
-        showBackButton: true,
-      ),
-      body: CitizenFlowScroll(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CitizenPhotoPlaceholder(
-              label: 'Severe road pothole',
-              showDetection: true,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            CitizenAccentCard(
-              accent: scheme.error,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Suggested classification',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                      Icon(Icons.error_outline_rounded, color: scheme.error),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Severe Road Pothole',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      color: scheme.error,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Immediate attention is recommended to help prevent vehicle damage.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  CitizenStatusPill(
-                    label: 'AI suggestion — needs your confirmation',
-                    color: scheme.primary,
-                    icon: Icons.auto_awesome_outlined,
-                  ),
-                ],
-              ),
-            ),
+      appBar: const LunasAppBar(title: 'Detection Result', subtitle: 'AI assistance', showBackButton: true),
+      body: SafeArea(top: false, child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (report?.images.isNotEmpty == true)
+            RemoteEvidencePreview(url: report!.images.first.url, width: report!.images.first.width, height: report!.images.first.height, findings: report!.images.first.aiFindings)
+          else
+            const LunasCard(child: Text('No submitted evidence image is available for this report.')),
+          const SizedBox(height: AppSpacing.md),
+          LunasCard(child: analysis == null ? const Text('AI analysis is not available for this report. Official review remains the source of truth.') : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('AI assistance', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            LunasCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'AI confidence',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                      const CitizenStatusPill(
-                        label: 'High',
-                        color: AppColorsLight.success,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '98%',
-                        style: theme.textTheme.displayMedium?.copyWith(
-                          color: AppColorsLight.success,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                        child: Text(
-                          'certainty',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSpacing.xs),
-                    child: LinearProgressIndicator(
-                      value: .98,
-                      minHeight: 9,
-                      color: AppColorsLight.success,
-                      backgroundColor: scheme.primaryContainer,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Text(analysis.category ?? analysis.hazardType ?? 'No classification returned.'),
             const SizedBox(height: AppSpacing.sm),
-            LunasCard(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: scheme.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.privacy_tip_outlined,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Privacy verification',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          'No faces or license plates were found in this image.',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  const CitizenStatusPill(
-                    label: 'Passed',
-                    color: AppColorsLight.success,
-                    icon: Icons.check_circle_outline_rounded,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            LunasButton(
-              label: 'Confirm Detection',
-              icon: Icons.check_circle_outline_rounded,
-              onPressed: () => Navigator.pushNamed(context, '/reports/confirm'),
-            ),
+            Text('Confidence: ${(analysis.confidence * 100).round()}%'),
             const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/reports/photo'),
-              icon: const Icon(Icons.replay_rounded),
-              label: const Text('Retake Photo'),
-            ),
-          ],
-        ),
-      ),
+            LinearProgressIndicator(value: analysis.confidence),
+            const SizedBox(height: AppSpacing.md),
+            const Text('Advisory only. An authorized official must manually review the report.'),
+          ])),
+        ]),
+      )),
     );
   }
 }

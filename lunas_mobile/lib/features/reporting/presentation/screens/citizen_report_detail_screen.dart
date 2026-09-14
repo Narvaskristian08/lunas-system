@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -260,6 +261,12 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                     const SizedBox(height: AppSpacing.sm),
                   ],
                   LunasCard(child: ReportStatusTimeline(events: history)),
+                  const SizedBox(height: AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push('/reports/${report.id}/timeline'),
+                    icon: const Icon(Icons.timeline_rounded),
+                    label: const Text('View full timeline'),
+                  ),
                 ],
               ),
             ),
