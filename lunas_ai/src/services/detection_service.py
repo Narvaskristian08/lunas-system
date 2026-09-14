@@ -426,6 +426,7 @@ class DetectionService:
             'category': category,
             'model_available': model_file_available,
             'model': assigned_model,
+            'damage_only': bool(model_config.get('damage_only', False)),
             'detections': [],
             'ai_suggestion': None,
             'confidence_score': 0.0,
@@ -451,7 +452,6 @@ class DetectionService:
         if not model_result.get('success'):
             results['model_available'] = False
             results['analysis_status'] = 'failed'
-            results['model'] = None
             results['error'] = 'Assigned category model could not be used'
             return results
 
@@ -540,6 +540,12 @@ class DetectionService:
                 class_name = class_names[class_id]
             else:
                 class_name = result.names.get(class_id, f"class_{class_id}")
+
+            # Electrical damage models are intentionally allowlisted. This
+            # prevents a stale/mismatched checkpoint label map from leaking
+            # ordinary asset detections into the advisory response.
+            if model_config.get('damage_only') and class_name not in class_names:
+                continue
             
             detections.append({
                 'class': class_name,

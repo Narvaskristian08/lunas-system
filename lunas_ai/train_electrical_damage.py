@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Train the backend electrical model from an exported InsPLAD dataset.
+"""Train the backend electrical category on damage-only annotations.
 
-The script deliberately requires a local base checkpoint. Ultralytics is not
-allowed to silently download ``yolov8n.pt`` because the repository workflow
-does not install or fetch dependencies automatically.
+The base checkpoint must already exist locally.  This keeps training
+reproducible and prevents Ultralytics from downloading an unrelated model.
 """
 
 from __future__ import annotations
@@ -13,17 +12,18 @@ import os
 import shutil
 from pathlib import Path
 
+
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_DATA = BASE_DIR / "datasets/electrical/insplad/data.yaml"
+DEFAULT_DATA = BASE_DIR / "datasets/electrical/damage/data.yaml"
 DEFAULT_OUTPUT = BASE_DIR / "models/electrical/electricpole/best.pt"
-LOCAL_CACHE = BASE_DIR / ".cache"
-os.environ.setdefault("YOLO_CONFIG_DIR", str(LOCAL_CACHE / "ultralytics"))
-os.environ.setdefault("MPLCONFIGDIR", str(LOCAL_CACHE / "matplotlib-training"))
+CACHE_DIR = BASE_DIR / ".cache"
+os.environ.setdefault("YOLO_CONFIG_DIR", str(CACHE_DIR / "ultralytics"))
+os.environ.setdefault("MPLCONFIGDIR", str(CACHE_DIR / "matplotlib-training"))
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Train the LUNAS electrical category model"
+        description="Train the LUNAS electrical damage detector"
     )
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
     parser.add_argument(
@@ -39,59 +39,46 @@ def parse_args() -> argparse.Namespace:
         "--fraction",
         type=float,
         default=1.0,
-        help="Fraction of the exported training set to use (keep 1.0 for QA training)",
-    )
-    parser.add_argument(
-        "--skip-validation",
-        action="store_true",
-        help="Skip per-epoch validation for long CPU runs; validate the final checkpoint separately",
+        help="Fraction of the training split used for a bounded QA run",
     )
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument(
-        "--output",
-        type=Path,
-        default=DEFAULT_OUTPUT,
-        help="Final checkpoint path consumed by the backend",
+        "--skip-validation",
+        action="store_true",
+        help="Skip per-epoch validation; final validation can be run separately",
     )
-    parser.add_argument("--name", default="electrical_insplad_yolov8n")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--name", default="electrical_damage_yolov8n")
     return parser.parse_args()
 
 
-def resolve_local_checkpoint(path: Path) -> Path:
+def absolute_path(path: Path) -> Path:
     candidate = path.expanduser()
     if not candidate.is_absolute():
         candidate = BASE_DIR / candidate
-    candidate = candidate.resolve()
-    if not candidate.is_file():
-        raise FileNotFoundError(
-            f"Local base checkpoint not found: {candidate}. "
-            "Place yolov8n.pt there or pass --base-model /path/to/model.pt; "
-            "automatic downloads are disabled."
-        )
-    return candidate
+    return candidate.resolve()
 
 
 def main() -> int:
     args = parse_args()
-    data_path = args.data.expanduser()
-    if not data_path.is_absolute():
-        data_path = BASE_DIR / data_path
-    data_path = data_path.resolve()
+    data_path = absolute_path(args.data)
+    base_checkpoint = absolute_path(args.base_model)
+    output_path = absolute_path(args.output)
     if not data_path.is_file():
         raise FileNotFoundError(
-            f"YOLO data configuration not found: {data_path}. "
-            "Run tools/prepare_insplad.py first."
+            f"Damage-only data.yaml not found: {data_path}. "
+            "Run tools/prepare_electrical_damage.py first."
         )
-
-    base_checkpoint = resolve_local_checkpoint(args.base_model)
+    if not base_checkpoint.is_file():
+        raise FileNotFoundError(
+            f"Local base checkpoint not found: {base_checkpoint}. "
+            "Automatic downloads are disabled."
+        )
     if not 0 < args.fraction <= 1:
         raise SystemExit("--fraction must be greater than zero and no greater than one")
-    output_path = args.output.expanduser()
-    if not output_path.is_absolute():
-        output_path = BASE_DIR / output_path
-    output_path = output_path.resolve()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if args.epochs <= 0 or args.batch <= 0 or args.imgsz <= 0:
+        raise SystemExit("--epochs, --batch, and --imgsz must be greater than zero")
 
     try:
         from src.utils.config import config
@@ -99,13 +86,14 @@ def main() -> int:
         from ultralytics import YOLO
     except ImportError as exc:
         raise SystemExit(
-            "Ultralytics is not available. Install dependencies separately "
-            "only when your team is ready to train."
+            "Ultralytics is not available. Install dependencies separately only "
+            "when your team is ready to train."
         ) from exc
 
     device = args.device or config.get_device()
-    logger.info("Training electrical model from %s", data_path)
+    logger.info("Training electrical damage model from %s", data_path)
     logger.info("Using local YOLOv8n checkpoint: %s", base_checkpoint)
+    logger.info("Using device: %s", device)
     logger.info("Output checkpoint: %s", output_path)
 
     model = YOLO(str(base_checkpoint))
@@ -146,10 +134,10 @@ def main() -> int:
     run_best = Path(results.save_dir) / "weights/best.pt"
     if not run_best.is_file():
         raise FileNotFoundError(f"Training completed without best.pt: {run_best}")
-
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(run_best, output_path)
-    logger.info("Electrical model installed for backend use: %s", output_path)
-    print(f"Saved trained electrical model to {output_path}")
+    logger.info("Electrical damage model installed for backend use: %s", output_path)
+    print(f"Saved trained electrical damage model to {output_path}")
     return 0
 
 

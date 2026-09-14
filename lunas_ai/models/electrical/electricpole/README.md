@@ -1,11 +1,9 @@
 # Electrical / Electric pole
 
 This folder is reserved for the backend model assigned to the canonical
-`electrical` category.
-
-The folder name follows the mobile category layout. The current InsPLAD
-checkpoint localizes electrical hardware assets (insulators, dampers, yokes,
-and related parts); it is not a broken-pole, exposed-wire, or damage detector.
+`electrical` category. The model must return damage/fault regions only; it
+must not return ordinary pole, tower, insulator, or other intact-component
+detections.
 
 Expected trained checkpoint:
 
@@ -13,21 +11,27 @@ Expected trained checkpoint:
 models/electrical/electricpole/best.pt
 ```
 
-The training source is the **detection** task from
-[Voxel51/InsPLAD](https://huggingface.co/datasets/Voxel51/InsPLAD). The
-repository includes the preparation utility at
-`lunas_ai/tools/prepare_insplad.py` and the training utility at
-`lunas_ai/train_electrical_insplad.py`.
+The checkpoint is prepared by:
 
-InsPLAD is licensed **CC BY-NC 3.0**. It is non-commercial only and uses UAV
-imagery from a Brazilian utility. The team must add and validate local,
-ground-level phone images before using a trained model for LUNAS QA.
+```bash
+cd lunas_ai
+python tools/prepare_electrical_damage.py
+python train_electrical_damage.py
+```
 
-The current local `best.pt` is a runtime-limited QA checkpoint from 16 of the
-configured 100 epochs on a 2% slice of the 1,000-sample pilot. It is suitable
-for integration testing only, not accuracy claims. Run the training utility
-with `--fraction 1.0` on a faster training host to complete the full pilot.
+Training sources are limited to datasets with explicit damage/fault labels:
 
-Until `best.pt` is present, the AI service returns `analysis_status:
-"unavailable"` for `electrical`. It never substitutes the road, environmental,
-or another category model.
+- [Power Equipment Image Dataset](https://huggingface.co/datasets/sxiong/Power-equipment-image-dataset), using only its transmission-line object-detection subset (MIT)
+- [Cable Damage](https://huggingface.co/datasets/LibreYOLO/cable-damage), using `break` and `thunderbolt` (CC BY 4.0)
+
+The previous InsPLAD detection checkpoint was an asset-localization model and
+is not used for this category. Pole-only and intact-component datasets are
+also excluded. The current model is an advisory QA detector: labels,
+confidence, and normalized boxes are evidence for officials, not automatic
+damage, severity, routing, priority, or closure decisions. Local Philippine
+phone images are still required for validation and fine-tuning.
+
+The checked-in QA checkpoint was trained locally for 3 epochs on a 10% training
+fraction at 320 pixels because this host has CPU-only training. For a stronger
+model, run the same command on a GPU host with the default 100 epochs and 640
+pixel input, then validate it with local phone images before operational use.

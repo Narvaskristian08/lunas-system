@@ -16,11 +16,17 @@ LUNAS AI Service is a production-ready Python microservice that provides real-ti
 
 ✅ **Multi-Model Support** - YOLOv8, YOLOv11, custom fine-tuned models  
 ✅ **Real-time Detection** - Sub-second inference on CPU, even faster on GPU/M1  
-✅ **Comprehensive Detection** - Potholes, cracks, manholes, sewer covers  
+✅ **Category-routed Detection** - The backend selects only the model assigned to the submitted category
 ✅ **Privacy Protection** - Automatic detection of people and vehicles  
 ✅ **Production Ready** - Docker support, logging, metrics, error handling  
 ✅ **Easy Integration** - RESTful API, JSON responses  
 ✅ **Extensible** - Support for custom models and fine-tuning  
+
+The `electrical` category is damage-only. Its model is trained from explicit
+fault/damage bounding boxes and returns advisory labels, confidence values, and
+normalized image regions. It does not detect intact poles/components and it
+cannot make severity, priority, routing, status, or closure decisions. Missing
+or failed category models remain manual review.
 
 ---
 
@@ -243,16 +249,25 @@ Parameters:
 **Response:**
 ```json
 {
-  "category": "road_pavement",
-  "road_damage": {...},
-  "cracks": {...},
-  "privacy": {...},
-  "ai_suggestion": "Road/Pavement - Pothole",
-  "confidence_score": 0.876,
-  "requires_manual_review": false,
+  "category": "electrical",
+  "model": "electrical_damage",
+  "damage_only": true,
+  "analysis_status": "completed",
+  "model_available": true,
+  "detections": [{
+    "class": "conductor_insulation_damage",
+    "confidence": 0.876,
+    "bbox": {"x1": 0.21, "y1": 0.18, "x2": 0.64, "y2": 0.51}
+  }],
+  "advisory_only": true,
+  "requires_manual_review": true,
   "processing_time": 1.234
 }
 ```
+
+The web category is the routing authority. Mobile and web submit images to the
+backend; neither contains model files or calls the AI service directly. AI
+results are display guidance only and never replace the official decision.
 
 ---
 

@@ -11,52 +11,38 @@ datasets/
 ├── README.md          ← You are here
 ├── .gitkeep          ← Keeps folder in git
 ├── rdd2022/          ← Road Damage Dataset 2022 (user must download)
-└── electrical/insplad/ ← Generated locally; never committed
+└── electrical/damage/  ← Generated locally; never committed
 ```
 
-## ⚡ Electrical Model: InsPLAD
+## ⚡ Electrical Model: Damage Only
 
-InsPLAD is a training source for the backend `electrical` category. The
-Hugging Face entry combines three tasks. LUNAS uses only its `detection` task,
-because that task contains bounding boxes. The fault-classification and
-anomaly-detection tasks contain cropped images and are not direct inputs for
-the current YOLO bounding-box response contract.
-
-Dataset source: [Voxel51/InsPLAD on Hugging Face](https://huggingface.co/datasets/Voxel51/InsPLAD)
-
-The dataset is licensed **CC BY-NC 3.0** and is non-commercial only. It also
-contains UAV imagery from a Brazilian utility, so local ground-level phone
-images are still required for validation and fine-tuning.
-
-### Prepare the YOLO export
-
-The preparation utility is intentionally optional and does not install
-anything. It loads the dataset through FiftyOne, filters `task ==
-"detection"`, creates reproducible splits, and writes a local YOLO dataset:
+The backend `electrical` category uses only explicit fault/damage bounding
+boxes. The preparation utility downloads the selected source archives into the
+ignored `.cache` directory and combines them into a local YOLO export:
 
 ```bash
 cd lunas_ai
-python tools/prepare_insplad.py --max-samples 1000
+python tools/prepare_electrical_damage.py
 ```
 
-Remove `--max-samples` only when the team is ready to process the complete
-detection subset. The generated files are ignored by Git because datasets are
-large.
+The selected sources are the transmission-line fault subset of the [Power
+Equipment Image Dataset](https://huggingface.co/datasets/sxiong/Power-equipment-image-dataset)
+(MIT) and [Cable Damage](https://huggingface.co/datasets/LibreYOLO/cable-damage)
+(CC BY 4.0). The output contains only their documented fault labels. InsPLAD
+detection, pole-only, and intact-component datasets are intentionally excluded
+because they highlight assets rather than damage.
 
-### Train the category model
-
-The training utility requires a local `yolov8n.pt` checkpoint. It will not
-download the checkpoint automatically:
+The training utility requires the local `yolov8n.pt` checkpoint and does not
+download it automatically:
 
 ```bash
 cd lunas_ai
-python train_electrical_insplad.py
+python train_electrical_damage.py
 ```
 
-On success, the trained checkpoint is copied to
-`models/electrical/electricpole/best.pt`. Only after that file exists will the
-backend run the model for `electrical`; otherwise it returns an unavailable
-analysis and keeps the incident in manual review.
+The output is `models/electrical/electricpole/best.pt`. If it is absent or
+inference fails, the backend returns an unavailable/manual-review result and
+does not substitute a road, environmental, or other category model.
 
 ---
 

@@ -159,6 +159,7 @@ class ModelManager:
             'display_name': model_config.get('name', model_name),
             'type': model_config.get('type', 'unknown'),
             'classes': model_config.get('classes', []),
+            'damage_only': bool(model_config.get('damage_only', False)),
             'loaded': model_name in self.models,
             'device': self.device,
             'confidence_threshold': model_config.get('confidence_threshold', 0.25),
