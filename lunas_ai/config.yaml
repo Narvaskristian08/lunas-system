@@ -55,6 +55,24 @@ models:
       normalize: true
       resize: true
     notes: "Detects environmental and urban safety hazards"
+
+  # Electrical assets: trained from the InsPLAD detection subset. Local
+  # ground-level images are still needed for validation and fine-tuning.
+  electrical_assets:
+    name: "YOLOv8n Electrical Asset Detection (InsPLAD fine-tuned)"
+    path: "models/electrical/electricpole/best.pt"
+    type: "detection"
+    # Class names are stored in the trained checkpoint produced by the
+    # preparation script. Keeping this empty lets the parser use checkpoint
+    # names while avoiding a guessed class-to-index mapping.
+    classes: []
+    confidence_threshold: 0.30
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "InsPLAD detection subset; CC BY-NC 3.0; validate with local phone images"
     
   crack_segmentation:
     name: "YOLOv8n-seg Crack Segmentation"
@@ -92,7 +110,7 @@ category_models:
   # and backend incident APIs. A null value is intentionally manual-only.
   road: road_damage
   drainage: null
-  electrical: null
+  electrical: electrical_assets
   water: null
   gas: null
   streetlight: null

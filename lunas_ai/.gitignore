@@ -23,6 +23,7 @@ share/python-wheels/
 MANIFEST
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
@@ -50,6 +51,7 @@ train_small.log
 training.log
 
 # Training Output & Cache
+.cache/
 runs/
 cache/inference/
 models/cache/
