@@ -40,9 +40,9 @@ bool isRepairPersonnelRole(String role) => role == 'repair_personnel';
 String? mobileWorkspaceHome(String role) {
   if (isCitizenRole(role)) return '/citizen';
   if (isRepairPersonnelRole(role)) return '/repair';
-  if (isValidationOfficialRole(role) && !isUtilityProviderRole(role)) {
-    return '/official';
-  }
+  if (role == 'barangay_official') return '/official';
+  if (role == 'city_engineer') return '/engineering';
+  if (role == 'admin') return '/official';
   return null;
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -29,7 +30,7 @@ class _ValidateReportScreenState extends State<ValidateReportScreen> {
         primaryLabel: 'Confirm validation',
         primaryIcon: Icons.check_circle_outline_rounded,
         onPrimary: () =>
-            Navigator.pushNamed(context, OperationsRoutes.assignPersonnel),
+            context.push(OperationsRoutes.assignPersonnel),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
@@ -143,7 +144,7 @@ class _EngineeringMapOversightScreenState
             title: 'Recent critical alerts',
             trailing: TextButton(
               onPressed: () =>
-                  Navigator.pushNamed(context, EngineeringRoutes.incidents),
+                  context.push(EngineeringRoutes.incidents),
               child: const Text('View queue'),
             ),
           ),
@@ -158,7 +159,7 @@ class _EngineeringMapOversightScreenState
             urgency: 'High urgency',
             color: AppColorsLight.critical,
             onTap: () =>
-                Navigator.pushNamed(context, EngineeringRoutes.incidentDetails),
+                context.push(EngineeringRoutes.incidentDetails),
           ),
           const SizedBox(height: AppSpacing.sm),
           _MapAlert(
@@ -170,9 +171,7 @@ class _EngineeringMapOversightScreenState
             time: '1h ago',
             urgency: 'Medium urgency',
             color: AppColorsLight.alert,
-            onTap: () => Navigator.pushNamed(
-              context,
-              EngineeringRoutes.utilityAssignment,
+            onTap: () => context.push(EngineeringRoutes.utilityAssignment,
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),
@@ -189,7 +188,7 @@ class _EngineeringMapOversightScreenState
                 ),
                 TextButton.icon(
                   onPressed: () =>
-                      Navigator.pushNamed(context, EngineeringRoutes.analytics),
+                      context.push(EngineeringRoutes.analytics),
                   icon: const Icon(Icons.analytics_outlined),
                   label: const Text('Insights'),
                 ),

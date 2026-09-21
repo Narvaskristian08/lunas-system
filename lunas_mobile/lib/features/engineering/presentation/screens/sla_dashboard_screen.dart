@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
@@ -121,7 +122,7 @@ class SlaDashboardScreen extends StatelessWidget {
             trailing: IconButton(
               tooltip: 'Open incident queue',
               onPressed: () =>
-                  Navigator.pushNamed(context, EngineeringRoutes.incidents),
+                  context.push(EngineeringRoutes.incidents),
               icon: const Icon(Icons.search_rounded),
             ),
           ),
@@ -320,7 +321,7 @@ class _SlaIncidentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LunasCard(
       onTap: () =>
-          Navigator.pushNamed(context, EngineeringRoutes.incidentDetails),
+          context.push(EngineeringRoutes.incidentDetails),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [

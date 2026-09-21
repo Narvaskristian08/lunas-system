@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -18,7 +19,7 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
       actions: [
         IconButton(
           tooltip: 'Notifications',
-          onPressed: () => Navigator.pushNamed(context, '/notifications'),
+          onPressed: () => context.push('/notifications'),
           icon: const Icon(Icons.notifications_none_rounded),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -75,9 +76,7 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
                   SizedBox(
                     width: width,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.utilityAssignment,
+                      onPressed: () => context.push(EngineeringRoutes.utilityAssignment,
                       ),
                       icon: const Icon(Icons.handshake_outlined),
                       label: const Text('Assign provider'),
@@ -87,7 +86,7 @@ class IncidentDetailsEngineeringScreen extends StatelessWidget {
                     width: width,
                     child: OutlinedButton.icon(
                       onPressed: () =>
-                          Navigator.pushNamed(context, EngineeringRoutes.sla),
+                          context.push(EngineeringRoutes.sla),
                       icon: const Icon(Icons.timer_outlined),
                       label: const Text('View SLA'),
                     ),

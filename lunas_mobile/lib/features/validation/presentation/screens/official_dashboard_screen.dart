@@ -17,7 +17,8 @@ class OfficialDashboardScreen extends StatefulWidget {
   const OfficialDashboardScreen({super.key});
 
   @override
-  State<OfficialDashboardScreen> createState() => _OfficialDashboardScreenState();
+  State<OfficialDashboardScreen> createState() =>
+      _OfficialDashboardScreenState();
 }
 
 class _OfficialDashboardScreenState extends State<OfficialDashboardScreen> {
@@ -83,20 +84,22 @@ class _OfficialDashboardScreenState extends State<OfficialDashboardScreen> {
         onAction: _load,
       );
     }
-    final summary = _summary ?? const ValidationSummary(
-      pending: 0,
-      validated: 0,
-      rejected: 0,
-      duplicate: 0,
-    );
+    final summary =
+        _summary ??
+        const ValidationSummary(
+          pending: 0,
+          validated: 0,
+          rejected: 0,
+          duplicate: 0,
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Hello${firstName == null || firstName.isEmpty ? '' : ', $firstName'}',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(
@@ -105,9 +108,20 @@ class _OfficialDashboardScreenState extends State<OfficialDashboardScreen> {
         const SizedBox(height: AppSpacing.xl),
         _QueueCallout(onOpenQueue: () => context.go('/official/validation')),
         const SizedBox(height: AppSpacing.md),
-        _WorkOrderCallout(onOpenWorkOrders: () => context.go('/official/work-orders')),
+        _WorkOrderCallout(
+          onOpenWorkOrders: () => context.go('/official/work-orders'),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        OutlinedButton.icon(
+          onPressed: () => context.push('/official/statistics'),
+          icon: const Icon(Icons.bar_chart_rounded),
+          label: const Text('Barangay statistics'),
+        ),
         const SizedBox(height: AppSpacing.xxl),
-        Text('Your validation summary', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Your validation summary',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.sm,
@@ -223,9 +237,14 @@ class _WorkOrderCallout extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Work-order monitoring', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Work-order monitoring',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: AppSpacing.xxs),
-              const Text('Review server-scoped repair status and SLA warnings. This mobile view is read-only.'),
+              const Text(
+                'Review server-scoped repair status and SLA warnings. This mobile view is read-only.',
+              ),
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton.icon(
                 onPressed: onOpenWorkOrders,

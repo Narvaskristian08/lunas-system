@@ -1,441 +1,301 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_routes.dart';
 import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_widgets.dart';
+import 'package:lunas_mobile/features/validation/data/models/validation_incident.dart';
 
-/// Static engineering workspace based on the Stitch engineering dashboard.
-class EngineeringDashboardScreen extends StatelessWidget {
+/// City engineering overview backed by server-scoped aggregate and incident APIs.
+class EngineeringDashboardScreen extends StatefulWidget {
   const EngineeringDashboardScreen({super.key});
+
+  @override
+  State<EngineeringDashboardScreen> createState() =>
+      _EngineeringDashboardScreenState();
+}
+
+class _EngineeringDashboardScreenState
+    extends State<EngineeringDashboardScreen> {
+  bool _loading = true;
+  String? _error;
+  Map<String, dynamic> _stats = const {};
+  List<ValidationIncident> _incidents = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final results = await Future.wait([
+        validationService.getDashboardStats(),
+        validationService.getIncidents(
+          page: 1,
+          limit: 10,
+          priority: 'critical',
+        ),
+      ]);
+      final payload = results.first as Map<String, dynamic>;
+      final data = payload['data'] is Map
+          ? Map<String, dynamic>.from(payload['data'] as Map)
+          : <String, dynamic>{};
+      final incidents = data['incidents'] is Map
+          ? Map<String, dynamic>.from(data['incidents'] as Map)
+          : <String, dynamic>{};
+      if (mounted) {
+        setState(() {
+          _stats = incidents;
+          _incidents = (results[1] as ValidationQueuePage).incidents;
+        });
+      }
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _count(String key) => (_stats[key] ?? 0).toString();
+
+  String get _criticalCount {
+    final breakdown = _stats['byPriority'];
+    if (breakdown is! List) return '0';
+    for (final item in breakdown.whereType<Map>()) {
+      final row = Map<String, dynamic>.from(item);
+      if (row['_id']?.toString().toLowerCase() == 'critical') {
+        return (row['count'] ?? 0).toString();
+      }
+    }
+    return '0';
+  }
 
   @override
   Widget build(BuildContext context) {
     return EngineeringPage(
       title: 'LUNAS Engineering',
-      subtitle: 'Dagupan infrastructure oversight',
-      showBackButton: true,
+      subtitle: 'Dagupan City infrastructure oversight',
+      showBackButton: false,
       actions: [
         IconButton(
-          tooltip: 'Notifications',
-          onPressed: () => Navigator.pushNamed(context, '/notifications'),
-          icon: const Icon(Icons.notifications_none_rounded),
+          onPressed: _loading ? null : _load,
+          tooltip: 'Refresh dashboard',
+          icon: const Icon(Icons.refresh_rounded),
         ),
         const SizedBox(width: AppSpacing.sm),
       ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Engineering dashboard',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'City-wide incident and SLA overview.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          ElevatedButton.icon(
-            onPressed: () =>
-                Navigator.pushNamed(context, EngineeringRoutes.incidents),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Create work order'),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const Divider(),
-          const SizedBox(height: AppSpacing.lg),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 640 ? 4 : 2;
-              final width =
-                  (constraints.maxWidth - (columns - 1) * AppSpacing.sm) /
-                  columns;
-              return Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  SizedBox(
-                    width: width,
-                    child: const EngineeringMetricCard(
-                      label: 'Active',
-                      value: '142',
-                      icon: Icons.warning_amber_rounded,
-                      color: AppColorsLight.brandBase,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: const EngineeringMetricCard(
-                      label: 'Critical',
-                      value: '18',
-                      icon: Icons.error_outline_rounded,
-                      color: AppColorsLight.critical,
-                      emphasized: true,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: const EngineeringMetricCard(
-                      label: 'Overdue',
-                      value: '7',
-                      icon: Icons.schedule_outlined,
-                      color: AppColorsLight.alert,
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: const EngineeringMetricCard(
-                      label: 'Completed today',
-                      value: '24',
-                      icon: Icons.check_circle_outline_rounded,
-                      color: AppColorsLight.success,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          EngineeringSectionHeading(
-            title: 'High-priority incidents',
-            trailing: TextButton(
-              onPressed: () =>
-                  Navigator.pushNamed(context, EngineeringRoutes.incidents),
-              child: const Text('View all'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _PriorityIncidentCard(
-            title: 'Water main rupture — Sector 7',
-            description:
-                'Water pressure is dropping rapidly. Immediate field dispatch is required.',
-            address: 'Barangay Pantal, Dagupan',
-            elapsed: '15m ago',
-            severity: 'Critical',
-            icon: Icons.water_drop_outlined,
-            color: AppColorsLight.critical,
-            onAssign: () => Navigator.pushNamed(
-              context,
-              EngineeringRoutes.utilityAssignment,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _PriorityIncidentCard(
-            title: 'Substation 4 offline',
-            description:
-                'Reported outage is affecting residential blocks near the public market.',
-            address: 'Downtown service area',
-            elapsed: '42m ago',
-            severity: 'High',
-            icon: Icons.electrical_services_outlined,
-            color: AppColorsLight.alert,
-            onAssign: () => Navigator.pushNamed(
-              context,
-              EngineeringRoutes.utilityAssignment,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          LunasCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'SLA compliance',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Open SLA dashboard',
-                      onPressed: () =>
-                          Navigator.pushNamed(context, EngineeringRoutes.sla),
-                      icon: const Icon(Icons.more_horiz_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '94%',
-                      style: Theme.of(context).textTheme.headlineLarge
-                          ?.copyWith(
-                            color: AppColorsLight.brandBase,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                      child: Text(
-                        '↑ 2.1%',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColorsLight.success,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  'Overall compliance in the last 30 days',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                const _SlaTrend(),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          const EngineeringSectionHeading(title: 'Quick actions'),
-          const SizedBox(height: AppSpacing.sm),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth >= 560
-                  ? (constraints.maxWidth - AppSpacing.sm) / 2
-                  : constraints.maxWidth;
-              return Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  SizedBox(
-                    width: width,
-                    child: _QuickActionCard(
-                      icon: Icons.list_alt_outlined,
-                      label: 'View incidents',
-                      color: AppColorsLight.brandBase,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.incidents,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _QuickActionCard(
-                      icon: Icons.handshake_outlined,
-                      label: 'Assign provider',
-                      color: AppColorsLight.success,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.utilityAssignment,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _QuickActionCard(
-                      icon: Icons.timer_outlined,
-                      label: 'SLA dashboard',
-                      color: AppColorsLight.alert,
-                      onTap: () =>
-                          Navigator.pushNamed(context, EngineeringRoutes.sla),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _QuickActionCard(
-                      icon: Icons.verified_user_outlined,
-                      label: 'Verify repairs',
-                      color: AppColorsLight.brandBase,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        EngineeringRoutes.verifyRepair,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PriorityIncidentCard extends StatelessWidget {
-  const _PriorityIncidentCard({
-    required this.title,
-    required this.description,
-    required this.address,
-    required this.elapsed,
-    required this.severity,
-    required this.icon,
-    required this.color,
-    required this.onAssign,
-  });
-
-  final String title;
-  final String description;
-  final String address;
-  final String elapsed;
-  final String severity;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onAssign;
-
-  @override
-  Widget build(BuildContext context) {
-    return LunasCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .14),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: _loading
+          ? const LunasStateView(
+              state: LunasViewState.loading,
+              title: 'Loading engineering dashboard',
+              message: 'Getting city-wide operational data.',
+            )
+          : _error != null
+          ? LunasStateView(
+              state: LunasViewState.error,
+              title: 'Could not load dashboard',
+              message: _error!,
+              actionLabel: 'Retry',
+              onAction: _load,
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  'Engineering dashboard',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(description, style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    EngineeringBadge(label: severity, color: color),
-                    _Metadata(icon: Icons.schedule_outlined, value: elapsed),
-                    _Metadata(icon: Icons.location_on_outlined, value: address),
-                  ],
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'City-wide incidents and SLA overview.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = constraints.maxWidth >= 640 ? 4 : 2;
+                    final width =
+                        (constraints.maxWidth - (columns - 1) * AppSpacing.sm) /
+                        columns;
+                    return Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        _metric(
+                          width,
+                          'Active',
+                          _count('inProgress'),
+                          Icons.warning_amber_rounded,
+                          AppColorsLight.brandBase,
+                        ),
+                        _metric(
+                          width,
+                          'Critical',
+                          _criticalCount,
+                          Icons.error_outline_rounded,
+                          AppColorsLight.critical,
+                          emphasized: true,
+                        ),
+                        _metric(
+                          width,
+                          'Overdue',
+                          _count('overdue'),
+                          Icons.schedule_outlined,
+                          AppColorsLight.alert,
+                        ),
+                        _metric(
+                          width,
+                          'Completed',
+                          _count('completed'),
+                          Icons.check_circle_outline_rounded,
+                          AppColorsLight.success,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                EngineeringSectionHeading(
+                  title: 'Critical incidents',
+                  trailing: TextButton(
+                    onPressed: () => context.push(EngineeringRoutes.incidents),
+                    child: const Text('View all'),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                OutlinedButton(
-                  onPressed: onAssign,
-                  child: const Text('Assign'),
+                if (_incidents.isEmpty)
+                  const LunasCard(
+                    child: Text(
+                      'No critical incidents in the current city scope.',
+                    ),
+                  )
+                else
+                  for (final incident in _incidents) ...[
+                    LunasCard(
+                      onTap: () =>
+                          context.push('/engineering/incidents/${incident.id}'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            incident.reportNumber,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            incident.categoryLabel,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            incident.location.displayAddress,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            incident.sla?.isOverdue == true
+                                ? 'SLA overdue'
+                                : 'Status: ${incident.status}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: incident.sla?.isOverdue == true
+                                      ? AppColorsLight.critical
+                                      : null,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                const SizedBox(height: AppSpacing.lg),
+                EngineeringSectionHeading(title: 'Engineering tools'),
+                const SizedBox(height: AppSpacing.sm),
+                _action(
+                  context,
+                  'City-wide incidents',
+                  Icons.map_outlined,
+                  EngineeringRoutes.incidents,
+                ),
+                _action(
+                  context,
+                  'SLA dashboard',
+                  Icons.timer_outlined,
+                  EngineeringRoutes.sla,
+                ),
+                _action(
+                  context,
+                  'Infrastructure analytics',
+                  Icons.insights_outlined,
+                  EngineeringRoutes.analytics,
+                ),
+                _action(
+                  context,
+                  'Performance reports',
+                  Icons.bar_chart_rounded,
+                  EngineeringRoutes.performance,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const LunasCard(
+                  child: Text(
+                    'Provider assignment and repair verification require backend workflow endpoints that are not currently available.',
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
-}
 
-class _Metadata extends StatelessWidget {
-  const _Metadata({required this.icon, required this.value});
+  Widget _metric(
+    double width,
+    String label,
+    String value,
+    IconData icon,
+    Color color, {
+    bool emphasized = false,
+  }) => SizedBox(
+    width: width,
+    child: EngineeringMetricCard(
+      label: label,
+      value: value,
+      icon: icon,
+      color: color,
+      emphasized: emphasized,
+    ),
+  );
 
-  final IconData icon;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 15,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: AppSpacing.xxs),
-        Text(value, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
-  }
-}
-
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LunasCard(
-      onTap: onTap,
-      color: Theme.of(
-        context,
-      ).colorScheme.primaryContainer.withValues(alpha: .55),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .14),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SlaTrend extends StatelessWidget {
-  const _SlaTrend();
-
-  @override
-  Widget build(BuildContext context) {
-    const values = [0.36, 0.42, 0.34, 0.66, 0.51, 0.69, 0.48, 0.75];
-    return SizedBox(
-      height: 72,
+  Widget _action(
+    BuildContext context,
+    String label,
+    IconData icon,
+    String route,
+  ) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    child: LunasCard(
+      onTap: () => context.push(route),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: values
-            .map(
-              (value) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Container(
-                    height: 14 + value * 52,
-                    decoration: BoxDecoration(
-                      color: AppColorsLight.brandBase.withValues(
-                        alpha: .35 + value * .55,
-                      ),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            )
-            .toList(),
+        children: [
+          Icon(icon, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          ),
+          const Icon(Icons.chevron_right_rounded),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }

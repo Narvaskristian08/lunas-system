@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
@@ -156,7 +157,7 @@ class _SlaIncidentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LunasCard(
       onTap: () =>
-          Navigator.pushNamed(context, OperationsRoutes.repairVerification),
+          context.push(OperationsRoutes.repairVerification),
       color: isOverdue ? color.withValues(alpha: .11) : null,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(

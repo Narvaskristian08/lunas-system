@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/widgets/citizen_bottom_navigation.dart';
+import 'package:lunas_mobile/core/widgets/backend_dependency_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/app_splash_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
@@ -40,6 +41,14 @@ import 'package:lunas_mobile/features/validation/presentation/screens/official_d
 import 'package:lunas_mobile/features/validation/presentation/screens/official_profile_screen.dart';
 import 'package:lunas_mobile/features/validation/presentation/screens/validation_incident_detail_screen.dart';
 import 'package:lunas_mobile/features/validation/presentation/screens/validation_queue_screen.dart';
+import 'package:lunas_mobile/features/validation/presentation/screens/official_statistics_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/official_sla_overview_screen.dart';
+import 'package:lunas_mobile/features/operations/presentation/screens/assign_personnel_workflow_screen.dart';
+import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_dashboard_screen.dart';
+import 'package:lunas_mobile/features/engineering/presentation/screens/city_wide_incidents_screen.dart';
+import 'package:lunas_mobile/features/engineering/presentation/screens/infrastructure_analytics_screen.dart';
+import 'package:lunas_mobile/features/operations/presentation/screens/operations_routes.dart';
+import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_routes.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -62,6 +71,7 @@ final GoRouter appRouter = GoRouter(
     final isPublic = publicLocations.contains(location);
     final isCitizenLocation = _isCitizenLocation(location);
     final isOfficialLocation = _isOfficialLocation(location);
+    final isEngineeringLocation = _isEngineeringLocation(location);
     final isRepairLocation = _isRepairLocation(location);
     switch (authController.status) {
       case AuthStatus.initializing:
@@ -94,6 +104,9 @@ final GoRouter appRouter = GoRouter(
         }
         if (authController.isRepairPersonnel) {
           return isRepairLocation ? null : home;
+        }
+        if (authController.user?.role == 'city_engineer') {
+          return isEngineeringLocation ? null : home;
         }
         if (authController.isValidationOfficial) {
           return isOfficialLocation ? null : home;
@@ -186,9 +199,8 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/reports/:id/timeline',
-          builder: (_, state) => ReportTimelineScreen(
-            reportId: state.pathParameters['id'] ?? '',
-          ),
+          builder: (_, state) =>
+              ReportTimelineScreen(reportId: state.pathParameters['id'] ?? ''),
         ),
         GoRoute(
           path: '/reports/:id',
@@ -211,6 +223,37 @@ final GoRouter appRouter = GoRouter(
       builder: (_, _) => const OfficialDashboardScreen(),
     ),
     GoRoute(
+      path: OperationsRoutes.incomingReports,
+      builder: (_, _) => const ValidationQueueScreen(),
+    ),
+    GoRoute(
+      path: OperationsRoutes.validateReport,
+      builder: (_, _) => const ValidationQueueScreen(),
+    ),
+    GoRoute(
+      path: OperationsRoutes.assignPersonnel,
+      builder: (_, _) => const ValidationQueueScreen(),
+    ),
+    GoRoute(
+      path: '/official/assign/:incidentId',
+      builder: (_, state) => AssignPersonnelWorkflowScreen(
+        incidentId: state.pathParameters['incidentId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: OperationsRoutes.slaMonitoring,
+      builder: (_, _) =>
+          const OfficialSlaOverviewScreen(title: 'Barangay SLA monitoring'),
+    ),
+    GoRoute(
+      path: OperationsRoutes.repairVerification,
+      builder: (_, _) => const BackendDependencyScreen(
+        title: 'Repair verification',
+        message:
+            'The backend does not currently expose an official approve, reject, or rework endpoint. Repair completion remains pending human review until that workflow is added.',
+      ),
+    ),
+    GoRoute(
       path: '/official/validation',
       builder: (_, _) => const ValidationQueueScreen(),
     ),
@@ -225,8 +268,75 @@ final GoRouter appRouter = GoRouter(
       builder: (_, _) => const OfficialProfileScreen(),
     ),
     GoRoute(
+      path: '/official/statistics',
+      builder: (_, _) => const OfficialStatisticsScreen(),
+    ),
+    GoRoute(
       path: '/official/work-orders',
       builder: (_, _) => const OfficialWorkOrdersScreen(),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.dashboard,
+      builder: (_, _) => const EngineeringDashboardScreen(),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.incidents,
+      builder: (_, _) => const CityWideIncidentsScreen(),
+    ),
+    GoRoute(
+      path: '/engineering/incidents/:incidentId',
+      builder: (_, state) => ValidationIncidentDetailScreen(
+        incidentId: state.pathParameters['incidentId'] ?? '',
+        isCityEngineering: true,
+      ),
+    ),
+    GoRoute(
+      path: '/engineering/assign/:incidentId',
+      builder: (_, state) => AssignPersonnelWorkflowScreen(
+        incidentId: state.pathParameters['incidentId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.incidentDetails,
+      builder: (_, _) => const CityWideIncidentsScreen(),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.map,
+      builder: (_, _) => const BackendDependencyScreen(
+        title: 'Engineering map',
+        message:
+            'A live city incident map is not connected yet. Open City-wide incidents to review current server-backed records and locations.',
+      ),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.utilityAssignment,
+      builder: (_, _) => const BackendDependencyScreen(
+        title: 'Assign utility provider',
+        message:
+            'The backend does not currently expose a provider directory or provider assignment workflow. No provider assignment was submitted.',
+      ),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.sla,
+      builder: (_, _) => const OfficialSlaOverviewScreen(
+        title: 'City engineering SLA dashboard',
+      ),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.analytics,
+      builder: (_, _) => const InfrastructureAnalyticsScreen(),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.performance,
+      builder: (_, _) => const InfrastructureAnalyticsScreen(),
+    ),
+    GoRoute(
+      path: EngineeringRoutes.verifyRepair,
+      builder: (_, _) => const BackendDependencyScreen(
+        title: 'Engineering repair verification',
+        message:
+            'The backend does not currently expose official approve, reject, or additional-work actions for submitted repairs.',
+      ),
     ),
     GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
     GoRoute(
@@ -279,6 +389,9 @@ bool _isCitizenLocation(String location) =>
 
 bool _isOfficialLocation(String location) =>
     location == '/official' || location.startsWith('/official/');
+
+bool _isEngineeringLocation(String location) =>
+    location == '/engineering' || location.startsWith('/engineering/');
 
 bool _isRepairLocation(String location) =>
     location == '/repair' || location.startsWith('/repair/');

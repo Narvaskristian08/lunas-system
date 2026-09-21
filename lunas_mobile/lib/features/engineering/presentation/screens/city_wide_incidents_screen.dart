@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
+import 'package:lunas_mobile/features/validation/data/models/validation_incident.dart';
 import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_routes.dart';
 import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_widgets.dart';
 
@@ -16,66 +21,69 @@ class CityWideIncidentsScreen extends StatefulWidget {
 
 class _CityWideIncidentsScreenState extends State<CityWideIncidentsScreen> {
   String _filter = 'All';
+  final _search = TextEditingController();
+  bool _loading = true;
+  String? _error;
+  List<ValidationIncident> _incidents = const [];
 
-  static const _incidents = [
-    _EngineeringIncident(
-      id: 'INC-2026-089',
-      title: 'Main water leak',
-      location: 'Barangay Pantal, A.B. Fernandez Ave.',
-      assignee: 'Engr. Santos',
-      remaining: '45m left',
-      priority: 'Critical',
-      status: 'In progress',
-      icon: Icons.water_drop_outlined,
-      color: AppColorsLight.critical,
-    ),
-    _EngineeringIncident(
-      id: 'INC-2026-092',
-      title: 'Fallen power line',
-      location: 'Barangay Bonuan Gueset, Bonuan Road',
-      assignee: 'Unassigned',
-      remaining: '2h 15m left',
-      priority: 'High',
-      status: 'Pending',
-      icon: Icons.electrical_services_outlined,
-      color: AppColorsLight.alert,
-    ),
-    _EngineeringIncident(
-      id: 'INC-2026-085',
-      title: 'Road surface failure',
-      location: 'Barangay Pogo Chico, M.H. del Pilar St.',
-      assignee: 'Engr. Reyes',
-      remaining: '1d 4h left',
-      priority: 'Medium',
-      status: 'In progress',
-      icon: Icons.construction_outlined,
-      color: AppColorsLight.brandBase,
-    ),
-    _EngineeringIncident(
-      id: 'INC-2026-078',
-      title: 'Blocked drainage inlet',
-      location: 'Barangay Malued, Arellano St.',
-      assignee: 'Drainage Team 2',
-      remaining: 'Overdue 2h',
-      priority: 'High',
-      status: 'Overdue',
-      icon: Icons.water_outlined,
-      color: AppColorsLight.critical,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final page = await validationService.getIncidents(
+        page: 1,
+        limit: 50,
+        search: _search.text.trim().isEmpty ? null : _search.text.trim(),
+      );
+      if (mounted) setState(() => _incidents = page.incidents);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final visible = _filter == 'All'
-        ? _incidents
-        : _incidents.where((incident) => incident.status == _filter).toList();
+    final visible = _incidents
+        .where((incident) {
+          switch (_filter) {
+            case 'Pending':
+              return incident.status == 'submitted' ||
+                  incident.status == 'validated';
+            case 'In progress':
+              return incident.status == 'assigned' ||
+                  incident.status == 'accepted' ||
+                  incident.status == 'in_progress';
+            case 'Overdue':
+              return incident.sla?.isOverdue == true;
+            default:
+              return true;
+          }
+        })
+        .map(_displayIncident)
+        .toList(growable: false);
     return EngineeringPage(
       title: 'City-wide incidents',
       subtitle: 'Engineering review queue',
       actions: [
         IconButton(
           tooltip: 'Open map overview',
-          onPressed: () => Navigator.pushNamed(context, EngineeringRoutes.map),
+          onPressed: () => context.push(EngineeringRoutes.map),
           icon: const Icon(Icons.map_outlined),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -84,11 +92,9 @@ class _CityWideIncidentsScreenState extends State<CityWideIncidentsScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
-            readOnly: true,
-            onTap: () => showEngineeringNotice(
-              context,
-              'Search is visual-only in this prototype.',
-            ),
+            controller: _search,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (_) => _load(),
             decoration: const InputDecoration(
               hintText: 'Search incident ID, location, or category',
               prefixIcon: Icon(Icons.search_rounded),
@@ -113,61 +119,116 @@ class _CityWideIncidentsScreenState extends State<CityWideIncidentsScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          EngineeringSectionHeading(
-            title: '${visible.length} incidents',
-            description: 'Sorted by response urgency and SLA deadline.',
-            trailing: IconButton(
-              tooltip: 'Filter incidents',
-              onPressed: () => showEngineeringNotice(
-                context,
-                'Additional filters will be connected to live data later.',
-              ),
-              icon: const Icon(Icons.tune_rounded),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          if (visible.isEmpty)
-            LunasCard(
-              child: Column(
-                children: [
-                  const Icon(Icons.inbox_outlined, size: 36),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'No $_filter incidents',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
+          if (_loading)
+            const LunasStateView(
+              state: LunasViewState.loading,
+              title: 'Loading city incidents',
+              message: 'Getting incidents in your authorized city scope.',
             )
-          else
-            for (final incident in visible) ...[
-              _IncidentCard(
-                incident: incident,
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  EngineeringRoutes.incidentDetails,
-                ),
+          else if (_error != null)
+            LunasStateView(
+              state: LunasViewState.error,
+              title: 'Could not load incidents',
+              message: _error!,
+              actionLabel: 'Retry',
+              onAction: _load,
+            )
+          else ...[
+            EngineeringSectionHeading(
+              title: '${visible.length} incidents',
+              description: 'Sorted by response urgency and SLA deadline.',
+              trailing: IconButton(
+                tooltip: 'Filter incidents',
+                onPressed: _load,
+                icon: const Icon(Icons.tune_rounded),
               ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-          const SizedBox(height: AppSpacing.xl),
-          LunasCard(
-            color: Theme.of(
-              context,
-            ).colorScheme.primaryContainer.withValues(alpha: .44),
-            child: const EngineeringInfoRow(
-              icon: Icons.info_outline_rounded,
-              label: 'Routing safeguard',
-              value:
-                  'Priority and provider recommendations are decision support. An authorized engineer confirms dispatch.',
             ),
-          ),
+            const SizedBox(height: AppSpacing.sm),
+            if (visible.isEmpty)
+              LunasCard(
+                child: Column(
+                  children: [
+                    const Icon(Icons.inbox_outlined, size: 36),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'No $_filter incidents',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              for (final incident in visible) ...[
+                _IncidentCard(
+                  incident: incident,
+                  onTap: () => context.push(
+                    '/engineering/incidents/${incident.routeId}',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            const SizedBox(height: AppSpacing.xl),
+            LunasCard(
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: .44),
+              child: const EngineeringInfoRow(
+                icon: Icons.info_outline_rounded,
+                label: 'Routing safeguard',
+                value:
+                    'Priority and provider recommendations are decision support. An authorized engineer confirms dispatch.',
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+_EngineeringIncident _displayIncident(ValidationIncident incident) {
+  final rawPriority = incident.priority ?? 'unassigned';
+  final priority = rawPriority.isEmpty
+      ? 'Unassigned'
+      : '${rawPriority[0].toUpperCase()}${rawPriority.substring(1)}';
+  final color = switch (rawPriority.toLowerCase()) {
+    'critical' => AppColorsLight.critical,
+    'high' => AppColorsLight.alert,
+    'medium' => AppColorsLight.brandBase,
+    'low' => AppColorsLight.success,
+    _ => AppColorsLight.textSecondary,
+  };
+  final status = incident.sla?.isOverdue == true
+      ? 'Overdue'
+      : switch (incident.status) {
+          'submitted' => 'Pending',
+          'validated' ||
+          'assigned' ||
+          'accepted' ||
+          'in_progress' => 'In progress',
+          'completed' || 'verified' || 'closed' => 'Completed',
+          _ => incident.status,
+        };
+  final deadline = incident.sla?.deadline;
+  final slaLabel = incident.sla?.isOverdue == true
+      ? 'SLA overdue'
+      : deadline == null
+      ? 'SLA unavailable'
+      : 'Due ${deadline.toLocal().month}/${deadline.toLocal().day}';
+  return _EngineeringIncident(
+    id: incident.reportNumber,
+    routeId: incident.id,
+    title: incident.categoryLabel,
+    location: incident.location.displayAddress,
+    assignee: incident.responsibleOrganization ?? 'Not assigned',
+    remaining: slaLabel,
+    priority: priority,
+    status: status,
+    icon: Icons.report_problem_outlined,
+    color: color,
+  );
 }
 
 class _IncidentCard extends StatelessWidget {
@@ -288,6 +349,7 @@ class _DetailLine extends StatelessWidget {
 class _EngineeringIncident {
   const _EngineeringIncident({
     required this.id,
+    required this.routeId,
     required this.title,
     required this.location,
     required this.assignee,
@@ -299,6 +361,7 @@ class _EngineeringIncident {
   });
 
   final String id;
+  final String routeId;
   final String title;
   final String location;
   final String assignee;

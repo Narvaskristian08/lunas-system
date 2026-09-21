@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -23,7 +24,7 @@ class OperationsDashboardScreen extends StatelessWidget {
         IconButton(
           tooltip: 'SLA monitoring',
           onPressed: () =>
-              Navigator.pushNamed(context, OperationsRoutes.slaMonitoring),
+              context.push(OperationsRoutes.slaMonitoring),
           icon: const Icon(Icons.timer_outlined),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -132,7 +133,7 @@ class OperationsDashboardScreen extends StatelessWidget {
             icon: Icons.inbox_outlined,
             color: AppColorsLight.brandBase,
             onTap: () =>
-                Navigator.pushNamed(context, OperationsRoutes.incomingReports),
+                context.push(OperationsRoutes.incomingReports),
           ),
           const SizedBox(height: AppSpacing.sm),
           _WorkflowCard(
@@ -143,7 +144,7 @@ class OperationsDashboardScreen extends StatelessWidget {
             icon: Icons.assignment_ind_outlined,
             color: AppColorsLight.alert,
             onTap: () =>
-                Navigator.pushNamed(context, OperationsRoutes.validateReport),
+                context.push(OperationsRoutes.validateReport),
           ),
           const SizedBox(height: AppSpacing.sm),
           _WorkflowCard(
@@ -153,9 +154,7 @@ class OperationsDashboardScreen extends StatelessWidget {
                 'Review field evidence before formally approving completion.',
             icon: Icons.verified_outlined,
             color: AppColorsLight.success,
-            onTap: () => Navigator.pushNamed(
-              context,
-              OperationsRoutes.repairVerification,
+            onTap: () => context.push(OperationsRoutes.repairVerification,
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),

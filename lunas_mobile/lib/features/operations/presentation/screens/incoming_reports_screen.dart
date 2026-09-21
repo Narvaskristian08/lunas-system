@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -18,7 +19,7 @@ class IncomingReportsScreen extends StatelessWidget {
         IconButton(
           tooltip: 'SLA monitoring',
           onPressed: () =>
-              Navigator.pushNamed(context, OperationsRoutes.slaMonitoring),
+              context.push(OperationsRoutes.slaMonitoring),
           icon: const Icon(Icons.timer_outlined),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -235,9 +236,7 @@ class _IncomingReportCard extends StatelessWidget {
               LunasButton(
                 label: 'Validate',
                 expand: false,
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  OperationsRoutes.validateReport,
+                onPressed: () => context.push(OperationsRoutes.validateReport,
                 ),
               ),
             ],

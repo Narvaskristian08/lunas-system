@@ -9,9 +9,59 @@ import 'package:lunas_mobile/features/validation/data/models/validation_summary.
 /// remain authoritative; this service never filters a broader incident set on
 /// the device.
 class ValidationService {
-  const ValidationService({required ApiClient apiClient}) : _apiClient = apiClient;
+  const ValidationService({required ApiClient apiClient})
+    : _apiClient = apiClient;
 
   final ApiClient _apiClient;
+
+  /// General role-scoped incident feed. The server applies the caller's
+  /// jurisdiction/city scope before returning this page.
+  Future<ValidationQueuePage> getIncidents({
+    int page = 1,
+    int limit = 20,
+    String? status,
+    String? priority,
+    String? category,
+    String? barangay,
+    String? search,
+    String sortBy = '-createdAt',
+  }) async {
+    if (page < 1) throw ArgumentError.value(page, 'page', 'Must be at least 1');
+    if (limit < 1) {
+      throw ArgumentError.value(limit, 'limit', 'Must be at least 1');
+    }
+    final payload = await _apiClient.get(
+      '/incidents',
+      queryParameters: {
+        'page': '$page',
+        'limit': '$limit',
+        'sortBy': sortBy,
+        ..._optionalQuery('status', status),
+        ..._optionalQuery('priority', priority),
+        ..._optionalQuery('category', category),
+        ..._optionalQuery('barangay', barangay),
+        ..._optionalQuery('search', search),
+      },
+    );
+    return ValidationQueuePage.fromPayload(payload);
+  }
+
+  /// Role scoped aggregate data; backend permissions and jurisdiction remain
+  /// authoritative.
+  Future<JsonMap> getDashboardStats() => _apiClient.get('/stats/dashboard');
+
+  Future<JsonMap> getAnalytics({
+    String? startDate,
+    String? endDate,
+    String? barangay,
+  }) => _apiClient.get(
+    '/stats/analytics',
+    queryParameters: {
+      ..._optionalQuery('startDate', startDate),
+      ..._optionalQuery('endDate', endDate),
+      ..._optionalQuery('barangay', barangay),
+    },
+  );
 
   Future<ValidationQueuePage> getPendingValidation({
     int page = 1,
@@ -25,7 +75,8 @@ class ValidationService {
     String? to,
   }) async {
     if (page < 1) throw ArgumentError.value(page, 'page', 'Must be at least 1');
-    if (limit < 1) throw ArgumentError.value(limit, 'limit', 'Must be at least 1');
+    if (limit < 1)
+      throw ArgumentError.value(limit, 'limit', 'Must be at least 1');
 
     final payload = await _apiClient.get(
       '/incidents/pending-validation',
@@ -55,18 +106,28 @@ class ValidationService {
     final data = _map(payload['data']);
     final rawHistory = payload['data'] is List
         ? payload['data'] as List
-        : _firstList(data, const ['history', 'statusHistory', 'items'])
-        .isNotEmpty
+        : _firstList(data, const [
+            'history',
+            'statusHistory',
+            'items',
+          ]).isNotEmpty
         ? _firstList(data, const ['history', 'statusHistory', 'items'])
         : _firstList(payload, const ['history', 'statusHistory']);
     return rawHistory
         .whereType<Map>()
-        .map((event) => ReportStatusEvent.fromJson(Map<String, dynamic>.from(event)))
+        .map(
+          (event) =>
+              ReportStatusEvent.fromJson(Map<String, dynamic>.from(event)),
+        )
         .toList(growable: false);
   }
 
-  Future<List<DuplicateCandidate>> getDuplicateCandidates(String incidentId) async {
-    final payload = await _apiClient.get('/incidents/$incidentId/duplicate-candidates');
+  Future<List<DuplicateCandidate>> getDuplicateCandidates(
+    String incidentId,
+  ) async {
+    final payload = await _apiClient.get(
+      '/incidents/$incidentId/duplicate-candidates',
+    );
     final data = _map(payload['data']);
     final rawCandidates = payload['data'] is List
         ? payload['data'] as List
@@ -89,7 +150,10 @@ class ValidationService {
           ]);
     return rawCandidates
         .whereType<Map>()
-        .map((candidate) => DuplicateCandidate.fromJson(Map<String, dynamic>.from(candidate)))
+        .map(
+          (candidate) =>
+              DuplicateCandidate.fromJson(Map<String, dynamic>.from(candidate)),
+        )
         .where((candidate) => candidate.id.isNotEmpty)
         .toList(growable: false);
   }
@@ -129,7 +193,8 @@ class ValidationService {
     final jurisdiction = <String, dynamic>{
       if (_nonEmpty(request.jurisdictionBarangay) != null)
         'barangay': _nonEmpty(request.jurisdictionBarangay),
-      if (_nonEmpty(request.jurisdictionCity) != null) 'city': _nonEmpty(request.jurisdictionCity),
+      if (_nonEmpty(request.jurisdictionCity) != null)
+        'city': _nonEmpty(request.jurisdictionCity),
       'responsibility': _requiredText(
         request.jurisdictionResponsibility,
         'jurisdiction responsibility',
@@ -140,19 +205,19 @@ class ValidationService {
         request.responsibleOrganization,
         'responsible organization',
       ),
-      'responsibleRole': _requiredText(request.responsibleRole, 'responsible role'),
-      if (_nonEmpty(request.routingReason) != null) 'reason': _nonEmpty(request.routingReason),
+      'responsibleRole': _requiredText(
+        request.responsibleRole,
+        'responsible role',
+      ),
+      if (_nonEmpty(request.routingReason) != null)
+        'reason': _nonEmpty(request.routingReason),
     };
-    return _postIncidentAction(
-      incidentId,
-      'validate',
-      {
-        'priority': _requiredText(request.priority, 'priority'),
-        'jurisdiction': jurisdiction,
-        'routing': routing,
-        if (_nonEmpty(request.notes) != null) 'notes': _nonEmpty(request.notes),
-      },
-    );
+    return _postIncidentAction(incidentId, 'validate', {
+      'priority': _requiredText(request.priority, 'priority'),
+      'jurisdiction': jurisdiction,
+      'routing': routing,
+      if (_nonEmpty(request.notes) != null) 'notes': _nonEmpty(request.notes),
+    });
   }
 
   Future<ValidationIncident> rejectIncident(
@@ -160,14 +225,10 @@ class ValidationService {
     ValidationDecisionRequest request,
   ) {
     _requireType(request, ValidationDecisionType.reject);
-    return _postIncidentAction(
-      incidentId,
-      'reject',
-      {
-        'reason': _requiredText(request.reason, 'rejection reason'),
-        if (_nonEmpty(request.notes) != null) 'notes': _nonEmpty(request.notes),
-      },
-    );
+    return _postIncidentAction(incidentId, 'reject', {
+      'reason': _requiredText(request.reason, 'rejection reason'),
+      if (_nonEmpty(request.notes) != null) 'notes': _nonEmpty(request.notes),
+    });
   }
 
   Future<ValidationIncident> markDuplicate(
@@ -175,23 +236,23 @@ class ValidationService {
     ValidationDecisionRequest request,
   ) {
     _requireType(request, ValidationDecisionType.duplicate);
-    return _postIncidentAction(
-      incidentId,
-      'mark-duplicate',
-      {
-        'duplicateOf': _requiredText(request.duplicateOfIncidentId, 'canonical incident'),
-        'reason': _requiredText(request.reason, 'duplicate reason'),
-        if (_nonEmpty(request.notes) != null) 'notes': _nonEmpty(request.notes),
-      },
-    );
+    return _postIncidentAction(incidentId, 'mark-duplicate', {
+      'duplicateOf': _requiredText(
+        request.duplicateOfIncidentId,
+        'canonical incident',
+      ),
+      'reason': _requiredText(request.reason, 'duplicate reason'),
+      if (_nonEmpty(request.notes) != null) 'notes': _nonEmpty(request.notes),
+    });
   }
 
-  Future<ValidationIncident> updatePriority(String incidentId, String priority) {
-    return _patchIncidentAction(
-      incidentId,
-      'priority',
-      {'priority': _requiredText(priority, 'priority')},
-    );
+  Future<ValidationIncident> updatePriority(
+    String incidentId,
+    String priority,
+  ) {
+    return _patchIncidentAction(incidentId, 'priority', {
+      'priority': _requiredText(priority, 'priority'),
+    });
   }
 
   Future<ValidationIncident> updateJurisdiction(
@@ -200,15 +261,14 @@ class ValidationService {
     String? city,
     required String responsibility,
   }) {
-    return _patchIncidentAction(
-      incidentId,
-      'jurisdiction',
-      {
-        'barangay': _requiredText(barangay, 'barangay'),
-        if (_nonEmpty(city) != null) 'city': _nonEmpty(city),
-        'responsibility': _requiredText(responsibility, 'jurisdiction responsibility'),
-      },
-    );
+    return _patchIncidentAction(incidentId, 'jurisdiction', {
+      'barangay': _requiredText(barangay, 'barangay'),
+      if (_nonEmpty(city) != null) 'city': _nonEmpty(city),
+      'responsibility': _requiredText(
+        responsibility,
+        'jurisdiction responsibility',
+      ),
+    });
   }
 
   Future<ValidationIncident> routeIncident(
@@ -217,18 +277,14 @@ class ValidationService {
     required String responsibleRole,
     String? reason,
   }) {
-    return _postIncidentAction(
-      incidentId,
-      'route',
-      {
-        'responsibleOrganization': _requiredText(
-          responsibleOrganization,
-          'responsible organization',
-        ),
-        'responsibleRole': _requiredText(responsibleRole, 'responsible role'),
-        if (_nonEmpty(reason) != null) 'reason': _nonEmpty(reason),
-      },
-    );
+    return _postIncidentAction(incidentId, 'route', {
+      'responsibleOrganization': _requiredText(
+        responsibleOrganization,
+        'responsible organization',
+      ),
+      'responsibleRole': _requiredText(responsibleRole, 'responsible role'),
+      if (_nonEmpty(reason) != null) 'reason': _nonEmpty(reason),
+    });
   }
 
   Future<ValidationIncident> _postIncidentAction(
@@ -236,7 +292,10 @@ class ValidationService {
     String action,
     Map<String, dynamic> body,
   ) async {
-    final payload = await _apiClient.post('/incidents/$incidentId/$action', body: body);
+    final payload = await _apiClient.post(
+      '/incidents/$incidentId/$action',
+      body: body,
+    );
     return ValidationIncident.fromJson(payload);
   }
 
@@ -245,7 +304,10 @@ class ValidationService {
     String action,
     Map<String, dynamic> body,
   ) async {
-    final payload = await _apiClient.patch('/incidents/$incidentId/$action', body: body);
+    final payload = await _apiClient.patch(
+      '/incidents/$incidentId/$action',
+      body: body,
+    );
     return ValidationIncident.fromJson(payload);
   }
 }
@@ -255,7 +317,10 @@ Map<String, String> _optionalQuery(String key, String? value) {
   return text == null ? const <String, String>{} : {key: text};
 }
 
-void _requireType(ValidationDecisionRequest request, ValidationDecisionType expected) {
+void _requireType(
+  ValidationDecisionRequest request,
+  ValidationDecisionType expected,
+) {
   if (request.type != expected) {
     throw ArgumentError.value(
       request.type,
@@ -267,7 +332,8 @@ void _requireType(ValidationDecisionRequest request, ValidationDecisionType expe
 
 String _requiredText(String? value, String field) {
   final text = _nonEmpty(value);
-  if (text == null) throw ArgumentError.value(value, field, 'Must not be blank');
+  if (text == null)
+    throw ArgumentError.value(value, field, 'Must not be blank');
   return text;
 }
 

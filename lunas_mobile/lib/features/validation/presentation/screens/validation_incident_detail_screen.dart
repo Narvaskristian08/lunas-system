@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
@@ -14,8 +15,13 @@ import 'package:lunas_mobile/features/reporting/presentation/widgets/report_stat
 import 'package:lunas_mobile/features/validation/data/models/validation_incident.dart';
 
 class ValidationIncidentDetailScreen extends StatefulWidget {
-  const ValidationIncidentDetailScreen({required this.incidentId, super.key});
+  const ValidationIncidentDetailScreen({
+    required this.incidentId,
+    this.isCityEngineering = false,
+    super.key,
+  });
   final String incidentId;
+  final bool isCityEngineering;
 
   @override
   State<ValidationIncidentDetailScreen> createState() =>
@@ -210,6 +216,19 @@ class _ValidationIncidentDetailScreenState
             onReject: () => _openDecision(ValidationDecisionType.reject),
             onDuplicate: () => _openDecision(ValidationDecisionType.duplicate),
           ),
+          if (incident.status == 'validated') ...[
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final assigned = await context.push<bool>(
+                  '${widget.isCityEngineering ? '/engineering' : '/official'}/assign/${incident.id}',
+                );
+                if (assigned == true && mounted) await _load();
+              },
+              icon: const Icon(Icons.assignment_ind_outlined),
+              label: const Text('Create work order and assign personnel'),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xl),
           if (incident.aiAnalysis != null) ...[
             _Section(

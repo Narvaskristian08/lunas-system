@@ -41,6 +41,7 @@ class RepairService {
     int page = 1,
     int limit = 20,
     RepairWorkOrderStatus? status,
+    String? slaState,
   }) async {
     _checkPage(page, limit);
     final payload = await _apiClient.get(
@@ -50,6 +51,7 @@ class RepairService {
         'limit': '$limit',
         if (status != null && status != RepairWorkOrderStatus.unknown)
           'status': status.apiValue,
+        'slaState': ?slaState,
       },
     );
     return RepairWorkOrderPage.fromPayload(payload);
@@ -58,6 +60,48 @@ class RepairService {
   Future<RepairWorkOrder> getWorkOrder(String workOrderId) async {
     _requireId(workOrderId);
     final payload = await _apiClient.get('/work-orders/$workOrderId');
+    return RepairWorkOrder.fromJson(payload);
+  }
+
+  /// Create a work order from a validated incident using the backend lifecycle.
+  Future<RepairWorkOrder> createWorkOrderFromIncident(
+    String incidentId, {
+    String? instructions,
+  }) async {
+    _requireId(incidentId);
+    final payload = await _apiClient.post(
+      '/incidents/$incidentId/work-orders',
+      body: {
+        if (instructions?.trim().isNotEmpty == true)
+          'instructions': instructions!.trim(),
+      },
+    );
+    return RepairWorkOrder.fromJson(payload);
+  }
+
+  Future<List<RepairPerson>> getEligiblePersonnel(String workOrderId) async {
+    _requireId(workOrderId);
+    final payload = await _apiClient.get(
+      '/work-orders/$workOrderId/eligible-personnel',
+    );
+    final data = payload['data'];
+    final people = data is List ? data : const <dynamic>[];
+    return people
+        .map(RepairPerson.fromJson)
+        .where((person) => person.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<RepairWorkOrder> assignPersonnel(
+    String workOrderId, {
+    required String personnelId,
+  }) async {
+    _requireId(workOrderId);
+    _requireId(personnelId);
+    final payload = await _apiClient.post(
+      '/work-orders/$workOrderId/assign',
+      body: {'assigneeId': personnelId},
+    );
     return RepairWorkOrder.fromJson(payload);
   }
 
@@ -80,7 +124,11 @@ class RepairService {
       );
     }
     if (trimmedReason.length > 500) {
-      throw ArgumentError.value(reason, 'reason', 'Must be 500 characters or fewer');
+      throw ArgumentError.value(
+        reason,
+        'reason',
+        'Must be 500 characters or fewer',
+      );
     }
     return _postAction(
       workOrderId,
@@ -133,7 +181,11 @@ class RepairService {
     }
     final trimmedNotes = notes.trim();
     if (trimmedNotes.length > 2000) {
-      throw ArgumentError.value(notes, 'notes', 'Notes must be 2,000 characters or fewer');
+      throw ArgumentError.value(
+        notes,
+        'notes',
+        'Notes must be 2,000 characters or fewer',
+      );
     }
     final payload = await _apiClient.post(
       '/work-orders/$workOrderId/progress',
@@ -175,7 +227,9 @@ class RepairService {
       ],
     );
     final data = _map(payload['data']);
-    final listData = payload['data'] is List ? payload['data'] as List : const <dynamic>[];
+    final listData = payload['data'] is List
+        ? payload['data'] as List
+        : const <dynamic>[];
     final evidenceData = _map(data['evidence']).isNotEmpty
         ? _map(data['evidence'])
         : listData.isNotEmpty
@@ -193,17 +247,17 @@ class RepairService {
     _requireId(workOrderId);
     final payload = await _apiClient.post(
       '/work-orders/$workOrderId/$action',
-      body: {
-        ...?body,
-        if (version != null) 'version': version,
-      },
+      body: {...?body, if (version != null) 'version': version},
     );
     return RepairWorkOrder.fromJson(payload);
   }
 
   Map<String, dynamic> _locationBody({double? latitude, double? longitude}) {
     if (latitude == null || longitude == null) return const {};
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    if (latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180) {
       throw ArgumentError('Location coordinates are outside the valid range');
     }
     return {
@@ -216,12 +270,17 @@ class RepairService {
 
   void _checkPage(int page, int limit) {
     if (page < 1) throw ArgumentError.value(page, 'page', 'Must be at least 1');
-    if (limit < 1) throw ArgumentError.value(limit, 'limit', 'Must be at least 1');
+    if (limit < 1)
+      throw ArgumentError.value(limit, 'limit', 'Must be at least 1');
   }
 
   void _requireId(String value) {
     if (value.trim().isEmpty) {
-      throw ArgumentError.value(value, 'id', 'A resource identifier is required');
+      throw ArgumentError.value(
+        value,
+        'id',
+        'A resource identifier is required',
+      );
     }
   }
 }
@@ -229,5 +288,5 @@ class RepairService {
 Map<String, dynamic> _map(Object? value) => value is Map<String, dynamic>
     ? value
     : value is Map
-        ? Map<String, dynamic>.from(value)
-        : <String, dynamic>{};
+    ? Map<String, dynamic>.from(value)
+    : <String, dynamic>{};

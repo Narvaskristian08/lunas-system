@@ -9,7 +9,12 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     expect(find.text('LUNAS'), findsOneWidget);
-    expect(find.text('Your city. Your voice. Your LUNAS.'), findsOneWidget);
+    expect(
+      find.text(
+        'AI-Assisted Urban Infrastructure\nMaintenance and Monitoring System',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Restoring your secure session…'), findsOneWidget);
   });
 }

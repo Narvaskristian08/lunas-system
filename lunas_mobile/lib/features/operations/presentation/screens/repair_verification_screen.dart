@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -25,10 +26,10 @@ class _RepairVerificationScreenState extends State<RepairVerificationScreen> {
       bottomAction: OperationsActionBar(
         secondaryLabel: 'Request rework',
         secondaryIsDestructive: true,
-        onSecondary: () => Navigator.pushNamed(context, '/repair/progress'),
+        onSecondary: () => context.push('/repair/progress'),
         primaryLabel: 'Approve repair',
         primaryIcon: Icons.verified_outlined,
-        onPrimary: () => Navigator.pushNamed(context, '/reports/resolved'),
+        onPrimary: () => context.push('/reports/resolved'),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

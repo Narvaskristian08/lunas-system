@@ -115,6 +115,7 @@ class ValidationIncident {
     this.validatedAt,
     this.validatedByName,
     this.sla,
+    this.workOrderId,
   });
 
   final String id;
@@ -145,6 +146,7 @@ class ValidationIncident {
   final DateTime? validatedAt;
   final String? validatedByName;
   final IncidentSla? sla;
+  final String? workOrderId;
 
   String get categoryLabel => categoryFromCode(category).label;
   // Incidents are created with a default `medium` value, so the priority text
@@ -172,6 +174,7 @@ class ValidationIncident {
     final address = _map(location['address']);
     final duplicateOf = _map(source['duplicateOf']);
     final validatedBy = _map(source['validatedBy']);
+    final workOrder = _map(source['workOrder']);
     final rawImages = _firstList(source, const ['images', 'evidence']);
     final evidenceThumbnail = source['evidenceThumbnail'];
     final queueImages = rawImages.isNotEmpty
@@ -275,6 +278,7 @@ class ValidationIncident {
       validatedAt: _date(source['validatedAt']),
       validatedByName: _personName(validatedBy),
       sla: IncidentSla.fromMaybeJson(source['sla']),
+      workOrderId: _text(workOrder['id'] ?? workOrder['_id']),
     );
   }
 }
