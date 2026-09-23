@@ -38,6 +38,9 @@ class ReportService {
   }
 
   Future<IncidentReport> submit(CitizenReportDraft draft) async {
+    if (!draft.location.isValid) {
+      throw ArgumentError('A valid report location is required.');
+    }
     final bytes = await draft.evidence.readAsBytes();
     final payload = await _apiClient.multipart(
       '/incidents',

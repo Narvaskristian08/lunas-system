@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -38,9 +40,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   GoogleMapController? _mapController;
   SelectedLocation? _selectedLocation;
   LatLng _cameraTarget = _dagupan;
-  bool _isLocating = true;
+  bool _isLocating = false;
   bool _isGeocoding = false;
   bool _hasLocationPermission = false;
+  LocationFailure? _locationFailure;
   String? _locationMessage;
 
   @override
@@ -64,24 +67,29 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   Future<void> _moveToCurrentLocation() async {
+    if (!mounted || _isLocating) return;
     setState(() {
       _isLocating = true;
+      _locationFailure = null;
       _locationMessage = null;
     });
     try {
       final position = await widget.locationService.determinePosition();
       if (!mounted) return;
-      setState(() => _hasLocationPermission = true);
+      setState(() {
+        _hasLocationPermission = true;
+        _locationFailure = null;
+      });
       final target = LatLng(position.latitude, position.longitude);
       await _selectPoint(target);
-      await _mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: target, zoom: 17),
-        ),
-      );
+      await _animateCameraTo(target, zoom: 17);
     } on LocationServiceException catch (error) {
       if (!mounted) return;
-      setState(() => _locationMessage = _messageFor(error.failure));
+      setState(() {
+        _hasLocationPermission = false;
+        _locationFailure = error.failure;
+        _locationMessage = _messageFor(error.failure);
+      });
     } catch (_) {
       if (!mounted) return;
       setState(
@@ -93,7 +101,37 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     }
   }
 
+  void _onMapCreated(GoogleMapController controller) {
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
+    _mapController = controller;
+    unawaited(
+      _animateCameraTo(
+        _cameraTarget,
+        zoom: _selectedLocation == null ? 13 : 17,
+      ),
+    );
+  }
+
+  Future<void> _animateCameraTo(LatLng target, {required double zoom}) async {
+    final controller = _mapController;
+    if (!mounted || controller == null) return;
+    try {
+      await controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: target, zoom: zoom),
+        ),
+      );
+    } catch (_) {
+      // The native map can be torn down while a route is leaving. The map
+      // remains usable on the next open, so this is intentionally not fatal.
+    }
+  }
+
   Future<void> _selectPoint(LatLng point) async {
+    if (!mounted) return;
     setState(() {
       _cameraTarget = point;
       _isGeocoding = true;
@@ -125,6 +163,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     };
   }
 
+  Future<void> _openAppSettings() async {
+    final opened = await widget.locationService.openAppSettings();
+    if (!mounted || opened) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Open LUNAS settings to enable location access.'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -142,7 +190,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               target: _cameraTarget,
               zoom: selected == null ? 13 : 17,
             ),
-            onMapCreated: (controller) => _mapController = controller,
+            onMapCreated: _onMapCreated,
             onTap: _selectPoint,
             myLocationEnabled: _hasLocationPermission,
             myLocationButtonEnabled: false,
@@ -206,6 +254,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                               ),
                               const SizedBox(width: AppSpacing.sm),
                               Expanded(child: Text(_locationMessage!)),
+                              if (_locationFailure ==
+                                  LocationFailure.permissionDeniedForever)
+                                TextButton(
+                                  onPressed: _openAppSettings,
+                                  child: const Text('Settings'),
+                                ),
                             ],
                           ),
                         ),

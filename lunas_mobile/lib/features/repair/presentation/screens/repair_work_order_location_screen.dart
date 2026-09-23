@@ -74,7 +74,7 @@ class _RepairWorkOrderLocationScreenState extends State<RepairWorkOrderLocationS
     }
     final workOrder = _workOrder!;
     final location = workOrder.location;
-    final hasCoordinates = location.latitude != null && location.longitude != null;
+    final hasCoordinates = location.hasValidCoordinates;
     return RepairPage(
       appBar: RepairAppBar(
         title: 'Work location',

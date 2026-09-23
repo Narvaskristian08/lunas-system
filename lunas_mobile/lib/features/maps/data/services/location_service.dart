@@ -35,6 +35,10 @@ class LocationService {
         LocationFailure.permissionDeniedForever,
       );
     }
+    if (permission != LocationPermission.whileInUse &&
+        permission != LocationPermission.always) {
+      throw const LocationServiceException(LocationFailure.permissionDenied);
+    }
 
     return Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
@@ -43,6 +47,8 @@ class LocationService {
       ),
     );
   }
+
+  Future<bool> openAppSettings() => Geolocator.openAppSettings();
 
   Future<SelectedLocation> resolveLocation({
     required double latitude,

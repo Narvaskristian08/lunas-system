@@ -475,7 +475,7 @@ class _LocationReview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (latitude != null && longitude != null)
+          if (location.hasValidCoordinates)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
@@ -484,7 +484,7 @@ class _LocationReview extends StatelessWidget {
                 height: 230,
                 child: GoogleMap(
                   initialCameraPosition: CameraPosition(
-                    target: LatLng(latitude, longitude),
+                    target: LatLng(latitude!, longitude!),
                     zoom: 16,
                   ),
                   markers: {

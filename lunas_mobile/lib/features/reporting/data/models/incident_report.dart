@@ -178,6 +178,16 @@ class IncidentLocation {
   final String? barangay;
   final String? city;
 
+  bool get hasValidCoordinates =>
+      latitude != null &&
+      longitude != null &&
+      latitude!.isFinite &&
+      longitude!.isFinite &&
+      latitude! >= -90 &&
+      latitude! <= 90 &&
+      longitude! >= -180 &&
+      longitude! <= 180;
+
   String get displayAddress {
     final parts = [
       address,

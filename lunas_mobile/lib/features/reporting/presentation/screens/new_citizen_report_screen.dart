@@ -66,11 +66,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
       _showRequired('Select the infrastructure category.');
       return;
     }
-    if (_location == null ||
-        _location!.latitude < -90 ||
-        _location!.latitude > 90 ||
-        _location!.longitude < -180 ||
-        _location!.longitude > 180) {
+    if (_location == null || !_location!.isValid) {
       _showRequired('Choose and confirm a valid report location.');
       return;
     }

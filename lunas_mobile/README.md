@@ -186,12 +186,18 @@ Enable **Maps SDK for Android** for that key and restrict it to the Android
 application ID/signing certificate used for the test build. The app’s Android
 manifest already declares camera, coarse/fine location, and internet access.
 
+The current Android application ID is `com.example.lunas_mobile`. Restrict the
+key to that application ID and the SHA-1/SHA-256 fingerprint from the keystore
+used by the build (normally the local debug keystore; use the release keystore
+fingerprint for release builds). Do not use an unrestricted key.
+
 ### iOS maps and permissions
 
 Camera, photo-library, and when-in-use location usage descriptions are present
-in `ios/Runner/Info.plist`. Before testing the map picker on iOS, wire a
-restricted iOS Google Maps SDK key into the native iOS configuration. The
-checked-in Android Gradle key mechanism does not configure iOS automatically.
+in `ios/Runner/Info.plist`. Before testing the map picker on iOS, set the
+`GOOGLE_MAPS_API_KEY` Xcode build setting to a restricted iOS key. The checked-in
+AppDelegate reads that setting from `GMSApiKey`; the Android Gradle key mechanism
+does not configure iOS automatically.
 
 Use a separate restricted key per platform and keep it outside source control.
 
