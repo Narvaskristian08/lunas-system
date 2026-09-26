@@ -49,6 +49,9 @@ import 'package:lunas_mobile/features/engineering/presentation/screens/city_wide
 import 'package:lunas_mobile/features/engineering/presentation/screens/infrastructure_analytics_screen.dart';
 import 'package:lunas_mobile/features/operations/presentation/screens/operations_routes.dart';
 import 'package:lunas_mobile/features/engineering/presentation/screens/engineering_routes.dart';
+import 'package:lunas_mobile/features/utility/presentation/screens/utility_provider_dashboard_screen.dart';
+import 'package:lunas_mobile/features/utility/presentation/screens/utility_routes.dart';
+import 'package:lunas_mobile/features/utility/presentation/screens/utility_work_orders_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -73,6 +76,7 @@ final GoRouter appRouter = GoRouter(
     final isOfficialLocation = _isOfficialLocation(location);
     final isEngineeringLocation = _isEngineeringLocation(location);
     final isRepairLocation = _isRepairLocation(location);
+    final isUtilityLocation = _isUtilityLocation(location);
     switch (authController.status) {
       case AuthStatus.initializing:
         return location == '/splash' ? null : '/splash';
@@ -83,12 +87,6 @@ final GoRouter appRouter = GoRouter(
       case AuthStatus.roleUnavailable:
         return location == '/role-unavailable' ? null : '/role-unavailable';
       case AuthStatus.authenticated:
-        // Provider accounts are valid official accounts, but their routed
-        // incident/work-order mobile workspace is deliberately deferred. Do
-        // not send them into the submitted-report validation queue.
-        if (authController.isUtilityProvider) {
-          return location == '/role-unavailable' ? null : '/role-unavailable';
-        }
         final home = authController.workspaceHomePath;
         if (home == null) return '/role-unavailable';
         if (isPublic ||
@@ -104,6 +102,9 @@ final GoRouter appRouter = GoRouter(
         }
         if (authController.isRepairPersonnel) {
           return isRepairLocation ? null : home;
+        }
+        if (authController.isUtilityProvider) {
+          return isUtilityLocation ? null : home;
         }
         if (authController.user?.role == 'city_engineer') {
           return isEngineeringLocation ? null : home;
@@ -338,6 +339,14 @@ final GoRouter appRouter = GoRouter(
             'The backend does not currently expose official approve, reject, or additional-work actions for submitted repairs.',
       ),
     ),
+    GoRoute(
+      path: UtilityRoutes.dashboard,
+      builder: (_, _) => const UtilityProviderDashboardScreen(),
+    ),
+    GoRoute(
+      path: UtilityRoutes.workOrders,
+      builder: (_, _) => const UtilityWorkOrdersScreen(),
+    ),
     GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
     GoRoute(
       path: '/repair/work-orders',
@@ -395,6 +404,9 @@ bool _isEngineeringLocation(String location) =>
 
 bool _isRepairLocation(String location) =>
     location == '/repair' || location.startsWith('/repair/');
+
+bool _isUtilityLocation(String location) =>
+    location == '/utility' || location.startsWith('/utility/');
 
 class _MissingRouteDataScreen extends StatelessWidget {
   const _MissingRouteDataScreen({required this.message});

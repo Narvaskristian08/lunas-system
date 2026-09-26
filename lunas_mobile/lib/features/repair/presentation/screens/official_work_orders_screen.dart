@@ -13,7 +13,16 @@ import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets
 /// management and completion verification intentionally remain outside mobile
 /// scope; the API enforces which records this account can see.
 class OfficialWorkOrdersScreen extends StatefulWidget {
-  const OfficialWorkOrdersScreen({super.key});
+  const OfficialWorkOrdersScreen({
+    this.title = 'Work orders',
+    this.subtitle = 'Read-only monitoring in your server-authorized scope',
+    this.emptyMessage = 'No work orders match the selected status in your scope.',
+    super.key,
+  });
+
+  final String title;
+  final String subtitle;
+  final String emptyMessage;
 
   @override
   State<OfficialWorkOrdersScreen> createState() => _OfficialWorkOrdersScreenState();
@@ -54,8 +63,8 @@ class _OfficialWorkOrdersScreenState extends State<OfficialWorkOrdersScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: LunasAppBar(
-      title: 'Work orders',
-      subtitle: 'Read-only monitoring in your server-authorized scope',
+      title: widget.title,
+      subtitle: widget.subtitle,
       showBackButton: true,
       actions: [
         IconButton(
@@ -119,10 +128,10 @@ class _OfficialWorkOrdersScreenState extends State<OfficialWorkOrdersScreen> {
     }
     final page = _page;
     if (page == null || page.items.isEmpty) {
-      return const LunasStateView(
+      return LunasStateView(
         state: LunasViewState.empty,
         title: 'No work orders found',
-        message: 'No work orders match the selected status in your scope.',
+        message: widget.emptyMessage,
       );
     }
     return Column(

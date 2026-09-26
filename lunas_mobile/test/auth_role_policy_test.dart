@@ -9,16 +9,14 @@ void main() {
     expect(mobileWorkspaceHome('admin'), '/official');
     expect(isSupportedMobileRole('repair_personnel'), isTrue);
     expect(mobileWorkspaceHome('repair_personnel'), '/repair');
+    expect(isSupportedMobileRole('utility_provider'), isTrue);
+    expect(mobileWorkspaceHome('utility_provider'), '/utility');
   });
 
-  test(
-    'utility providers remain official accounts but fail closed on mobile',
-    () {
-      expect(isValidationOfficialRole('utility_provider'), isTrue);
-      expect(isSupportedMobileRole('utility_provider'), isFalse);
-      expect(mobileWorkspaceHome('utility_provider'), isNull);
-    },
-  );
+  test('utility providers retain their official workflow boundary', () {
+    expect(isValidationOfficialRole('utility_provider'), isTrue);
+    expect(isUtilityProviderRole('utility_provider'), isTrue);
+  });
 
   test('unsupported roles fail closed instead of receiving citizen routes', () {
     expect(isSupportedMobileRole('unknown_role'), isFalse);
