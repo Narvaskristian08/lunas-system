@@ -2,7 +2,7 @@
  * Local-only synthetic data for demonstrations and QA evidence.
  *
  * This is intentionally the target of the existing `npm run seed:demo`
- * command. It refuses every database except a local `lunas_demo` database and
+ * command. It refuses every database except a local `lunas_db` database and
  * only removes records that carry the demo account/report identifiers below.
  */
 require('dotenv').config();
@@ -42,8 +42,8 @@ function requireSafeEnvironment() {
   }
 
   const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, '').split('/')[0]);
-  if (databaseName !== 'lunas_demo') {
-    throw new Error('Refusing to seed: database name must be exactly lunas_demo.');
+  if (databaseName !== 'lunas_db') {
+    throw new Error('Refusing to seed: database name must be exactly lunas_db.');
   }
 
   return uri;
@@ -244,7 +244,7 @@ async function seed() {
       status: 'success'
     });
 
-    console.log(`Seeded ${[admin, engineer, citizen, barangayOfficial, utilityProvider, repairPersonnel, disabledCitizen].length} synthetic demo accounts and ${incidents.length} synthetic incidents in lunas_demo.`);
+    console.log(`Seeded ${[admin, engineer, citizen, barangayOfficial, utilityProvider, repairPersonnel, disabledCitizen].length} synthetic demo accounts and ${incidents.length} synthetic incidents in lunas_db.`);
     console.log('Demo records use the demo.*@lunas.test namespace; no non-demo records were changed.');
   } finally {
     await mongoose.disconnect();
