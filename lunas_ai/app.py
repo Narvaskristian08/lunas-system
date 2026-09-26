@@ -51,6 +51,8 @@ def create_app():
                 'detect_road_damage': '/api/v1/detect/road-damage',
                 'detect_cracks': '/api/v1/detect/cracks',
                 'detect_privacy': '/api/v1/detect/privacy',
+                'detect_drainage': '/api/v1/detect/drainage',
+                'detect_electrical': '/api/v1/detect/electrical',
                 'comprehensive': '/api/v1/detect/comprehensive'
             },
             'documentation': 'See README.md for API documentation'

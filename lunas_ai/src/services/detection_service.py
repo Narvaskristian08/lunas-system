@@ -189,68 +189,6 @@ class DetectionService:
                 'total_detections': 0
             }
     
-    def detect_road_collapse(
-        self,
-        image: Image.Image,
-        confidence: Optional[float] = None
-    ) -> Dict[str, Any]:
-        """
-        Detect critical infrastructure failures (bridge/road collapse)
-        
-        Args:
-            image: PIL Image object
-            confidence: Confidence threshold (optional)
-            
-        Returns:
-            Dictionary with collapse detection results
-        """
-        try:
-            # Load model
-            model = self.model_manager.load_model('road_collapse')
-            
-            # Get model config
-            model_config = config.get_model_config('road_collapse')
-            conf_threshold = confidence or model_config.get('confidence_threshold', 0.30)
-            iou_threshold = model_config.get('iou_threshold', 0.45)
-            
-            # Run inference
-            logger.info("Running road collapse detection...")
-            results = model.predict(
-                source=image,
-                conf=conf_threshold,
-                iou=iou_threshold,
-                max_det=config.MAX_DETECTIONS,
-                device=self.model_manager.device,
-                verbose=False
-            )
-            
-            # Parse results
-            detections = self._parse_detection_results(results[0], model_config, image)
-            
-            # All collapses are critical severity
-            for detection in detections:
-                detection['severity'] = 'critical'
-                detection['priority'] = 'emergency'
-            
-            return {
-                'success': True,
-                'model': 'road_collapse',
-                'detections': detections,
-                'summary': self._create_summary(detections),
-                'total_detections': len(detections),
-                'critical_alert': len(detections) > 0
-            }
-            
-        except Exception as e:
-            logger.error(f"Road collapse detection failed: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'detections': [],
-                'total_detections': 0,
-                'critical_alert': False
-            }
-    
     def detect_environmental_hazards(
         self,
         image: Image.Image,
@@ -328,8 +266,6 @@ class DetectionService:
         Run detection models and combine detections
         - RDD2022: Road damage (cracks, potholes)
         - Environmental Hazards: Urban hazards
-        
-        Note: Road Collapse model disabled due to high false positive rate
         
         Args:
             image: PIL Image object
@@ -416,19 +352,26 @@ class DetectionService:
         assigned_model = config.get_category_model(category)
         logger.info(f"Running comprehensive detection for category: {category}")
 
+        model_config = config.get_model_config(assigned_model) if assigned_model else {}
+        model_path = model_config.get('path')
+        model_file_available = bool(
+            model_path and (config.BASE_DIR / model_path).is_file()
+        )
+
         results = {
             'category': category,
-            'model_available': bool(assigned_model),
+            'model_available': model_file_available,
             'model': assigned_model,
+            'damage_only': bool(model_config.get('damage_only', False)),
             'detections': [],
             'ai_suggestion': None,
             'confidence_score': 0.0,
             'requires_manual_review': True,
             'advisory_only': True,
-            'analysis_status': 'completed' if assigned_model else 'unavailable'
+            'analysis_status': 'completed' if model_file_available else 'unavailable'
         }
 
-        if not assigned_model:
+        if not assigned_model or not model_file_available:
             return results
 
         if assigned_model == 'road_damage':
@@ -436,17 +379,15 @@ class DetectionService:
         elif assigned_model == 'environmental_hazards':
             model_result = self.detect_environmental_hazards(image)
         else:
-            # A category assignment must be explicitly implemented here. Do
-            # not fall through to a model assigned to another category.
-            results['model_available'] = False
-            results['analysis_status'] = 'unavailable'
-            results['model'] = None
-            return results
+            # Category assignments remain explicit and backend-owned. This
+            # generic path supports a configured detection model without
+            # allowing an unassigned category to fall through to another
+            # model.
+            model_result = self.detect_category_model(image, assigned_model)
 
         if not model_result.get('success'):
             results['model_available'] = False
             results['analysis_status'] = 'failed'
-            results['model'] = None
             results['error'] = 'Assigned category model could not be used'
             return results
 
@@ -454,6 +395,60 @@ class DetectionService:
         results['ai_suggestion'] = results['detections'][0].get('class') if results['detections'] else None
         results['confidence_score'] = self._calculate_confidence(model_result)
         return results
+
+    def detect_category_model(
+        self,
+        image: Image.Image,
+        model_name: str,
+        confidence: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """Run a configured category detection model.
+
+        This method is used only after ``category_models`` has selected the
+        model. It never searches for, downloads, or substitutes another
+        checkpoint.
+        """
+        try:
+            model_config = config.get_model_config(model_name)
+            if model_config.get('type', 'detection') != 'detection':
+                raise ValueError(f"Category model '{model_name}' is not a detection model")
+
+            model = self.model_manager.load_model(model_name)
+            conf_threshold = (
+                confidence
+                if confidence is not None
+                else model_config.get('confidence_threshold', 0.25)
+            )
+            iou_threshold = model_config.get('iou_threshold', 0.45)
+
+            logger.info(f"Running category detection with model: {model_name}")
+            inference_results = model.predict(
+                source=image,
+                conf=conf_threshold,
+                iou=iou_threshold,
+                max_det=config.MAX_DETECTIONS,
+                device=self.model_manager.device,
+                verbose=False
+            )
+            detections = self._parse_detection_results(
+                inference_results[0], model_config, image
+            )
+
+            return {
+                'success': True,
+                'model': model_name,
+                'detections': detections,
+                'summary': self._create_summary(detections),
+                'total_detections': len(detections)
+            }
+        except Exception as e:
+            logger.error(f"Category model detection failed for {model_name}: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'detections': [],
+                'total_detections': 0
+            }
     
     def _parse_detection_results(
         self,
@@ -481,6 +476,12 @@ class DetectionService:
                 class_name = class_names[class_id]
             else:
                 class_name = result.names.get(class_id, f"class_{class_id}")
+
+            # Electrical damage models are intentionally allowlisted. This
+            # prevents a stale/mismatched checkpoint label map from leaking
+            # ordinary asset detections into the advisory response.
+            if model_config.get('damage_only') and class_name not in class_names:
+                continue
             
             detections.append({
                 'class': class_name,

@@ -12,8 +12,6 @@ models:
       - alligator_crack
       - longitudinal_crack
       - transverse_crack
-      - manhole
-      - sewer_cover
     confidence_threshold: 0.25
     iou_threshold: 0.45
     input_size: 640
@@ -21,22 +19,6 @@ models:
       normalize: true
       resize: true
     notes: "Trained on RDD2022 dataset - optimized for Philippine roads"
-  
-  # Road Collapse: Critical infrastructure failures
-  road_collapse:
-    name: "YOLOv8n Road Collapse Detection"
-    path: "models/road/roadcollapse/best.pt"
-    type: "detection"
-    classes:
-      - bridge_collapse
-      - road_collapse
-    confidence_threshold: 0.60
-    iou_threshold: 0.45
-    input_size: 640
-    preprocessing:
-      normalize: true
-      resize: true
-    notes: "Detects critical structural failures - bridge and road collapses"
   
   # Environmental Hazards: Urban safety hazards
   environmental_hazards:
@@ -55,6 +37,118 @@ models:
       normalize: true
       resize: true
     notes: "Detects environmental and urban safety hazards"
+
+  # Electrical damage only: never include intact-pole/component labels here.
+  electrical_damage:
+    name: "YOLOv8n Electrical Damage Detection (fault boxes)"
+    path: "models/electrical/electricpole/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - surge_arrester_discoloration
+      - surge_arrester_insulation_breakdown
+      - surge_arrester_aging
+      - surge_arrester_loose_nut
+      - surge_arrester_damage
+      - surge_arrester_ground_lead_missing
+      - surge_arrester_detached
+      - surge_arrester_ground_lead_broken
+      - porcelain_insulator_crack
+      - porcelain_insulator_damage
+      - porcelain_insulator_flashover
+      - porcelain_insulator_lead_missing
+      - conductor_insulation_damage
+      - conductor_strand_breakage
+      - conductor_strand_loosening
+      - conductor_vegetation_encroachment
+      - conductor_crossarm_contact
+      - composite_insulator_damage
+      - high_voltage_joint_overheating
+      - high_voltage_joint_damage
+      - line_hardware_terminal_damage
+      - line_hardware_clamp_crack
+      - line_hardware_clamp_loose
+      - insulator_shed_chipping
+      - bird_nest_on_line
+      - foreign_object_on_line
+      - ground_lead_broken
+      - cable_break
+      - cable_thunderbolt
+    confidence_threshold: 0.30
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Damage-only boxes from Power Equipment transmission faults and Cable Damage; advisory only"
+
+  # Surface drainage issues: visible water and blocked drainage channels only.
+  surface_drainage:
+    name: "YOLOv8n Surface Drainage Issue Detection"
+    path: "models/drainage/surfacedrainage/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - standing_water
+      - blocked_surface_drain
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Public-data model for standing water and blocked surface drains; advisory/manual review only"
+
+  # Water infrastructure damage: leak evidence only; no automatic severity or closure decisions.
+  water_leak:
+    name: "YOLOv8n Water Leak Detection"
+    path: "models/water/waterleak/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - water_leak
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "CC BY 4.0 public pipe-leak v6 model; advisory/manual review only"
+
+  # Gas infrastructure damage is intentionally manual-only until image data is available.
+  gas_infrastructure_damage:
+    name: "Gas Infrastructure Damage Detection (manual review)"
+    path: "models/gas/gasinfrastructure/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - corrosion_rust
+      - water_seepage
+      - wall_crack
+      - coating_damage
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Manual-only until a licensed image-bearing gas-infrastructure damage dataset is available"
+
+  # Streetlight damage: the source has one dedicated damaged class.
+  streetlight_damage:
+    name: "YOLOv8n Streetlight Damage Detection"
+    path: "models/streetlight/streetlightdamage/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - streetlight_damage
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "CC BY 4.0 public StreetLampPole damaged-class model; advisory/manual review only"
     
   crack_segmentation:
     name: "YOLOv8n-seg Crack Segmentation"
@@ -91,11 +185,11 @@ category_models:
   # These keys are the canonical category codes shared by the web, mobile,
   # and backend incident APIs. A null value is intentionally manual-only.
   road: road_damage
-  drainage: null
-  electrical: null
-  water: null
-  gas: null
-  streetlight: null
+  drainage: surface_drainage
+  electrical: electrical_damage
+  water: water_leak
+  gas: gas_infrastructure_damage
+  streetlight: streetlight_damage
   other: environmental_hazards
 
 severity_estimation:

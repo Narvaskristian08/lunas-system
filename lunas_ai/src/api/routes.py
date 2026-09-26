@@ -17,6 +17,10 @@ from ..utils.logger import logger
 # Create blueprint
 api = Blueprint('api', __name__)
 
+CANONICAL_CATEGORIES = {
+    'road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'
+}
+
 
 def validate_image(file) -> tuple:
     """
@@ -210,10 +214,12 @@ def detect_privacy():
         }), 500
 
 
-@api.route('/detect/comprehensive', methods=['POST'])
-def comprehensive_detection():
-    """
-    Comprehensive infrastructure detection based on category
+def _run_category_detection(category: str):
+    """Validate an image and run the backend-owned category route.
+
+    This helper is shared by the generic category endpoint and the fixed
+    drainage/electrical QA endpoints. Callers provide a category, never a
+    checkpoint path or model filename.
     """
     start_time = time.time()
     
@@ -229,13 +235,12 @@ def comprehensive_detection():
                 'requires_manual_review': True
             }), 400
         
-        # The caller must provide one of the canonical web/mobile category
-        # codes. The detection service owns the category-to-model mapping.
-        category = request.form.get('category', '').strip().lower()
-        allowed_categories = {
-            'road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'
-        }
-        if category not in allowed_categories:
+        # The generic endpoint passes the caller's canonical category, while
+        # fixed QA endpoints pass their own hard-coded category. In both cases
+        # the service owns the category-to-model mapping; callers never select
+        # a checkpoint path or model filename.
+        category = str(category or '').strip().lower()
+        if category not in CANONICAL_CATEGORIES:
             return jsonify({
                 'success': False,
                 'error': 'A canonical incident category is required',
@@ -265,15 +270,32 @@ def comprehensive_detection():
         }), 500
 
 
+@api.route('/detect/drainage', methods=['POST'])
+def detect_surface_drainage():
+    """QA endpoint fixed to the canonical drainage category."""
+    return _run_category_detection('drainage')
+
+
+@api.route('/detect/electrical', methods=['POST'])
+def detect_electrical_damage():
+    """QA endpoint fixed to the canonical electrical category."""
+    return _run_category_detection('electrical')
+
+
+@api.route('/detect/comprehensive', methods=['POST'])
+def comprehensive_detection():
+    """Run the backend-owned model assigned to a canonical category."""
+    category = request.form.get('category', '').strip().lower()
+    return _run_category_detection(category)
+
+
 @api.route('/detect/all-hazards', methods=['POST'])
 def detect_all_hazards():
     """
-    Unified detection using ALL 3 models:
-    - RDD2022: Road damage (cracks, potholes)
-    - Road Collapse: Critical infrastructure failures
-    - Environmental Hazards: Urban hazards (trees, fire, garbage, manholes)
+    Unified detection is no longer available. Use a canonical category so the
+    backend selects exactly one assigned model, including RDD2022 for road.
     
-    Returns combined detections from all models
+    Returns a deprecation response directing callers to category detection.
     """
     return jsonify({
         'success': False,

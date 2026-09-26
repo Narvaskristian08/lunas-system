@@ -10,8 +10,73 @@ This directory is for storing training and testing datasets. The datasets are **
 datasets/
 ├── README.md          ← You are here
 ├── .gitkeep          ← Keeps folder in git
-└── rdd2022/          ← Road Damage Dataset 2022 (user must download)
+├── rdd2022/          ← Road Damage Dataset 2022 (user must download)
+├── electrical/damage/  ← Generated locally; never committed
+└── drainage/surface/  ← Generated locally; never committed
 ```
+
+## ⚡ Electrical Model: Damage Only
+
+The backend `electrical` category uses only explicit fault/damage bounding
+boxes. The preparation utility downloads the selected source archives into the
+ignored `.cache` directory and combines them into a local YOLO export:
+
+```bash
+cd lunas_ai
+python tools/prepare_electrical_damage.py
+```
+
+The selected sources are the transmission-line fault subset of the [Power
+Equipment Image Dataset](https://huggingface.co/datasets/sxiong/Power-equipment-image-dataset)
+(MIT) and [Cable Damage](https://huggingface.co/datasets/LibreYOLO/cable-damage)
+(CC BY 4.0). The output contains only their documented fault labels. InsPLAD
+detection, pole-only, and intact-component datasets are intentionally excluded
+because they highlight assets rather than damage.
+
+The training utility requires the local `yolov8n.pt` checkpoint and does not
+download it automatically:
+
+```bash
+cd lunas_ai
+python train_electrical_damage.py
+```
+
+The output is `models/electrical/electricpole/best.pt`. If it is absent or
+inference fails, the backend returns an unavailable/manual-review result and
+does not substitute a road, environmental, or other category model.
+
+## 🌧️ Surface-drainage issue model
+
+The canonical `drainage` category is for visible surface drains, gutters,
+canals, and culverts. The backend model uses only issue labels:
+`standing_water` and `blocked_surface_drain`.
+
+The preparation utility downloads two small public archives into the ignored
+`.cache` directory, so the team does not need to first collect local phone
+photos:
+
+```bash
+cd lunas_ai
+python tools/prepare_surface_drainage.py
+```
+
+It uses the [Roadway Flooding Image Dataset](https://www.kaggle.com/datasets/saurabhshahane/roadway-flooding-image-dataset)
+(CC BY 4.0) for mask-derived standing-water regions and
+[drainage-channel-images](https://www.kaggle.com/datasets/irenemargi/drainage-channel-images)
+(Apache 2.0) for blocked/clear channel examples. The channel source has
+folder-level labels only, so blocked examples are represented with a
+full-image box; this is a QA signal, not precise debris localization.
+
+Train from the existing local base checkpoint without installing packages:
+
+```bash
+python train_surface_drainage.py
+```
+
+The checkpoint is written to `models/drainage/surfacedrainage/best.pt` and the
+generated dataset is ignored by Git. The model remains advisory and requires
+manual review; it is not a reliable detector for broken grates, collapsed
+channels, or exact trash/silt boundaries in local phone images.
 
 ---
 

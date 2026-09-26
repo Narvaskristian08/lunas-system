@@ -1,4 +1,5 @@
 # Streetlight
 
-No streetlight model is currently available. The canonical `streetlight`
-category therefore remains manual-review only.
+The canonical `streetlight` category routes to `streetlight_damage`.
+See `streetlightdamage/README.md`; the checkpoint is advisory and requires
+manual review.
