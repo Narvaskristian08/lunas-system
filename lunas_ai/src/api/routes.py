@@ -292,12 +292,10 @@ def comprehensive_detection():
 @api.route('/detect/all-hazards', methods=['POST'])
 def detect_all_hazards():
     """
-    Unified detection using ALL 3 models:
-    - RDD2022: Road damage (cracks, potholes)
-    - Road Collapse: Critical infrastructure failures
-    - Environmental Hazards: Urban hazards (trees, fire, garbage, manholes)
+    Unified detection is no longer available. Use a canonical category so the
+    backend selects exactly one assigned model, including RDD2022 for road.
     
-    Returns combined detections from all models
+    Returns a deprecation response directing callers to category detection.
     """
     return jsonify({
         'success': False,

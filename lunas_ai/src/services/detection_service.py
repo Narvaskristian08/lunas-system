@@ -189,68 +189,6 @@ class DetectionService:
                 'total_detections': 0
             }
     
-    def detect_road_collapse(
-        self,
-        image: Image.Image,
-        confidence: Optional[float] = None
-    ) -> Dict[str, Any]:
-        """
-        Detect critical infrastructure failures (bridge/road collapse)
-        
-        Args:
-            image: PIL Image object
-            confidence: Confidence threshold (optional)
-            
-        Returns:
-            Dictionary with collapse detection results
-        """
-        try:
-            # Load model
-            model = self.model_manager.load_model('road_collapse')
-            
-            # Get model config
-            model_config = config.get_model_config('road_collapse')
-            conf_threshold = confidence or model_config.get('confidence_threshold', 0.30)
-            iou_threshold = model_config.get('iou_threshold', 0.45)
-            
-            # Run inference
-            logger.info("Running road collapse detection...")
-            results = model.predict(
-                source=image,
-                conf=conf_threshold,
-                iou=iou_threshold,
-                max_det=config.MAX_DETECTIONS,
-                device=self.model_manager.device,
-                verbose=False
-            )
-            
-            # Parse results
-            detections = self._parse_detection_results(results[0], model_config, image)
-            
-            # All collapses are critical severity
-            for detection in detections:
-                detection['severity'] = 'critical'
-                detection['priority'] = 'emergency'
-            
-            return {
-                'success': True,
-                'model': 'road_collapse',
-                'detections': detections,
-                'summary': self._create_summary(detections),
-                'total_detections': len(detections),
-                'critical_alert': len(detections) > 0
-            }
-            
-        except Exception as e:
-            logger.error(f"Road collapse detection failed: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'detections': [],
-                'total_detections': 0,
-                'critical_alert': False
-            }
-    
     def detect_environmental_hazards(
         self,
         image: Image.Image,
@@ -328,8 +266,6 @@ class DetectionService:
         Run detection models and combine detections
         - RDD2022: Road damage (cracks, potholes)
         - Environmental Hazards: Urban hazards
-        
-        Note: Road Collapse model disabled due to high false positive rate
         
         Args:
             image: PIL Image object

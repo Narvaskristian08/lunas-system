@@ -35,7 +35,7 @@ def test_surface_dataset_has_all_splits_and_safe_boxes():
                 assert all(0.0 <= float(value) <= 1.0 for value in fields[1:])
 
 
-def test_unsupported_category_is_manual_only_and_does_not_load_a_fallback():
+def test_unavailable_category_is_manual_only_and_does_not_load_a_fallback():
     from PIL import Image
 
     from src.services.detection_service import DetectionService
@@ -51,9 +51,9 @@ def test_unsupported_category_is_manual_only_and_does_not_load_a_fallback():
             raise AssertionError("unsupported category must not load a fallback model")
 
     service.model_manager = NoFallbackManager()
-    result = service.comprehensive_detection(Image.new("RGB", (32, 32)), "water")
+    result = service.comprehensive_detection(Image.new("RGB", (32, 32)), "gas")
 
-    assert result["model"] is None
+    assert result["model"] == "gas_infrastructure_damage"
     assert result["analysis_status"] == "unavailable"
     assert result["requires_manual_review"] is True
     assert result["advisory_only"] is True

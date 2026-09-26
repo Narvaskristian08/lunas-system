@@ -12,8 +12,6 @@ models:
       - alligator_crack
       - longitudinal_crack
       - transverse_crack
-      - manhole
-      - sewer_cover
     confidence_threshold: 0.25
     iou_threshold: 0.45
     input_size: 640
@@ -21,22 +19,6 @@ models:
       normalize: true
       resize: true
     notes: "Trained on RDD2022 dataset - optimized for Philippine roads"
-  
-  # Road Collapse: Critical infrastructure failures
-  road_collapse:
-    name: "YOLOv8n Road Collapse Detection"
-    path: "models/road/roadcollapse/best.pt"
-    type: "detection"
-    classes:
-      - bridge_collapse
-      - road_collapse
-    confidence_threshold: 0.60
-    iou_threshold: 0.45
-    input_size: 640
-    preprocessing:
-      normalize: true
-      resize: true
-    notes: "Detects critical structural failures - bridge and road collapses"
   
   # Environmental Hazards: Urban safety hazards
   environmental_hazards:
@@ -115,7 +97,58 @@ models:
     preprocessing:
       normalize: true
       resize: true
-    notes: "Public-data QA model for standing water and blocked surface drains; advisory/manual review only"
+    notes: "Public-data model for standing water and blocked surface drains; advisory/manual review only"
+
+  # Water infrastructure damage: leak evidence only; no automatic severity or closure decisions.
+  water_leak:
+    name: "YOLOv8n Water Leak Detection"
+    path: "models/water/waterleak/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - water_leak
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "CC BY 4.0 public pipe-leak v6 model; advisory/manual review only"
+
+  # Gas infrastructure damage is intentionally manual-only until image data is available.
+  gas_infrastructure_damage:
+    name: "Gas Infrastructure Damage Detection (manual review)"
+    path: "models/gas/gasinfrastructure/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - corrosion_rust
+      - water_seepage
+      - wall_crack
+      - coating_damage
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "Manual-only until a licensed image-bearing gas-infrastructure damage dataset is available"
+
+  # Streetlight damage: the source has one dedicated damaged class.
+  streetlight_damage:
+    name: "YOLOv8n Streetlight Damage Detection"
+    path: "models/streetlight/streetlightdamage/best.pt"
+    type: "detection"
+    damage_only: true
+    classes:
+      - streetlight_damage
+    confidence_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    preprocessing:
+      normalize: true
+      resize: true
+    notes: "CC BY 4.0 public StreetLampPole damaged-class model; advisory/manual review only"
     
   crack_segmentation:
     name: "YOLOv8n-seg Crack Segmentation"
@@ -154,9 +187,9 @@ category_models:
   road: road_damage
   drainage: surface_drainage
   electrical: electrical_damage
-  water: null
-  gas: null
-  streetlight: null
+  water: water_leak
+  gas: gas_infrastructure_damage
+  streetlight: streetlight_damage
   other: environmental_hazards
 
 severity_estimation:

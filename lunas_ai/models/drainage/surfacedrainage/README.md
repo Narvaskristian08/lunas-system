@@ -1,6 +1,6 @@
 # Surface-drainage issue model
 
-`best.pt` is a backend-only YOLOv8n QA model assigned to the canonical
+`best.pt` is a backend-only YOLOv8n model assigned to the canonical
 `drainage` category. It is trained only on visible issue signals:
 
 - `standing_water`: region boxes derived from binary roadway-flooding masks.

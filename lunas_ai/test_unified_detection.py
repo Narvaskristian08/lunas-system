@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test script for unified detection across all 3 models
-"""
+"""Test the canonical road category using the RDD2022 model."""
 
 import requests
 import sys
@@ -9,11 +7,11 @@ from pathlib import Path
 
 API_URL = "http://localhost:5001/api/v1"
 
-def test_unified_detection(image_path: str):
-    """Test the unified detection endpoint"""
+def run_road_detection(image_path: str):
+    """Verify that the road category uses RDD2022 only."""
     
     print("=" * 70)
-    print("🌙 LUNAS AI - Unified Detection Test")
+    print("🌙 LUNAS AI - RDD2022 Road Detection Test")
     print("=" * 70)
     print(f"Testing with image: {image_path}")
     print()
@@ -30,7 +28,8 @@ def test_unified_detection(image_path: str):
         print("📤 Sending image to API...")
         try:
             response = requests.post(
-                f"{API_URL}/detect/all-hazards",
+                f"{API_URL}/detect/comprehensive",
+                data={'category': 'road'},
                 files=files,
                 timeout=30
             )
@@ -44,25 +43,10 @@ def test_unified_detection(image_path: str):
                 print("📊 RESULTS")
                 print("=" * 70)
                 
-                # Summary
-                print(f"Total Detections: {data['total_detections']}")
-                print(f"Processing Time: {data['processing_time']}s")
-                print(f"Severity Level: {data['severity_level'].upper()}")
-                print(f"Requires Urgent Action: {'YES' if data['requires_urgent_action'] else 'NO'}")
-                print()
-                
-                # By Model
-                print("By Model:")
-                print(f"  🔧 RDD2022 (Road Damage): {data['by_model']['rdd2022']} detections")
-                print(f"  🏗️  Road Collapse: {data['by_model']['road_collapse']} detections")
-                print(f"  🌿 Environmental Hazards: {data['by_model']['environmental_hazards']} detections")
-                print()
-                
-                # By Category
-                print("By Category:")
-                print(f"  Road Damage: {data['by_category']['road_damage']}")
-                print(f"  Critical Infrastructure: {data['by_category']['critical_infrastructure']}")
-                print(f"  Environmental/Urban: {data['by_category']['environmental_urban']}")
+                print(f"Category: {data.get('category', 'unknown')}")
+                print(f"Model: {data.get('model', 'unknown')}")
+                print(f"Analysis status: {data.get('analysis_status', 'unknown')}")
+                print(f"Total detections: {len(data.get('detections', []))}")
                 print()
                 
                 # Individual Detections
@@ -76,9 +60,7 @@ def test_unified_detection(image_path: str):
                         print(f"   Model: {det['model']}")
                         print(f"   Category: {det['category']}")
                         print(f"   Confidence: {det['confidence']*100:.1f}%")
-                        print(f"   Severity: {det.get('severity', 'N/A')}")
-                        if 'priority' in det:
-                            print(f"   Priority: {det['priority']}")
+                        print(f"   Severity: {det.get('severity', 'advisory')}")
                         print(f"   Bbox: ({det['bbox']['x1']:.0f}, {det['bbox']['y1']:.0f}) - ({det['bbox']['x2']:.0f}, {det['bbox']['y2']:.0f})")
                 else:
                     print("✅ No hazards detected - Image is clear!")
@@ -106,7 +88,7 @@ def main():
         sys.exit(1)
     
     image_path = sys.argv[1]
-    test_unified_detection(image_path)
+    run_road_detection(image_path)
 
 
 if __name__ == '__main__':

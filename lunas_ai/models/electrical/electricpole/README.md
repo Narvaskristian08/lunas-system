@@ -26,12 +26,12 @@ Training sources are limited to datasets with explicit damage/fault labels:
 
 The previous InsPLAD detection checkpoint was an asset-localization model and
 is not used for this category. Pole-only and intact-component datasets are
-also excluded. The current model is an advisory QA detector: labels,
+also excluded. The current model is an advisory detector: labels,
 confidence, and normalized boxes are evidence for officials, not automatic
 damage, severity, routing, priority, or closure decisions. Local Philippine
 phone images are still required for validation and fine-tuning.
 
-The checked-in QA checkpoint was trained locally for 3 epochs on a 10% training
-fraction at 320 pixels because this host has CPU-only training. For a stronger
-model, run the same command on a GPU host with the default 100 epochs and 640
-pixel input, then validate it with local phone images before operational use.
+The checked-in checkpoint completed the full 100-epoch training configuration
+at 640 pixels on the damage-only dataset. Its final validation remains modest,
+so it is suitable only for advisory assistance and still requires validation
+and fine-tuning with local Philippine phone images before operational use.

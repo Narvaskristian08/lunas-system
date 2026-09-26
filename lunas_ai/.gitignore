@@ -44,7 +44,6 @@ venv.bak/
 logs/*.log
 *.log
 train_pid.txt
-train_road_collapse.log
 train_live.log
 train_output.log
 train_small.log
@@ -67,8 +66,6 @@ yolov8x.pt
 datasets/**/*
 !datasets/.gitkeep
 !datasets/README.md
-!datasets/road_collapse/
-!datasets/road_collapse/README.md
 
 # Temporary Files
 *.tmp
