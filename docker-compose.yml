@@ -43,6 +43,20 @@ services:
       JWT_EXPIRE: 7d
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRE: 30d
+
+      # Web login CAPTCHA
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      TURNSTILE_ALLOWED_HOSTNAMES: ${TURNSTILE_ALLOWED_HOSTNAMES:-localhost,127.0.0.1,dummy-key-response}
+      TURNSTILE_TIMEOUT_MS: ${TURNSTILE_TIMEOUT_MS:-8000}
+
+      # Mobile registration email MFA
+      REGISTRATION_MFA_SECRET: ${REGISTRATION_MFA_SECRET}
+      REGISTRATION_MFA_EXPIRE_MINUTES: ${REGISTRATION_MFA_EXPIRE_MINUTES:-10}
+      REGISTRATION_MFA_RESEND_SECONDS: ${REGISTRATION_MFA_RESEND_SECONDS:-60}
+      REGISTRATION_MFA_DELIVERY_URL: ${REGISTRATION_MFA_DELIVERY_URL}
+      REGISTRATION_MFA_DELIVERY_TOKEN: ${REGISTRATION_MFA_DELIVERY_TOKEN}
+      REGISTRATION_MFA_DELIVERY_TIMEOUT_MS: ${REGISTRATION_MFA_DELIVERY_TIMEOUT_MS:-10000}
+      REGISTRATION_MFA_EXPOSE_CODE: ${REGISTRATION_MFA_EXPOSE_CODE:-false}
       
       # Supabase
       SUPABASE_URL: ${SUPABASE_URL}
@@ -99,14 +113,17 @@ services:
     build:
       context: ./lunas_web
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000/api/v1}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
     container_name: lunas_web
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
-      # Add other Next.js environment variables here
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000/api/v1}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
     depends_on:
       backend:
         condition: service_healthy

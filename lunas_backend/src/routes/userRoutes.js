@@ -4,13 +4,14 @@ const {
   getUsers,
   getUser,
   updateUser,
-  deleteUser,
+  archiveUser,
   getRepairPersonnel
 } = require('../controllers/userController');
 const { getMe, updateProfile } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/auth');
 const {
   paginationValidation,
+  archiveUserValidation,
   mongoIdValidation,
   updateProfileValidation,
   validate
@@ -28,9 +29,21 @@ router.route('/me')
 router.route('/')
   .get(protect, authorize('barangay_official', 'city_engineer', 'admin'), paginationValidation, validate, getUsers);
 
+router.patch(
+  '/:id/archive',
+  protect,
+  authorize('admin'),
+  mongoIdValidation,
+  archiveUserValidation,
+  validate,
+  archiveUser
+);
+
 router.route('/:id')
   .get(protect, mongoIdValidation, validate, getUser)
   .put(protect, authorize('admin'), mongoIdValidation, validate, updateUser)
-  .delete(protect, authorize('admin'), mongoIdValidation, validate, deleteUser);
+  // Backward-compatible alias. Despite the HTTP verb, this never deletes a
+  // database record; new clients should use PATCH /:id/archive.
+  .delete(protect, authorize('admin'), mongoIdValidation, archiveUserValidation, validate, archiveUser);
 
 module.exports = router;

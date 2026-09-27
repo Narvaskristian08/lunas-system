@@ -9,6 +9,7 @@ const notificationRoutes = require('./notificationRoutes');
 const userRoutes = require('./userRoutes');
 const statsRoutes = require('./statsRoutes');
 const categoryRoutes = require('./categoryRoutes');
+const auditLogRoutes = require('./auditLogRoutes');
 const { getWorkOrderSummary } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -20,6 +21,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/users', userRoutes);
 router.use('/stats', statsRoutes);
 router.use('/categories', categoryRoutes);
+router.use('/audit-logs', auditLogRoutes);
 router.get(
   '/dashboard/work-orders-summary',
   protect,
@@ -41,7 +43,8 @@ router.get('/', (req, res) => {
       notifications: '/api/v1/notifications',
       users: '/api/v1/users',
       stats: '/api/v1/stats',
-      categories: '/api/v1/categories'
+      categories: '/api/v1/categories',
+      auditLogs: '/api/v1/audit-logs'
     }
   });
 });

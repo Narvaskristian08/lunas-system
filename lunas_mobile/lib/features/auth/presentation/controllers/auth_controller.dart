@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_session.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_user.dart';
+import 'package:lunas_mobile/features/auth/data/models/registration_mfa_challenge.dart';
 import 'package:lunas_mobile/features/auth/data/services/auth_service.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 
@@ -21,19 +22,21 @@ class AuthController extends ChangeNotifier {
   AuthUser? _user;
   String? _message;
   bool _isSubmitting = false;
+  RegistrationMfaChallenge? _pendingRegistration;
 
   AuthStatus get status => _status;
   AuthUser? get user => _user;
   String? get message => _message;
   bool get isSubmitting => _isSubmitting;
+  RegistrationMfaChallenge? get pendingRegistration => _pendingRegistration;
   bool get isCitizen => _user?.isCitizen == true;
   bool get isValidationOfficial => _user?.isValidationOfficial == true;
   bool get isRepairPersonnel =>
       _user != null && isRepairPersonnelRole(_user!.role);
-  bool get isUtilityProvider => _user != null && isUtilityProviderRole(_user!.role);
-  String? get workspaceHomePath => _user == null
-      ? null
-      : mobileWorkspaceHome(_user!.role);
+  bool get isUtilityProvider =>
+      _user != null && isUtilityProviderRole(_user!.role);
+  String? get workspaceHomePath =>
+      _user == null ? null : mobileWorkspaceHome(_user!.role);
 
   Future<void> restoreSession() async {
     _status = AuthStatus.initializing;
@@ -73,22 +76,77 @@ class AuthController extends ChangeNotifier {
     );
   }
 
-  Future<bool> register({
+  Future<RegistrationMfaChallenge?> register({
     required String firstName,
     required String lastName,
     required String email,
     required String phone,
     required String password,
-  }) {
-    return _completeAuthentication(
-      () => _authService.register(
+  }) async {
+    _isSubmitting = true;
+    _message = null;
+    notifyListeners();
+    try {
+      _pendingRegistration = await _authService.register(
         firstName: firstName,
         lastName: lastName,
         email: email,
         phone: phone,
         password: password,
-      ),
+      );
+      return _pendingRegistration;
+    } on ApiException catch (error) {
+      _message = error.message;
+      return null;
+    } on FormatException catch (error) {
+      _message = error.message;
+      return null;
+    } catch (_) {
+      _message =
+          'We could not start registration verification. Please try again.';
+      return null;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> verifyRegistrationMfa(String code) async {
+    final challenge = _pendingRegistration;
+    if (challenge == null) {
+      _message = 'Start registration again to request a new verification code.';
+      notifyListeners();
+      return false;
+    }
+    final success = await _completeAuthentication(
+      () =>
+          _authService.verifyRegistrationMfa(challenge: challenge, code: code),
     );
+    if (success) _pendingRegistration = null;
+    return success;
+  }
+
+  Future<bool> resendRegistrationMfa() async {
+    final challenge = _pendingRegistration;
+    if (challenge == null) return false;
+    _isSubmitting = true;
+    _message = null;
+    notifyListeners();
+    try {
+      _pendingRegistration = await _authService.resendRegistrationMfa(
+        challenge,
+      );
+      return true;
+    } on ApiException catch (error) {
+      _message = error.message;
+      return false;
+    } catch (_) {
+      _message = 'We could not resend the verification code. Please try again.';
+      return false;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
   }
 
   Future<bool> resetPassword({
@@ -100,7 +158,9 @@ class AuthController extends ChangeNotifier {
     );
   }
 
-  Future<bool> _completeAuthentication(Future<AuthSession> Function() action) async {
+  Future<bool> _completeAuthentication(
+    Future<AuthSession> Function() action,
+  ) async {
     _isSubmitting = true;
     _message = null;
     notifyListeners();
@@ -163,6 +223,7 @@ class AuthController extends ChangeNotifier {
       await _authService.logout();
     } finally {
       _user = null;
+      _pendingRegistration = null;
       _status = AuthStatus.unauthenticated;
       _isSubmitting = false;
       notifyListeners();
@@ -172,6 +233,7 @@ class AuthController extends ChangeNotifier {
   Future<void> expireSession() async {
     await _authService.clearSession();
     _user = null;
+    _pendingRegistration = null;
     _status = AuthStatus.unauthenticated;
     _message = 'Your session has expired. Please sign in again.';
     notifyListeners();

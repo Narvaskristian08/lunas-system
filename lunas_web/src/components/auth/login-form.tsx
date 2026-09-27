@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { LockKeyhole, WifiOff } from "lucide-react";
 import { loginAction } from "@/app/actions/auth";
 import type { LoginActionState } from "@/app/actions/auth";
 import { AuthAlert, AuthCard, SecurityNotice } from "@/components/auth/auth-ui";
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 import { FormField } from "@/components/forms/form-field";
 import { PasswordField } from "@/components/forms/password-field";
 import { Button } from "@/components/ui/button";
@@ -19,15 +20,17 @@ const outcomeActions = {
   MAINTENANCE: { href: "/maintenance", label: "View system status" },
 } as const;
 
-const initialLoginState: LoginActionState = { status: "idle" };
+const initialLoginState: LoginActionState = { status: "idle", attempt: 0 };
 
-export function LoginForm({ returnTo = "/dashboard" }: { returnTo?: string }) {
+export function LoginForm({ returnTo = "/dashboard", turnstileSiteKey }: { returnTo?: string; turnstileSiteKey: string }) {
   const [state, formAction, pending] = useActionState(loginAction, initialLoginState);
   const { online, checked } = useConnectivity();
   const alertRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const rememberRef = useRef<HTMLInputElement>(null);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const onCaptchaVerificationChange = useCallback((verified: boolean) => setCaptchaVerified(verified), []);
 
   useEffect(() => {
     const remembered = window.localStorage.getItem("lunas_remembered_email");
@@ -121,7 +124,14 @@ export function LoginForm({ returnTo = "/dashboard" }: { returnTo?: string }) {
           </Link>
         </div>
 
-        <Button type="submit" size="lg" className="w-full" loading={pending} loadingLabel="Signing in…" disabled={checked && !online}>
+        <TurnstileWidget
+          siteKey={turnstileSiteKey}
+          resetKey={String(state.attempt ?? 0)}
+          onVerificationChange={onCaptchaVerificationChange}
+        />
+        {state.fieldErrors?.captcha ? <p className="text-sm font-medium text-red-700">{state.fieldErrors.captcha}</p> : null}
+
+        <Button type="submit" size="lg" className="w-full" loading={pending} loadingLabel="Signing in…" disabled={(checked && !online) || !captchaVerified}>
           <LockKeyhole className="size-4.5" aria-hidden="true" />
           Sign in to command center
         </Button>

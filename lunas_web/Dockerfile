@@ -21,8 +21,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set environment variable for build
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 # Build Next.js application
 RUN npm run build

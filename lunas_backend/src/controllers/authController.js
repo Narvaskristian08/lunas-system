@@ -9,8 +9,28 @@ const {
   verifyRefreshToken
 } = require('../utils/authTokens');
 const { deliverPasswordReset } = require('../services/passwordResetDeliveryService');
+const { verifyLoginCaptcha } = require('../services/captchaService');
+const {
+  createRegistrationChallenge,
+  deliverRegistrationCode,
+  isRegistrationChallengeTokenValid,
+  registrationChallengeResponse,
+  verifyRegistrationChallenge
+} = require('../services/registrationMfaService');
 
 const MAX_REFRESH_TOKENS = Math.max(1, parseInt(process.env.MAX_REFRESH_TOKENS_PER_USER, 10) || 5);
+
+const requestSource = (platform) => {
+  if (platform === 'web') return 'web';
+  if (platform === 'android' || platform === 'ios') return 'mobile';
+  return 'api';
+};
+
+const auditRequestContext = (req, source = 'api') => ({
+  source,
+  ipAddress: req.ip,
+  userAgent: req.headers['user-agent']
+});
 
 const addRefreshToken = (user, tokenPair, req) => {
   const now = new Date();
@@ -41,6 +61,24 @@ const unauthorized = (res, message = 'Invalid or expired authentication token') 
   message
 });
 
+const applyRegistrationChallenge = (user, challenge) => {
+  user.registrationChallengeHash = challenge.challengeTokenHash;
+  user.registrationMfaCodeHash = challenge.codeHash;
+  user.registrationMfaExpires = challenge.expiresAt;
+  user.registrationMfaAttempts = 0;
+  user.registrationMfaSentAt = new Date();
+};
+
+const registrationMfaFields = [
+  '+registrationChallengeHash',
+  '+registrationMfaCodeHash',
+  '+registrationMfaExpires',
+  '+registrationMfaAttempts',
+  '+registrationMfaSentAt',
+  '+refreshTokens',
+  '+tokenVersion'
+].join(' ');
+
 // @desc    Register a citizen account
 // @route   POST /api/v1/auth/register
 // @access  Public
@@ -48,44 +86,244 @@ exports.register = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, phone, password, address } = req.body;
   const normalizedEmail = email.toLowerCase();
 
-  const existingUser = await User.findOne({ email: normalizedEmail });
-  if (existingUser) {
+  const existingUser = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
+  if (existingUser && (existingUser.isActive || existingUser.isVerified || existingUser.isArchived)) {
     return res.status(409).json({
       success: false,
       message: 'User with this email already exists'
     });
   }
 
-  // Public registration is deliberately citizen-only. Official accounts must
-  // be provisioned through the protected administration workflow.
-  const user = await User.create({
-    firstName,
-    lastName,
+  const challenge = createRegistrationChallenge(normalizedEmail);
+  const delivery = await deliverRegistrationCode({
     email: normalizedEmail,
-    phone,
-    password,
-    role: 'citizen',
-    address
+    firstName,
+    code: challenge.code
+  });
+  if (!delivery.delivered) {
+    await createAuditLog({
+      action: 'registration_mfa_delivery_failed',
+      actorType: 'anonymous',
+      resourceType: 'System',
+      status: 'failure',
+      details: { reason: delivery.configured ? 'provider_failed' : 'provider_not_configured' },
+      ...auditRequestContext(req, 'mobile')
+    });
+    return res.status(503).json({
+      success: false,
+      message: 'Registration verification is temporarily unavailable. Please try again later.'
+    });
+  }
+
+  let user = existingUser;
+  if (user) {
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.phone = phone;
+    user.password = password;
+    user.address = address;
+    user.role = 'citizen';
+    user.isActive = false;
+    user.isVerified = false;
+    applyRegistrationChallenge(user, challenge);
+    await user.save();
+  } else {
+    // Public registration is deliberately citizen-only. No session is issued
+    // until the email OTP challenge has been completed.
+    user = await User.create({
+      firstName,
+      lastName,
+      email: normalizedEmail,
+      phone,
+      password,
+      role: 'citizen',
+      address,
+      isActive: false,
+      isVerified: false,
+      registrationChallengeHash: challenge.challengeTokenHash,
+      registrationMfaCodeHash: challenge.codeHash,
+      registrationMfaExpires: challenge.expiresAt,
+      registrationMfaAttempts: 0,
+      registrationMfaSentAt: new Date()
+    });
+  }
+
+  await createAuditLog({
+    action: 'registration_mfa_challenged',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    details: { role: user.role, deliveryConfigured: delivery.configured },
+    ...auditRequestContext(req, 'mobile')
   });
 
+  res.status(201).json({
+    success: true,
+    message: 'Enter the verification code sent to your email to finish registration.',
+    data: registrationChallengeResponse({ challenge, email: normalizedEmail })
+  });
+});
+
+// @desc    Verify the email OTP and finish citizen registration
+// @route   POST /api/v1/auth/register/verify
+// @access  Public
+exports.verifyRegistrationMfa = asyncHandler(async (req, res) => {
+  const normalizedEmail = req.body.email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
+
+  if (!user || user.isArchived || user.isVerified || Number(user.registrationMfaAttempts) >= 5) {
+    await createAuditLog({
+      action: 'registration_mfa_failed',
+      ...(user ? { performedBy: user._id, resourceType: 'User', resourceId: user._id } : {
+        actorType: 'anonymous', resourceType: 'System'
+      }),
+      status: 'failure',
+      details: { reason: user ? 'challenge_unavailable_or_locked' : 'challenge_not_found' },
+      ...auditRequestContext(req, 'mobile')
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The registration verification code is invalid or expired.'
+    });
+  }
+
+  const verification = verifyRegistrationChallenge({
+    user,
+    challengeToken: req.body.challengeToken,
+    code: req.body.code
+  });
+  if (!verification.valid) {
+    user.registrationMfaAttempts = Number(user.registrationMfaAttempts || 0) + 1;
+    await user.save({ validateBeforeSave: false });
+    await createAuditLog({
+      action: 'registration_mfa_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      details: { reason: verification.reason, attempts: user.registrationMfaAttempts },
+      status: 'failure',
+      ...auditRequestContext(req, 'mobile')
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The registration verification code is invalid or expired.'
+    });
+  }
+
+  user.isVerified = true;
+  user.isActive = true;
+  user.registrationChallengeHash = undefined;
+  user.registrationMfaCodeHash = undefined;
+  user.registrationMfaExpires = undefined;
+  user.registrationMfaAttempts = 0;
+  user.registrationMfaSentAt = undefined;
   const tokenPair = issueTokenPair(user);
   addRefreshToken(user, tokenPair, req);
   await user.save();
 
   await createAuditLog({
+    action: 'registration_mfa_verified',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    ...auditRequestContext(req, 'mobile')
+  });
+  await createAuditLog({
     action: 'user_created',
     performedBy: user._id,
     resourceType: 'User',
     resourceId: user._id,
-    details: { role: user.role },
-    ipAddress: req.ip,
-    userAgent: req.headers['user-agent']
+    details: { role: user.role, registrationMfaVerified: true },
+    ...auditRequestContext(req, 'mobile')
   });
 
-  res.status(201).json({
+  return res.status(200).json({
     success: true,
-    message: 'Citizen account registered successfully',
+    message: 'Registration verified successfully',
     data: tokenResponseData(user, tokenPair)
+  });
+});
+
+// @desc    Rotate and resend a pending registration OTP
+// @route   POST /api/v1/auth/register/resend
+// @access  Public
+exports.resendRegistrationMfa = asyncHandler(async (req, res) => {
+  const normalizedEmail = req.body.email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
+  if (!user || user.isArchived || user.isVerified
+    || !isRegistrationChallengeTokenValid(user, req.body.challengeToken)) {
+    await createAuditLog({
+      action: 'registration_mfa_failed',
+      ...(user ? { performedBy: user._id, resourceType: 'User', resourceId: user._id } : {
+        actorType: 'anonymous', resourceType: 'System'
+      }),
+      status: 'failure',
+      details: { reason: 'invalid_resend_challenge' },
+      ...auditRequestContext(req, 'mobile')
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The pending registration challenge is invalid or expired.'
+    });
+  }
+
+  const resendSeconds = Math.max(30, parseInt(process.env.REGISTRATION_MFA_RESEND_SECONDS, 10) || 60);
+  const elapsedMs = Date.now() - new Date(user.registrationMfaSentAt || 0).getTime();
+  if (elapsedMs < resendSeconds * 1000) {
+    await createAuditLog({
+      action: 'registration_mfa_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'warning',
+      details: { reason: 'resend_cooldown' },
+      ...auditRequestContext(req, 'mobile')
+    });
+    return res.status(429).json({
+      success: false,
+      message: 'Wait before requesting another verification code.',
+      data: { retryAfterSeconds: Math.ceil((resendSeconds * 1000 - elapsedMs) / 1000) }
+    });
+  }
+
+  const challenge = createRegistrationChallenge(normalizedEmail);
+  const delivery = await deliverRegistrationCode({
+    email: normalizedEmail,
+    firstName: user.firstName,
+    code: challenge.code
+  });
+  if (!delivery.delivered) {
+    await createAuditLog({
+      action: 'registration_mfa_delivery_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: delivery.configured ? 'provider_failed' : 'provider_not_configured', resend: true },
+      ...auditRequestContext(req, 'mobile')
+    });
+    return res.status(503).json({
+      success: false,
+      message: 'Registration verification is temporarily unavailable. Please try again later.'
+    });
+  }
+
+  applyRegistrationChallenge(user, challenge);
+  await user.save({ validateBeforeSave: false });
+
+  await createAuditLog({
+    action: 'registration_mfa_challenged',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    details: { resend: true, deliveryConfigured: delivery.configured },
+    ...auditRequestContext(req, 'mobile')
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'A new verification code was sent.',
+    data: registrationChallengeResponse({ challenge, email: normalizedEmail })
   });
 });
 
@@ -93,23 +331,53 @@ exports.register = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/auth/login
 // @access  Public
 exports.login = asyncHandler(async (req, res) => {
-  const { email, password, deviceToken, platform } = req.body;
+  const { email, password, deviceToken, platform, captchaToken } = req.body;
   const normalizedEmail = email.toLowerCase();
+
+  if (platform === 'web') {
+    if (!captchaToken) {
+      await createAuditLog({
+        action: 'login_captcha_failed',
+        actorType: 'anonymous',
+        resourceType: 'System',
+        status: 'failure',
+        details: { reason: 'missing_token' },
+        ...auditRequestContext(req, 'web')
+      });
+      return res.status(400).json({ success: false, message: 'Complete the CAPTCHA challenge.' });
+    }
+    const captcha = await verifyLoginCaptcha({ token: captchaToken, remoteIp: req.ip });
+    if (!captcha.success) {
+      await createAuditLog({
+        action: captcha.unavailable ? 'login_captcha_unavailable' : 'login_captcha_failed',
+        actorType: 'anonymous',
+        resourceType: 'System',
+        status: captcha.unavailable ? 'warning' : 'failure',
+        details: { reason: captcha.unavailable ? 'provider_unavailable' : 'challenge_rejected' },
+        ...auditRequestContext(req, 'web')
+      });
+      return res.status(captcha.unavailable ? 503 : 400).json({
+        success: false,
+        message: captcha.unavailable
+          ? 'CAPTCHA verification is temporarily unavailable.'
+          : 'CAPTCHA verification failed. Please try again.'
+      });
+    }
+  }
 
   const user = await User.findOne({ email: normalizedEmail })
     .select('+password +refreshTokens +tokenVersion');
 
   if (!user || !(await user.comparePassword(password))) {
-    if (user) {
-      await createAuditLog({
-        action: 'user_login',
-        performedBy: user._id,
-        status: 'failure',
-        details: { reason: 'Invalid credentials' },
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-    }
+    await createAuditLog({
+      action: 'user_login',
+      ...(user ? { performedBy: user._id, resourceType: 'User', resourceId: user._id } : {
+        actorType: 'anonymous', resourceType: 'System'
+      }),
+      status: 'failure',
+      details: { reason: 'invalid_credentials', accountMatched: Boolean(user) },
+      ...auditRequestContext(req, requestSource(platform))
+    });
 
     return res.status(401).json({
       success: false,
@@ -117,7 +385,32 @@ exports.login = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!user.isActive) {
+  if (!user.isVerified && !user.isActive && !user.isArchived) {
+    await createAuditLog({
+      action: 'user_login',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: 'registration_verification_required' },
+      ...auditRequestContext(req, requestSource(platform))
+    });
+    return res.status(403).json({
+      success: false,
+      message: 'Your account still needs verification'
+    });
+  }
+
+  if (!user.isActive || user.isArchived) {
+    await createAuditLog({
+      action: 'user_login',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: user.isArchived ? 'account_archived' : 'account_inactive' },
+      ...auditRequestContext(req, requestSource(platform))
+    });
     return res.status(403).json({
       success: false,
       message: 'Your account has been deactivated'
@@ -139,9 +432,10 @@ exports.login = asyncHandler(async (req, res) => {
   await createAuditLog({
     action: 'user_login',
     performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
     status: 'success',
-    ipAddress: req.ip,
-    userAgent: req.headers['user-agent']
+    ...auditRequestContext(req, requestSource(platform))
   });
 
   res.status(200).json({
@@ -169,7 +463,7 @@ exports.refresh = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(decoded.id).select('+refreshTokens +tokenVersion');
-  if (!user || !user.isActive || !isCurrentTokenVersion(decoded, user)) {
+  if (!user || !user.isActive || user.isArchived || !isCurrentTokenVersion(decoded, user)) {
     return unauthorized(res);
   }
 

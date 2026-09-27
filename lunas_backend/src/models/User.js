@@ -92,6 +92,19 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: Date,
+  archivedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  archiveReason: {
+    type: String,
+    maxlength: 500
+  },
   // Incrementing this value invalidates every access and refresh token that
   // was issued before the change. It is used for logout and password changes.
   tokenVersion: {
@@ -120,7 +133,12 @@ const userSchema = new mongoose.Schema({
   passwordResetToken: { type: String, select: false },
   passwordResetExpires: { type: Date, select: false },
   verificationToken: { type: String, select: false },
-  verificationTokenExpires: { type: Date, select: false }
+  verificationTokenExpires: { type: Date, select: false },
+  registrationChallengeHash: { type: String, select: false },
+  registrationMfaCodeHash: { type: String, select: false },
+  registrationMfaExpires: { type: Date, select: false },
+  registrationMfaAttempts: { type: Number, default: 0, select: false },
+  registrationMfaSentAt: { type: Date, select: false }
 }, {
   timestamps: true
 });
@@ -179,6 +197,8 @@ userSchema.methods.toPublicJSON = function() {
     profileImage: this.profileImage,
     isVerified: this.isVerified,
     isActive: this.isActive,
+    isArchived: this.isArchived,
+    archivedAt: this.archivedAt,
     createdAt: this.createdAt
   };
 };

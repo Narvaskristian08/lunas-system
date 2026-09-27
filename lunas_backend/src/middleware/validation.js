@@ -43,8 +43,28 @@ exports.registerValidation = [
 exports.loginValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 1, max: 128 }).withMessage('Password is required'),
+  body('captchaToken').optional().isString().isLength({ min: 1, max: 2048 })
+    .withMessage('Complete the CAPTCHA challenge'),
   body('deviceToken').optional().trim().isLength({ max: 512 }),
   body('platform').optional().isIn(['android', 'ios', 'web']).withMessage('Invalid device platform')
+];
+
+exports.registrationMfaValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('challengeToken').isString().isLength({ min: 64, max: 128 })
+    .withMessage('A valid registration challenge is required'),
+  body('code').trim().matches(/^\d{6}$/).withMessage('Enter the 6-digit verification code')
+];
+
+exports.registrationMfaResendValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('challengeToken').isString().isLength({ min: 64, max: 128 })
+    .withMessage('A valid registration challenge is required')
+];
+
+exports.archiveUserValidation = [
+  body('reason').trim().isLength({ min: 3, max: 500 })
+    .withMessage('An archive reason between 3 and 500 characters is required')
 ];
 
 exports.refreshValidation = [
@@ -307,6 +327,18 @@ exports.paginationValidation = [
   query('sortBy').optional().trim().isLength({ max: 50 }),
   query('status').optional().trim(),
   query('priority').optional().trim()
+];
+
+exports.auditLogQueryValidation = [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  query('action').optional().trim().isLength({ min: 1, max: 80 }),
+  query('status').optional().isIn(['success', 'failure', 'warning']),
+  query('actorType').optional().isIn(['user', 'anonymous', 'system']),
+  query('source').optional().isIn(['web', 'mobile', 'api', 'system']),
+  query('resourceType').optional().isIn(['User', 'Incident', 'WorkOrder', 'Notification', 'System']),
+  query('from').optional().isISO8601().withMessage('from must be an ISO date'),
+  query('to').optional().isISO8601().withMessage('to must be an ISO date')
 ];
 
 exports.nearbyCoordinatesValidation = [

@@ -6,6 +6,25 @@ Base URL: `http://localhost:5000/api/v1`
 
 ---
 
+## Audit Log Endpoint
+
+### Read Audit Logs
+**GET** `/audit-logs`
+
+**Access:** Private (Admin only)
+
+Supported filters are `action`, `status`, `actorType`, `source`,
+`resourceType`, `from`, `to`, `page`, and `limit`. Results are newest first.
+The endpoint returns sanitized, read-only records; passwords, session tokens,
+CAPTCHA tokens, MFA challenge tokens, and one-time codes are never included.
+
+Security events include web CAPTCHA failures/provider outages, registration MFA
+challenge/delivery/verification outcomes, login success/failure, and account
+archive success/failure. Anonymous events retain request context without storing
+the submitted email address or credentials.
+
+---
+
 ## Authentication Endpoints
 
 ### 1. Register Citizen
@@ -33,31 +52,57 @@ self-assign a barangay, city, utility, repair, or administrator role.
 }
 ```
 
-**Response:**
+The account remains inactive until its email one-time code is verified.
+
+**Response (HTTP 201):**
 ```json
 {
   "success": true,
-  "message": "Citizen account registered successfully",
+  "message": "Enter the verification code sent to your email to finish registration.",
   "data": {
-    "user": {
-      "id": "64abc123...",
-      "firstName": "Juan",
-      "lastName": "Dela Cruz",
-      "email": "juan@example.com",
-      "role": "citizen"
-    },
-    "accessToken": "short-lived-access-jwt",
-    "refreshToken": "rotating-refresh-jwt",
-    "token": "short-lived-access-jwt",
-    "expiresIn": "15m"
+    "challengeToken": "one-time-registration-challenge",
+    "email": "juan@example.com",
+    "expiresInSeconds": 600,
+    "resendAfterSeconds": 60
   }
 }
 ```
+
+### 1a. Verify Mobile Registration MFA
+**POST** `/auth/register/verify`
+
+```json
+{
+  "email": "juan@example.com",
+  "challengeToken": "one-time-registration-challenge",
+  "code": "123456"
+}
+```
+
+Successful verification activates the account and returns the access/refresh
+session pair. The code expires, is attempt-limited, and is never stored in
+plain text.
+
+### 1b. Resend Mobile Registration MFA
+**POST** `/auth/register/resend`
+
+```json
+{
+  "email": "juan@example.com",
+  "challengeToken": "current-registration-challenge"
+}
+```
+
+The endpoint is rate-limited and rotates both the challenge and code.
 
 ### 2. Login
 **POST** `/auth/login`
 
 **Access:** Public
+
+Web login must include `"platform": "web"` and a current
+`"captchaToken"` returned by the Turnstile widget. Native mobile login does
+not render or call Turnstile.
 
 **Request Body:**
 ```json
@@ -829,7 +874,21 @@ self-assigned through this endpoint.
 }
 ```
 
-### 5. Get Repair Personnel
+### 5. Archive User
+**PATCH** `/users/:id/archive`
+
+**Access:** Private (Admin only)
+
+```json
+{ "reason": "Employment ended" }
+```
+
+Archiving keeps the database record and audit history, marks the account
+inactive, and revokes access, refresh, and device sessions. The former
+`DELETE /users/:id` route is retained only as a compatibility alias and also
+performs this same non-destructive archive operation.
+
+### 6. Get Repair Personnel
 **GET** `/users/repair-personnel`
 
 **Access:** Private (Officials)

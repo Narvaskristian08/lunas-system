@@ -36,9 +36,15 @@ Read the milestone records before planning later work:
 ### 25% — citizen reporting foundation
 
 - Public registration creates **citizen** accounts only; roles cannot be
-  self-assigned.
+  self-assigned. Email OTP verification is required before activation or
+  session issuance.
 - JWT access tokens, rotating refresh tokens, logout/session invalidation,
   password change, and optional password-reset delivery.
+- Web login uses a backend-verified Cloudflare Turnstile challenge. Account
+  removal is a recoverable, audited archive that revokes existing sessions.
+- Administrators can read the sanitized, server-generated security trail from
+  `GET /audit-logs`. CAPTCHA, MFA, login, and account-archive outcomes are
+  connected to this trail without retaining submitted secrets or OTP values.
 - Category lookup and multipart citizen report submission with one to five
   JPG/PNG evidence files.
 - Server-side image decoding, quality checks, JPEG re-encoding to remove EXIF
@@ -156,6 +162,8 @@ completed `.env` file or expose service-role credentials to web/mobile clients.
 | Database | `MONGODB_URI` | Required for persistent API operation. |
 | Auth | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRE`, `JWT_REFRESH_EXPIRE`, `MAX_REFRESH_TOKENS_PER_USER` | Use distinct, high-entropy production secrets. |
 | Auth protection | `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX_REQUESTS` | Login/registration/reset rate limits. |
+| Web login CAPTCHA | `TURNSTILE_SECRET_KEY`, `TURNSTILE_ALLOWED_HOSTNAMES`, `TURNSTILE_TIMEOUT_MS` | Server-side Turnstile validation. The browser site key is configured in `lunas_web`. |
+| Registration MFA | `REGISTRATION_MFA_SECRET`, `REGISTRATION_MFA_EXPIRE_MINUTES`, `REGISTRATION_MFA_RESEND_SECONDS`, `REGISTRATION_MFA_DELIVERY_URL`, `REGISTRATION_MFA_DELIVERY_TOKEN`, `REGISTRATION_MFA_DELIVERY_TIMEOUT_MS`, `REGISTRATION_MFA_EXPOSE_CODE` | Required email-code verification for public mobile registration. Never expose the code outside isolated local QA. |
 | Password reset (optional) | `PASSWORD_RESET_EXPIRE_MINUTES`, `PASSWORD_RESET_APP_URL`, `PASSWORD_RESET_DELIVERY_URL`, `PASSWORD_RESET_DELIVERY_TIMEOUT_MS` | Reset links are delivered only when both URL settings are configured. |
 | Evidence storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `SUPABASE_STORAGE_PUBLIC`, `EVIDENCE_SIGNED_URL_EXPIRE_SECONDS` | Required for real private evidence upload/read. Keep `SUPABASE_STORAGE_PUBLIC=false` unless a public bucket is intentionally approved. |
 | Evidence limits | `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES`, `ALLOWED_IMAGE_FORMATS`, `MIN_IMAGE_WIDTH`, `MIN_IMAGE_HEIGHT`, `EVIDENCE_MAX_WIDTH`, `EVIDENCE_JPEG_QUALITY` | Upload acceptance and image processing. |
@@ -371,8 +379,13 @@ notification, or cross-account acceptance testing.
 
 ### 25% citizen reporting
 
-- [ ] Register a new account and confirm its returned role is `citizen`, even
-      if a role is included in the request body.
+- [ ] Register a new account, verify that no session is returned before the
+      email code, complete the code challenge, and confirm the resulting role
+      is `citizen`.
+- [ ] Confirm web login rejects a missing, invalid, expired, or reused CAPTCHA
+      token before checking credentials.
+- [ ] Archive a test user and confirm its database record remains while all
+      previous access and refresh tokens are rejected.
 - [ ] Log in, call `GET /auth/me`, refresh the session once, then verify the
       old refresh token cannot be reused.
 - [ ] Log out and confirm previous access/refresh tokens no longer authorize
@@ -456,7 +469,12 @@ notification, or cross-account acceptance testing.
 - Authentication uses short-lived JWT access tokens and rotating hashed refresh
   tokens. Logout/password changes invalidate sessions through token versioning.
 - Public registration cannot create officials, administrators, repair staff, or
-  utility-provider accounts.
+  utility-provider accounts, and it cannot issue a session until the email OTP
+  challenge succeeds.
+- Web CAPTCHA tokens are validated by the backend. Archived users are inactive,
+  hidden from ordinary user lists, and have all sessions revoked.
+- Audit details are recursively sanitized before persistence. Only admins can
+  read audit records; there is no audit-update or audit-delete API.
 - Helmet, CORS allow-listing, API/auth rate limits, request validation, and
   image type/dimension limits are active server protections.
 - Evidence is re-encoded to strip EXIF metadata before storage. Private buckets

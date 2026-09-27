@@ -10,7 +10,14 @@ const auditLogSchema = new mongoose.Schema({
       'auth_token_refreshed',
       'user_created',
       'user_updated',
-      'user_deleted',
+      'user_archived',
+      'registration_mfa_challenged',
+      'registration_mfa_verified',
+      'registration_mfa_failed',
+      'registration_mfa_delivery_failed',
+      'login_captcha_failed',
+      'login_captcha_unavailable',
+      'user_archive_failed',
       'incident_created',
       'incident_updated',
       'incident_validated',
@@ -51,7 +58,18 @@ const auditLogSchema = new mongoose.Schema({
   },
   performedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'User'
+  },
+  actorType: {
+    type: String,
+    enum: ['user', 'anonymous', 'system'],
+    default: 'user',
+    required: true
+  },
+  source: {
+    type: String,
+    enum: ['web', 'mobile', 'api', 'system'],
+    default: 'api',
     required: true
   },
   affectedUser: {
@@ -91,6 +109,7 @@ const auditLogSchema = new mongoose.Schema({
 auditLogSchema.index({ performedBy: 1, timestamp: -1 });
 auditLogSchema.index({ resourceType: 1, resourceId: 1 });
 auditLogSchema.index({ action: 1 });
+auditLogSchema.index({ actorType: 1, action: 1, timestamp: -1 });
 auditLogSchema.index({ timestamp: -1 });
 
 // TTL index - auto-delete logs older than 1 year

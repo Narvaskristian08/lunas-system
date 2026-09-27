@@ -149,6 +149,8 @@ Install or prepare the following before running the app:
 Public registration intentionally creates only citizen accounts. Create or seed
 official accounts through the approved backend/admin process, with correct
 barangay or organization fields, before testing official workflows.
+Citizen registration is completed through the email-code screen; the backend
+does not issue or store a mobile session until that challenge succeeds.
 
 ## Configuration
 
@@ -280,7 +282,9 @@ storage environment before signing off the applicable mobile work.
 
 ### Authentication and session handling
 
-- [ ] Register a new account and verify it is a `citizen`, never an official.
+- [ ] Register a new account, enter its email verification code, and verify it
+      becomes a `citizen`, never an official. Confirm no authenticated session
+      exists before the code succeeds.
 - [ ] Sign in as a citizen and verify the app opens `/citizen`.
 - [ ] Sign in as a barangay official, city engineer, and admin; verify each
   opens `/official` rather than a citizen route.

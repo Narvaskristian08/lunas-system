@@ -7,6 +7,7 @@ import 'package:lunas_mobile/features/auth/presentation/controllers/auth_control
 import 'package:lunas_mobile/features/auth/presentation/screens/app_splash_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_registration_screen.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/password_recovery_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/reset_password_with_token_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/role_unavailable_screen.dart';
@@ -68,6 +69,7 @@ final GoRouter appRouter = GoRouter(
       '/onboarding',
       '/login',
       '/register',
+      '/register/verify',
       '/forgot-password',
       '/reset-password',
     };
@@ -83,6 +85,10 @@ final GoRouter appRouter = GoRouter(
       case AuthStatus.restoreFailed:
         return location == '/splash' || isPublic ? null : '/splash';
       case AuthStatus.unauthenticated:
+        if (location == '/register/verify' &&
+            authController.pendingRegistration == null) {
+          return '/register';
+        }
         return isPublic ? null : '/onboarding';
       case AuthStatus.roleUnavailable:
         return location == '/role-unavailable' ? null : '/role-unavailable';
@@ -122,6 +128,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (_, _) => const CitizenRegistrationScreen(),
+    ),
+    GoRoute(
+      path: '/register/verify',
+      builder: (_, _) => const OtpVerificationScreen(),
     ),
     GoRoute(
       path: '/forgot-password',

@@ -22,7 +22,10 @@ export default async function LoginPage({
       description="Access the authorized web command center for infrastructure monitoring, response coordination, and accountability."
       wide
     >
-      <LoginForm returnTo={safeReturnPath(rawNext)} />
+      <LoginForm
+        returnTo={safeReturnPath(rawNext)}
+        turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+      />
     </AuthShell>
   );
 }

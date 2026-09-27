@@ -42,14 +42,18 @@ class _CitizenRegistrationScreenState extends State<CitizenRegistrationScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = AuthScope.of(context);
-    final success = await auth.register(
+    final challenge = await auth.register(
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _normalizedPhone,
       password: _passwordController.text,
     );
-    if (!success && mounted && auth.message != null) {
+    if (challenge != null && mounted) {
+      context.go('/register/verify');
+      return;
+    }
+    if (mounted && auth.message != null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(auth.message!)));

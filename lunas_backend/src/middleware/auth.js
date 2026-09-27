@@ -42,7 +42,7 @@ exports.protect = async (req, res, next) => {
       }
 
       // Check if user is active
-      if (!req.user.isActive) {
+      if (!req.user.isActive || req.user.isArchived) {
         return res.status(401).json({
           success: false,
           message: 'User account is deactivated'
@@ -122,7 +122,7 @@ exports.optionalAuth = async (req, res, next) => {
           req.user = null;
         } else {
           const user = await User.findById(decoded.id).select('-password +tokenVersion');
-          req.user = user && user.isActive && isCurrentTokenVersion(decoded, user) ? user : null;
+          req.user = user && user.isActive && !user.isArchived && isCurrentTokenVersion(decoded, user) ? user : null;
         }
       } catch (error) {
         // Token invalid, but continue without user

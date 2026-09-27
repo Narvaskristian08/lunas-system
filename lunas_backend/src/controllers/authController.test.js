@@ -13,10 +13,28 @@ jest.mock('../utils/authTokens', () => ({
 jest.mock('../services/passwordResetDeliveryService', () => ({
   deliverPasswordReset: jest.fn()
 }));
+jest.mock('../services/captchaService', () => ({
+  verifyLoginCaptcha: jest.fn()
+}));
+jest.mock('../services/registrationMfaService', () => ({
+  createRegistrationChallenge: jest.fn(),
+  deliverRegistrationCode: jest.fn(),
+  isRegistrationChallengeTokenValid: jest.fn(),
+  registrationChallengeResponse: jest.fn(),
+  verifyRegistrationChallenge: jest.fn()
+}));
 
 const User = require('../models/User');
+const { createAuditLog } = require('../utils/auditLogger');
 const { issueTokenPair } = require('../utils/authTokens');
-const { getMe, login, register } = require('./authController');
+const { verifyLoginCaptcha } = require('../services/captchaService');
+const {
+  createRegistrationChallenge,
+  deliverRegistrationCode,
+  registrationChallengeResponse,
+  verifyRegistrationChallenge
+} = require('../services/registrationMfaService');
+const { getMe, login, register, verifyRegistrationMfa } = require('./authController');
 
 const createResponse = () => {
   const response = {};
@@ -34,16 +52,30 @@ describe('public citizen registration', () => {
       refreshTokenHash: 'refresh-token-hash',
       refreshTokenExpiresAt: new Date('2026-09-10T00:00:00Z')
     });
+    verifyLoginCaptcha.mockResolvedValue({ success: true, unavailable: false });
+    createRegistrationChallenge.mockReturnValue({
+      challengeToken: 'challenge-token',
+      challengeTokenHash: 'challenge-hash',
+      code: '123456',
+      codeHash: 'code-hash',
+      expiresAt: new Date('2026-09-10T00:10:00Z'),
+      expiresInSeconds: 600
+    });
+    deliverRegistrationCode.mockResolvedValue({ configured: true, delivered: true });
+    registrationChallengeResponse.mockReturnValue({
+      challengeToken: 'challenge-token',
+      email: 'juan@example.com',
+      expiresInSeconds: 600,
+      resendAfterSeconds: 60
+    });
   });
 
-  test('forces the citizen role even if the controller receives a privileged role', async () => {
-    User.findOne.mockResolvedValue(null);
+  test('forces the citizen role and requires MFA before issuing a session', async () => {
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(null) });
     const user = {
       _id: '507f191e810c19729de860aa',
       role: 'citizen',
-      refreshTokens: [],
       toPublicJSON: jest.fn(() => ({ id: '507f191e810c19729de860aa', role: 'citizen' })),
-      save: jest.fn().mockResolvedValue()
     };
     User.create.mockResolvedValue(user);
     const req = {
@@ -64,19 +96,27 @@ describe('public citizen registration', () => {
 
     expect(User.create).toHaveBeenCalledWith(expect.objectContaining({
       email: 'juan@example.com',
-      role: 'citizen'
+      role: 'citizen',
+      isActive: false,
+      isVerified: false,
+      registrationChallengeHash: 'challenge-hash',
+      registrationMfaCodeHash: 'code-hash'
     }));
-    expect(user.refreshTokens).toEqual(expect.arrayContaining([
-      expect.objectContaining({ tokenHash: 'refresh-token-hash' })
-    ]));
+    expect(issueTokenPair).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ accessToken: 'access-token', refreshToken: 'refresh-token' })
+      data: expect.objectContaining({ challengeToken: 'challenge-token', email: 'juan@example.com' })
     }));
   });
 
   test('returns a conflict when an email is already registered', async () => {
-    User.findOne.mockResolvedValue({ _id: '507f191e810c19729de860aa' });
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: '507f191e810c19729de860aa',
+        isActive: true,
+        isVerified: true
+      })
+    });
     const res = createResponse();
 
     await register({
@@ -107,16 +147,118 @@ describe('public citizen registration', () => {
     const res = createResponse();
 
     await login({
-      body: { email: 'juan@example.com', password: 'SecurePass123' },
+      body: {
+        email: 'juan@example.com',
+        password: 'SecurePass123',
+        platform: 'web',
+        captchaToken: 'turnstile-token'
+      },
       ip: '127.0.0.1',
       headers: {}
     }, res, jest.fn());
 
     expect(user.comparePassword).toHaveBeenCalledWith('SecurePass123');
+    expect(verifyLoginCaptcha).toHaveBeenCalledWith({
+      token: 'turnstile-token',
+      remoteIp: '127.0.0.1'
+    });
     expect(user.save).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ accessToken: 'access-token', refreshToken: 'refresh-token' })
+    }));
+  });
+
+  test('rejects a web login before checking credentials when CAPTCHA fails', async () => {
+    verifyLoginCaptcha.mockResolvedValue({ success: false, unavailable: false });
+    const res = createResponse();
+
+    await login({
+      body: {
+        email: 'juan@example.com',
+        password: 'SecurePass123',
+        platform: 'web',
+        captchaToken: 'invalid-token'
+      },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(User.findOne).not.toHaveBeenCalled();
+    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'login_captcha_failed',
+      actorType: 'anonymous',
+      source: 'web',
+      status: 'failure',
+      details: { reason: 'challenge_rejected' }
+    }));
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test('audits registration MFA delivery failures without creating an account', async () => {
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(null) });
+    deliverRegistrationCode.mockResolvedValue({ configured: true, delivered: false });
+    const res = createResponse();
+
+    await register({
+      body: {
+        firstName: 'Juan', lastName: 'Dela Cruz', email: 'juan@example.com',
+        phone: '09123456789', password: 'SecurePass123'
+      },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(User.create).not.toHaveBeenCalled();
+    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'registration_mfa_delivery_failed',
+      actorType: 'anonymous',
+      source: 'mobile',
+      status: 'failure'
+    }));
+    expect(res.status).toHaveBeenCalledWith(503);
+  });
+
+  test('issues a session only after a valid registration OTP', async () => {
+    const user = {
+      _id: '507f191e810c19729de860aa',
+      email: 'juan@example.com',
+      role: 'citizen',
+      isActive: false,
+      isVerified: false,
+      isArchived: false,
+      tokenVersion: 0,
+      registrationMfaAttempts: 0,
+      refreshTokens: [],
+      toPublicJSON: jest.fn(() => ({
+        id: '507f191e810c19729de860aa',
+        role: 'citizen',
+        isVerified: true
+      })),
+      save: jest.fn().mockResolvedValue()
+    };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    verifyRegistrationChallenge.mockReturnValue({ valid: true });
+    const res = createResponse();
+
+    await verifyRegistrationMfa({
+      body: {
+        email: 'juan@example.com',
+        challengeToken: 'challenge-token',
+        code: '123456'
+      },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(user.isVerified).toBe(true);
+    expect(user.isActive).toBe(true);
+    expect(user.refreshTokens).toEqual(expect.arrayContaining([
+      expect.objectContaining({ tokenHash: 'refresh-token-hash' })
+    ]));
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ accessToken: 'access-token' })
     }));
   });
 

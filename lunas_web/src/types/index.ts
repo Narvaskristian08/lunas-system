@@ -30,6 +30,7 @@ export type Permission =
   | "analytics.view"
   | "users.manage"
   | "settings.manage"
+  | "audit.view"
   | "notifications.view"
   | "profile.manage"
   | "support.create";
@@ -153,7 +154,8 @@ export type AuthFailureCode =
   | "RATE_LIMITED"
   | "OFFLINE"
   | "SERVER_UNAVAILABLE"
-  | "MAINTENANCE";
+  | "MAINTENANCE"
+  | "CAPTCHA_REQUIRED";
 
 export type AuthResult =
   | { ok: true; user: UserProfile }

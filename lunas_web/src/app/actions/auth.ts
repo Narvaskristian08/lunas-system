@@ -9,10 +9,11 @@ import type { AuthFailureCode } from "@/types";
 
 export interface LoginActionState {
   status: "idle" | "error";
+  attempt?: number;
   message?: string;
   code?: AuthFailureCode;
   email?: string;
-  fieldErrors?: { email?: string; password?: string };
+  fieldErrors?: { email?: string; password?: string; captcha?: string };
 }
 
 export interface ActionResult {
@@ -45,6 +46,7 @@ const safeFailures: Record<AuthFailureCode, string> = {
   OFFLINE: "You appear to be offline. Reconnect and try again.",
   SERVER_UNAVAILABLE: "LUNAS is temporarily unavailable. Please try again shortly.",
   MAINTENANCE: "Sign-in is unavailable during scheduled maintenance.",
+  CAPTCHA_REQUIRED: "Complete the security check before signing in.",
 };
 
 function authenticationFailure(error: unknown): Pick<LoginActionState, "code" | "message"> {
@@ -64,35 +66,42 @@ function authenticationFailure(error: unknown): Pick<LoginActionState, "code" | 
   if (serverMessage.includes("verif")) {
     return { code: "UNVERIFIED", message: safeFailures.UNVERIFIED };
   }
+  if (serverMessage.includes("captcha")) {
+    return { code: "CAPTCHA_REQUIRED", message: safeFailures.CAPTCHA_REQUIRED };
+  }
   return { code: "INVALID_CREDENTIALS", message: safeFailures.INVALID_CREDENTIALS };
 }
 
 export async function loginAction(
-  _previousState: LoginActionState,
+  previousState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> {
+  const attempt = (previousState.attempt ?? 0) + 1;
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const captchaToken = String(formData.get("captchaToken") ?? "");
   const next = safeReturnPath(String(formData.get("next") ?? "/dashboard"));
   const fieldErrors: LoginActionState["fieldErrors"] = {};
   if (!email) fieldErrors.email = "Enter your authorized email address.";
   else if (!isValidEmail(email)) fieldErrors.email = "Enter a valid email address.";
   if (!password) fieldErrors.password = "Enter your password.";
+  if (!captchaToken) fieldErrors.captcha = "Complete the CAPTCHA challenge.";
   if (Object.keys(fieldErrors).length) {
-    return { status: "error", message: "Review the highlighted fields.", email, fieldErrors };
+    return { status: "error", attempt, message: "Review the highlighted fields.", email, fieldErrors };
   }
 
   try {
     const payload = responseData(
       await backendRequest<LoginPayload>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password, platform: "web" }),
+        body: JSON.stringify({ email, password, platform: "web", captchaToken }),
       }),
     );
     const accessToken = payload.accessToken ?? payload.token;
     if (!accessToken) {
       return {
         status: "error",
+        attempt,
         code: "SERVER_UNAVAILABLE",
         message: safeFailures.SERVER_UNAVAILABLE,
         email,
@@ -101,7 +110,7 @@ export async function loginAction(
 
     await createSession({ accessToken, refreshToken: payload.refreshToken });
   } catch (error) {
-    return { status: "error", email, ...authenticationFailure(error) };
+    return { status: "error", attempt, email, ...authenticationFailure(error) };
   }
 
   redirect(next);

@@ -8,7 +8,10 @@ const asyncHandler = require('../middleware/asyncHandler');
 exports.getUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, role, barangay, search, sortBy = 'createdAt' } = req.query;
 
-  const filter = {};
+  const canViewArchived = req.user.role === 'admin' && req.query.includeArchived === 'true';
+  const filter = canViewArchived
+    ? {}
+    : { isArchived: { $ne: true } };
   
   if (role) filter.role = role;
   if (barangay) filter.barangay = barangay;
@@ -91,6 +94,13 @@ exports.updateUser = asyncHandler(async (req, res) => {
     });
   }
 
+  if (user.isArchived && isActive === true) {
+    return res.status(400).json({
+      success: false,
+      message: 'Archived accounts must be restored through an audited restore workflow'
+    });
+  }
+
   const normalizedUtilityCompany = typeof utilityCompany === 'string'
     ? utilityCompany.trim()
     : utilityCompany;
@@ -154,36 +164,115 @@ exports.updateUser = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Delete user
-// @route   DELETE /api/v1/users/:id
+// @desc    Archive user and revoke all active sessions
+// @route   PATCH /api/v1/users/:id/archive (DELETE /:id is a compatibility alias)
 // @access  Private (Admin only)
-exports.deleteUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+exports.archiveUser = asyncHandler(async (req, res) => {
+  if (req.params.id === req.user._id.toString()) {
+    await createAuditLog({
+      action: 'user_archive_failed',
+      performedBy: req.user._id,
+      affectedUser: req.user._id,
+      resourceType: 'User',
+      resourceId: req.user._id,
+      status: 'failure',
+      details: { reason: 'self_archive_blocked' },
+      source: 'web',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'Administrators cannot archive their own active account'
+    });
+  }
+
+  const user = await User.findById(req.params.id).select('+refreshTokens +tokenVersion');
 
   if (!user) {
+    await createAuditLog({
+      action: 'user_archive_failed',
+      performedBy: req.user._id,
+      resourceType: 'User',
+      resourceId: req.params.id,
+      status: 'failure',
+      details: { reason: 'target_not_found' },
+      source: 'web',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     return res.status(404).json({
       success: false,
       message: 'User not found'
     });
   }
 
-  await user.deleteOne();
+  if (user.isArchived) {
+    await createAuditLog({
+      action: 'user_archived',
+      performedBy: req.user._id,
+      affectedUser: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'warning',
+      details: { reason: 'already_archived', noChange: true },
+      source: 'web',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+    return res.status(200).json({
+      success: true,
+      message: 'User account is already archived',
+      data: user.toPublicJSON()
+    });
+  }
+
+  const archiveBefore = {
+    isActive: user.isActive,
+    isArchived: user.isArchived,
+    tokenVersion: Number(user.tokenVersion || 0)
+  };
+  user.isArchived = true;
+  user.isActive = false;
+  user.archivedAt = new Date();
+  user.archivedBy = req.user._id;
+  user.archiveReason = req.body.reason.trim();
+  user.refreshTokens = [];
+  user.deviceTokens = [];
+  user.tokenVersion = Number(user.tokenVersion || 0) + 1;
+  await user.save({ validateBeforeSave: false });
 
   await createAuditLog({
-    action: 'user_deleted',
+    action: 'user_archived',
     performedBy: req.user._id,
     affectedUser: req.params.id,
     resourceType: 'User',
     resourceId: req.params.id,
+    details: { reason: user.archiveReason },
+    changes: {
+      before: archiveBefore,
+      after: {
+        isActive: false,
+        isArchived: true,
+        tokenVersion: user.tokenVersion,
+        sessionsRevoked: true
+      }
+    },
+    source: 'web',
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });
 
   res.status(200).json({
     success: true,
-    message: 'User deleted successfully'
+    message: 'User account archived successfully',
+    data: user.toPublicJSON()
   });
 });
+
+// Compatibility export for callers that still import the old controller
+// symbol. The DELETE route is now a recoverable archive operation.
+exports.deleteUser = exports.archiveUser;
 
 // @desc    Get repair personnel by barangay/expertise
 // @route   GET /api/v1/users/repair-personnel
@@ -193,7 +282,8 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
 
   const filter = {
     role: 'repair_personnel',
-    isActive: true
+    isActive: true,
+    isArchived: { $ne: true }
   };
 
   if (barangay) filter.barangay = barangay;

@@ -31,6 +31,7 @@ const permissionLabels: Record<Permission, string> = {
   "analytics.view": "View analytics",
   "users.manage": "Manage users",
   "settings.manage": "Manage settings",
+  "audit.view": "View security audit trail",
   "notifications.view": "View notifications",
   "profile.manage": "Manage own profile",
   "support.create": "Contact support",

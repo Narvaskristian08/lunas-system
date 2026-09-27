@@ -4,6 +4,7 @@ import {
   ClipboardList,
   ClipboardCheck,
   HelpCircle,
+  ScrollText,
   Timer,
   UserRound,
 } from "lucide-react";
@@ -32,6 +33,10 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
       { label: "Work orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view" },
       { label: "SLA monitor", href: "/sla", icon: Timer, permission: "sla.view" },
     ],
+  },
+  {
+    label: "Administration",
+    items: [{ label: "Audit trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
   },
   {
     label: "Account",

@@ -1,6 +1,43 @@
 const AuditLog = require('../models/AuditLog');
 const logger = require('./logger');
 
+const REDACTED = '[REDACTED]';
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'currentpassword',
+  'newpassword',
+  'token',
+  'accesstoken',
+  'refreshtoken',
+  'captchatoken',
+  'challengetoken',
+  'verificationtoken',
+  'secret',
+  'apikey',
+  'authorization',
+  'code',
+  'otp'
+]);
+
+const normalizeKey = (key) => String(key).replace(/[^a-z0-9]/gi, '').toLowerCase();
+
+const sanitizeAuditValue = (value, depth = 0) => {
+  if (depth > 8) return '[TRUNCATED]';
+  if (Array.isArray(value)) return value.map((item) => sanitizeAuditValue(item, depth + 1));
+  if (!value || typeof value !== 'object' || value instanceof Date) return value;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return value;
+
+  return Object.fromEntries(Object.entries(value).map(([key, nestedValue]) => [
+    key,
+    SENSITIVE_KEYS.has(normalizeKey(key))
+      ? REDACTED
+      : sanitizeAuditValue(nestedValue, depth + 1)
+  ]));
+};
+
+exports.sanitizeAuditValue = sanitizeAuditValue;
+
 /**
  * Create an audit log entry
  * @param {Object} logData - Audit log data
@@ -8,7 +45,12 @@ const logger = require('./logger');
  */
 exports.createAuditLog = async (logData) => {
   try {
-    const auditLog = await AuditLog.create(logData);
+    const auditLog = await AuditLog.create({
+      ...logData,
+      actorType: logData.actorType || (logData.performedBy ? 'user' : 'system'),
+      details: sanitizeAuditValue(logData.details || {}),
+      changes: sanitizeAuditValue(logData.changes)
+    });
     return auditLog;
   } catch (error) {
     logger.error('Failed to create audit log:', error);
@@ -34,12 +76,12 @@ exports.auditMiddleware = (action, resourceType = null) => {
           performedBy: req.user._id,
           resourceType,
           resourceId: req.params.id || data.data?._id,
-          details: {
+          details: sanitizeAuditValue({
             method: req.method,
             path: req.path,
             query: req.query,
-            body: sanitizeBody(req.body)
-          },
+            body: req.body
+          }),
           ipAddress: req.ip,
           userAgent: req.headers['user-agent'],
           status: 'success'
@@ -58,21 +100,3 @@ exports.auditMiddleware = (action, resourceType = null) => {
     next();
   };
 };
-
-/**
- * Sanitize request body to remove sensitive data
- */
-function sanitizeBody(body) {
-  if (!body) return {};
-  
-  const sanitized = { ...body };
-  const sensitiveFields = ['password', 'token', 'secret', 'apiKey'];
-  
-  sensitiveFields.forEach(field => {
-    if (sanitized[field]) {
-      sanitized[field] = '[REDACTED]';
-    }
-  });
-  
-  return sanitized;
-}

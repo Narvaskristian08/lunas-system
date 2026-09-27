@@ -2,6 +2,7 @@ import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/core/storage/secure_session_store.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_session.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_user.dart';
+import 'package:lunas_mobile/features/auth/data/models/registration_mfa_challenge.dart';
 
 class AuthService {
   const AuthService({
@@ -25,7 +26,7 @@ class AuthService {
     return AuthSession.fromResponse(payload);
   }
 
-  Future<AuthSession> register({
+  Future<RegistrationMfaChallenge> register({
     required String firstName,
     required String lastName,
     required String email,
@@ -45,7 +46,37 @@ class AuthService {
         'role': 'citizen',
       },
     );
+    return RegistrationMfaChallenge.fromResponse(payload);
+  }
+
+  Future<AuthSession> verifyRegistrationMfa({
+    required RegistrationMfaChallenge challenge,
+    required String code,
+  }) async {
+    final payload = await _apiClient.post(
+      '/auth/register/verify',
+      authenticated: false,
+      body: {
+        'email': challenge.email,
+        'challengeToken': challenge.challengeToken,
+        'code': code,
+      },
+    );
     return AuthSession.fromResponse(payload);
+  }
+
+  Future<RegistrationMfaChallenge> resendRegistrationMfa(
+    RegistrationMfaChallenge challenge,
+  ) async {
+    final payload = await _apiClient.post(
+      '/auth/register/resend',
+      authenticated: false,
+      body: {
+        'email': challenge.email,
+        'challengeToken': challenge.challengeToken,
+      },
+    );
+    return RegistrationMfaChallenge.fromResponse(payload);
   }
 
   Future<AuthUser> getCurrentUser() async {

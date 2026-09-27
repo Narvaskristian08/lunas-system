@@ -3,6 +3,8 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const {
   register,
+  verifyRegistrationMfa,
+  resendRegistrationMfa,
   login,
   refresh,
   forgotPassword,
@@ -17,6 +19,8 @@ const {
   changePasswordValidation,
   forgotPasswordValidation,
   loginValidation,
+  registrationMfaResendValidation,
+  registrationMfaValidation,
   refreshValidation,
   registerValidation,
   resetPasswordValidation,
@@ -36,6 +40,8 @@ const authLimiter = rateLimit({
 });
 
 router.post('/register', authLimiter, registerValidation, validate, register);
+router.post('/register/verify', authLimiter, registrationMfaValidation, validate, verifyRegistrationMfa);
+router.post('/register/resend', authLimiter, registrationMfaResendValidation, validate, resendRegistrationMfa);
 router.post('/login', authLimiter, loginValidation, validate, login);
 router.post('/refresh', authLimiter, refreshValidation, validate, refresh);
 router.post('/forgot-password', authLimiter, forgotPasswordValidation, validate, forgotPassword);
