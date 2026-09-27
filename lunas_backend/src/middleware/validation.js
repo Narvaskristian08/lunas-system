@@ -62,6 +62,22 @@ exports.registrationMfaResendValidation = [
     .withMessage('A valid registration challenge is required')
 ];
 
+exports.privilegedLoginMfaValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('challengeToken').isString().isLength({ min: 64, max: 128 })
+    .withMessage('A valid security verification challenge is required'),
+  body('code').trim().matches(/^\d{6}$/).withMessage('Enter the 6-digit verification code'),
+  body('deviceToken').optional().trim().isLength({ max: 512 }),
+  body('platform').optional().isIn(['android', 'ios', 'web']).withMessage('Invalid device platform')
+];
+
+exports.privilegedLoginMfaResendValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('challengeToken').isString().isLength({ min: 64, max: 128 })
+    .withMessage('A valid security verification challenge is required'),
+  body('platform').optional().isIn(['android', 'ios', 'web']).withMessage('Invalid device platform')
+];
+
 exports.archiveUserValidation = [
   body('reason').trim().isLength({ min: 3, max: 500 })
     .withMessage('An archive reason between 3 and 500 characters is required')

@@ -1,10 +1,12 @@
 jest.mock('../models/User', () => ({
   findOne: jest.fn(),
   findById: jest.fn(),
+  findOneAndUpdate: jest.fn(),
   create: jest.fn()
 }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
 jest.mock('../utils/authTokens', () => ({
+  hasPrivilegedMfaProof: jest.fn(),
   hashToken: jest.fn(),
   isCurrentTokenVersion: jest.fn(),
   issueTokenPair: jest.fn(),
@@ -23,6 +25,15 @@ jest.mock('../services/registrationMfaService', () => ({
   registrationChallengeResponse: jest.fn(),
   verifyRegistrationChallenge: jest.fn()
 }));
+jest.mock('../services/privilegedMfaService', () => ({
+  createPrivilegedMfaChallenge: jest.fn(),
+  deliverPrivilegedMfaCode: jest.fn(),
+  isPrivilegedMfaChallengeTokenValid: jest.fn(),
+  privilegedMfaChallengeResponse: jest.fn(),
+  requiresPrivilegedMfa: jest.fn(),
+  resendAfterSeconds: jest.fn(),
+  verifyPrivilegedMfaChallenge: jest.fn()
+}));
 
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
@@ -34,7 +45,22 @@ const {
   registrationChallengeResponse,
   verifyRegistrationChallenge
 } = require('../services/registrationMfaService');
-const { getMe, login, register, verifyRegistrationMfa } = require('./authController');
+const {
+  createPrivilegedMfaChallenge,
+  deliverPrivilegedMfaCode,
+  isPrivilegedMfaChallengeTokenValid,
+  privilegedMfaChallengeResponse,
+  requiresPrivilegedMfa,
+  verifyPrivilegedMfaChallenge
+} = require('../services/privilegedMfaService');
+const {
+  getMe,
+  login,
+  register,
+  resetPassword,
+  verifyPrivilegedLoginMfa,
+  verifyRegistrationMfa
+} = require('./authController');
 
 const createResponse = () => {
   const response = {};
@@ -65,6 +91,26 @@ describe('public citizen registration', () => {
     registrationChallengeResponse.mockReturnValue({
       challengeToken: 'challenge-token',
       email: 'juan@example.com',
+      expiresInSeconds: 600,
+      resendAfterSeconds: 60
+    });
+    requiresPrivilegedMfa.mockImplementation((role) => [
+      'barangay_official', 'city_engineer', 'utility_provider', 'admin'
+    ].includes(role));
+    createPrivilegedMfaChallenge.mockReturnValue({
+      challengeToken: 'p'.repeat(64),
+      challengeTokenHash: 'privileged-challenge-hash',
+      code: '654321',
+      codeHash: 'privileged-code-hash',
+      expiresAt: new Date('2026-09-10T00:10:00Z'),
+      expiresInSeconds: 600
+    });
+    deliverPrivilegedMfaCode.mockResolvedValue({ configured: true, delivered: true });
+    isPrivilegedMfaChallengeTokenValid.mockReturnValue(true);
+    privilegedMfaChallengeResponse.mockReturnValue({
+      mfaRequired: true,
+      challengeToken: 'p'.repeat(64),
+      email: 'official@example.com',
       expiresInSeconds: 600,
       resendAfterSeconds: 60
     });
@@ -192,6 +238,151 @@ describe('public citizen registration', () => {
       status: 'failure',
       details: { reason: 'challenge_rejected' }
     }));
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test.each(['barangay_official', 'city_engineer', 'utility_provider', 'admin'])(
+    'requires OTP before issuing a session for %s',
+    async (role) => {
+      const user = {
+        _id: '507f191e810c19729de860ac',
+        firstName: 'Officer',
+        email: 'official@example.com',
+        role,
+        isVerified: true,
+        isActive: true,
+        isArchived: false,
+        deviceTokens: [],
+        refreshTokens: [],
+        comparePassword: jest.fn().mockResolvedValue(true),
+        save: jest.fn().mockResolvedValue()
+      };
+      User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+      const res = createResponse();
+
+      await login({
+        body: { email: 'official@example.com', password: 'SecurePass123', platform: 'android' },
+        ip: '127.0.0.1',
+        headers: {}
+      }, res, jest.fn());
+
+      expect(user.privilegedMfaChallengeHash).toBe('privileged-challenge-hash');
+      expect(issueTokenPair).not.toHaveBeenCalled();
+      expect(user.lastLogin).toBeUndefined();
+      expect(res.status).toHaveBeenCalledWith(202);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ mfaRequired: true })
+      }));
+    }
+  );
+
+  test('issues a privileged session only after a valid OTP', async () => {
+    const user = {
+      _id: '507f191e810c19729de860ac',
+      email: 'official@example.com',
+      role: 'admin',
+      isActive: true,
+      isArchived: false,
+      privilegedMfaAttempts: 0,
+      deviceTokens: [],
+      refreshTokens: [],
+      toPublicJSON: jest.fn(() => ({ id: '507f191e810c19729de860ac', role: 'admin' })),
+      save: jest.fn().mockResolvedValue()
+    };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    User.findOneAndUpdate.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    verifyPrivilegedMfaChallenge.mockReturnValue({ valid: true });
+    const res = createResponse();
+
+    await verifyPrivilegedLoginMfa({
+      body: {
+        email: 'official@example.com',
+        challengeToken: 'p'.repeat(64),
+        code: '654321',
+        platform: 'web'
+      },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(issueTokenPair).toHaveBeenCalledWith(user, { mfaVerified: true });
+    expect(User.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: user._id }),
+      expect.objectContaining({
+        $unset: expect.objectContaining({ privilegedMfaCodeHash: '' }),
+        $set: expect.objectContaining({ lastLogin: expect.any(Date) })
+      }),
+      { new: true }
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('rejects email password reset for privileged accounts', async () => {
+    const user = {
+      _id: '507f191e810c19729de860ac',
+      role: 'admin',
+      tokenVersion: 2,
+      refreshTokens: [{ tokenHash: 'existing-session' }],
+      save: jest.fn().mockResolvedValue()
+    };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    const res = createResponse();
+
+    await resetPassword({
+      body: { token: 'reset-token', password: 'NewSecurePass123' },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(issueTokenPair).not.toHaveBeenCalled();
+    expect(user.tokenVersion).toBe(2);
+    expect(user.refreshTokens).toHaveLength(1);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('administrator assistance')
+    }));
+  });
+
+  test('reserves a wrong-code attempt atomically for the matching challenge', async () => {
+    const user = {
+      _id: '507f191e810c19729de860ac',
+      email: 'official@example.com',
+      role: 'admin',
+      isActive: true,
+      isArchived: false,
+      privilegedMfaAttempts: 0,
+      privilegedMfaChallengeHash: 'challenge-hash',
+      privilegedMfaCodeHash: 'code-hash',
+      privilegedMfaExpires: new Date(Date.now() + 60000)
+    };
+    const attemptedUser = { ...user, privilegedMfaAttempts: 1 };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    User.findOneAndUpdate.mockReturnValue({
+      select: jest.fn().mockResolvedValue(attemptedUser)
+    });
+    verifyPrivilegedMfaChallenge.mockReturnValue({ valid: false, reason: 'invalid' });
+    const res = createResponse();
+
+    await verifyPrivilegedLoginMfa({
+      body: {
+        email: 'official@example.com',
+        challengeToken: 'p'.repeat(64),
+        code: '000000',
+        platform: 'web'
+      },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(User.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: user._id,
+        privilegedMfaAttempts: { $lt: 5 }
+      }),
+      { $inc: { privilegedMfaAttempts: 1 } },
+      { new: true }
+    );
+    expect(issueTokenPair).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
   });
 

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
+const { requiresPrivilegedMfa } = require('../services/privilegedMfaService');
 
 // @desc    Get all users
 // @route   GET /api/v1/users
@@ -85,7 +86,7 @@ exports.updateUser = asyncHandler(async (req, res) => {
     availability
   } = req.body;
 
-  let user = await User.findById(req.params.id);
+  let user = await User.findById(req.params.id).select('+refreshTokens +tokenVersion');
 
   if (!user) {
     return res.status(404).json({
@@ -141,6 +142,14 @@ exports.updateUser = asyncHandler(async (req, res) => {
     updates.availability = availability;
   }
 
+  const enteringPrivilegedRole = role
+    && requiresPrivilegedMfa(role)
+    && !requiresPrivilegedMfa(user.role);
+  if (enteringPrivilegedRole) {
+    updates.tokenVersion = Number(user.tokenVersion || 0) + 1;
+    updates.refreshTokens = [];
+  }
+
   user = await User.findByIdAndUpdate(req.params.id, updates, {
     new: true,
     runValidators: true
@@ -152,7 +161,10 @@ exports.updateUser = asyncHandler(async (req, res) => {
     affectedUser: user._id,
     resourceType: 'User',
     resourceId: user._id,
-    details: updates,
+    details: {
+      ...updates,
+      ...(enteringPrivilegedRole ? { sessionsRevokedForPrivilegedMfa: true } : {})
+    },
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });

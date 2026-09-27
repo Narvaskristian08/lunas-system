@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/core/storage/secure_session_store.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_session.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_user.dart';
+import 'package:lunas_mobile/features/auth/data/models/login_result.dart';
+import 'package:lunas_mobile/features/auth/data/models/privileged_login_mfa_challenge.dart';
 import 'package:lunas_mobile/features/auth/data/models/registration_mfa_challenge.dart';
 
 class AuthService {
@@ -14,16 +17,53 @@ class AuthService {
   final ApiClient _apiClient;
   final SecureSessionStore _sessionStore;
 
-  Future<AuthSession> login({
+  String get _platform => switch (defaultTargetPlatform) {
+    TargetPlatform.iOS => 'ios',
+    _ => 'android',
+  };
+
+  Future<LoginResult> login({
     required String email,
     required String password,
   }) async {
     final payload = await _apiClient.post(
       '/auth/login',
       authenticated: false,
-      body: {'email': email, 'password': password},
+      body: {'email': email, 'password': password, 'platform': _platform},
+    );
+    return LoginResult.fromResponse(payload);
+  }
+
+  Future<AuthSession> verifyPrivilegedLoginMfa({
+    required PrivilegedLoginMfaChallenge challenge,
+    required String code,
+  }) async {
+    final payload = await _apiClient.post(
+      '/auth/login/verify',
+      authenticated: false,
+      body: {
+        'email': challenge.email,
+        'challengeToken': challenge.challengeToken,
+        'code': code,
+        'platform': _platform,
+      },
     );
     return AuthSession.fromResponse(payload);
+  }
+
+  Future<PrivilegedLoginMfaChallenge> resendPrivilegedLoginMfa(
+    PrivilegedLoginMfaChallenge challenge,
+  ) async {
+    final payload = await _apiClient.post(
+      '/auth/login/resend',
+      authenticated: false,
+      body: {
+        'email': challenge.email,
+        'challengeToken': challenge.challengeToken,
+        'platform': _platform,
+      },
+    );
+    return PrivilegedLoginMfaChallenge.fromResponse(payload);
   }
 
   Future<RegistrationMfaChallenge> register({
@@ -110,16 +150,15 @@ class AuthService {
     );
   }
 
-  Future<AuthSession> resetPassword({
+  Future<void> resetPassword({
     required String token,
     required String password,
   }) async {
-    final payload = await _apiClient.post(
+    await _apiClient.post(
       '/auth/reset-password',
       authenticated: false,
       body: {'token': token, 'password': password},
     );
-    return AuthSession.fromResponse(payload);
   }
 
   Future<void> persist(AuthSession session) {

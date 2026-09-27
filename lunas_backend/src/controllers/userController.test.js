@@ -1,5 +1,6 @@
 jest.mock('../models/User', () => ({
   findById: jest.fn(),
+  findByIdAndUpdate: jest.fn(),
   find: jest.fn(),
   countDocuments: jest.fn()
 }));
@@ -9,7 +10,7 @@ jest.mock('../utils/auditLogger', () => ({
 
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
-const { archiveUser, getUsers } = require('./userController');
+const { archiveUser, getUsers, updateUser } = require('./userController');
 
 const createResponse = () => {
   const response = {};
@@ -116,5 +117,45 @@ describe('archived user visibility', () => {
       user: { role: 'admin' }
     }, adminResponse, jest.fn());
     expect(User.find).toHaveBeenLastCalledWith({});
+  });
+});
+
+describe('privileged role promotion', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test('revokes existing sessions when a citizen becomes an official', async () => {
+    const existingUser = {
+      _id: '507f191e810c19729de860bb',
+      role: 'citizen',
+      tokenVersion: 3,
+      refreshTokens: [{ tokenHash: 'citizen-session' }]
+    };
+    const updatedUser = {
+      _id: existingUser._id,
+      role: 'city_engineer'
+    };
+    User.findById.mockReturnValue({ select: jest.fn().mockResolvedValue(existingUser) });
+    User.findByIdAndUpdate.mockReturnValue({ select: jest.fn().mockResolvedValue(updatedUser) });
+    const res = createResponse();
+
+    await updateUser({
+      params: { id: existingUser._id },
+      body: { role: 'city_engineer' },
+      user: { _id: 'admin-1' },
+      headers: {}
+    }, res, jest.fn());
+
+    expect(User.findByIdAndUpdate).toHaveBeenCalledWith(
+      existingUser._id,
+      expect.objectContaining({
+        role: 'city_engineer',
+        tokenVersion: 4,
+        refreshTokens: []
+      }),
+      expect.objectContaining({ new: true, runValidators: true })
+    );
+    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({ sessionsRevokedForPrivilegedMfa: true })
+    }));
   });
 });

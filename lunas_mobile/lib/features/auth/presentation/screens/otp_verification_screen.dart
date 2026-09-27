@@ -27,8 +27,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_timer == null) {
-      final challenge = AuthScope.of(context).pendingRegistration;
-      _startTimer(challenge?.resendAfterSeconds ?? 60);
+      final auth = AuthScope.of(context);
+      final seconds =
+          auth.pendingPrivilegedLogin?.resendAfterSeconds ??
+          auth.pendingRegistration?.resendAfterSeconds ??
+          60;
+      _startTimer(seconds);
     }
   }
 
@@ -56,7 +60,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Future<void> _verify() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = AuthScope.of(context);
-    final success = await auth.verifyRegistrationMfa(_codeController.text);
+    final isPrivilegedLogin = auth.pendingPrivilegedLogin != null;
+    final success = isPrivilegedLogin
+        ? await auth.verifyPrivilegedLoginMfa(_codeController.text)
+        : await auth.verifyRegistrationMfa(_codeController.text);
     if (success && mounted) {
       context.go(auth.workspaceHomePath ?? '/citizen');
     }
@@ -64,10 +71,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   Future<void> _resend() async {
     final auth = AuthScope.of(context);
-    final sent = await auth.resendRegistrationMfa();
+    final isPrivilegedLogin = auth.pendingPrivilegedLogin != null;
+    final sent = isPrivilegedLogin
+        ? await auth.resendPrivilegedLoginMfa()
+        : await auth.resendRegistrationMfa();
     if (!mounted || !sent) return;
     _codeController.clear();
-    _startTimer(auth.pendingRegistration?.resendAfterSeconds ?? 60);
+    _startTimer(
+      auth.pendingPrivilegedLogin?.resendAfterSeconds ??
+          auth.pendingRegistration?.resendAfterSeconds ??
+          60,
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('A new verification code was sent.')),
     );
@@ -76,8 +90,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = AuthScope.of(context);
-    final challenge = auth.pendingRegistration;
-    final email = challenge?.email ?? widget.email ?? 'your email';
+    final loginChallenge = auth.pendingPrivilegedLogin;
+    final registrationChallenge = auth.pendingRegistration;
+    final isPrivilegedLogin = loginChallenge != null;
+    final hasChallenge =
+        loginChallenge != null || registrationChallenge != null;
+    final email =
+        loginChallenge?.email ??
+        registrationChallenge?.email ??
+        widget.email ??
+        'your email';
+    final developmentCode =
+        loginChallenge?.developmentCode ??
+        registrationChallenge?.developmentCode;
     return AuthLayout(
       showBrand: false,
       showBackButton: true,
@@ -91,11 +116,16 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthHeading(
-                    eyebrow: 'Registration security',
-                    title: 'Verify your email',
-                    description:
-                        'Enter the one-time code before your citizen account is activated.',
+                  AuthHeading(
+                    eyebrow: isPrivilegedLogin
+                        ? 'Privileged account security'
+                        : 'Registration security',
+                    title: isPrivilegedLogin
+                        ? 'Complete security verification'
+                        : 'Verify your email',
+                    description: isPrivilegedLogin
+                        ? 'Enter the one-time code before LUNAS opens your official workspace.'
+                        : 'Enter the one-time code before your citizen account is activated.',
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
@@ -125,10 +155,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       if (!auth.isSubmitting) _verify();
                     },
                   ),
-                  if (challenge?.developmentCode != null) ...[
+                  if (developmentCode != null) ...[
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Local QA code: ${challenge!.developmentCode}',
+                      'Local QA code: $developmentCode',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -138,17 +168,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ],
                   const SizedBox(height: AppSpacing.xl),
                   LunasButton(
-                    label: 'Verify and create account',
+                    label: isPrivilegedLogin
+                        ? 'Verify and sign in'
+                        : 'Verify and create account',
                     icon: Icons.verified_user_outlined,
                     isLoading: auth.isSubmitting,
-                    onPressed: challenge == null || auth.isSubmitting
+                    onPressed: !hasChallenge || auth.isSubmitting
                         ? null
                         : _verify,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   TextButton(
                     onPressed:
-                        challenge != null &&
+                        hasChallenge &&
                             _secondsRemaining == 0 &&
                             !auth.isSubmitting
                         ? _resend
@@ -162,8 +194,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   TextButton(
                     onPressed: auth.isSubmitting
                         ? null
-                        : () => context.go('/register'),
-                    child: const Text('Start registration again'),
+                        : () => context.go(
+                            isPrivilegedLogin ? '/login' : '/register',
+                          ),
+                    child: Text(
+                      isPrivilegedLogin
+                          ? 'Return to sign in'
+                          : 'Start registration again',
+                    ),
                   ),
                 ],
               ),

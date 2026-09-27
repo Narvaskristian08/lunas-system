@@ -1,12 +1,19 @@
 jest.mock('../models/User', () => ({ findById: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
 jest.mock('../utils/authTokens', () => ({
+  hasPrivilegedMfaProof: jest.fn(),
   isCurrentTokenVersion: jest.fn(),
   verifyAccessToken: jest.fn()
 }));
 
-const { authorize } = require('./auth');
+const { authorize, protect } = require('./auth');
 const { createAuditLog } = require('../utils/auditLogger');
+const User = require('../models/User');
+const {
+  hasPrivilegedMfaProof,
+  isCurrentTokenVersion,
+  verifyAccessToken
+} = require('../utils/authTokens');
 const { VALIDATION_DECISION_ROLES } = require('../services/jurisdictionService');
 
 const response = () => {
@@ -58,5 +65,50 @@ describe('50% validation route authorization', () => {
     expect(allowedNext).toHaveBeenCalledTimes(1);
     expect(providerNext).not.toHaveBeenCalled();
     expect(providerRes.status).toHaveBeenCalledWith(403);
+  });
+});
+
+describe('privileged session MFA enforcement', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    verifyAccessToken.mockReturnValue({
+      id: 'admin-1',
+      tokenType: 'access',
+      tokenVersion: 2
+    });
+    isCurrentTokenVersion.mockReturnValue(true);
+    User.findById.mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: 'admin-1',
+        role: 'admin',
+        tokenVersion: 2,
+        isActive: true,
+        isArchived: false
+      })
+    });
+  });
+
+  test('rejects a privileged access token that predates MFA proof', async () => {
+    hasPrivilegedMfaProof.mockReturnValue(false);
+    const req = { headers: { authorization: 'Bearer legacy-token' } };
+    const res = response();
+    const next = jest.fn();
+
+    await protect(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  test('accepts a privileged access token carrying MFA proof', async () => {
+    hasPrivilegedMfaProof.mockReturnValue(true);
+    const req = { headers: { authorization: 'Bearer verified-token' } };
+    const res = response();
+    const next = jest.fn();
+
+    await protect(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(req.auth).toEqual(expect.objectContaining({ tokenType: 'access' }));
   });
 });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_text_field.dart';
@@ -45,6 +46,17 @@ class _ResetPasswordWithTokenScreenState
       token: _tokenController.text.trim(),
       password: _passwordController.text,
     );
+    if (success && mounted) {
+      context.go('/login');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Password reset complete. Sign in with your new password.',
+          ),
+        ),
+      );
+      return;
+    }
     if (!success && mounted && auth.message != null) {
       ScaffoldMessenger.of(
         context,

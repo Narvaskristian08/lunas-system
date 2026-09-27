@@ -6,6 +6,8 @@ const {
   verifyRegistrationMfa,
   resendRegistrationMfa,
   login,
+  verifyPrivilegedLoginMfa,
+  resendPrivilegedLoginMfa,
   refresh,
   forgotPassword,
   resetPassword,
@@ -19,6 +21,8 @@ const {
   changePasswordValidation,
   forgotPasswordValidation,
   loginValidation,
+  privilegedLoginMfaResendValidation,
+  privilegedLoginMfaValidation,
   registrationMfaResendValidation,
   registrationMfaValidation,
   refreshValidation,
@@ -43,6 +47,8 @@ router.post('/register', authLimiter, registerValidation, validate, register);
 router.post('/register/verify', authLimiter, registrationMfaValidation, validate, verifyRegistrationMfa);
 router.post('/register/resend', authLimiter, registrationMfaResendValidation, validate, resendRegistrationMfa);
 router.post('/login', authLimiter, loginValidation, validate, login);
+router.post('/login/verify', authLimiter, privilegedLoginMfaValidation, validate, verifyPrivilegedLoginMfa);
+router.post('/login/resend', authLimiter, privilegedLoginMfaResendValidation, validate, resendPrivilegedLoginMfa);
 router.post('/refresh', authLimiter, refreshValidation, validate, refresh);
 router.post('/forgot-password', authLimiter, forgotPasswordValidation, validate, forgotPassword);
 router.post('/reset-password', authLimiter, resetPasswordValidation, validate, resetPassword);

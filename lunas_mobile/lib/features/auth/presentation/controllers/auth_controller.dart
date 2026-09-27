@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_session.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_user.dart';
+import 'package:lunas_mobile/features/auth/data/models/privileged_login_mfa_challenge.dart';
 import 'package:lunas_mobile/features/auth/data/models/registration_mfa_challenge.dart';
 import 'package:lunas_mobile/features/auth/data/services/auth_service.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
@@ -23,12 +24,15 @@ class AuthController extends ChangeNotifier {
   String? _message;
   bool _isSubmitting = false;
   RegistrationMfaChallenge? _pendingRegistration;
+  PrivilegedLoginMfaChallenge? _pendingPrivilegedLogin;
 
   AuthStatus get status => _status;
   AuthUser? get user => _user;
   String? get message => _message;
   bool get isSubmitting => _isSubmitting;
   RegistrationMfaChallenge? get pendingRegistration => _pendingRegistration;
+  PrivilegedLoginMfaChallenge? get pendingPrivilegedLogin =>
+      _pendingPrivilegedLogin;
   bool get isCitizen => _user?.isCitizen == true;
   bool get isValidationOfficial => _user?.isValidationOfficial == true;
   bool get isRepairPersonnel =>
@@ -70,10 +74,78 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login({required String email, required String password}) {
-    return _completeAuthentication(
-      () => _authService.login(email: email, password: password),
+  Future<bool> login({required String email, required String password}) async {
+    _isSubmitting = true;
+    _message = null;
+    _pendingPrivilegedLogin = null;
+    notifyListeners();
+    try {
+      final result = await _authService.login(email: email, password: password);
+      if (result.mfaChallenge != null) {
+        _pendingPrivilegedLogin = result.mfaChallenge;
+        return true;
+      }
+      final session = result.session;
+      if (session == null) {
+        throw const FormatException(
+          'The server returned an incomplete login response.',
+        );
+      }
+      await _acceptSession(session);
+      return true;
+    } on ApiException catch (error) {
+      _message = error.message;
+      return false;
+    } on FormatException catch (error) {
+      _message = error.message;
+      return false;
+    } catch (_) {
+      _message = 'We could not complete sign-in. Please try again.';
+      return false;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> verifyPrivilegedLoginMfa(String code) async {
+    final challenge = _pendingPrivilegedLogin;
+    if (challenge == null) {
+      _message = 'Sign in again to request a new security verification code.';
+      notifyListeners();
+      return false;
+    }
+    final success = await _completeAuthentication(
+      () => _authService.verifyPrivilegedLoginMfa(
+        challenge: challenge,
+        code: code,
+      ),
     );
+    if (success) _pendingPrivilegedLogin = null;
+    return success;
+  }
+
+  Future<bool> resendPrivilegedLoginMfa() async {
+    final challenge = _pendingPrivilegedLogin;
+    if (challenge == null) return false;
+    _isSubmitting = true;
+    _message = null;
+    notifyListeners();
+    try {
+      _pendingPrivilegedLogin = await _authService.resendPrivilegedLoginMfa(
+        challenge,
+      );
+      return true;
+    } on ApiException catch (error) {
+      _message = error.message;
+      return false;
+    } catch (_) {
+      _message = 'We could not resend the security code. Please try again.';
+      return false;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
   }
 
   Future<RegistrationMfaChallenge?> register({
@@ -152,10 +224,32 @@ class AuthController extends ChangeNotifier {
   Future<bool> resetPassword({
     required String token,
     required String password,
-  }) {
-    return _completeAuthentication(
-      () => _authService.resetPassword(token: token, password: password),
-    );
+  }) async {
+    _isSubmitting = true;
+    _message = null;
+    notifyListeners();
+    try {
+      await _authService.resetPassword(token: token, password: password);
+      _status = AuthStatus.unauthenticated;
+      return true;
+    } on ApiException catch (error) {
+      _message = error.message;
+      return false;
+    } catch (_) {
+      _message = 'We could not reset your password. Please try again.';
+      return false;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _acceptSession(AuthSession session) async {
+    await _authService.persist(session);
+    _user = session.user;
+    _status = _user!.hasSupportedMobileWorkspace
+        ? AuthStatus.authenticated
+        : AuthStatus.roleUnavailable;
   }
 
   Future<bool> _completeAuthentication(
@@ -166,11 +260,7 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     try {
       final session = await action();
-      await _authService.persist(session);
-      _user = session.user;
-      _status = _user!.hasSupportedMobileWorkspace
-          ? AuthStatus.authenticated
-          : AuthStatus.roleUnavailable;
+      await _acceptSession(session);
       return true;
     } on ApiException catch (error) {
       _message = error.message;
@@ -224,6 +314,7 @@ class AuthController extends ChangeNotifier {
     } finally {
       _user = null;
       _pendingRegistration = null;
+      _pendingPrivilegedLogin = null;
       _status = AuthStatus.unauthenticated;
       _isSubmitting = false;
       notifyListeners();
@@ -234,6 +325,7 @@ class AuthController extends ChangeNotifier {
     await _authService.clearSession();
     _user = null;
     _pendingRegistration = null;
+    _pendingPrivilegedLogin = null;
     _status = AuthStatus.unauthenticated;
     _message = 'Your session has expired. Please sign in again.';
     notifyListeners();

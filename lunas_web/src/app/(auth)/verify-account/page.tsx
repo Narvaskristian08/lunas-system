@@ -1,29 +1,28 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { AuthAlert, AuthCard, BackToLogin } from "@/components/auth/auth-ui";
+import { VerificationForm } from "@/components/auth/verification-form";
+import { readPendingPrivilegedMfa } from "@/lib/auth/mfa-challenge.server";
 
 export const metadata: Metadata = {
-  title: "Verify account",
-  description: "Account verification availability for LUNAS users.",
+  title: "Security verification",
+  description: "Complete multi-factor authentication for a privileged LUNAS account.",
 };
 
-export default function VerifyAccountPage() {
+export default async function VerifyAccountPage() {
+  const challenge = await readPendingPrivilegedMfa();
+  if (!challenge) redirect("/login");
   return (
     <AuthShell
-      eyebrow="Account verification"
-      title="Account verification is not available yet"
-      description="This release does not send or accept online verification codes."
+      eyebrow="Privileged account security"
+      title="Complete security verification"
+      description="Enter the one-time code sent to your assigned email before LUNAS opens your workspace."
     >
-      <AuthCard>
-        <AuthAlert tone="info" title="Use your assigned sign-in details">
-          If you cannot access your account, contact your organization or use
-          password recovery when it has been enabled. No verification code was
-          sent from this page.
-        </AuthAlert>
-        <div className="mt-5">
-          <BackToLogin />
-        </div>
-      </AuthCard>
+      <VerificationForm
+        email={challenge.email}
+        initialCooldown={challenge.resendAfterSeconds}
+        developmentCode={challenge.developmentCode}
+      />
     </AuthShell>
   );
 }

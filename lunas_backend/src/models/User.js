@@ -138,7 +138,12 @@ const userSchema = new mongoose.Schema({
   registrationMfaCodeHash: { type: String, select: false },
   registrationMfaExpires: { type: Date, select: false },
   registrationMfaAttempts: { type: Number, default: 0, select: false },
-  registrationMfaSentAt: { type: Date, select: false }
+  registrationMfaSentAt: { type: Date, select: false },
+  privilegedMfaChallengeHash: { type: String, select: false },
+  privilegedMfaCodeHash: { type: String, select: false },
+  privilegedMfaExpires: { type: Date, select: false },
+  privilegedMfaAttempts: { type: Number, default: 0, select: false },
+  privilegedMfaSentAt: { type: Date, select: false }
 }, {
   timestamps: true
 });

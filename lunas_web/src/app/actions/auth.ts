@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendRequest, isBackendApiError, responseData } from "@/lib/api/backend.server";
 import { clearSession, createSession, readSession } from "@/lib/auth/session.server";
+import {
+  clearPendingPrivilegedMfa,
+  readPendingPrivilegedMfa,
+  savePendingPrivilegedMfa,
+} from "@/lib/auth/mfa-challenge.server";
 import { isValidEmail, safeReturnPath } from "@/lib/utils";
 import type { AuthFailureCode } from "@/types";
 
@@ -29,6 +34,12 @@ interface LoginPayload {
   // Retained only for compatibility with the currently deployed API while it
   // rolls out the explicit accessToken field.
   token?: string;
+  mfaRequired?: boolean;
+  challengeToken?: string;
+  email?: string;
+  expiresInSeconds?: number;
+  resendAfterSeconds?: number;
+  developmentCode?: string;
 }
 
 interface PasswordChangePayload {
@@ -90,6 +101,7 @@ export async function loginAction(
     return { status: "error", attempt, message: "Review the highlighted fields.", email, fieldErrors };
   }
 
+  let mfaRequired = false;
   try {
     const payload = responseData(
       await backendRequest<LoginPayload>("/auth/login", {
@@ -97,22 +109,47 @@ export async function loginAction(
         body: JSON.stringify({ email, password, platform: "web", captchaToken }),
       }),
     );
-    const accessToken = payload.accessToken ?? payload.token;
-    if (!accessToken) {
-      return {
-        status: "error",
-        attempt,
-        code: "SERVER_UNAVAILABLE",
-        message: safeFailures.SERVER_UNAVAILABLE,
-        email,
-      };
+    if (payload.mfaRequired) {
+      if (!payload.challengeToken || !payload.email) {
+        return {
+          status: "error",
+          attempt,
+          code: "SERVER_UNAVAILABLE",
+          message: safeFailures.SERVER_UNAVAILABLE,
+          email,
+        };
+      }
+      await savePendingPrivilegedMfa({
+        email: payload.email,
+        challengeToken: payload.challengeToken,
+        expiresInSeconds: payload.expiresInSeconds ?? 600,
+        resendAfterSeconds: payload.resendAfterSeconds ?? 60,
+        next,
+        developmentCode: payload.developmentCode,
+      });
+      mfaRequired = true;
     }
 
-    await createSession({ accessToken, refreshToken: payload.refreshToken });
+    if (!mfaRequired) {
+      const accessToken = payload.accessToken ?? payload.token;
+      if (!accessToken) {
+        return {
+          status: "error",
+          attempt,
+          code: "SERVER_UNAVAILABLE",
+          message: safeFailures.SERVER_UNAVAILABLE,
+          email,
+        };
+      }
+
+      await createSession({ accessToken, refreshToken: payload.refreshToken });
+      await clearPendingPrivilegedMfa();
+    }
   } catch (error) {
     return { status: "error", attempt, email, ...authenticationFailure(error) };
   }
 
+  if (mfaRequired) redirect("/verify-account");
   redirect(next);
 }
 
@@ -131,6 +168,7 @@ export async function logoutAction() {
     // access token is short-lived and is never exposed to the browser.
   } finally {
     await clearSession();
+    await clearPendingPrivilegedMfa();
   }
 }
 
@@ -248,32 +286,75 @@ export async function resetPasswordAction(token: string, newPassword: string): P
 }
 
 export async function verifyAccountAction(code: string): Promise<ActionResult> {
+  const challenge = await readPendingPrivilegedMfa();
+  if (!challenge) {
+    return { ok: false, code: "expired", message: "Sign in again to request a new code." };
+  }
+
+  let verified = false;
   try {
-    await backendRequest("/auth/verify", {
-      method: "POST",
-      body: JSON.stringify({ code }),
-    });
-    return { ok: true };
-  } catch (error) {
-    if (isBackendApiError(error) && error.status === 404) {
-      return { ok: false, code: "unavailable", message: "Online account verification is not configured yet." };
+    const payload = responseData(
+      await backendRequest<LoginPayload>("/auth/login/verify", {
+        method: "POST",
+        body: JSON.stringify({
+          email: challenge.email,
+          challengeToken: challenge.challengeToken,
+          code,
+          platform: "web",
+        }),
+      }),
+    );
+    const accessToken = payload.accessToken ?? payload.token;
+    if (!accessToken) {
+      return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
     }
+    await createSession({ accessToken, refreshToken: payload.refreshToken });
+    await clearPendingPrivilegedMfa();
+    verified = true;
+  } catch (error) {
     if (isBackendApiError(error) && error.status === 400) {
-      return { ok: false, code: error.message.toLowerCase().includes("expire") ? "expired" : "invalid" };
+      return { ok: false, code: "invalid" };
     }
     return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
   }
+
+  if (verified) redirect(challenge.next);
+  return { ok: false, code: "unavailable" };
 }
 
-export async function resendVerificationAction(email?: string): Promise<ActionResult> {
+export async function resendVerificationAction(): Promise<ActionResult> {
+  const challenge = await readPendingPrivilegedMfa();
+  if (!challenge) {
+    return { ok: false, code: "expired", message: "Sign in again to request a new code." };
+  }
+  const remainingCooldown = challenge.resendAfterSeconds;
+  if (remainingCooldown > 0) {
+    return { ok: true, retryAfterSeconds: remainingCooldown };
+  }
+
   try {
-    const result = responseData<{ retryAfterSeconds?: number }>(
-      await backendRequest("/auth/verification/resend", {
+    const result = responseData<LoginPayload>(
+      await backendRequest("/auth/login/resend", {
         method: "POST",
-        body: JSON.stringify(email ? { email } : {}),
+        body: JSON.stringify({
+          email: challenge.email,
+          challengeToken: challenge.challengeToken,
+          platform: "web",
+        }),
       }),
     );
-    return { ok: true, retryAfterSeconds: result.retryAfterSeconds ?? 30 };
+    if (!result.challengeToken || !result.email) {
+      return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
+    }
+    await savePendingPrivilegedMfa({
+      email: result.email,
+      challengeToken: result.challengeToken,
+      expiresInSeconds: result.expiresInSeconds ?? 600,
+      resendAfterSeconds: result.resendAfterSeconds ?? 60,
+      next: challenge.next,
+      developmentCode: result.developmentCode,
+    });
+    return { ok: true, retryAfterSeconds: result.resendAfterSeconds ?? 60 };
   } catch {
     return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
   }

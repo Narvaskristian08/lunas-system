@@ -1,4 +1,5 @@
 const {
+  createAccessToken,
   hashToken,
   isCurrentTokenVersion,
   issueTokenPair,
@@ -39,5 +40,28 @@ describe('authentication token helpers', () => {
     expect(isCurrentTokenVersion({ tokenVersion: 2 }, user)).toBe(true);
     expect(isCurrentTokenVersion({ tokenVersion: 1 }, user)).toBe(false);
     expect(isCurrentTokenVersion({}, user)).toBe(false);
+  });
+
+  test('refuses privileged tokens without MFA and preserves proof across the pair', () => {
+    const user = {
+      _id: '507f191e810c19729de860eb',
+      role: 'admin',
+      tokenVersion: 1
+    };
+
+    expect(() => issueTokenPair(user)).toThrow('verified MFA');
+    expect(() => createAccessToken(user)).toThrow('verified MFA');
+
+    const pair = issueTokenPair(user, {
+      mfaVerified: true,
+      mfaAuthenticatedAt: 1789920000
+    });
+    const access = verifyAccessToken(pair.accessToken);
+    const refresh = verifyRefreshToken(pair.refreshToken);
+
+    expect(access.amr).toEqual(['pwd', 'email_otp']);
+    expect(refresh.amr).toEqual(['pwd', 'email_otp']);
+    expect(access.mfaAuthenticatedAt).toBe(1789920000);
+    expect(refresh.mfaAuthenticatedAt).toBe(1789920000);
   });
 });

@@ -13,14 +13,18 @@ type VerificationState = "waiting" | "verifying" | "success" | "failed" | "link-
 
 export function VerificationForm({
   email,
+  initialCooldown = 0,
+  developmentCode,
   initialStatus = "waiting",
 }: {
   email?: string;
+  initialCooldown?: number;
+  developmentCode?: string;
   initialStatus?: Exclude<VerificationState, "verifying" | "success">;
 }) {
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [status, setStatus] = useState<VerificationState>(initialStatus);
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(initialCooldown);
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<"success" | "offline" | "error" | null>(null);
   const [failureKind, setFailureKind] = useState<"offline" | "server">("server");
@@ -96,7 +100,7 @@ export function VerificationForm({
     setResending(true);
     setResendStatus(null);
     try {
-      const result = await resendVerificationAction(email);
+      const result = await resendVerificationAction();
       if (!result.ok) {
         setResendStatus("error");
         return;
@@ -120,9 +124,9 @@ export function VerificationForm({
         <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
           <BadgeCheck className="size-7" aria-hidden="true" />
         </span>
-        <h2 className="mt-4 text-xl font-semibold text-slate-950">{already ? "Account already verified" : "Account verified"}</h2>
+        <h2 className="mt-4 text-xl font-semibold text-slate-950">{already ? "Verification already complete" : "Security verification complete"}</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
-          {already ? "No further verification is needed. You can sign in with your assigned credentials." : "Your identity check is complete. Your LUNAS account is ready for secure sign-in."}
+          {already ? "No further verification is needed." : "Your identity check is complete. LUNAS is opening your workspace."}
         </p>
         <Link href="/login" className={buttonStyles({ size: "lg", className: "mt-6 w-full" })}>Continue to sign in</Link>
       </AuthCard>
@@ -173,7 +177,7 @@ export function VerificationForm({
 
       <form onSubmit={verify} className="mt-5" aria-busy={status === "verifying"}>
         <fieldset>
-          <legend className="sr-only">Six-digit account verification code</legend>
+          <legend className="sr-only">Six-digit security verification code</legend>
           <div className="grid grid-cols-6 gap-2 sm:gap-3" onPaste={handlePaste}>
             {digits.map((digit, index) => (
               <input
@@ -196,8 +200,12 @@ export function VerificationForm({
           </div>
         </fieldset>
 
+        {developmentCode ? (
+          <p className="mt-3 text-center text-xs text-slate-500">Local QA code: <span className="font-mono font-semibold">{developmentCode}</span></p>
+        ) : null}
+
         <Button className="mt-5 w-full" size="lg" type="submit" loading={status === "verifying"} loadingLabel="Verifying code…" disabled={incomplete || (checked && !online)}>
-          Verify account
+          Verify and sign in
         </Button>
       </form>
 

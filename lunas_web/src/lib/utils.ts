@@ -34,7 +34,11 @@ export function sleep(ms = 650) {
 
 export function safeReturnPath(value: string | null | undefined) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
-  if (value.startsWith("/login") || value.startsWith("/session-expired")) return "/dashboard";
+  if (
+    value.startsWith("/login")
+    || value.startsWith("/session-expired")
+    || value.startsWith("/verify-account")
+  ) return "/dashboard";
   return value;
 }
 

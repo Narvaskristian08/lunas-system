@@ -129,6 +129,50 @@ not render or call Turnstile.
 }
 ```
 
+Admin, city engineer, barangay official, and utility-provider accounts receive
+HTTP 202 after the password is accepted. No access or refresh token is issued:
+
+```json
+{
+  "success": true,
+  "data": {
+    "mfaRequired": true,
+    "challengeToken": "one-time-login-challenge",
+    "email": "official@example.com",
+    "expiresInSeconds": 600,
+    "resendAfterSeconds": 60
+  }
+}
+```
+
+### 2a. Verify Privileged Login MFA
+**POST** `/auth/login/verify`
+
+```json
+{
+  "email": "official@example.com",
+  "challengeToken": "one-time-login-challenge",
+  "code": "123456",
+  "platform": "web"
+}
+```
+
+Successful verification consumes the challenge and returns the standard login
+session. The endpoint locks a challenge after five failed attempts.
+
+### 2b. Resend Privileged Login MFA
+**POST** `/auth/login/resend`
+
+```json
+{
+  "email": "official@example.com",
+  "challengeToken": "current-login-challenge",
+  "platform": "web"
+}
+```
+
+Resend is cooldown-protected and rotates both the challenge and code.
+
 ### 3. Refresh Session
 **POST** `/auth/refresh`
 
@@ -153,6 +197,9 @@ JavaScript or application logs.
 
 The response is deliberately generic. Reset email delivery occurs only when
 `PASSWORD_RESET_APP_URL` and `PASSWORD_RESET_DELIVERY_URL` are configured.
+Privileged accounts do not receive email password-reset links because the same
+inbox is used for login OTP. Their recovery requires administrator-assisted
+identity verification through a separate channel.
 
 ### 5. Complete Password Reset
 **POST** `/auth/reset-password`
@@ -167,7 +214,9 @@ The response is deliberately generic. Reset email delivery occurs only when
 ```
 
 Reset tokens are stored as hashes, expire, and are invalidated after use. A
-successful reset returns a new access/refresh token pair.
+successful reset revokes existing sessions and requires a fresh sign-in. A
+privileged account reset token is rejected and requires administrator-assisted
+recovery through a separate channel.
 
 ### 6. Get Current User
 **GET** `/auth/me`

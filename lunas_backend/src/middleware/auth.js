@@ -1,6 +1,11 @@
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
-const { isCurrentTokenVersion, verifyAccessToken } = require('../utils/authTokens');
+const {
+  hasPrivilegedMfaProof,
+  isCurrentTokenVersion,
+  verifyAccessToken
+} = require('../utils/authTokens');
+const { requiresPrivilegedMfa } = require('../services/privilegedMfaService');
 
 // Verify JWT token and attach user to request
 exports.protect = async (req, res, next) => {
@@ -56,6 +61,14 @@ exports.protect = async (req, res, next) => {
         });
       }
 
+      if (requiresPrivilegedMfa(req.user.role) && !hasPrivilegedMfaProof(decoded)) {
+        return res.status(401).json({
+          success: false,
+          message: 'Multi-factor authentication is required. Please log in again.'
+        });
+      }
+
+      req.auth = decoded;
       next();
     } catch (error) {
       return res.status(401).json({
@@ -122,7 +135,14 @@ exports.optionalAuth = async (req, res, next) => {
           req.user = null;
         } else {
           const user = await User.findById(decoded.id).select('-password +tokenVersion');
-          req.user = user && user.isActive && !user.isArchived && isCurrentTokenVersion(decoded, user) ? user : null;
+          req.user = user
+            && user.isActive
+            && !user.isArchived
+            && isCurrentTokenVersion(decoded, user)
+            && (!requiresPrivilegedMfa(user.role) || hasPrivilegedMfaProof(decoded))
+            ? user
+            : null;
+          req.auth = req.user ? decoded : null;
         }
       } catch (error) {
         // Token invalid, but continue without user

@@ -285,7 +285,9 @@ Primary endpoints:
 | Method | Endpoint | Access | Purpose |
 | --- | --- | --- |
 | `POST` | `/auth/register` | Public | Creates a citizen account only. |
-| `POST` | `/auth/login` | Public | Returns short-lived access and rotating refresh tokens. |
+| `POST` | `/auth/login` | Public | Returns a session for ordinary roles or starts privileged MFA. |
+| `POST` | `/auth/login/verify` | Public | Consumes a privileged login OTP and returns a session. |
+| `POST` | `/auth/login/resend` | Public | Rotates and resends a privileged login OTP. |
 | `POST` | `/auth/refresh` | Public with refresh token | Rotates the refresh token. |
 | `POST` | `/auth/logout` | Private | Revokes active sessions. |
 | `GET` | `/auth/me` | Private | Current account. |

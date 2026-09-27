@@ -33,6 +33,10 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
+    if (success && mounted && auth.pendingPrivilegedLogin != null) {
+      context.go('/login/verify');
+      return;
+    }
     if (!success && mounted && auth.message != null) {
       ScaffoldMessenger.of(
         context,
@@ -119,10 +123,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                         SizedBox(
                           width: 24,
                           height: 24,
-                          child: Checkbox(
-                            value: true,
-                            onChanged: null,
-                          ),
+                          child: Checkbox(value: true, onChanged: null),
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(

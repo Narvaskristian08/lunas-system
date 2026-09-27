@@ -70,6 +70,7 @@ final GoRouter appRouter = GoRouter(
       '/login',
       '/register',
       '/register/verify',
+      '/login/verify',
       '/forgot-password',
       '/reset-password',
     };
@@ -88,6 +89,10 @@ final GoRouter appRouter = GoRouter(
         if (location == '/register/verify' &&
             authController.pendingRegistration == null) {
           return '/register';
+        }
+        if (location == '/login/verify' &&
+            authController.pendingPrivilegedLogin == null) {
+          return '/login';
         }
         return isPublic ? null : '/onboarding';
       case AuthStatus.roleUnavailable:
@@ -131,6 +136,10 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/register/verify',
+      builder: (_, _) => const OtpVerificationScreen(),
+    ),
+    GoRoute(
+      path: '/login/verify',
       builder: (_, _) => const OtpVerificationScreen(),
     ),
     GoRoute(

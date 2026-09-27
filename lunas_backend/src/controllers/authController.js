@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
 const {
+  hasPrivilegedMfaProof,
   hashToken,
   isCurrentTokenVersion,
   issueTokenPair,
@@ -17,6 +18,15 @@ const {
   registrationChallengeResponse,
   verifyRegistrationChallenge
 } = require('../services/registrationMfaService');
+const {
+  createPrivilegedMfaChallenge,
+  deliverPrivilegedMfaCode,
+  isPrivilegedMfaChallengeTokenValid,
+  privilegedMfaChallengeResponse,
+  requiresPrivilegedMfa,
+  resendAfterSeconds: privilegedMfaResendAfterSeconds,
+  verifyPrivilegedMfaChallenge
+} = require('../services/privilegedMfaService');
 
 const MAX_REFRESH_TOKENS = Math.max(1, parseInt(process.env.MAX_REFRESH_TOKENS_PER_USER, 10) || 5);
 
@@ -78,6 +88,37 @@ const registrationMfaFields = [
   '+refreshTokens',
   '+tokenVersion'
 ].join(' ');
+
+const privilegedMfaFields = [
+  '+privilegedMfaChallengeHash',
+  '+privilegedMfaCodeHash',
+  '+privilegedMfaExpires',
+  '+privilegedMfaAttempts',
+  '+privilegedMfaSentAt',
+  '+refreshTokens',
+  '+tokenVersion'
+].join(' ');
+
+const applyPrivilegedMfaChallenge = (user, challenge) => {
+  user.privilegedMfaChallengeHash = challenge.challengeTokenHash;
+  user.privilegedMfaCodeHash = challenge.codeHash;
+  user.privilegedMfaExpires = challenge.expiresAt;
+  user.privilegedMfaAttempts = 0;
+  user.privilegedMfaSentAt = new Date();
+};
+
+const clearPrivilegedMfaChallenge = (user) => {
+  user.privilegedMfaChallengeHash = undefined;
+  user.privilegedMfaCodeHash = undefined;
+  user.privilegedMfaExpires = undefined;
+  user.privilegedMfaAttempts = 0;
+  user.privilegedMfaSentAt = undefined;
+};
+
+const tokenAuthContext = (claims) => ({
+  mfaVerified: hasPrivilegedMfaProof(claims),
+  mfaAuthenticatedAt: claims?.mfaAuthenticatedAt
+});
 
 // @desc    Register a citizen account
 // @route   POST /api/v1/auth/register
@@ -417,6 +458,48 @@ exports.login = asyncHandler(async (req, res) => {
     });
   }
 
+  if (requiresPrivilegedMfa(user.role)) {
+    const challenge = createPrivilegedMfaChallenge(normalizedEmail);
+    const delivery = await deliverPrivilegedMfaCode({
+      email: normalizedEmail,
+      firstName: user.firstName,
+      code: challenge.code
+    });
+    if (!delivery.delivered) {
+      await createAuditLog({
+        action: 'privileged_mfa_delivery_failed',
+        performedBy: user._id,
+        resourceType: 'User',
+        resourceId: user._id,
+        status: 'failure',
+        details: { reason: delivery.configured ? 'provider_failed' : 'provider_not_configured' },
+        ...auditRequestContext(req, requestSource(platform))
+      });
+      return res.status(503).json({
+        success: false,
+        message: 'Security verification is temporarily unavailable. Please try again later.'
+      });
+    }
+
+    applyPrivilegedMfaChallenge(user, challenge);
+    await user.save({ validateBeforeSave: false });
+
+    await createAuditLog({
+      action: 'privileged_mfa_challenged',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      details: { role: user.role, deliveryConfigured: delivery.configured },
+      ...auditRequestContext(req, requestSource(platform))
+    });
+
+    return res.status(202).json({
+      success: true,
+      message: 'Enter the verification code sent to your email to finish signing in.',
+      data: privilegedMfaChallengeResponse({ challenge, email: normalizedEmail })
+    });
+  }
+
   if (deviceToken && platform) {
     const existingToken = user.deviceTokens.find((token) => token.token === deviceToken);
     if (!existingToken) {
@@ -442,6 +525,233 @@ exports.login = asyncHandler(async (req, res) => {
     success: true,
     message: 'Login successful',
     data: tokenResponseData(user, tokenPair)
+  });
+});
+
+// @desc    Verify a privileged-account login OTP and create the session
+// @route   POST /api/v1/auth/login/verify
+// @access  Public
+exports.verifyPrivilegedLoginMfa = asyncHandler(async (req, res) => {
+  const normalizedEmail = req.body.email.toLowerCase();
+  let user = await User.findOne({ email: normalizedEmail }).select(privilegedMfaFields);
+
+  if (!user
+    || !user.isActive
+    || user.isArchived
+    || !requiresPrivilegedMfa(user.role)
+    || Number(user.privilegedMfaAttempts) >= 5) {
+    await createAuditLog({
+      action: 'privileged_mfa_failed',
+      ...(user ? { performedBy: user._id, resourceType: 'User', resourceId: user._id } : {
+        actorType: 'anonymous', resourceType: 'System'
+      }),
+      status: 'failure',
+      details: { reason: user ? 'challenge_unavailable_or_locked' : 'challenge_not_found' },
+      ...auditRequestContext(req, requestSource(req.body.platform))
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The security verification code is invalid or expired.'
+    });
+  }
+
+  if (!isPrivilegedMfaChallengeTokenValid({
+    user,
+    challengeToken: req.body.challengeToken
+  })) {
+    await createAuditLog({
+      action: 'privileged_mfa_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: 'challenge_invalid_or_expired' },
+      ...auditRequestContext(req, requestSource(req.body.platform))
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The security verification code is invalid or expired.'
+    });
+  }
+
+  const attemptedUser = await User.findOneAndUpdate({
+    _id: user._id,
+    privilegedMfaChallengeHash: user.privilegedMfaChallengeHash,
+    privilegedMfaExpires: { $gt: new Date() },
+    privilegedMfaAttempts: { $lt: 5 }
+  }, {
+    $inc: { privilegedMfaAttempts: 1 }
+  }, { new: true }).select(privilegedMfaFields);
+
+  if (!attemptedUser) {
+    return res.status(400).json({
+      success: false,
+      message: 'The security verification code is invalid or expired.'
+    });
+  }
+  user = attemptedUser;
+
+  const verification = verifyPrivilegedMfaChallenge({
+    user,
+    challengeToken: req.body.challengeToken,
+    code: req.body.code
+  });
+  if (!verification.valid) {
+    await createAuditLog({
+      action: 'privileged_mfa_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: verification.reason, attempts: user.privilegedMfaAttempts },
+      ...auditRequestContext(req, requestSource(req.body.platform))
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The security verification code is invalid or expired.'
+    });
+  }
+
+  const consumedUser = await User.findOneAndUpdate({
+    _id: user._id,
+    privilegedMfaChallengeHash: user.privilegedMfaChallengeHash,
+    privilegedMfaCodeHash: user.privilegedMfaCodeHash,
+    privilegedMfaExpires: { $gt: new Date() },
+    privilegedMfaAttempts: { $lte: 5 }
+  }, {
+    $unset: {
+      privilegedMfaChallengeHash: '',
+      privilegedMfaCodeHash: '',
+      privilegedMfaExpires: '',
+      privilegedMfaSentAt: ''
+    },
+    $set: { privilegedMfaAttempts: 0, lastLogin: new Date() }
+  }, { new: true }).select('+refreshTokens +tokenVersion');
+
+  if (!consumedUser) {
+    await createAuditLog({
+      action: 'privileged_mfa_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: 'challenge_already_consumed' },
+      ...auditRequestContext(req, requestSource(req.body.platform))
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The security verification code is invalid or expired.'
+    });
+  }
+  user = consumedUser;
+
+  if (req.body.deviceToken && req.body.platform) {
+    const existingToken = user.deviceTokens.find((token) => token.token === req.body.deviceToken);
+    if (!existingToken) {
+      user.deviceTokens.push({ token: req.body.deviceToken, platform: req.body.platform });
+    }
+  }
+
+  const tokenPair = issueTokenPair(user, { mfaVerified: true });
+  addRefreshToken(user, tokenPair, req);
+  await user.save({ validateBeforeSave: false });
+
+  await createAuditLog({
+    action: 'privileged_mfa_verified',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    ...auditRequestContext(req, requestSource(req.body.platform))
+  });
+  await createAuditLog({
+    action: 'user_login',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    status: 'success',
+    details: { mfa: 'email_otp' },
+    ...auditRequestContext(req, requestSource(req.body.platform))
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'Login successful',
+    data: tokenResponseData(user, tokenPair)
+  });
+});
+
+// @desc    Rotate and resend a privileged-account login OTP
+// @route   POST /api/v1/auth/login/resend
+// @access  Public
+exports.resendPrivilegedLoginMfa = asyncHandler(async (req, res) => {
+  const normalizedEmail = req.body.email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).select(privilegedMfaFields);
+  const challengeAvailable = user
+    && user.isActive
+    && !user.isArchived
+    && requiresPrivilegedMfa(user.role)
+    && Number(user.privilegedMfaAttempts) < 5
+    && isPrivilegedMfaChallengeTokenValid({
+      user,
+      challengeToken: req.body.challengeToken
+    });
+
+  if (!challengeAvailable) {
+    return res.status(400).json({
+      success: false,
+      message: 'The security verification challenge is invalid or expired. Sign in again.'
+    });
+  }
+
+  const resendSeconds = privilegedMfaResendAfterSeconds();
+  const retryAfterSeconds = Math.max(0, Math.ceil(
+    ((user.privilegedMfaSentAt?.getTime() || 0) + resendSeconds * 1000 - Date.now()) / 1000
+  ));
+  if (retryAfterSeconds > 0) {
+    return res.status(429).json({
+      success: false,
+      message: 'Wait before requesting another verification code.',
+      data: { retryAfterSeconds }
+    });
+  }
+
+  const challenge = createPrivilegedMfaChallenge(normalizedEmail);
+  const delivery = await deliverPrivilegedMfaCode({
+    email: normalizedEmail,
+    firstName: user.firstName,
+    code: challenge.code
+  });
+  if (!delivery.delivered) {
+    await createAuditLog({
+      action: 'privileged_mfa_delivery_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: delivery.configured ? 'provider_failed' : 'provider_not_configured', resend: true },
+      ...auditRequestContext(req, requestSource(req.body.platform))
+    });
+    return res.status(503).json({
+      success: false,
+      message: 'Security verification is temporarily unavailable. Please try again later.'
+    });
+  }
+
+  applyPrivilegedMfaChallenge(user, challenge);
+  await user.save({ validateBeforeSave: false });
+  await createAuditLog({
+    action: 'privileged_mfa_challenged',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    details: { resend: true, deliveryConfigured: delivery.configured },
+    ...auditRequestContext(req, requestSource(req.body.platform))
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'A new security verification code was sent.',
+    data: privilegedMfaChallengeResponse({ challenge, email: normalizedEmail })
   });
 });
 
@@ -479,7 +789,11 @@ exports.refresh = asyncHandler(async (req, res) => {
 
   // Rotate the token: a refresh token can only be used once.
   user.refreshTokens = user.refreshTokens.filter((token) => token.tokenHash !== tokenHash);
-  const tokenPair = issueTokenPair(user);
+  if (requiresPrivilegedMfa(user.role) && !hasPrivilegedMfaProof(decoded)) {
+    return unauthorized(res, 'Multi-factor authentication is required. Please log in again.');
+  }
+
+  const tokenPair = issueTokenPair(user, tokenAuthContext(decoded));
   addRefreshToken(user, tokenPair, req);
   await user.save();
 
@@ -565,7 +879,7 @@ exports.changePassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   user.tokenVersion += 1;
   user.refreshTokens = [];
-  const tokenPair = issueTokenPair(user);
+  const tokenPair = issueTokenPair(user, tokenAuthContext(req.auth));
   addRefreshToken(user, tokenPair, req);
   await user.save();
 
@@ -598,6 +912,22 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
     .select('+passwordResetToken +passwordResetExpires');
 
   if (!user || !user.isActive) {
+    return res.status(200).json(genericResponse);
+  }
+
+  if (requiresPrivilegedMfa(user.role)) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    await createAuditLog({
+      action: 'password_reset_requested',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      details: { privilegedRecoveryRequired: true, delivered: false },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     return res.status(200).json(genericResponse);
   }
 
@@ -635,13 +965,32 @@ exports.resetPassword = asyncHandler(async (req, res) => {
     });
   }
 
+  if (requiresPrivilegedMfa(user.role)) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    await createAuditLog({
+      action: 'password_reset_completed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason: 'privileged_recovery_requires_administrator' },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'Privileged account recovery requires administrator assistance.'
+    });
+  }
+
   user.password = req.body.password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   user.tokenVersion += 1;
   user.refreshTokens = [];
-  const tokenPair = issueTokenPair(user);
-  addRefreshToken(user, tokenPair, req);
+  clearPrivilegedMfaChallenge(user);
   await user.save();
 
   await createAuditLog({
@@ -649,14 +998,18 @@ exports.resetPassword = asyncHandler(async (req, res) => {
     performedBy: user._id,
     resourceType: 'User',
     resourceId: user._id,
+    details: {
+      sessionIssued: false,
+      privilegedMfaRequired: requiresPrivilegedMfa(user.role)
+    },
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
-    message: 'Password reset successfully',
-    data: tokenResponseData(user, tokenPair)
+    message: 'Password reset successfully. Sign in with your new password.',
+    data: { requiresLogin: true }
   });
 });
 
