@@ -291,6 +291,9 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
   try {
     const canonicalCategory = String(category || '').trim().toLowerCase();
     const result = await this.comprehensiveDetection(imageBuffer, canonicalCategory);
+    const model = typeof result.model === 'string' && result.model.trim()
+      ? result.model.trim().slice(0, 80)
+      : undefined;
     const rawFindings = Array.isArray(result.findings)
       ? result.findings
       : Array.isArray(result.detections) ? result.detections : [];
@@ -309,6 +312,7 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
       return {
         success: false,
         category: canonicalCategory,
+        model,
         analysisStatus: 'failed',
         detected: false,
         confidence: 0,
@@ -320,10 +324,14 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
       };
     }
 
-    if (result.analysis_status === 'unavailable' || result.analysisStatus === 'unavailable' || result.model_available === false) {
+    if (result.analysis_status === 'unavailable'
+      || result.analysisStatus === 'unavailable'
+      || result.model_available === false
+      || result.modelAvailable === false) {
       return {
         success: true,
         category: canonicalCategory,
+        model,
         analysisStatus: 'unavailable',
         detected: false,
         confidence: 0,
@@ -335,19 +343,26 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
       };
     }
 
+    const reportedConfidence = Number(result.confidence_score ?? result.confidence);
+    const confidence = Number.isFinite(reportedConfidence)
+      ? Math.max(0, Math.min(1, reportedConfidence))
+      : Math.max(0, ...findings.map((finding) => Number(finding.confidence) || 0));
+
     // Extract relevant information
     const aiAnalysis = {
       success: true,
       category: canonicalCategory,
+      model,
       analysisStatus: 'completed',
       modelAvailable: true,
       detected: findings.length > 0,
-      confidence: Number(result.confidence_score) || 0,
+      confidence,
       suggestion: result.ai_suggestion || findings[0]?.label,
       findings,
       // Keep the manual-only invariant even if the AI service returns a
       // high-confidence result that claims review is unnecessary.
       requiresManualReview: true,
+      advisoryOnly: true,
       aiEnabled: true,
       detections: {
         road_damage: canonicalCategory === 'road' ? findings.length : 0,

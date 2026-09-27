@@ -70,6 +70,9 @@ const safeAiAnalysis = (analysis, evidenceFindings = []) => {
   return {
     analysisStatus: status,
     category: typeof analysis.category === 'string' ? analysis.category.slice(0, 40) : undefined,
+    ...(typeof analysis.model === 'string' && analysis.model.trim()
+      ? { model: analysis.model.trim().slice(0, 80) }
+      : {}),
     modelAvailable: status === 'completed' && analysis.modelAvailable !== false,
     detected: status === 'completed' && analysis.detected === true,
     hazardType: status === 'completed' && typeof analysis.hazardType === 'string'
@@ -230,6 +233,9 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       hazardType: aiAnalysis.hazardType || null,
       confidence: hasConfidence ? aiAnalysis.confidence : 0,
       category: typeof aiAnalysis.category === 'string' ? aiAnalysis.category : undefined,
+      ...(typeof aiAnalysis.model === 'string' && aiAnalysis.model.trim()
+        ? { model: aiAnalysis.model.trim().slice(0, 80) }
+        : {}),
       modelAvailable: analysisStatus === 'completed' && aiAnalysis.modelAvailable !== false,
       detections: {
         roadDamage: Number(aiAnalysis.detections?.roadDamage) || 0,

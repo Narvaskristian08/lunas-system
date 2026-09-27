@@ -270,6 +270,7 @@ class AiAnalysis {
   const AiAnalysis({
     required this.status,
     required this.category,
+    this.model,
     required this.modelAvailable,
     required this.detected,
     required this.confidence,
@@ -282,6 +283,7 @@ class AiAnalysis {
 
   final String status;
   final String? category;
+  final String? model;
   final bool modelAvailable;
   final bool detected;
   final double confidence;
@@ -294,6 +296,7 @@ class AiAnalysis {
   factory AiAnalysis.fromJson(Map<String, dynamic> json) => AiAnalysis(
     status: (json['analysisStatus'] ?? 'unavailable').toString(),
     category: _text(json['category']),
+    model: _text(json['model']),
     modelAvailable: json['modelAvailable'] == true,
     detected: json['detected'] == true,
     confidence: (_double(json['confidence']) ?? 0).clamp(0, 1).toDouble(),

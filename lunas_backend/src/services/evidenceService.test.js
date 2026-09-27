@@ -86,6 +86,8 @@ describe('secure incident evidence processing', () => {
       detected: true,
       confidence: 0.92,
       suggestion: 'pothole',
+      category: 'road',
+      model: 'road_damage',
       // Deliberately false to prove the backend owns this invariant.
       requiresManualReview: false,
       aiEnabled: true,
@@ -110,6 +112,8 @@ describe('secure incident evidence processing', () => {
     expect(aiService.analyzeIncidentImage).toHaveBeenCalledWith(expect.any(Buffer), 'road');
     expect(result.aiAnalysis).toEqual(expect.objectContaining({
       analysisStatus: 'completed',
+      category: 'road',
+      model: 'road_damage',
       hazardType: 'pothole',
       confidence: 0.92,
       detections: { roadDamage: 1, cracks: 0 },

@@ -79,10 +79,13 @@ function AiAssistance({ incident }: { incident: ValidationIncident }) {
             <div><dt className="text-slate-600">Advisory hazard</dt><dd className="font-semibold text-slate-950">{analysis?.hazardType ? titleCase(analysis.hazardType) : "No hazard suggested"}</dd></div>
             <div><dt className="text-slate-600">Confidence</dt><dd className="font-semibold text-slate-950">{confidence !== undefined ? `${confidence}%` : "Not available"}</dd></div>
             <div><dt className="text-slate-600">Image highlights</dt><dd className="font-semibold text-slate-950">{findingsCount}</dd></div>
-            <div><dt className="text-slate-600">Category model</dt><dd className="font-semibold text-slate-950">{analysis?.modelAvailable === false ? "Manual review only" : "Available"}</dd></div>
+            <div><dt className="text-slate-600">Category model</dt><dd className="font-semibold text-slate-950">{analysis?.model ? titleCase(analysis.model) : "Available"}</dd></div>
           </dl>
         ) : (
-          <p className="text-sm leading-6 text-slate-600">The report remains available for official validation. AI availability does not affect submission or the official decision workflow.</p>
+          <div className="space-y-1 text-sm leading-6 text-slate-600">
+            {analysis?.model ? <p>Assigned category model: <span className="font-semibold text-slate-800">{titleCase(analysis.model)}</span> (unavailable)</p> : null}
+            <p>The report remains available for official validation. AI availability does not affect submission or the official decision workflow.</p>
+          </div>
         )}
         {analysis?.processedAt ? <p className="text-xs text-slate-500">Processed {formatDateTime(analysis.processedAt)}</p> : null}
       </div>

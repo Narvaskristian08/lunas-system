@@ -158,6 +158,13 @@ class AiAssistanceCard extends StatelessWidget {
             'Manual review required. AI assistance does not change the category, priority, routing, status, duplicate decision, work order, or closure.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          if (analysis!.model != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Category model: ${_modelLabel(analysis!.model!)}${completed ? '' : ' (unavailable)'}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
           if (completed) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -176,6 +183,14 @@ class AiAssistanceCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _modelLabel(String value) {
+  final words = value
+      .split(RegExp(r'[_-]+'))
+      .where((word) => word.isNotEmpty)
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}');
+  return words.join(' ');
 }
 
 class _PreviewFallback extends StatelessWidget {

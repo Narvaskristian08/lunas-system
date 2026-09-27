@@ -68,6 +68,7 @@ const normalizeAiAnalysis = (analysis) => {
   return {
     analysisStatus,
     category: typeof analysis?.category === 'string' ? analysis.category.slice(0, 40) : undefined,
+    model: typeof analysis?.model === 'string' ? analysis.model.trim().slice(0, 80) : undefined,
     modelAvailable: completed,
     detected: completed && analysis?.detected === true,
     hazardType: completed
@@ -160,6 +161,7 @@ const mergeAiAnalyses = (analyses = []) => {
   return {
     analysisStatus: completed.length ? 'completed' : (failed ? 'failed' : 'unavailable'),
     category: first.category,
+    model: first.model,
     modelAvailable: completed.length > 0,
     detected: completed.some((analysis) => analysis.detected),
     hazardType: completed.find((analysis) => analysis.hazardType)?.hazardType || null,

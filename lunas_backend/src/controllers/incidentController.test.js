@@ -151,6 +151,7 @@ describe('citizen incident reporting', () => {
       images: [{ key: 'incidents/citizen/evidence.jpg', url: 'https://storage.example/evidence.jpg' }],
       aiAnalysis: {
         analysisStatus: 'completed',
+        model: 'road_damage',
         detected: true,
         hazardType: 'pothole',
         confidence: 0.92,
@@ -223,6 +224,7 @@ describe('citizen incident reporting', () => {
       images: [],
       aiAnalysis: {
         analysisStatus: 'completed',
+        model: 'road_damage',
         detected: true,
         hazardType: 'pothole',
         confidence: 0.92,
@@ -239,6 +241,7 @@ describe('citizen incident reporting', () => {
     expect(official.aiAnalysis).toEqual({
       analysisStatus: 'completed',
       category: undefined,
+      model: 'road_damage',
       modelAvailable: true,
       detected: true,
       hazardType: 'pothole',
@@ -253,6 +256,7 @@ describe('citizen incident reporting', () => {
     expect(citizen.aiAnalysis).toEqual({
       analysisStatus: 'completed',
       category: undefined,
+      model: 'road_damage',
       modelAvailable: true,
       detected: true,
       hazardType: 'pothole',

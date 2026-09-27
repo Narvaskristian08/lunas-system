@@ -131,6 +131,7 @@ void main() {
       'aiAnalysis': {
         'analysisStatus': 'completed',
         'category': 'road',
+        'model': 'road_damage',
         'modelAvailable': true,
         'detected': true,
         'confidence': 0.91,
@@ -157,6 +158,7 @@ void main() {
 
     expect(report.aiAnalysis?.requiresManualReview, isTrue);
     expect(report.aiAnalysis?.advisoryOnly, isTrue);
+    expect(report.aiAnalysis?.model, 'road_damage');
     expect(report.images.single.aiFindings.single.label, 'pothole');
     expect(report.images.single.aiFindings.single.bbox.x1, 0.1);
   });

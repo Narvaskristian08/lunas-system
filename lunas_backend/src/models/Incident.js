@@ -83,6 +83,7 @@ const incidentSchema = new mongoose.Schema({
       enum: ['completed', 'unavailable', 'failed']
     },
     category: String,
+    model: { type: String, maxlength: 80 },
     modelAvailable: { type: Boolean, default: false },
     detected: { type: Boolean, default: false },
     hazardType: String,

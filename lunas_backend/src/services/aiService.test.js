@@ -25,6 +25,7 @@ describe('category-routed AI service', () => {
         success: true,
         analysis_status: 'completed',
         model_available: true,
+        model: 'road_damage',
         confidence_score: 0.91,
         ai_suggestion: 'pothole',
         detections: [{
@@ -46,6 +47,7 @@ describe('category-routed AI service', () => {
     expect(result).toEqual(expect.objectContaining({
       success: true,
       category: 'road',
+      model: 'road_damage',
       analysisStatus: 'completed',
       findings: [{
         label: 'pothole',
@@ -54,6 +56,58 @@ describe('category-routed AI service', () => {
       }],
       requiresManualReview: true
     }));
+  });
+
+  test.each([
+    ['road', 'road_damage'],
+    ['drainage', 'surface_drainage'],
+    ['electrical', 'electrical_damage'],
+    ['water', 'water_leak'],
+    ['gas', 'gas_infrastructure_damage'],
+    ['streetlight', 'streetlight_damage'],
+    ['other', 'environmental_hazards']
+  ])('forwards %s and preserves its assigned model identity', async (category, model) => {
+    axios.post.mockResolvedValue({
+      data: {
+        success: true,
+        analysis_status: category === 'gas' ? 'unavailable' : 'completed',
+        model_available: category !== 'gas',
+        model,
+        detections: []
+      }
+    });
+
+    const result = await aiService.analyzeIncidentImage(Buffer.from('webp'), category);
+
+    expect(axios.post.mock.calls[0][1].values.find(([name]) => name === 'category'))
+      .toEqual(['category', category]);
+    expect(result).toEqual(expect.objectContaining({
+      category,
+      model,
+      analysisStatus: category === 'gas' ? 'unavailable' : 'completed',
+      requiresManualReview: true
+    }));
+  });
+
+  test('uses the strongest finding confidence when the AI response omits a summary score', async () => {
+    axios.post.mockResolvedValue({
+      data: {
+        success: true,
+        analysis_status: 'completed',
+        model_available: true,
+        model: 'water_leak',
+        detections: [{
+          class: 'water_leak',
+          confidence: 0.84,
+          bbox: { x1: 0.2, y1: 0.1, x2: 0.8, y2: 0.9 }
+        }]
+      }
+    });
+
+    const result = await aiService.analyzeIncidentImage(Buffer.from('webp'), 'water');
+
+    expect(result.confidence).toBe(0.84);
+    expect(result.suggestion).toBe('water_leak');
   });
 
   test('does not substitute a model for an unsupported canonical category', async () => {

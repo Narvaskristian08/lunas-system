@@ -4,9 +4,25 @@ from src.utils.config import config
 
 
 def test_category_model_routes_are_explicit_and_category_scoped():
-    assert config.get_category_model("water") == "water_leak"
-    assert config.get_category_model("streetlight") == "streetlight_damage"
-    assert config.get_category_model("gas") == "gas_infrastructure_damage"
+    expected = {
+        "road": "road_damage",
+        "drainage": "surface_drainage",
+        "electrical": "electrical_damage",
+        "water": "water_leak",
+        "gas": "gas_infrastructure_damage",
+        "streetlight": "streetlight_damage",
+        "other": "environmental_hazards",
+    }
+    assert {
+        category: config.get_category_model(category)
+        for category in expected
+    } == expected
+
+
+def test_available_category_checkpoints_exist():
+    for category in ("road", "drainage", "electrical", "water", "streetlight", "other"):
+        model = config.get_model_config(config.get_category_model(category))
+        assert (Path(config.BASE_DIR) / model["path"]).is_file(), category
 
 
 def test_water_and_streetlight_checkpoints_exist():

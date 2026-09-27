@@ -87,6 +87,7 @@ export interface ValidationIncident {
   aiAnalysis?: {
     analysisStatus?: ValidationAiAnalysisStatus;
     category?: string;
+    model?: string;
     modelAvailable?: boolean;
     detected?: boolean;
     hazardType?: string;
@@ -311,6 +312,7 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
         ? aiStatus
         : undefined,
       category: asString(aiAnalysis.category),
+      model: asString(aiAnalysis.model),
       modelAvailable: aiStatus === "completed"
         ? aiAnalysis.modelAvailable !== false
         : aiAnalysis.modelAvailable === true,
