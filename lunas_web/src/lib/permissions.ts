@@ -49,6 +49,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "support.create",
   ],
   "System Administrator": [
+    "users.manage",
     "dashboard.view",
     "reports.view",
     "reports.validate",

@@ -247,7 +247,7 @@ const setAvailability = async (personnelId, availability) => {
 
 const findScopedWorkOrder = (req, id, includeIncident = true) => {
   const scope = buildWorkOrderScope(req.user);
-  return populateWorkOrder(WorkOrder.findOne({ ...scope, _id: id }), includeIncident);
+  return populateWorkOrder(WorkOrder.findOne({ _id: id, ...scope }), includeIncident);
 };
 
 const listFilter = async (req) => {

@@ -36,7 +36,7 @@ exports.deliverPasswordReset = async ({ user, resetToken }) => {
     return { configured: true, delivered: true };
   } catch (error) {
     // Never include the reset URL or token in logs.
-    logger.error(`Password reset delivery failed: ${error.message}`);
+    logger.error('Password reset delivery failed');
     return { configured: true, delivered: false };
   }
 };

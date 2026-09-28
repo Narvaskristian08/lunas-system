@@ -1,29 +1,144 @@
 "use client";
-import { useMemo, useState } from "react";
+
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Archive, CheckCircle2, Database, HardDrive, KeyRound, LockKeyhole, MonitorCog, Plus, Search, ShieldAlert, Users, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DataTable } from "@/components/ui/data-table";
-import { usersByRole } from "@/lib/mock-data";
+import { manageAccountAction } from "@/app/actions/authorized-accounts";
+import { accountRoleLabels, accountStatusLabels, type AuthorizedAccount, type AuthorizedAccountPage } from "@/lib/authorized-accounts";
 
-const labels: Record<string,string>={users:"Users",roles:"Roles & permissions",permissions:"Permission matrix",organizations:"Organizations",personnel:"Repair personnel","incident-configuration":"Incident configuration",sla:"SLA configuration",settings:"System settings",audit:"Audit & security",security:"Security center",data:"Data management",monitoring:"System monitoring"};
-const services=[['API','Operational','success'],['PostgreSQL database','Operational','success'],['Cloud storage','Operational','success'],['Notification service','Degraded','warning'],['SLA monitor','Operational','success'],['Scheduled tasks','Operational','success']];
-export function AdminConsole({segments=[]}:{segments?:string[]}){const root=segments[0]??'overview';const leaf=segments.at(-1);const [query,setQuery]=useState('');const [dialog,setDialog]=useState<'create'|'danger'|'backup'|null>(null);const [reason,setReason]=useState('');const title=root==='overview'?'Platform administration':labels[root]??'Administration';const users=useMemo(()=>Object.values(usersByRole).filter(u=>`${u.firstName} ${u.lastName} ${u.email} ${u.role}`.toLowerCase().includes(query.toLowerCase())),[query]);
-if(root==='overview')return <AdminOverview/>;
-if(root==='monitoring')return <Monitoring title={leaf&&leaf!==root?leaf.replaceAll('-',' '):'System monitoring'}/>;
-if(root==='data')return <DataManagement title={leaf&&leaf!==root?leaf.replaceAll('-',' '):'Data management'} onBackup={()=>setDialog('backup')}/>;
-if(root==='settings'||root==='incident-configuration'||root==='sla')return <Configuration title={title} section={leaf} onSave={()=>setDialog('create')}/>;
-if(root==='audit'||root==='security')return <AuditSecurity title={title} section={leaf}/>;
-if(root==='users'&&segments.length>1)return <UserDetail id={segments[1]} onDanger={()=>setDialog('danger')}/>;
-return <div className="mx-auto max-w-[1680px]"><PageHeader eyebrow="LUNAS · Platform governance" title={title} description="Administrative changes are permission-checked, auditable, and prepared for backend approval." actions={<Button onClick={()=>setDialog('create')}><Plus className="size-4" />{root==='users'?'Create user':`Add ${title.slice(0,-1)}`}</Button>}/><Card className="overflow-hidden"><CardHeader title={`${title} register`} description="Search, review, and manage governance records."/><div className="border-y bg-slate-50 p-4"><label className="relative block"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500"/><span className="sr-only">Search {title}</span><input value={query} onChange={e=>setQuery(e.target.value)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder={`Search ${title.toLowerCase()}`}/></label></div>{root==='users'?<DataTable caption="User accounts" columns={[{key:'name',label:'User'},{key:'role',label:'Role'},{key:'organization',label:'Organization'},{key:'status',label:'Account status'},{key:'verified',label:'Verification'},{key:'open',label:''}]} rows={users.map(u=>({id:u.id,cells:{name:<div><Link href={`/admin/users/${u.id}`} className="font-semibold text-brand-700 hover:underline">{u.firstName} {u.lastName}</Link><p className="text-xs text-slate-500">{u.email}</p></div>,role:u.role,organization:u.organization,status:<StatusBadge tone={u.status==='Active'?'success':'critical'}>{u.status}</StatusBadge>,verified:<StatusBadge tone={u.verified?'success':'warning'}>{u.verified?'Verified':'Pending'}</StatusBadge>,open:<Link href={`/admin/users/${u.id}`} className="text-brand-700">Open</Link>}}))}/>:<GovernanceTable root={root}/>}</Card><ConfirmationDialog open={dialog!==null} icon="none" title={dialog==='danger'?'Confirm security action':dialog==='backup'?'Run encrypted backup?':`Save ${title.toLowerCase()} change?`} description={dialog==='danger'?'This action can immediately revoke access while preserving history and assignments. A reason is required.':'Changes are recorded in the immutable administrative audit trail and require a backend authorization check.'} confirmLabel={dialog==='danger'?'Confirm security action':dialog==='backup'?'Run backup':'Save change'} destructive={dialog==='danger'} onClose={()=>setDialog(null)} onConfirm={()=>{if(dialog==='danger'&&!reason.trim())return;setDialog(null)}}><label className="block text-sm font-medium">Administrative reason{dialog==='danger'?' (required)':''}<textarea value={reason} onChange={e=>setReason(e.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Describe the authorized business or security reason"/></label></ConfirmationDialog></div>}
-function AdminOverview(){return <div className="mx-auto max-w-[1680px]"><PageHeader eyebrow="LUNAS · Secure platform control" title="Platform administration" description="Govern users, configuration, security, data protection, and service health without changing ordinary operational records." actions={<Link href="/admin/users" className="inline-flex min-h-11 items-center rounded-xl bg-brand-700 px-4 text-sm font-semibold text-white"><Users className="mr-2 size-4"/>Manage users</Link>}/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Total users','248','information'],['Suspended accounts','3','critical'],['Security alerts','2','warning'],['System availability','99.98%','success'],['Organizations','36','information'],['Backup status','Current','success'],['Failed logins','14','warning'],['SLA monitor','Healthy','success']].map(([l,v,t])=><Card key={l} className="p-5"><p className="text-sm text-slate-600">{l}</p><p className="mt-2 text-3xl font-bold">{v}</p><StatusBadge className="mt-3" tone={t as 'information'|'critical'|'warning'|'success'}>{t==='success'?'Operational':'Review'}</StatusBadge></Card>)}</div><div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_1fr]"><Card className="p-6"><h2 className="font-semibold">System health summary</h2><div className="mt-4 space-y-3">{services.map(([name,status,tone])=><div key={name} className="flex items-center justify-between rounded-xl border border-slate-200 p-3"><span className="font-medium">{name}</span><StatusBadge tone={tone as 'success'|'warning'}>{status}</StatusBadge></div>)}</div></Card><Card className="p-6"><h2 className="font-semibold">Recent administrative activity</h2><ol className="mt-4 space-y-4 text-sm"><li><strong>USR-BO-0184 role verified</strong><p className="text-slate-600">Carlo Mendoza · 9:24 AM</p></li><li><strong>SLA-CRITICAL-001 updated</strong><p className="text-slate-600">Critical escalation window adjusted · 8:52 AM</p></li><li><strong>BACKUP-2026-0087 completed</strong><p className="text-slate-600">Encrypted backup retained under policy · 2:00 AM</p></li></ol></Card></div></div>}
-function GovernanceTable({root}:{root:string}){const rows=root==='roles'?[['System Administrator','12 permissions','4 users','Active'],['City Engineering Office','9 permissions','27 users','Active'],['Utility Provider','8 permissions','19 users','Active']]:root==='organizations'?[['Barangay Pantal','Barangay','Active','BRGY-PTL-001'],['Dagupan City Engineering Office','Department','Active','DEPT-ENG-001'],['Dagupan Water District','Utility provider','Active','UTIL-WATER-001']]:root==='personnel'?[['PERSON-2026-0048','Water Team Alpha','Available','18 active assignments'],['PERSON-2026-0052','Road Crew R-05','On site','12 active assignments']]:[['Configuration record','Scope','Active','Last changed']];return <DataTable caption={`${root} register`} columns={[{key:'a',label:'Record'},{key:'b',label:'Scope'},{key:'c',label:'Status'},{key:'d',label:'Context'}]} rows={rows.map((r,i)=>({id:String(i),cells:{a:<strong className="text-slate-900">{r[0]}</strong>,b:r[1],c:<StatusBadge tone={r[2]==='Active'||r[2]==='Available'?'success':'information'}>{r[2]}</StatusBadge>,d:r[3]}}))}/>}
-function Configuration({title,section,onSave}:{title:string;section?:string;onSave:()=>void}){return <div className="mx-auto max-w-5xl"><PageHeader eyebrow="LUNAS · Controlled configuration" title={title} description="Configuration is versioned, permission-checked, and written to the audit history." actions={<Button onClick={onSave}>Save draft</Button>}/><Card className="p-6"><h2 className="font-semibold">{section?.replaceAll('-',' ')??'Active configuration'}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2">{['Display name','Status','Default owner','Notification behavior'].map((label,i)=><label key={label} className="block text-sm font-medium">{label}<input defaultValue={i===0?'LUNAS platform':''} className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 px-3 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70"/></label>)}</div><div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><ShieldAlert className="mr-2 inline size-4"/>Sensitive configuration requires backend authorization and a change reason before deployment.</div></Card></div>}
-function AuditSecurity({title,section}:{title:string;section?:string}){return <div className="mx-auto max-w-[1680px]"><PageHeader eyebrow="LUNAS · Immutable accountability" title={title} description="Read-only audit, authentication, access, signature, hash, and security-alert records."/><Card className="overflow-hidden"><CardHeader title={section?.replaceAll('-',' ')??'Audit log'} description="Sensitive values, credentials, tokens, and raw stack traces are never displayed."/><DataTable caption="Audit and security records" columns={[{key:'time',label:'Time'},{key:'event',label:'Event'},{key:'actor',label:'Actor'},{key:'result',label:'Result'}]} rows={[['2026-08-01 09:24','Role verification approved','Carlo Mendoza','Success'],['2026-08-01 08:52','SLA rule modified','Carlo Mendoza','Success'],['2026-08-01 08:11','Failed sign-in threshold reached','Security monitor','Investigating']].map((r,i)=>({id:String(i),cells:{time:r[0],event:r[1],actor:r[2],result:<StatusBadge tone={r[3]==='Success'?'success':'warning'}>{r[3]}</StatusBadge>}}))}/></Card></div>}
-function DataManagement({title,onBackup}:{title:string;onBackup:()=>void}){return <div className="mx-auto max-w-5xl"><PageHeader eyebrow="LUNAS · Data protection" title={title} description="Backups, retention, archives, exports, and restore controls preserve auditability." actions={<Button onClick={onBackup}><HardDrive className="size-4"/>Run backup</Button>}/><div className="grid gap-5 md:grid-cols-2">{[['Encrypted backup','BACKUP-2026-0087 · completed 2:00 AM',HardDrive],['Retention policy','Incident evidence: 7 years · audit records: 10 years',Archive],['Restore protection','Requires confirmation phrase and dual authorization',LockKeyhole],['Export controls','Permission-filtered PDF, Excel, and CSV exports',Database]].map(([h,d,Icon])=>{const I=Icon as typeof HardDrive;return <Card key={h as string} className="p-5"><I className="size-5 text-brand-700"/><h2 className="mt-3 font-semibold">{h as string}</h2><p className="mt-2 text-sm text-slate-600">{d as string}</p></Card>})}</div></div>}
-function Monitoring({title}:{title:string}){return <div className="mx-auto max-w-5xl"><PageHeader eyebrow="LUNAS · Service observability" title={title} description="Service health, scheduled jobs, errors, performance, and SLA monitor status."/><div className="grid gap-4 sm:grid-cols-2">{services.map(([n,s,t])=><Card key={n} className="p-5"><MonitorCog className="size-5 text-brand-700"/><h2 className="mt-3 font-semibold">{n}</h2><StatusBadge className="mt-3" tone={t as 'success'|'warning'}>{s}</StatusBadge><p className="mt-3 text-sm text-slate-600">Last checked less than one minute ago. Detailed diagnostics require the monitoring API.</p></Card>)}</div></div>}
-function UserDetail({id,onDanger}:{id:string;onDanger:()=>void}){const user=Object.values(usersByRole).find(u=>u.id===id);return <div className="mx-auto max-w-5xl"><PageHeader eyebrow="LUNAS · User governance" title={user?`${user.firstName} ${user.lastName}`:'User not found'} description={user?.email??'The requested account is unavailable.'} actions={<Button variant="secondary">Edit user</Button>}/>{user?<div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]"><Card className="p-6"><h2 className="font-semibold">Identity, role, and access</h2><dl className="mt-4 space-y-3 text-sm">{[['User ID',user.id],['Role',user.role],['Organization',user.organization],['Last login',user.lastLogin],['Permissions',user.permissions.join(', ')]].map(([l,v])=><div key={l}><dt className="text-slate-500">{l}</dt><dd className="mt-1 font-medium">{v}</dd></div>)}</dl></Card><Card className="p-6"><h2 className="font-semibold">Account actions</h2><div className="mt-4 grid gap-2"><Button><CheckCircle2 className="size-4"/>Activate</Button><Button variant="secondary"><KeyRound className="size-4"/>Send password reset</Button><Button variant="danger" onClick={onDanger}><XCircle className="size-4"/>Suspend user</Button></div></Card></div>:null}</div>}
+const inputClass = "mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100";
+type AccessAction = "active" | "suspended" | "deactivated" | "activation";
+const actionLabels: Record<AccessAction, string> = { active: "Reactivate", suspended: "Suspend", deactivated: "Deactivate", activation: "Send activation email" };
+
+export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccountPage; viewerId: string; search: string }) {
+  const router = useRouter();
+  const [selected, setSelected] = useState<AuthorizedAccount | "new" | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [message, setMessage] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [dialog, setDialog] = useState<{ account: AuthorizedAccount; action: AccessAction } | null>(null);
+  const [reason, setReason] = useState("");
+  const [dialogError, setDialogError] = useState("");
+  const canManage = (account: AuthorizedAccount) => account.id !== viewerId && (account.role !== "admin" || data.canManageAdministrators);
+
+  function confirmAccess() {
+    if (!dialog || pending) return;
+    if (dialog.action !== "activation" && !reason.trim()) { setDialogError("Enter the reason for this access change."); return; }
+    const form = new FormData();
+    form.set("version", String(dialog.account.version));
+    form.set("reason", reason);
+    form.set("status", dialog.action);
+    startTransition(async () => {
+      try {
+        const result = await manageAccountAction(dialog.action === "activation" ? "activation" : "status", dialog.account.id, form);
+        if (!result.ok) { setDialogError(result.message); return; }
+        setMessage(result.message);
+        setDialog(null);
+        setSelected(null);
+        router.refresh();
+      } catch { setDialogError("The service could not be reached. Refresh before retrying."); }
+    });
+  }
+
+  return <div className="mx-auto max-w-[1680px] space-y-6">
+    <PageHeader eyebrow="LUNAS · Account administration" title="Authorized accounts"
+      description="Provision personnel after their responsible organization has verified and approved access outside LUNAS."
+      actions={<Button onClick={() => { setSelected("new"); setEditing(true); setMessage(""); }}><Plus className="size-4" />Create Authorized Account</Button>} />
+    {message && <p role="status" className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm">{message}</p>}
+    <Card className="overflow-hidden">
+      <CardHeader title="Personnel accounts" description="Role, jurisdiction, and account status are enforced by the server." />
+      <form action="/admin/users" className="flex gap-3 border-y bg-slate-50 p-4">
+        <label className="flex-1 text-sm">Search accounts<input name="search" defaultValue={search} maxLength={100} placeholder="Name, email, or organization" className={inputClass} /></label>
+        <Button type="submit" variant="secondary" className="self-end">Search</Button>
+      </form>
+      <DataTable caption="Authorized personnel" columns={[{ key: "name", label: "Name" }, { key: "role", label: "Role" }, { key: "scope", label: "Organization / jurisdiction" }, { key: "status", label: "Status" }, { key: "actions", label: "Actions" }]}
+        rows={data.accounts.map(account => ({ id: account.id, cells: {
+          name: <><strong>{account.firstName} {account.lastName}</strong><p className="text-xs text-slate-500">{account.email}</p></>,
+          role: accountRoleLabels[account.role],
+          scope: <>{account.organization || account.utilityCompany || account.repairOrganization || "—"}<p className="text-xs text-slate-500">{account.barangay || (account.role === "utility_provider" ? "Assigned utility organization" : "City-level scope")}</p></>,
+          status: <StatusBadge tone={account.accountStatus === "active" ? "success" : account.accountStatus === "pending_activation" ? "warning" : "critical"}>{accountStatusLabels[account.accountStatus]}</StatusBadge>,
+          actions: <Button variant="secondary" onClick={() => { setSelected(account); setEditing(false); }}>View</Button>,
+        } }))} />
+      {!data.accounts.length && <p className="p-6 text-sm text-slate-500">No authorized accounts match this search.</p>}
+      <div className="flex items-center justify-between border-t p-4 text-sm">
+        <span>{data.pagination.total} accounts · Page {data.pagination.page} of {Math.max(1, data.pagination.pages)}</span>
+        <div className="flex gap-4">
+          {data.pagination.page > 1 && <Link href={`/admin/users?${new URLSearchParams({ search, page: String(data.pagination.page - 1) })}`} className="text-brand-700">Previous</Link>}
+          {data.pagination.page < data.pagination.pages && <Link href={`/admin/users?${new URLSearchParams({ search, page: String(data.pagination.page + 1) })}`} className="text-brand-700">Next</Link>}
+        </div>
+      </div>
+    </Card>
+    {selected && <Card className="p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">{selected === "new" ? "Create Authorized Account" : `${selected.firstName} ${selected.lastName}`}</h2>
+        <div className="flex gap-2">{selected !== "new" && !editing && canManage(selected) && <Button variant="secondary" onClick={() => setEditing(true)}>Edit approved details</Button>}<Button variant="ghost" onClick={() => setSelected(null)}>Close</Button></div>
+      </div>
+      <AccountForm key={`${selected === "new" ? "new" : `${selected.id}-${selected.version}`}-${editing}`} account={selected === "new" ? undefined : selected} data={data} readOnly={!editing}
+        onSaved={text => { setMessage(text); setSelected(null); router.refresh(); }} />
+      {selected !== "new" && !editing && canManage(selected) && <div className="mt-6 flex flex-wrap gap-3 border-t pt-5">
+        {(selected.accountStatus === "active" ? ["suspended", "deactivated"]
+          : selected.accountStatus === "pending_activation" ? ["activation", "deactivated"]
+          : ["active", ...(selected.accountStatus === "suspended" ? ["deactivated"] : [])]).map(value => {
+          const action = value as AccessAction;
+          return <Button key={action} variant={action === "deactivated" ? "danger" : "secondary"} onClick={() => { setDialog({ account: selected, action }); setReason(""); setDialogError(""); }}>{actionLabels[action]}</Button>;
+        })}
+      </div>}
+    </Card>}
+    <ConfirmationDialog open={!!dialog} icon="none" title={`${dialog ? actionLabels[dialog.action] : "Update"} account?`}
+      description={dialog?.action === "activation" ? "A new expiring link will be emailed to this person. Previous links will stop working."
+        : "This changes the person's access immediately and revokes existing sessions. Historical actions and records will be retained."}
+      confirmLabel={dialog ? actionLabels[dialog.action] : "Confirm"} destructive={dialog?.action === "deactivated" || dialog?.action === "suspended"}
+      loading={pending} onClose={() => setDialog(null)} onConfirm={confirmAccess}>
+      {dialog?.action !== "activation" && <label className="text-sm">Reason (required)<textarea className={inputClass} value={reason} maxLength={500} onChange={event => setReason(event.target.value)} /></label>}
+      {dialogError && <p role="alert" className="mt-2 text-sm text-red-700">{dialogError}</p>}
+    </ConfirmationDialog>
+  </div>;
+}
+
+function AccountForm({ account, data, readOnly, onSaved }: { account?: AuthorizedAccount; data: AuthorizedAccountPage; readOnly: boolean; onSaved: (message: string) => void }) {
+  const [role, setRole] = useState<AuthorizedAccount["role"]>(account?.role || "barangay_official");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const roles = data.roles.filter(value => value !== "admin" || data.canManageAdministrators || account?.role === "admin");
+  function field(name: string, label: string, value = "", required = true, maxLength = 160, type = "text") {
+    return <label className="block text-sm font-medium">{label}{required ? " *" : ""}<input className={inputClass} name={name} defaultValue={value} type={type} required={required} maxLength={maxLength} /></label>;
+  }
+  return <form onSubmit={event => {
+    event.preventDefault();
+    if (pending || readOnly) return;
+    const form = new FormData(event.currentTarget);
+    startTransition(async () => {
+      try {
+        const result = await manageAccountAction(account ? "edit" : "create", account?.id || "", form);
+        if (result.ok) onSaved(result.message); else setError(result.message);
+      } catch { setError("The service could not be reached. Refresh before retrying."); }
+    });
+  }}>
+    <p className="mb-5 text-sm text-slate-600">{account ? `Status: ${accountStatusLabels[account.accountStatus]}.` : "Status: Pending Activation. The person will receive an email link to choose their own password."} Approval below records a decision already made by the responsible organization.</p>
+    <input type="hidden" name="version" value={account?.version || 0} />
+    <fieldset disabled={readOnly || pending} className="grid gap-5 md:grid-cols-2">
+      {field("firstName", "First name", account?.firstName, true, 80)}
+      {field("lastName", "Last name", account?.lastName, true, 80)}
+      {account ? <div className="text-sm"><p className="font-medium">Email</p><p className="mt-3">{account.email}</p></div> : field("email", "Email", "", true, 254, "email")}
+      {field("phone", "Contact number", account?.phone, true, 13, "tel")}
+      {field("personnelId", "Employee / personnel ID (if applicable)", account?.personnelId, false, 80)}
+      {field("position", "Position / designation", account?.position, true, 120)}
+      {field("organization", "Office / organization", account?.organization)}
+      <label className="text-sm font-medium">System role *<select name="role" value={role} onChange={event => setRole(event.target.value as AuthorizedAccount["role"])} className={inputClass}>{roles.map(value => <option key={value} value={value}>{accountRoleLabels[value]}</option>)}</select></label>
+      {["barangay_official", "repair_personnel"].includes(role) && <label className="text-sm font-medium">Assigned barangay{role === "barangay_official" ? " *" : " (optional)"}<select name="barangay" className={inputClass} defaultValue={account?.barangay || ""} required={role === "barangay_official"}><option value="">{role === "repair_personnel" ? "Citywide within assigned organization" : "Select barangay"}</option>{data.barangays.map(value => <option key={value}>{value}</option>)}</select></label>}
+      {role === "utility_provider" && field("utilityCompany", "Assigned utility company", account?.utilityCompany)}
+      {role === "repair_personnel" && <>{field("repairOrganization", "Assigned repair organization", account?.repairOrganization)}{field("repairTeam", "Repair team (optional)", account?.repairTeam, false, 120)}</>}
+      {field("approvalAuthority", "Approved by / approving authority", account?.approval?.authority)}
+      <label className="text-sm font-medium md:col-span-2">Approval reference / remarks *<textarea className={inputClass} name="approvalReference" required maxLength={500} defaultValue={account?.approval?.reference || ""} placeholder="Reference or remarks confirming the offline authorization" /></label>
+    </fieldset>
+    {!readOnly && <div className="mt-6"><p className="mb-3 text-sm text-slate-600">By saving, you confirm that the role and jurisdiction match the organization&apos;s offline approval.</p><Button type="submit" loading={pending} loadingLabel="Saving account…">{account ? "Save approved details" : "Create account and send activation"}</Button></div>}
+    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
+  </form>;
+}

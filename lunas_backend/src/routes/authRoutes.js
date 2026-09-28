@@ -15,6 +15,8 @@ const {
   logout
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const { activateAuthorizedAccount } = require('../controllers/authorizedAccountController');
+const { activateAccountValidation } = require('../middleware/accountValidation');
 const {
   changePasswordValidation,
   forgotPasswordValidation,
@@ -40,6 +42,7 @@ const authLimiter = rateLimit({
 });
 
 router.post('/register', authLimiter, registerValidation, validate, register);
+router.post('/activate-account', authLimiter, activateAccountValidation, validate, activateAuthorizedAccount);
 router.post('/register/verify', authLimiter, registrationMfaValidation, validate, verifyRegistrationMfa);
 router.post('/register/resend', authLimiter, registrationMfaResendValidation, validate, resendRegistrationMfa);
 router.post('/login', authLimiter, loginValidation, validate, login);

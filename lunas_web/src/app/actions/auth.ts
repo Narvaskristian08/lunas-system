@@ -278,3 +278,16 @@ export async function resendVerificationAction(email?: string): Promise<ActionRe
     return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
   }
 }
+
+export async function activateAccountAction(token: string, password: string): Promise<ActionResult> {
+  try {
+    await backendRequest("/auth/activate-account", { method: "POST", body: JSON.stringify({ token, password }) });
+    return { ok: true };
+  } catch (error) {
+    if (isBackendApiError(error) && error.status === 400) {
+      const payload = error.payload as { errors?: Array<{ message?: string }> } | undefined;
+      return { ok: false, message: payload?.errors?.[0]?.message || "This link is invalid, expired, or already used. Ask your administrator for a new activation email." };
+    }
+    return { ok: false, message: "Activation is temporarily unavailable. Please try again later." };
+  }
+}

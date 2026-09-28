@@ -108,7 +108,7 @@ describe('archived user visibility', () => {
       query: { includeArchived: 'true' },
       user: { role: 'barangay_official' }
     }, officialResponse, jest.fn());
-    expect(User.find).toHaveBeenLastCalledWith({ isArchived: { $ne: true } });
+    expect(User.find).toHaveBeenLastCalledWith({ isArchived: { $ne: true }, barangay: '__unassigned__' });
 
     const adminResponse = createResponse();
     await getUsers({

@@ -1,5 +1,7 @@
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { redirect } from "next/navigation";
+import { requirePermission } from "@/lib/auth/dal.server";
 
-export default function AdminPage() {
-  return <MilestoneUnavailable title="Administration is not available yet" description="Administrative governance features are planned after the foundational milestone." />;
+export default async function AdminPage() {
+  await requirePermission("users.manage");
+  redirect("/admin/users");
 }

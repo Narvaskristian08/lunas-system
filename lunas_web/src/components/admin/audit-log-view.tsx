@@ -51,7 +51,7 @@ export function AuditLogView({
       <PageHeader
         eyebrow="LUNAS · Security accountability"
         title="Audit & security"
-        description="Read-only server-generated records for authentication, registration MFA, account archiving, and operational decisions."
+        description="Read-only records for authentication, account provisioning, access changes, and operational decisions."
       />
 
       <Card className="mb-5 p-4">
@@ -87,7 +87,7 @@ export function AuditLogView({
                 actor: <div><p className="font-medium text-slate-900">{record.actor.name || record.actor.label || "System"}</p>{record.actor.email ? <p className="text-xs text-slate-500">{record.actor.email}</p> : null}</div>,
                 source: <span className="capitalize">{record.source}</span>,
                 result: <StatusBadge tone={resultTone(record.status)}>{record.status}</StatusBadge>,
-                context: <span className="capitalize">{contextLabel(record)}</span>,
+                context: <div><span>{contextLabel(record)}</span>{record.resourceType === "User" && record.changes && <details className="mt-2"><summary className="cursor-pointer text-brand-700">View change</summary><pre className="mt-2 max-w-sm whitespace-pre-wrap break-words text-xs">{JSON.stringify(record.changes, null, 2)}</pre></details>}</div>,
               },
             }))}
           />

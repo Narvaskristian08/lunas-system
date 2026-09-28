@@ -4,6 +4,15 @@ const logger = require('./logger');
 const REDACTED = '[REDACTED]';
 const SENSITIVE_KEYS = new Set([
   'password',
+  'passwordhash',
+  'activationtoken',
+  'activationtokenhash',
+  'activationurl',
+  'passwordresettoken',
+  'registrationmfacodehash',
+  'registrationchallengehash',
+  'refreshtokens',
+  'tokenhash',
   'currentpassword',
   'newpassword',
   'token',

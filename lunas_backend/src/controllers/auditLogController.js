@@ -1,5 +1,6 @@
 const AuditLog = require('../models/AuditLog');
 const asyncHandler = require('../middleware/asyncHandler');
+const { sanitizeAuditValue } = require('../utils/auditLogger');
 
 const actorSummary = (actor, actorType) => {
   if (!actor) return { type: actorType, label: actorType === 'anonymous' ? 'Anonymous request' : 'System' };
@@ -51,7 +52,8 @@ exports.getAuditLogs = asyncHandler(async (req, res) => {
       status: log.status,
       resourceType: log.resourceType,
       resourceId: log.resourceId,
-      details: log.details,
+      details: sanitizeAuditValue(log.details),
+      changes: sanitizeAuditValue(log.changes),
       ipAddress: log.ipAddress,
       userAgent: log.userAgent,
       timestamp: log.timestamp

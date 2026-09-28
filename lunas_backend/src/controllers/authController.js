@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { canSignIn } = require('../utils/accountPolicy');
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
@@ -87,7 +88,7 @@ exports.register = asyncHandler(async (req, res) => {
   const normalizedEmail = email.toLowerCase();
 
   const existingUser = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
-  if (existingUser && (existingUser.isActive || existingUser.isVerified || existingUser.isArchived)) {
+  if (existingUser && (existingUser.role !== 'citizen' || existingUser.isActive || existingUser.isVerified || existingUser.isArchived)) {
     return res.status(409).json({
       success: false,
       message: 'User with this email already exists'
@@ -171,7 +172,7 @@ exports.verifyRegistrationMfa = asyncHandler(async (req, res) => {
   const normalizedEmail = req.body.email.toLowerCase();
   const user = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
 
-  if (!user || user.isArchived || user.isVerified || Number(user.registrationMfaAttempts) >= 5) {
+  if (!user || user.role !== 'citizen' || user.isArchived || user.isVerified || Number(user.registrationMfaAttempts) >= 5) {
     await createAuditLog({
       action: 'registration_mfa_failed',
       ...(user ? { performedBy: user._id, resourceType: 'User', resourceId: user._id } : {
@@ -250,7 +251,7 @@ exports.verifyRegistrationMfa = asyncHandler(async (req, res) => {
 exports.resendRegistrationMfa = asyncHandler(async (req, res) => {
   const normalizedEmail = req.body.email.toLowerCase();
   const user = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
-  if (!user || user.isArchived || user.isVerified
+  if (!user || user.role !== 'citizen' || user.isArchived || user.isVerified
     || !isRegistrationChallengeTokenValid(user, req.body.challengeToken)) {
     await createAuditLog({
       action: 'registration_mfa_failed',
@@ -401,7 +402,7 @@ exports.login = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!user.isActive || user.isArchived) {
+  if (!canSignIn(user)) {
     await createAuditLog({
       action: 'user_login',
       performedBy: user._id,
@@ -463,7 +464,7 @@ exports.refresh = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(decoded.id).select('+refreshTokens +tokenVersion');
-  if (!user || !user.isActive || user.isArchived || !isCurrentTokenVersion(decoded, user)) {
+  if (!user || !canSignIn(user) || !isCurrentTokenVersion(decoded, user)) {
     return unauthorized(res);
   }
 
@@ -597,7 +598,7 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: req.body.email.toLowerCase() })
     .select('+passwordResetToken +passwordResetExpires');
 
-  if (!user || !user.isActive) {
+  if (!canSignIn(user)) {
     return res.status(200).json(genericResponse);
   }
 
@@ -624,6 +625,10 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
 exports.resetPassword = asyncHandler(async (req, res) => {
   const tokenHash = crypto.createHash('sha256').update(req.body.token).digest('hex');
   const user = await User.findOne({
+    isActive: true,
+    isArchived: { $ne: true },
+    requiresActivation: { $ne: true },
+    $or: [{ accountStatus: 'active' }, { accountStatus: { $exists: false } }],
     passwordResetToken: tokenHash,
     passwordResetExpires: { $gt: new Date() }
   }).select('+password +passwordResetToken +passwordResetExpires +refreshTokens +tokenVersion');

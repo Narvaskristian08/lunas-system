@@ -84,7 +84,7 @@ exports.deliverRegistrationCode = async ({ email, firstName, code }) => {
     });
     return { configured: true, delivered: true };
   } catch (error) {
-    logger.error(`Registration MFA delivery failed: ${error.message}`);
+    logger.error('Registration MFA delivery failed');
     return { configured: true, delivered: false };
   }
 };
@@ -96,11 +96,5 @@ exports.registrationChallengeResponse = ({ challenge, email }) => ({
   resendAfterSeconds: Math.max(
     30,
     parseInt(process.env.REGISTRATION_MFA_RESEND_SECONDS, 10) || 60
-  ),
-  ...(
-    process.env.NODE_ENV !== 'production'
-    && process.env.REGISTRATION_MFA_EXPOSE_CODE === 'true'
-      ? { developmentCode: challenge.code }
-      : {}
   )
 });

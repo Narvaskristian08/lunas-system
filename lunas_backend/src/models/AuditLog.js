@@ -11,6 +11,13 @@ const auditLogSchema = new mongoose.Schema({
       'user_created',
       'user_updated',
       'user_archived',
+      'authorized_account_created',
+      'account_activation_sent',
+      'account_activation_completed',
+      'account_suspended',
+      'account_reactivated',
+      'account_deactivated',
+      'account_jurisdiction_changed',
       'registration_mfa_challenged',
       'registration_mfa_verified',
       'registration_mfa_failed',
@@ -112,7 +119,7 @@ auditLogSchema.index({ action: 1 });
 auditLogSchema.index({ actorType: 1, action: 1, timestamp: -1 });
 auditLogSchema.index({ timestamp: -1 });
 
-// TTL index - auto-delete logs older than 1 year
-auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 31536000 });
+// Accountability records must survive account deactivation. Existing databases
+// must run the remove-audit-ttl migration to remove the former TTL index.
 
 module.exports = mongoose.model('AuditLog', auditLogSchema);

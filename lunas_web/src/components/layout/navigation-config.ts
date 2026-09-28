@@ -36,7 +36,7 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
   },
   {
     label: "Administration",
-    items: [{ label: "Audit trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
+    items: [{ label: "Authorized accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" }, { label: "Audit trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
   },
   {
     label: "Account",

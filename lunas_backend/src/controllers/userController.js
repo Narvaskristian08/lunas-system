@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
+const { canManageAdministrators } = require('../utils/accountPolicy');
 
 // @desc    Get all users
 // @route   GET /api/v1/users
@@ -15,17 +16,18 @@ exports.getUsers = asyncHandler(async (req, res) => {
   
   if (role) filter.role = role;
   if (barangay) filter.barangay = barangay;
+  if (req.user.role === 'barangay_official') filter.barangay = req.user.barangay || '__unassigned__';
   if (search) {
     filter.$or = [
-      { firstName: { $regex: search, $options: 'i' } },
-      { lastName: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } }
+      { firstName: { $regex: String(search).slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+      { lastName: { $regex: String(search).slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+      { email: { $regex: String(search).slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
     ];
   }
 
   const users = await User.find(filter)
     .select('-password')
-    .sort(sortBy)
+    .sort(['createdAt', '-createdAt', 'firstName', '-firstName'].includes(sortBy) ? sortBy : 'createdAt')
     .limit(parseInt(limit))
     .skip((parseInt(page) - 1) * parseInt(limit));
 
@@ -33,7 +35,7 @@ exports.getUsers = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: users,
+    data: users.map(user => user.toPublicJSON()),
     pagination: {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -56,7 +58,9 @@ exports.getUser = asyncHandler(async (req, res) => {
     });
   }
 
-  if (req.user.role === 'citizen' && user._id.toString() !== req.user._id.toString()) {
+  if (user._id.toString() !== req.user._id.toString()
+    && !['admin', 'city_engineer'].includes(req.user.role)
+    && !(req.user.role === 'barangay_official' && req.user.barangay && user.barangay === req.user.barangay)) {
     return res.status(403).json({
       success: false,
       message: 'Not authorized to access another user profile'
@@ -65,102 +69,7 @@ exports.getUser = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: user
-  });
-});
-
-// @desc    Update user
-// @route   PUT /api/v1/users/:id
-// @access  Private (Admin only)
-exports.updateUser = asyncHandler(async (req, res) => {
-  const {
-    role,
-    isActive,
-    isVerified,
-    barangay,
-    expertise,
-    utilityCompany,
-    repairOrganization,
-    repairTeam,
-    availability
-  } = req.body;
-
-  let user = await User.findById(req.params.id);
-
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'User not found'
-    });
-  }
-
-  if (user.isArchived && isActive === true) {
-    return res.status(400).json({
-      success: false,
-      message: 'Archived accounts must be restored through an audited restore workflow'
-    });
-  }
-
-  const normalizedUtilityCompany = typeof utilityCompany === 'string'
-    ? utilityCompany.trim()
-    : utilityCompany;
-  if (typeof utilityCompany !== 'undefined'
-    && (typeof normalizedUtilityCompany !== 'string'
-      || !normalizedUtilityCompany
-      || normalizedUtilityCompany.length > 160)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Utility company must be a non-empty value of at most 160 characters'
-    });
-  }
-
-  const targetRole = role || user.role;
-  const targetUtilityCompany = typeof utilityCompany === 'undefined'
-    ? user.utilityCompany
-    : normalizedUtilityCompany;
-  if (targetRole === 'utility_provider' && !targetUtilityCompany) {
-    return res.status(400).json({
-      success: false,
-      message: 'A utility-provider account must have a utility company before it can be activated'
-    });
-  }
-
-  const updates = {};
-  if (role) updates.role = role;
-  if (typeof isActive !== 'undefined') updates.isActive = isActive;
-  if (typeof isVerified !== 'undefined') updates.isVerified = isVerified;
-  if (barangay) updates.barangay = barangay;
-  if (expertise) updates.expertise = expertise;
-  if (typeof utilityCompany !== 'undefined') updates.utilityCompany = normalizedUtilityCompany;
-  if (typeof repairOrganization !== 'undefined') updates.repairOrganization = repairOrganization;
-  if (typeof repairTeam !== 'undefined') updates.repairTeam = repairTeam;
-  if (typeof availability !== 'undefined') {
-    if (!['available', 'assigned', 'unavailable', 'off_duty'].includes(availability)) {
-      return res.status(400).json({ success: false, message: 'Invalid personnel availability state' });
-    }
-    updates.availability = availability;
-  }
-
-  user = await User.findByIdAndUpdate(req.params.id, updates, {
-    new: true,
-    runValidators: true
-  }).select('-password');
-
-  await createAuditLog({
-    action: 'user_updated',
-    performedBy: req.user._id,
-    affectedUser: user._id,
-    resourceType: 'User',
-    resourceId: user._id,
-    details: updates,
-    ipAddress: req.ip,
-    userAgent: req.headers['user-agent']
-  });
-
-  res.status(200).json({
-    success: true,
-    message: 'User updated successfully',
-    data: user
+    data: user.toPublicJSON()
   });
 });
 
@@ -207,6 +116,10 @@ exports.archiveUser = asyncHandler(async (req, res) => {
     });
   }
 
+  if (user.role === 'admin' && !canManageAdministrators(req.user)) {
+    return res.status(403).json({ success: false, message: 'Not authorized to manage administrator accounts' });
+  }
+
   if (user.isArchived) {
     await createAuditLog({
       action: 'user_archived',
@@ -232,6 +145,12 @@ exports.archiveUser = asyncHandler(async (req, res) => {
     isArchived: user.isArchived,
     tokenVersion: Number(user.tokenVersion || 0)
   };
+  user.accountStatus = 'deactivated';
+  user.activationTokenHash = undefined;
+  user.activationExpiresAt = undefined;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  user.__v = Number(user.__v || 0) + 1;
   user.isArchived = true;
   user.isActive = false;
   user.archivedAt = new Date();
@@ -287,6 +206,7 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
   };
 
   if (barangay) filter.barangay = barangay;
+  if (req.user.role === 'barangay_official') filter.barangay = req.user.barangay || '__unassigned__';
   if (expertise) filter.expertise = expertise;
 
   const personnel = await User.find(filter).select(

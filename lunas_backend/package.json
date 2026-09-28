@@ -10,7 +10,8 @@
     "lint": "eslint src/**/*.js scripts/**/*.js",
     "seed:demo": "node scripts/seed-demo-data.js",
     "seed:demo:barangay": "node scripts/seed-demo-barangay.js",
-    "seed:demo:engineer": "node scripts/seed-demo-city-engineer.js"
+    "seed:demo:engineer": "node scripts/seed-demo-city-engineer.js",
+    "migrate:account-retention": "node scripts/remove-audit-ttl.js"
   },
   "keywords": [
     "infrastructure",

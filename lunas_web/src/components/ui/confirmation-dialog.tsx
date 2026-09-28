@@ -69,7 +69,7 @@ export function ConfirmationDialog({
         {children ? <div className="mt-4">{children}</div> : null}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button ref={cancelRef} type="button" variant="secondary" onClick={onClose} disabled={loading} className="sm:min-w-28">{cancelLabel}</Button>
-          <Button type="button" variant={destructive ? "danger" : "primary"} onClick={onConfirm} loading={loading} loadingLabel="Signing out…" className="sm:min-w-36">{confirmLabel}</Button>
+          <Button type="button" variant={destructive ? "danger" : "primary"} onClick={onConfirm} loading={loading} loadingLabel="Please wait…" className="sm:min-w-36">{confirmLabel}</Button>
         </div>
       </div>
     </div>

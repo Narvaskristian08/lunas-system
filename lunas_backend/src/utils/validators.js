@@ -113,8 +113,7 @@ exports.sanitizeInput = (input) => {
  * @param {String} barangay - Barangay name
  * @returns {Boolean} Is valid
  */
-exports.isValidBarangay = (barangay) => {
-  const validBarangays = [
+const BARANGAYS = [
     'Bacayao Norte', 'Bacayao Sur', 'Barangay I', 'Barangay II', 'Barangay III',
     'Barangay IV', 'Bolosan', 'Bonuan Binloc', 'Bonuan Boquig', 'Bonuan Gueset',
     'Calmay', 'Carael', 'Caranglaan', 'Herrero', 'Lasip Chico', 'Lasip Grande',
@@ -122,6 +121,6 @@ exports.isValidBarangay = (barangay) => {
     'Poblacion Oeste', 'Pogo Chico', 'Pogo Grande', 'Pugaro Suit', 'Salapingao',
     'Salisay', 'Tambac', 'Tapuac', 'Tebeng'
   ];
-  
-  return validBarangays.includes(barangay);
-};
+
+exports.BARANGAYS = Object.freeze(BARANGAYS);
+exports.isValidBarangay = barangay => BARANGAYS.includes(barangay);

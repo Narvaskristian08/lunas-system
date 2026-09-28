@@ -2,6 +2,11 @@
 # Training outputs are stored here when running from project root
 runs/
 
+# Root deployment environment. Keep actual AWS/Compose credentials out of Git.
+/.env
+/.env.*
+!/.env.example
+
 # OS Files
 .DS_Store
 .vscode/

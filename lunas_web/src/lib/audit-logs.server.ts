@@ -21,6 +21,7 @@ export interface AuditLogRecord {
   resourceType?: string;
   resourceId?: string;
   details?: Record<string, unknown>;
+  changes?: { before?: unknown; after?: unknown };
   ipAddress?: string;
   userAgent?: string;
   timestamp: string;

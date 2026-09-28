@@ -3,7 +3,6 @@ const router = express.Router();
 const {
   getUsers,
   getUser,
-  updateUser,
   archiveUser,
   getRepairPersonnel
 } = require('../controllers/userController');
@@ -16,6 +15,19 @@ const {
   updateProfileValidation,
   validate
 } = require('../middleware/validation');
+const accounts = require('../controllers/authorizedAccountController');
+const accountRules = require('../middleware/accountValidation');
+
+router.route('/authorized')
+  .get(protect, authorize('admin'), paginationValidation, accountRules.accountQueryValidation, validate, accounts.getAuthorizedAccounts)
+  .post(protect, authorize('admin'), accountRules.createAccountValidation, validate, accounts.createAuthorizedAccount);
+router.route('/authorized/:id')
+  .get(protect, authorize('admin'), mongoIdValidation, validate, accounts.getAuthorizedAccount)
+  .put(protect, authorize('admin'), mongoIdValidation, accountRules.updateAccountValidation, validate, accounts.updateAuthorizedAccount);
+router.patch('/authorized/:id/status', protect, authorize('admin'), mongoIdValidation,
+  accountRules.accountStatusValidation, validate, accounts.changeAccountStatus);
+router.post('/authorized/:id/activation', protect, authorize('admin'), mongoIdValidation,
+  accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 
 router.get('/repair-personnel', protect, authorize('barangay_official', 'city_engineer', 'admin'), getRepairPersonnel);
 
@@ -41,7 +53,8 @@ router.patch(
 
 router.route('/:id')
   .get(protect, mongoIdValidation, validate, getUser)
-  .put(protect, authorize('admin'), mongoIdValidation, validate, updateUser)
+  // Compatibility route now uses the same approved-field and role policy.
+  .put(protect, authorize('admin'), mongoIdValidation, accountRules.updateAccountValidation, validate, accounts.updateAuthorizedAccount)
   // Backward-compatible alias. Despite the HTTP verb, this never deletes a
   // database record; new clients should use PATCH /:id/archive.
   .delete(protect, authorize('admin'), mongoIdValidation, archiveUserValidation, validate, archiveUser);

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { USER_ROLES, ACCOUNT_STATUSES, accountStatus } = require('../utils/accountPolicy');
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -28,13 +29,13 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() { return !this.requiresActivation; },
     minlength: [8, 'Password must be at least 8 characters'],
     select: false
   },
   role: {
     type: String,
-    enum: ['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider', 'admin'],
+    enum: USER_ROLES,
     default: 'citizen',
     required: true
   },
@@ -48,7 +49,7 @@ const userSchema = new mongoose.Schema({
   barangay: {
     type: String,
     required: function() {
-      return ['barangay_official', 'repair_personnel'].includes(this.role);
+      return this.role === 'barangay_official';
     }
   },
   utilityCompany: {
@@ -84,6 +85,21 @@ const userSchema = new mongoose.Schema({
     }
   },
   profileImage: String,
+  organization: { type: String, trim: true, maxlength: 160 },
+  position: { type: String, trim: true, maxlength: 120 },
+  personnelId: { type: String, trim: true, maxlength: 80 },
+  approval: {
+    authority: { type: String, maxlength: 160 },
+    reference: { type: String, maxlength: 500 },
+    recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    recordedAt: Date
+  },
+  accountStatus: { type: String, enum: ACCOUNT_STATUSES },
+  requiresActivation: Boolean,
+  activatedAt: Date,
+  activationTokenHash: { type: String, select: false },
+  activationExpiresAt: { type: Date, select: false },
+  activationSentAt: { type: Date, select: false },
   isVerified: {
     type: Boolean,
     default: false
@@ -150,7 +166,7 @@ userSchema.index({ role: 1, repairOrganization: 1, availability: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return next();
   }
   
@@ -161,6 +177,7 @@ userSchema.pre('save', async function(next) {
 
 // Method to compare passwords
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
@@ -198,6 +215,10 @@ userSchema.methods.toPublicJSON = function() {
     isVerified: this.isVerified,
     isActive: this.isActive,
     isArchived: this.isArchived,
+    accountStatus: accountStatus(this),
+    organization: this.organization,
+    position: this.position,
+    personnelId: this.personnelId,
     archivedAt: this.archivedAt,
     createdAt: this.createdAt
   };

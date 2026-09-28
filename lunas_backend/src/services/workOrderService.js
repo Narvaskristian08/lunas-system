@@ -65,7 +65,11 @@ const buildWorkOrderScope = (user) => {
     return organization ? { responsibleOrganization: organization } : { _id: null };
   }
   if (user.role === REPAIR_PERSONNEL_ROLE) {
-    return { assignedTo: user._id, assignmentState: { $in: ['pending', 'accepted'] } };
+    const organization = normalizeText(user.repairOrganization);
+    if (!organization) return { _id: null };
+    return { assignedTo: user._id, assignmentState: { $in: ['pending', 'accepted'] },
+      responsibleOrganization: organization,
+      ...(normalizeText(user.barangay) ? { 'jurisdiction.barangay': normalizeText(user.barangay) } : {}) };
   }
   return { _id: null };
 };
@@ -74,7 +78,10 @@ const canAccessWorkOrder = (user, workOrder) => {
   if (!user || !workOrder) return false;
   if (user.role === REPAIR_PERSONNEL_ROLE) {
     return sameId(workOrder.assignedTo, user._id)
-      && ['pending', 'accepted'].includes(workOrder.assignmentState);
+      && ['pending', 'accepted'].includes(workOrder.assignmentState)
+      && Boolean(normalizeText(user.repairOrganization))
+      && normalizeText(user.repairOrganization) === normalizeText(workOrder.responsibleOrganization)
+      && (!normalizeText(user.barangay) || normalizeText(user.barangay) === getWorkOrderBarangay(workOrder));
   }
   return canManageWorkOrder(user, workOrder);
 };

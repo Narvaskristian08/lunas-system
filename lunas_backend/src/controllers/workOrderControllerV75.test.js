@@ -43,7 +43,7 @@ const {
 const { processAndUploadRepairEvidence } = require('../services/evidenceService');
 
 const cityEngineer = { _id: '507f191e810c19729de860a1', role: 'city_engineer' };
-const assignedWorker = { _id: '507f191e810c19729de860a2', role: 'repair_personnel' };
+const assignedWorker = { _id: '507f191e810c19729de860a2', role: 'repair_personnel', repairOrganization: 'City Engineering' };
 
 const response = () => {
   const res = {};
@@ -87,7 +87,7 @@ describe('75% work-order controller boundaries', () => {
   });
 
   test('scopes a repair-personnel detail lookup to the caller assignment to prevent IDOR', async () => {
-    const otherWorker = { _id: '507f191e810c19729de860ff', role: 'repair_personnel' };
+    const otherWorker = { _id: '507f191e810c19729de860ff', role: 'repair_personnel', repairOrganization: 'City Engineering' };
     WorkOrder.findOne.mockReturnValue(scopedQuery(null));
     const res = response();
 
@@ -99,6 +99,7 @@ describe('75% work-order controller boundaries', () => {
     expect(WorkOrder.findOne).toHaveBeenCalledWith({
       _id: '507f191e810c19729de860d1',
       assignedTo: otherWorker._id,
+      responsibleOrganization: 'City Engineering',
       assignmentState: { $in: ['pending', 'accepted'] }
     });
     expect(res.status).toHaveBeenCalledWith(404);
