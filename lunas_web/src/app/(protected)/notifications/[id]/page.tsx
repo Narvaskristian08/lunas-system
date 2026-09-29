@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { NotificationDetail } from "@/components/notifications/notification-detail";
 
 export const metadata: Metadata = { title: "Notification details" };
 
-export default function NotificationDetailPage() {
-  return <MilestoneUnavailable title="Notifications are not available yet" description="Live notifications will be introduced with the later operational workflows they support." />;
+export default async function NotificationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <NotificationDetail id={id} />;
 }

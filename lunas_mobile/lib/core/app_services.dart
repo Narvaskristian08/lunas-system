@@ -6,7 +6,6 @@ import 'package:lunas_mobile/features/reporting/data/services/category_service.d
 import 'package:lunas_mobile/features/reporting/data/services/evidence_service.dart';
 import 'package:lunas_mobile/features/reporting/data/services/report_service.dart';
 import 'package:lunas_mobile/features/repair/data/services/repair_service.dart';
-import 'package:lunas_mobile/features/validation/data/services/validation_service.dart';
 
 /// Application-owned services for the production mobile path.
 /// Tests can construct each service/controller directly with a fake client.
@@ -20,7 +19,6 @@ final authController = AuthController(authService);
 final reportService = ReportService(apiClient: apiClient);
 final categoryService = CategoryService(apiClient: apiClient);
 final evidenceService = EvidenceService();
-final validationService = ValidationService(apiClient: apiClient);
 final repairService = RepairService(apiClient: apiClient);
 
 void configureAppServices() {

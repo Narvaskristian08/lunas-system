@@ -3,6 +3,7 @@ import {
   CircleGauge,
   ClipboardList,
   ClipboardCheck,
+  Bell,
   HelpCircle,
   ScrollText,
   Timer,
@@ -33,6 +34,10 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
       { label: "Work orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view" },
       { label: "SLA monitor", href: "/sla", icon: Timer, permission: "sla.view" },
     ],
+  },
+  {
+    label: "Updates",
+    items: [{ label: "Notifications", href: "/notifications", icon: Bell, permission: "notifications.view" }],
   },
   {
     label: "Administration",

@@ -154,16 +154,17 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
   Future<void> _save() async {
     final workOrder = _workOrder;
     if (workOrder == null || !_formKey.currentState!.validate()) return;
-    if (_selectedProgress <= workOrder.progressPercent) {
+    final correctionResubmission = workOrder.isCorrectionResubmission;
+    if (_selectedProgress <= workOrder.progressPercent && !correctionResubmission) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Select a repair milestone higher than the current progress.')),
       );
       return;
     }
-    if (_selectedProgress == 100 && _evidence != null) {
+    if (_selectedProgress == 100 && _evidence == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Upload field evidence before recording the 100% milestone.'),
+          content: Text('Add final post-maintenance evidence before completing the repair.'),
         ),
       );
       return;
@@ -175,11 +176,12 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
         progressPercent: _selectedProgress,
         stage: repairStageForProgress(_selectedProgress),
         notes: _notesController.text,
+        finalEvidence: _selectedProgress == 100 ? _evidence : null,
         latitude: _latitude,
         longitude: _longitude,
         version: workOrder.version,
       );
-      if (_evidence != null) {
+      if (_evidence != null && _selectedProgress != 100) {
         try {
           final progressUpdateId = updated.progressUpdates.isEmpty
               ? null
@@ -205,7 +207,7 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
       }
       if (!mounted) return;
       final message = _selectedProgress == 100
-          ? 'Progress saved. This repair is ready for completion / verification.'
+          ? 'Repair completed and sent to the Utility Provider for review.'
           : 'Repair progress saved.';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       context.go(RepairRoutes.workOrder(updated.id));
@@ -287,7 +289,9 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
             const SizedBox(height: AppSpacing.xl),
             Text('Repair progress', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.xs),
-            const Text('Select the approved repair milestone. Progress cannot be reduced.'),
+            Text(workOrder.isCorrectionResubmission
+                ? 'The provider requested corrective work. Submit a new completion note and final evidence at 100%.'
+                : 'Select the approved repair milestone. Progress cannot be reduced.'),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.xs,
@@ -295,13 +299,12 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
               children: [
                 for (final value in [0, 25, 50, 75, 100])
                   ChoiceChip(
-                    label: Text('$value%'),
+                    label: Text(value == 100 && workOrder.isCorrectionResubmission ? '100% · Resubmit completion' : '$value%'),
                     selected: _selectedProgress == value,
-                    onSelected: value <= workOrder.progressPercent
+                    onSelected: value <= workOrder.progressPercent && !(value == 100 && workOrder.isCorrectionResubmission)
                         ? null
                         : (_) => setState(() {
                             _selectedProgress = value;
-                            if (value == 100) _evidence = null;
                           }),
                   ),
               ],
@@ -326,14 +329,12 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            if (_selectedProgress == 100)
-              const _FinishEvidenceNotice()
-            else
-              _EvidencePicker(
-                evidence: _evidence,
-                onPick: _saving ? null : _pickEvidence,
-                onRemove: _saving ? null : () => setState(() => _evidence = null),
-              ),
+            _EvidencePicker(
+              evidence: _evidence,
+              requiredForCompletion: _selectedProgress == 100,
+              onPick: _saving ? null : _pickEvidence,
+              onRemove: _saving ? null : () => setState(() => _evidence = null),
+            ),
             const SizedBox(height: AppSpacing.lg),
             _LocationPicker(
               locating: _locating,
@@ -380,11 +381,13 @@ class _CurrentProgressCard extends StatelessWidget {
 class _EvidencePicker extends StatelessWidget {
   const _EvidencePicker({
     required this.evidence,
+    required this.requiredForCompletion,
     required this.onPick,
     required this.onRemove,
   });
 
   final EvidenceSelection? evidence;
+  final bool requiredForCompletion;
   final VoidCallback? onPick;
   final VoidCallback? onRemove;
 
@@ -393,15 +396,17 @@ class _EvidencePicker extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Field evidence', style: Theme.of(context).textTheme.titleLarge),
+        Text(requiredForCompletion ? 'Final post-maintenance evidence' : 'Field evidence', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: AppSpacing.xs),
-        const Text('Optional JPG or PNG evidence up to 10 MB. It uploads only after progress is confirmed.'),
+        Text(requiredForCompletion
+            ? 'Required to complete the repair. This image is submitted with the 100% completion update.'
+            : 'Optional JPG or PNG evidence up to 10 MB. It uploads after the progress update is confirmed.'),
         const SizedBox(height: AppSpacing.md),
         if (evidence == null)
           OutlinedButton.icon(
             onPressed: onPick,
             icon: const Icon(Icons.add_a_photo_outlined),
-            label: const Text('Select evidence'),
+            label: Text(requiredForCompletion ? 'Add final evidence' : 'Select evidence'),
           )
         else
           Row(
@@ -461,17 +466,6 @@ class _LocationPicker extends StatelessWidget {
   );
 }
 
-class _FinishEvidenceNotice extends StatelessWidget {
-  const _FinishEvidenceNotice();
-
-  @override
-  Widget build(BuildContext context) => const LunasCard(
-    child: Text(
-      'If you need to add final field evidence, upload it from the work order before recording 100% progress.',
-    ),
-  );
-}
-
 class _ReadyForCompletionNotice extends StatelessWidget {
   const _ReadyForCompletionNotice();
 
@@ -479,7 +473,7 @@ class _ReadyForCompletionNotice extends StatelessWidget {
   Widget build(BuildContext context) => LunasCard(
     color: AppColorsLight.success.withValues(alpha: .10),
     child: const Text(
-      'At 100%, this repair becomes ready for formal completion / verification. LUNAS does not verify, approve, or close it in this workflow.',
+      'At 100%, the repair is marked completed and sent to the Utility Provider for review. City Engineering performs the final verification and closure.',
     ),
   );
 }

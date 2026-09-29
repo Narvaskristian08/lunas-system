@@ -16,7 +16,7 @@ const response = () => {
   return res;
 };
 
-describe('50% validation route authorization', () => {
+describe('incident decision route authorization', () => {
   beforeEach(() => jest.clearAllMocks());
 
   test('denies a citizen before any validation controller can run', () => {
@@ -40,7 +40,7 @@ describe('50% validation route authorization', () => {
   });
 
   test('permits a configured validation official but not a provider decision', () => {
-    const allowedReq = { user: { _id: 'official-1', role: 'city_engineer' } };
+    const allowedReq = { user: { _id: 'official-1', role: 'barangay_official' } };
     const providerReq = {
       user: { _id: 'provider-1', role: 'utility_provider' },
       path: '/incidents/507f191e810c19729de860a1/validate',

@@ -193,10 +193,13 @@ exports.archiveUser = asyncHandler(async (req, res) => {
 // symbol. The DELETE route is now a recoverable archive operation.
 exports.deleteUser = exports.archiveUser;
 
-// @desc    Get repair personnel by barangay/expertise
+// @desc    Get repair personnel belonging to the caller's Utility Provider organization
 // @route   GET /api/v1/users/repair-personnel
-// @access  Private (Officials)
+// @access  Private (Utility Provider)
 exports.getRepairPersonnel = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'utility_provider') {
+    return res.status(403).json({ success: false, message: 'Only Utility Providers may select Repair Personnel' });
+  }
   const { barangay, expertise } = req.query;
 
   const filter = {
@@ -205,8 +208,8 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
     isArchived: { $ne: true }
   };
 
+  filter.repairOrganization = req.user.utilityCompany || '__unassigned__';
   if (barangay) filter.barangay = barangay;
-  if (req.user.role === 'barangay_official') filter.barangay = req.user.barangay || '__unassigned__';
   if (expertise) filter.expertise = expertise;
 
   const personnel = await User.find(filter).select(
@@ -217,5 +220,25 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
     success: true,
     data: personnel,
     count: personnel.length
+  });
+});
+
+// @desc    Get selectable Utility Provider organizations with active provisioned accounts
+// @route   GET /api/v1/users/utility-providers
+// @access  Private (City Engineer)
+exports.getUtilityProviderOrganizations = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'city_engineer') {
+    return res.status(403).json({ success: false, message: 'Only City Engineering may select a responsible Utility Provider' });
+  }
+  const organizations = await User.distinct('utilityCompany', {
+    role: 'utility_provider',
+    isActive: true,
+    isArchived: { $ne: true },
+    utilityCompany: { $type: 'string', $ne: '' }
+  });
+  return res.status(200).json({
+    success: true,
+    data: organizations.map((organization) => String(organization).trim()).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+    count: organizations.length
   });
 });

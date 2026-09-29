@@ -34,7 +34,7 @@ class CategoryService {
     } on ApiException catch (error) {
       if (error.isUnauthorized || error.isForbidden) rethrow;
     }
-    // These are the backend's established 25% incident enum values, not demo
+    // These are the backend's supported incident category values, not demo
     // data. They keep manual reporting available if the category API is down.
     return const CategoryLoadResult(
       categories: supportedReportCategories,

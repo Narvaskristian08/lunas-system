@@ -11,9 +11,10 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
 
   // Get incident statistics
   const totalIncidents = await Incident.countDocuments(filter);
-  const pendingIncidents = await Incident.countDocuments({ ...filter, status: 'submitted' });
+  const pendingStatus = req.user.role === 'city_engineer' ? 'barangay_validated' : 'submitted';
+  const pendingIncidents = await Incident.countDocuments({ ...filter, status: pendingStatus });
   const inProgressIncidents = await Incident.countDocuments({ ...filter, status: 'in_progress' });
-  const completedIncidents = await Incident.countDocuments({ ...filter, status: { $in: ['completed', 'verified', 'closed'] } });
+  const completedIncidents = await Incident.countDocuments({ ...filter, status: 'closed' });
 
   // Get incidents by priority
   const incidentsByPriority = await Incident.aggregate([
@@ -27,15 +28,14 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     { $group: { _id: '$category', count: { $sum: 1 } } }
   ]);
 
-  // A 50% official dashboard must not leak global work-order counts to a
-  // barangay or provider. Work-order scoping is a later milestone, so only
-  // city-wide roles receive those aggregate values here.
-  const canReadCitywideWorkOrderStats = ['admin', 'city_engineer'].includes(req.user.role);
+  // Do not leak citywide work-order counts to barangay or provider accounts.
+  // Their dashboard summaries use their own server-scoped work-order queries.
+  const canReadCitywideWorkOrderStats = req.user.role === 'city_engineer';
   const [totalWorkOrders, activeWorkOrders, completedWorkOrders] = canReadCitywideWorkOrderStats
     ? await Promise.all([
       WorkOrder.countDocuments(),
       WorkOrder.countDocuments({ status: { $in: ['pending', 'accepted', 'in_progress'] } }),
-      WorkOrder.countDocuments({ status: { $in: ['completed', 'verified'] } })
+      WorkOrder.countDocuments({ status: 'verified' })
     ])
     : [0, 0, 0];
 
@@ -73,7 +73,7 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
 
 // @desc    Get analytics
 // @route   GET /api/v1/stats/analytics
-// @access  Private (Officials, Admin)
+// @access  Private (City Engineer)
 exports.getAnalytics = asyncHandler(async (req, res) => {
   const { startDate, endDate, barangay } = req.query;
 
@@ -137,15 +137,19 @@ exports.getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Summary used by the 50% official validation dashboard
+// @desc    Role-stage summary for the official review queues
 // @route   GET /api/v1/stats/validation-summary
 // @access  Private (Validation officials; query scope is enforced server-side)
 exports.getValidationSummary = asyncHandler(async (req, res) => {
   const scope = buildIncidentScope(req.user);
   const count = (status) => Incident.countDocuments(combineIncidentFilters(scope, { status }));
-  const [pending, validated, rejected, duplicate] = await Promise.all([
-    count('submitted'),
-    count('validated'),
+  const pendingStates = req.user.role === 'city_engineer'
+    ? ['barangay_validated']
+    : ['submitted', 'clarification_required'];
+  const pending = await Incident.countDocuments(combineIncidentFilters(scope, { status: { $in: pendingStates } }));
+  const validatedState = req.user.role === 'barangay_official' ? 'barangay_validated' : 'city_confirmed';
+  const [validated, rejected, duplicate] = await Promise.all([
+    count(validatedState),
     count('rejected'),
     count('duplicate')
   ]);

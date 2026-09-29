@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { NotificationsCenter } from "@/components/notifications/notifications-center";
 
 export const metadata: Metadata = { title: "Notifications" };
 
 export default function NotificationsPage() {
-  return <MilestoneUnavailable title="Notifications are not available yet" description="Live notifications will be introduced with the later operational workflows they support." />;
+  return <NotificationsCenter />;
 }

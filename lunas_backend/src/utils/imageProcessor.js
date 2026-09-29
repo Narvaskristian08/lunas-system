@@ -31,8 +31,8 @@ exports.detectHazards = async () => ({
 });
 
 /**
- * Repair verification is a later milestone. Never report a fabricated SSIM
- * result when no comparison implementation is configured.
+ * City Engineering verification is a human review. No image-comparison or
+ * SSIM result is produced by this utility.
  */
 exports.compareRepairImages = async () => ({
   available: false,

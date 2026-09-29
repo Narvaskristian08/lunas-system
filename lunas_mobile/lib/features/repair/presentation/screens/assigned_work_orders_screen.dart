@@ -141,7 +141,8 @@ class _StatusFilters extends StatelessWidget {
       (RepairWorkOrderStatus.pending, 'Pending'),
       (RepairWorkOrderStatus.accepted, 'Accepted'),
       (RepairWorkOrderStatus.inProgress, 'In progress'),
-      (RepairWorkOrderStatus.completed, 'Ready'),
+      (RepairWorkOrderStatus.completed, 'Provider review'),
+      (RepairWorkOrderStatus.reworkRequired, 'Correction'),
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,

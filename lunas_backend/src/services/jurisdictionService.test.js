@@ -6,7 +6,7 @@ const {
   isValidationDecisionOfficial
 } = require('./jurisdictionService');
 
-describe('50% jurisdiction authorization', () => {
+describe('jurisdiction authorization', () => {
   const barangayOfficial = { _id: 'official-1', role: 'barangay_official', barangay: 'Poblacion Oeste' };
 
   test('builds a barangay query scope instead of trusting a client filter', () => {

@@ -1,5 +1,6 @@
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
+import { redirect } from "next/navigation";
 
-export default function ReportPage() {
-  return <MilestoneUnavailable title="Report review is not available yet" description="Official report review and validation are planned after Milestone 1." />;
+export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/validation-routing/${encodeURIComponent(id)}`);
 }

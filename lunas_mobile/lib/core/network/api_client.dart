@@ -9,7 +9,7 @@ import 'package:lunas_mobile/core/storage/secure_session_store.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 
-/// Small REST client shared by the mobile 25% milestone.
+/// REST client shared by the Citizen and Repair Personnel mobile workflows.
 ///
 /// It attaches the short-lived access token, performs one safe refresh/retry on
 /// a 401 response, and tells the auth controller when a session is no longer

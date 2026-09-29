@@ -28,7 +28,6 @@ class AuthUser {
 
   String get fullName => '$firstName $lastName'.trim();
   bool get isCitizen => isCitizenRole(role);
-  bool get isValidationOfficial => isValidationOfficialRole(role);
   bool get hasSupportedMobileWorkspace => isSupportedMobileRole(role);
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {

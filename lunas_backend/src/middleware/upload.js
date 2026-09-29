@@ -34,7 +34,7 @@ const fileFilter = (req, file, cb) => {
 
 const maxFileSize = parseInt(process.env.MAX_FILE_SIZE, 10) || 10 * 1024 * 1024;
 
-// Generic upload instance retained for existing later-milestone endpoints.
+// Generic upload instance for endpoints that accept one or more image files.
 const upload = multer({
   storage: storage,
   limits: {

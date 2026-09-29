@@ -29,10 +29,10 @@ export interface AuthorizedAccountPage {
 }
 export const accountRoleLabels: Record<AuthorizedAccount["role"], string> = {
   barangay_official: "Barangay Official",
-  city_engineer: "City Engineering Personnel",
-  repair_personnel: "Repair / Maintenance Personnel",
-  utility_provider: "Utility Provider Personnel",
-  admin: "System Administrator",
+  city_engineer: "City Engineer",
+  repair_personnel: "Repair Personnel",
+  utility_provider: "Utility Provider",
+  admin: "Admin",
 };
 export const accountStatusLabels: Record<AccountStatus, string> = {
   pending_activation: "Pending Activation", active: "Active", suspended: "Suspended", deactivated: "Deactivated",

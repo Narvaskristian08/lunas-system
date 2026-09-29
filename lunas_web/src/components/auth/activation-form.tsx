@@ -6,6 +6,7 @@ import { AuthCard, BackToLogin } from "@/components/auth/auth-ui";
 import { PasswordField } from "@/components/forms/password-field";
 import { PasswordStrength } from "@/components/forms/password-strength";
 import { Button } from "@/components/ui/button";
+import { passwordChecks } from "@/lib/utils";
 
 export function ActivationForm() {
   const token = useRef("");
@@ -25,6 +26,7 @@ export function ActivationForm() {
       event.preventDefault();
       if (pending) return;
       if (!/^[a-f0-9]{64}$/.test(token.current)) { setMessage("Open the activation link from your email. Ask your administrator for a new link if needed."); return; }
+      if (!Object.values(passwordChecks(password)).every(Boolean)) { setMessage("Choose a password that meets the requirements below."); return; }
       if (password !== confirmation) { setMessage("The passwords do not match."); return; }
       startTransition(async () => {
         try {
@@ -36,7 +38,7 @@ export function ActivationForm() {
     }}>
       <div><PasswordField id="activation-password" name="password" label="Create password" autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} required disabled={pending} /><PasswordStrength password={password} /></div>
       <PasswordField id="activation-confirm" name="confirmation" label="Confirm password" autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} required disabled={pending} />
-      <p className="text-sm text-slate-600">Use at least 8 characters including uppercase, lowercase, and a number. The link expires and can be used once.</p>
+      <p className="text-sm text-slate-600">Choose a unique password that meets every requirement above. The link expires and can be used once.</p>
       {message && <p role="alert" className="text-sm text-red-700">{message}</p>}
       <Button type="submit" className="w-full" loading={pending} loadingLabel="Activating account…">Activate account</Button><BackToLogin />
     </form>}</AuthCard>;

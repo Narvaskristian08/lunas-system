@@ -101,7 +101,7 @@ describe('citizen incident reporting', () => {
     await createIncident(req, res, jest.fn());
 
     expect(payload.reporter).toBe(req.user._id);
-    expect(payload.priority).toBe('medium');
+    expect(payload.priority).toBeUndefined();
     expect(payload.status).toBe('submitted');
     expect(payload.statusHistory).toEqual(expect.arrayContaining([
       expect.objectContaining({ status: 'submitted', changedBy: req.user._id })
@@ -200,7 +200,7 @@ describe('citizen incident reporting', () => {
       advisoryOnly: true
     }));
     expect(payload.category).toBe('road');
-    expect(payload.priority).toBe('medium');
+    expect(payload.priority).toBeUndefined();
     expect(payload.status).toBe('submitted');
     expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       action: 'ai_analysis_completed',

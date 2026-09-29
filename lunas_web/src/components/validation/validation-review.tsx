@@ -6,9 +6,16 @@
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ClipboardPlus, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
-import { createWorkOrderAction } from "@/app/actions/work-orders";
-import { markDuplicateAction, rejectIncidentAction, validateIncidentAction } from "@/app/actions/validation";
+import { AlertTriangle, CheckCircle2, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import {
+  assignIncidentPriorityAction,
+  confirmIncidentAction,
+  markDuplicateAction,
+  rejectIncidentAction,
+  requestClarificationAction,
+  routeIncidentAction,
+  validateIncidentAction,
+} from "@/app/actions/validation";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,25 +24,18 @@ import type { ValidationAiFinding, ValidationIncident, ValidationPriority } from
 import { formatDateTime } from "@/lib/utils";
 import type { Severity, UserProfile } from "@/types";
 
-type Decision = "validate" | "reject" | "duplicate";
-type Responsibility = "barangay" | "city_engineering" | "utility_provider";
+type Decision = "validate" | "reject" | "duplicate" | "confirm" | "clarification" | "priority" | "route";
 
 const priorities: ValidationPriority[] = ["critical", "high", "medium", "low"];
-const responsibilities: Array<{ value: Responsibility; label: string }> = [
-  { value: "barangay", label: "Barangay" },
-  { value: "city_engineering", label: "City Engineering" },
-  { value: "utility_provider", label: "Utility Provider" },
-];
-
 function titleCase(value: string | undefined, fallback = "Not assigned") {
   if (!value) return fallback;
   return value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function statusTone(status: string): Severity {
-  if (status === "validated") return "success";
   if (status === "rejected") return "critical";
   if (status === "duplicate") return "neutral";
+  if (["verified", "resolved", "closed"].includes(status)) return "success";
   return "warning";
 }
 
@@ -148,7 +148,7 @@ function Evidence({ incident }: { incident: ValidationIncident }) {
             {image.url ? <a href={image.url} target="_blank" rel="noreferrer" className="block bg-slate-100" style={{ aspectRatio: image.width && image.height ? `${image.width} / ${image.height}` : "4 / 3" }}><div className="relative size-full"><img src={image.url} alt={`Submitted evidence ${index + 1}`} className="size-full object-contain" />{image.aiFindings.map(renderFinding)}</div></a> : <div className="flex aspect-[4/3] items-center justify-center text-slate-500"><FileImage className="size-8" aria-hidden="true" /></div>}
             <div className="flex flex-wrap gap-2 border-t border-slate-200 px-3 py-2.5 text-xs text-slate-600">
               {image.quality?.status ? <Badge tone={image.quality.status === "passed" ? "success" : "neutral"}>Quality: {titleCase(image.quality.status)}</Badge> : null}
-              {image.privacyProcessing?.status ? <Badge tone={image.privacyProcessing.applied ? "success" : "warning"}>Privacy: {titleCase(image.privacyProcessing.status)}</Badge> : null}
+              {image.privacyProcessing?.status === "not_available" ? <Badge tone="warning">Automated redaction unavailable</Badge> : null}
               {image.aiFindings.length ? <Badge tone="warning">AI highlights: {image.aiFindings.length}</Badge> : null}
             </div>
           </div>
@@ -170,61 +170,71 @@ function Timeline({ incident }: { incident: ValidationIncident }) {
 }
 
 function ValidationRoutingSummary({ incident }: { incident: ValidationIncident }) {
-  const hasActiveSla = incident.sla?.state === "active";
   const deadline = incident.sla?.deadline ? formatDateTime(incident.sla.deadline) : undefined;
   const targetHours = incident.sla?.targetResolutionTime;
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Validation, routing, and SLA" description="Operational values are assigned by the protected validation workflow, not by the browser." />
+      <CardHeader title="Engineering and provider routing" description="Barangay review, City Engineering decisions, and provider assignment are recorded as separate handoffs." />
       <dl className="divide-y divide-slate-200 text-sm">
-        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Priority</dt><dd className="text-right font-semibold text-slate-900">{hasActiveSla && incident.priority ? titleCase(incident.priority) : "Not assigned"}</dd></div>
+        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Priority</dt><dd className="text-right font-semibold text-slate-900">{incident.priority ? titleCase(incident.priority) : "Not assigned by City Engineering"}</dd></div>
         <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Jurisdiction</dt><dd className="text-right font-semibold text-slate-900">{incident.jurisdiction ?? incident.location.address.barangay ?? "To be confirmed"}</dd></div>
-        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Responsible organization</dt><dd className="text-right font-semibold text-slate-900">{incident.routing?.responsibleOrganization ?? "To be routed"}</dd></div>
-        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">SLA</dt><dd className="max-w-56 text-right font-semibold text-slate-900">{hasActiveSla ? <>{targetHours ? `${targetHours} hour target` : "Active"}{deadline ? <span className="mt-0.5 block text-xs font-normal text-slate-600">Due {deadline}</span> : null}</> : "Starts after validation"}</dd></div>
+        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Utility Provider</dt><dd className="text-right font-semibold text-slate-900">{incident.routing?.responsibleOrganization ?? "Not assigned"}</dd></div>
+        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">SLA deadline</dt><dd className="max-w-56 text-right font-semibold text-slate-900">{deadline ? <>{targetHours ? `${targetHours} hour target` : titleCase(incident.sla?.state)}<span className="mt-0.5 block text-xs font-normal text-slate-600">Due {deadline}</span></> : "Calculated after City Engineering assigns priority"}</dd></div>
       </dl>
     </Card>
   );
 }
 
-export function ValidationReview({ viewer, incident }: { viewer: UserProfile; incident: ValidationIncident }) {
+export function ValidationReview({ viewer, incident, utilityProviders = [] }: { viewer: UserProfile; incident: ValidationIncident; utilityProviders?: string[] }) {
   const router = useRouter();
-  const [decision, setDecision] = useState<Decision>("validate");
-  const [priority, setPriority] = useState<ValidationPriority>(incident.priority ?? "medium");
+  const isBarangay = viewer.backendRole === "barangay_official";
+  const isCityEngineer = viewer.backendRole === "city_engineer";
+  const initialDecision: Decision = isBarangay
+    ? "validate"
+    : incident.status === "barangay_validated" ? "confirm"
+      : incident.status === "city_confirmed" ? "priority"
+        : "route";
+  const [decision, setDecision] = useState<Decision>(initialDecision);
+  const [priority, setPriority] = useState<ValidationPriority | "">(incident.priority ?? "");
   const [barangay, setBarangay] = useState(incident.jurisdiction ?? incident.location.address.barangay ?? "");
-  const [responsibility, setResponsibility] = useState<Responsibility>(incident.jurisdictionResponsibility ?? incident.routing?.responsibleRole ?? "barangay");
-  const [organization, setOrganization] = useState(incident.routing?.responsibleOrganization ?? "");
+  const [organization, setOrganization] = useState(() => {
+    const current = incident.routing?.responsibleOrganization ?? "";
+    return utilityProviders.includes(current) ? current : "";
+  });
   const [routingReason, setRoutingReason] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
-  const [workOrderInstructions, setWorkOrderInstructions] = useState("");
   const [duplicateOf, setDuplicateOf] = useState(incident.duplicateCandidates[0]?.id ?? "");
   const [confirm, setConfirm] = useState(false);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
-  const canDecide = viewer.permissions.includes("reports.validate") && incident.status === "submitted";
-  const canCreateWorkOrder = viewer.permissions.includes("work_orders.manage")
-    && ["barangay_official", "city_engineer", "utility_provider", "admin"].includes(viewer.backendRole)
-    && incident.status === "validated"
-    && !incident.workOrder?.id;
+  const canBarangayReview = isBarangay && viewer.permissions.includes("reports.validate")
+    && ["submitted", "clarification_required"].includes(incident.status);
+  const canCityReview = isCityEngineer && viewer.permissions.includes("reports.validate")
+    && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status);
 
   const duplicateOptions = useMemo(() => incident.duplicateCandidates.map((candidate) => ({ value: candidate.id, label: `${candidate.reportNumber} · ${candidate.location?.address.barangay ?? "location unavailable"}` })), [incident.duplicateCandidates]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(undefined);
-    if (!canDecide) return;
-    if (decision === "validate" && (!barangay.trim() || !organization.trim())) {
-      setError("Confirm a barangay and responsible organization before validating.");
+    if (!canBarangayReview && !canCityReview) return;
+    if (["validate", "confirm"].includes(decision) && !barangay.trim()) {
+      setError("Confirm the report's barangay before continuing.");
       return;
     }
-    if (decision === "reject" && !reason.trim()) {
-      setError("Provide a rejection reason before continuing.");
+    if (["reject", "clarification"].includes(decision) && !reason.trim()) {
+      setError("Provide a reason before continuing.");
       return;
     }
     if (decision === "duplicate" && (!duplicateOf || !reason.trim())) {
       setError("Select or enter a canonical report and provide a duplicate reason.");
+      return;
+    }
+    if (decision === "priority" && !priority) {
+      setError("Select the priority City Engineering has determined for this incident.");
       return;
     }
     setConfirm(true);
@@ -233,10 +243,18 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
   const confirmDecision = () => {
     startTransition(async () => {
       const result = decision === "validate"
-        ? await validateIncidentAction({ incidentId: incident.id, priority, jurisdiction: { barangay, city: incident.location.address.city, responsibility }, routing: { responsibleOrganization: organization, responsibleRole: responsibility, reason: routingReason }, notes })
+        ? await validateIncidentAction({ incidentId: incident.id, jurisdiction: { barangay, city: incident.location.address.city }, notes })
         : decision === "reject"
           ? await rejectIncidentAction({ incidentId: incident.id, reason, notes })
-          : await markDuplicateAction({ incidentId: incident.id, duplicateOf, reason, notes });
+          : decision === "duplicate"
+            ? await markDuplicateAction({ incidentId: incident.id, duplicateOf, reason, notes })
+            : decision === "confirm"
+              ? await confirmIncidentAction({ incidentId: incident.id, jurisdiction: { barangay, city: incident.location.address.city }, notes })
+              : decision === "clarification"
+                ? await requestClarificationAction({ incidentId: incident.id, reason })
+                : decision === "priority"
+                  ? await assignIncidentPriorityAction({ incidentId: incident.id, priority: priority as ValidationPriority })
+                  : await routeIncidentAction({ incidentId: incident.id, organization, reason: routingReason });
       setConfirm(false);
       if (!result.ok) {
         setError(result.message);
@@ -248,27 +266,17 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
     });
   };
 
-  const decisionTitle = decision === "validate" ? "Validate report" : decision === "reject" ? "Reject report" : "Mark report as duplicate";
-  const createWorkOrder = () => {
-    startTransition(async () => {
-      const result = await createWorkOrderAction({ incidentId: incident.id, instructions: workOrderInstructions });
-      if (!result.ok) {
-        setError(result.message);
-        if (result.conflict) router.refresh();
-        return;
-      }
-      setMessage(result.message);
-      if (result.workOrderId) {
-        router.push(`/work-orders/${encodeURIComponent(result.workOrderId)}`);
-        return;
-      }
-      router.refresh();
-    });
-  };
+  const decisionTitle = decision === "validate" ? "Validate at barangay level"
+    : decision === "reject" ? "Reject report"
+      : decision === "duplicate" ? "Mark report as duplicate"
+        : decision === "confirm" ? "Confirm at City Engineering"
+          : decision === "clarification" ? "Return for clarification"
+            : decision === "priority" ? "Assign incident priority"
+              : "Route to Utility Provider";
   return (
     <div className="mx-auto max-w-[1480px]">
       <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div><p className="text-sm font-semibold text-brand-700">Official review · {viewer.organization}</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{incident.reportNumber}</h1><p className="mt-2 max-w-3xl text-slate-600">Review citizen evidence, location, history, and advisory duplicate candidates before recording a controlled decision.</p></div>
+        <div><p className="text-sm font-semibold text-brand-700">{isBarangay ? `Barangay review · ${viewer.organization}` : `City Engineering · ${viewer.organization}`}</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{incident.reportNumber}</h1><p className="mt-2 max-w-3xl text-slate-600">Review citizen evidence and location before making the decision assigned to your role.</p></div>
         <StatusBadge tone={statusTone(incident.status)}>{titleCase(incident.status)}</StatusBadge>
       </div>
 
@@ -288,26 +296,29 @@ export function ValidationReview({ viewer, incident }: { viewer: UserProfile; in
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
           <Card className="overflow-hidden"><CardHeader title="Duplicate candidates" description="Suggestions only; LUNAS never marks a report duplicate automatically." /><div className="divide-y divide-slate-200">{incident.duplicateCandidates.length ? incident.duplicateCandidates.map((candidate) => <div key={candidate.id} className="p-4"><p className="font-semibold text-slate-900">{candidate.reportNumber}</p><p className="mt-1 text-sm text-slate-600">{titleCase(candidate.category)} · {candidate.location?.address.barangay ?? "Location unavailable"}</p><div className="mt-2 flex gap-2">{candidate.distanceMeters !== undefined ? <Badge>{Math.round(candidate.distanceMeters)} m away</Badge> : null}{candidate.score !== undefined ? <Badge tone="warning">Candidate score {Math.round(candidate.score)}</Badge> : null}</div></div>) : <p className="p-4 text-sm text-slate-600">No likely duplicate reports found.</p>}</div></Card>
 
-          <Card className="overflow-hidden"><CardHeader title="Official decision" description={canDecide ? "This action is persisted by the backend and cannot be undone from this screen." : incident.status === "submitted" ? "Your role can review this report but cannot make a validation decision." : "This report has already received an official decision."} />
-            {canDecide ? <form onSubmit={submit} className="space-y-4 p-5">
+          <Card className="overflow-hidden"><CardHeader title={isBarangay ? "Barangay validation" : "City Engineering decision"} description="Each handoff is recorded by the backend with the actor, state, timestamp, and decision notes." />
+            {canBarangayReview ? <form onSubmit={submit} className="space-y-4 p-5">
               <div className="grid grid-cols-3 gap-2">{(["validate", "reject", "duplicate"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "reject" ? "border-red-700 bg-red-700 text-white" : value === "duplicate" ? "border-slate-700 bg-slate-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "validate" ? "Validate" : value === "reject" ? "Reject" : "Duplicate"}</button>)}</div>
-
-              {decision === "validate" ? <><label className="block text-sm font-semibold text-slate-800">Priority<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority)} className={fieldClass()}>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label><Badge tone={priorityTone(priority)}>SLA begins only after validation at this priority.</Badge><label className="block text-sm font-semibold text-slate-800">Confirmed barangay<input value={barangay} onChange={(event) => setBarangay(event.target.value)} className={fieldClass()} maxLength={100} /></label><label className="block text-sm font-semibold text-slate-800">Responsibility<select value={responsibility} onChange={(event) => setResponsibility(event.target.value as Responsibility)} className={fieldClass()}>{responsibilities.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Responsible organization<input value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} maxLength={160} placeholder="e.g. City Engineering" /></label><label className="block text-sm font-semibold text-slate-800">Routing note <span className="font-normal text-slate-500">(optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label></> : null}
-
+              {decision === "validate" ? <><label className="block text-sm font-semibold text-slate-800">Confirmed barangay<input value={barangay} onChange={(event) => setBarangay(event.target.value)} className={fieldClass()} maxLength={100} required /></label><Badge tone="information">Initial validation does not set City priority or choose a Utility Provider.</Badge></> : null}
               {decision === "reject" ? <label className="block text-sm font-semibold text-slate-800">Rejection reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label> : null}
-
-              {decision === "duplicate" ? <><label className="block text-sm font-semibold text-slate-800">Canonical report<select value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} required><option value="">Select a likely match</option>{duplicateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>{!duplicateOptions.length ? <label className="block text-sm font-semibold text-slate-800">Canonical report ID<input value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} placeholder="MongoDB report ID" required /></label> : null}<label className="block text-sm font-semibold text-slate-800">Duplicate reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label></> : null}
-
-              <label className="block text-sm font-semibold text-slate-800">Internal decision note <span className="font-normal text-slate-500">(optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label>
-              <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and route</> : decision === "reject" ? <><XCircle className="size-4" /> Reject report</> : <><Route className="size-4" /> Mark duplicate</>}</Button>
-            </form> : <div className="p-5 text-sm text-slate-600">No decision controls are available for this report.</div>}
+              {decision === "duplicate" ? <><label className="block text-sm font-semibold text-slate-800">Canonical report<select value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} required><option value="">Select a likely match</option>{duplicateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Duplicate reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label></> : null}
+              <label className="block text-sm font-semibold text-slate-800">Review note <span className="font-normal text-slate-500">(optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label>
+              <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and forward</> : decision === "reject" ? <><XCircle className="size-4" /> Reject report</> : <><Route className="size-4" /> Mark duplicate</>}</Button>
+            </form> : null}
+            {canCityReview && incident.status === "barangay_validated" ? <form onSubmit={submit} className="space-y-4 p-5">
+              <div className="grid grid-cols-2 gap-2">{(["confirm", "clarification"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "clarification" ? "border-amber-700 bg-amber-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "confirm" ? "Confirm" : "Return for clarification"}</button>)}</div>
+              {decision === "confirm" ? <><label className="block text-sm font-semibold text-slate-800">Confirmed barangay<input value={barangay} onChange={(event) => setBarangay(event.target.value)} className={fieldClass()} maxLength={100} required /></label><label className="block text-sm font-semibold text-slate-800">Engineering review note <span className="font-normal text-slate-500">(optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label></> : <label className="block text-sm font-semibold text-slate-800">Clarification reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={2000} required /></label>}
+              <Button type="submit" variant={decision === "clarification" ? "secondary" : "primary"} className="w-full" disabled={pending}>{decision === "confirm" ? "Confirm for engineering" : "Return with reason"}</Button>
+            </form> : null}
+            {canCityReview && incident.status === "city_confirmed" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Manual priority<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority | "")} className={fieldClass()} required><option value="">Select City Engineering priority</option>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label><Badge tone={priority ? priorityTone(priority) : "neutral"}>LUNAS calculates the SLA deadline after City Engineering records a priority.</Badge><Button type="submit" className="w-full" disabled={pending || !priority}>Assign priority and start SLA</Button></form> : null}
+            {canCityReview && incident.status === "prioritized" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Responsible Utility Provider<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an active provider organization</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>{utilityProviders.length ? <p className="text-xs leading-5 text-slate-500">Only organizations with active, provisioned Utility Provider accounts are selectable.</p> : <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">No active Utility Provider organization is provisioned. An Admin must authorize and provision one before City Engineering can route this incident.</p>}<label className="block text-sm font-semibold text-slate-800">Routing note <span className="font-normal text-slate-500">(optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label><Button type="submit" className="w-full" disabled={pending || utilityProviders.length === 0}><Route className="size-4" /> Route to Utility Provider</Button></form> : null}
+            {!canBarangayReview && !(canCityReview && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status)) ? <div className="p-5 text-sm text-slate-600">No decision controls are available for this role or incident state.</div> : null}
           </Card>
-          {canCreateWorkOrder ? <Card className="overflow-hidden"><CardHeader title="Create work order" description="This validated, routed incident is eligible for one primary active work order." /><div className="space-y-4 p-5"><p className="text-sm leading-6 text-slate-600">Creating a work order preserves the citizen report and its evidence, starts repair progress at 0%, and makes the task available for assignment.</p><label className="block text-sm font-semibold text-slate-800">Work instructions <span className="font-normal text-slate-500">(optional)</span><textarea value={workOrderInstructions} onChange={(event) => setWorkOrderInstructions(event.target.value)} maxLength={4000} className={`${fieldClass()} min-h-24 py-2`} placeholder="Add operational instructions for the assigned repair team" /></label><Button type="button" className="w-full" disabled={pending} loading={pending} loadingLabel="Creating…" onClick={createWorkOrder}><ClipboardPlus className="size-4" />Create work order</Button></div></Card> : null}
           {incident.workOrder?.id ? <Card className="overflow-hidden"><CardHeader title="Work order" description="This incident already has its primary maintenance work order." /><div className="p-5"><p className="font-semibold text-slate-950">{incident.workOrder.reference ?? "Work order created"}</p><p className="mt-1 text-sm text-slate-600">{incident.workOrder.progressPercent !== undefined ? `${incident.workOrder.progressPercent}% · ` : ""}{incident.workOrder.status?.replaceAll("_", " ") ?? "Operational status available"}</p><Link href={`/work-orders/${encodeURIComponent(incident.workOrder.id)}`} className="mt-4 inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Open work order <Route className="ml-1 size-4" /></Link></div></Card> : null}
         </aside>
       </div>
 
-      <ConfirmationDialog open={confirm} onClose={() => !pending && setConfirm(false)} onConfirm={confirmDecision} loading={pending} icon="none" destructive={decision === "reject"} title={decisionTitle} description={decision === "validate" ? "This will validate the report, persist the selected priority, initialize its SLA deadline, and route it to the responsible organization." : decision === "reject" ? "This will reject the citizen report with the reason entered above." : "This will preserve the report and mark it as a duplicate of the selected canonical incident."} confirmLabel={decisionTitle} />
+      <ConfirmationDialog open={confirm} onClose={() => !pending && setConfirm(false)} onConfirm={confirmDecision} loading={pending} icon="none" destructive={decision === "reject" || decision === "clarification"} title={decisionTitle} description={decision === "validate" ? "This records Barangay validation and forwards the report to City Engineering. Priority and provider assignment remain separate decisions." : decision === "reject" ? "This rejects the report with the reason entered above." : decision === "duplicate" ? "This records a human duplicate decision. Candidate matching alone does not change the report." : decision === "confirm" ? "This records City Engineering confirmation. Priority and SLA are assigned in the next step." : decision === "clarification" ? "This returns the report for clarification and records your reason." : decision === "priority" ? "This records your manual priority decision and calculates the configured SLA deadline." : "This assigns the incident to the named Utility Provider organization."} confirmLabel={decisionTitle} />
     </div>
   );
 }

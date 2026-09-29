@@ -280,6 +280,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
 String? _decisionReason(IncidentReport report) => switch (report.status) {
   'rejected' => report.rejectionReason,
   'duplicate' => report.duplicateReason,
+  'clarification_required' => report.clarificationReason,
   _ => null,
 };
 
@@ -291,7 +292,7 @@ class _CitizenRepairProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isReady = repair.readyForCompletion || repair.progressPercent == 100;
+    final isReady = repair.readyForCompletion || repair.status == 'completed';
     return LunasCard(
       color: isReady
           ? theme.colorScheme.tertiaryContainer
@@ -338,7 +339,7 @@ class _CitizenRepairProgressCard extends StatelessWidget {
           if (isReady) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'The field repair is ready for formal completion and verification. It has not been verified or closed yet.',
+              'Repair Personnel submitted completion. The Utility Provider must review it before City Engineering performs final verification.',
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -401,12 +402,9 @@ class _EvidenceProcessingStatus extends StatelessWidget {
     final privacyStatus = evidence.privacyProcessingStatus;
     final privacyText = privacyStatus == null
         ? 'Privacy-processing status was not returned for this evidence.'
-        : evidence.privacyProcessingApplied == true ||
-              evidence.isPrivacyMasked == true
-        ? 'Server privacy processing: ${humanStatus(privacyStatus)}.'
         : privacyStatus == 'not_available'
         ? 'Server privacy redaction is not available for this evidence.'
-        : 'Server privacy-processing status: ${humanStatus(privacyStatus)}.';
+        : 'Automated redaction status is not available for this evidence.';
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Column(

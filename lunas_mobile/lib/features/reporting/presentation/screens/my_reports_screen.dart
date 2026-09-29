@@ -48,7 +48,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     final filtered = _reports.where((report) {
       final matchesFilter = switch (_filter) {
         'active' => !{'closed', 'rejected', 'duplicate'}.contains(report.status),
-        'resolved' => {'closed', 'completed'}.contains(report.status),
+        'resolved' => {'resolved', 'closed'}.contains(report.status),
         'in_progress' => report.status == 'in_progress',
         _ => true,
       };

@@ -17,7 +17,10 @@ const {
   getProgress,
   getWorkOrderSLA,
   getApproachingDeadlineWorkOrders,
-  getOverdueWorkOrders
+  getOverdueWorkOrders,
+  reviewCompletedWork,
+  coordinateCityCorrection,
+  finalReviewWorkOrder
 } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
 const { uploadMultiple } = require('../middleware/upload');
@@ -27,6 +30,9 @@ const {
   assignWorkOrderValidation,
   reassignWorkOrderValidation,
   declineWorkOrderValidation,
+  providerWorkOrderReviewValidation,
+  providerCorrectionValidation,
+  cityFinalReviewValidation,
   repairEvidenceValidation,
   workOrderQueryValidation,
   paginationValidation,
@@ -34,8 +40,8 @@ const {
   validate
 } = require('../middleware/validation');
 
-const officialRoles = ['barangay_official', 'city_engineer', 'utility_provider', 'admin'];
-const workOrderRoles = [...officialRoles, 'repair_personnel'];
+const providerRole = ['utility_provider'];
+const workOrderRoles = ['city_engineer', 'utility_provider', 'repair_personnel'];
 
 // Static paths must come before /:id.
 router.get('/my', protect, authorize('repair_personnel'), paginationValidation, workOrderQueryValidation, validate, getMyWorkOrders);
@@ -45,12 +51,12 @@ router.get('/overdue', protect, authorize(...workOrderRoles), paginationValidati
 router.route('/')
   .get(protect, authorize(...workOrderRoles), paginationValidation, workOrderQueryValidation, validate, getWorkOrders)
   // Compatibility route. New clients should use POST /incidents/:id/work-orders.
-  .post(protect, authorize(...officialRoles), createWorkOrderValidation, validate, createWorkOrder);
+  .post(protect, authorize(...providerRole), createWorkOrderValidation, validate, createWorkOrder);
 
-router.get('/:id/assignments', protect, authorize(...officialRoles), mongoIdValidation, validate, getAssignments);
-router.get('/:id/eligible-personnel', protect, authorize(...officialRoles), mongoIdValidation, validate, getEligiblePersonnel);
-router.post('/:id/assign', protect, authorize(...officialRoles), mongoIdValidation, assignWorkOrderValidation, validate, assignWorkOrder);
-router.post('/:id/reassign', protect, authorize(...officialRoles), mongoIdValidation, reassignWorkOrderValidation, validate, reassignWorkOrder);
+router.get('/:id/assignments', protect, authorize(...providerRole), mongoIdValidation, validate, getAssignments);
+router.get('/:id/eligible-personnel', protect, authorize(...providerRole), mongoIdValidation, validate, getEligiblePersonnel);
+router.post('/:id/assign', protect, authorize(...providerRole), mongoIdValidation, assignWorkOrderValidation, validate, assignWorkOrder);
+router.post('/:id/reassign', protect, authorize(...providerRole), mongoIdValidation, reassignWorkOrderValidation, validate, reassignWorkOrder);
 router.post('/:id/accept', protect, authorize('repair_personnel'), mongoIdValidation, validate, acceptWorkOrder);
 router.post('/:id/decline', protect, authorize('repair_personnel'), mongoIdValidation, declineWorkOrderValidation, validate, declineWorkOrder);
 router.post('/:id/start', protect, authorize('repair_personnel'), mongoIdValidation, validate, startWorkOrder);
@@ -75,6 +81,12 @@ router.post(
   validate,
   uploadRepairEvidence
 );
+router.post('/:id/provider-review', protect, authorize('utility_provider'), mongoIdValidation,
+  providerWorkOrderReviewValidation, validate, reviewCompletedWork);
+router.post('/:id/coordinate-correction', protect, authorize('utility_provider'), mongoIdValidation,
+  providerCorrectionValidation, validate, coordinateCityCorrection);
+router.post('/:id/final-review', protect, authorize('city_engineer'), mongoIdValidation,
+  cityFinalReviewValidation, validate, finalReviewWorkOrder);
 router.get('/:id/sla', protect, authorize(...workOrderRoles), mongoIdValidation, validate, getWorkOrderSLA);
 router.get('/:id', protect, authorize(...workOrderRoles), mongoIdValidation, validate, getWorkOrder);
 

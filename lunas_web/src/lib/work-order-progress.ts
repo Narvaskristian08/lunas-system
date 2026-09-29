@@ -1,6 +1,6 @@
 /**
  * The progress scale for one repair work order. It is deliberately separate
- * from project-development milestone percentages.
+ * for a single repair work order.
  */
 export type RepairProgressStage = "assigned" | "site_preparation" | "main_repair" | "finishing" | "ready_for_completion";
 

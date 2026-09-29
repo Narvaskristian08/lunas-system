@@ -1,12 +1,10 @@
 export type UserRole =
   | "Citizen"
-  | "Barangay Official"
-  | "City Engineering Office"
-  | "Utility Provider"
   | "Repair Personnel"
-  | "System Administrator"
-  | "Maintenance Coordinator"
-  | "Executive Viewer";
+  | "Admin"
+  | "Barangay Official"
+  | "City Engineer"
+  | "Utility Provider";
 
 /** Roles sent by the current Express API. Keep these separate from display labels. */
 export type BackendUserRole =
@@ -21,15 +19,11 @@ export type Permission =
   | "dashboard.view"
   | "reports.view"
   | "reports.validate"
-  | "incidents.view"
-  | "incidents.assign"
   | "work_orders.view"
   | "work_orders.manage"
   | "repairs.verify"
   | "sla.view"
-  | "analytics.view"
   | "users.manage"
-  | "settings.manage"
   | "audit.view"
   | "notifications.view"
   | "profile.manage"
@@ -91,57 +85,6 @@ export interface DashboardMetric {
   trend?: "up" | "down" | "steady";
   tone: Severity;
   icon: "reports" | "incident" | "workOrder" | "sla" | "users" | "verified";
-}
-
-export interface DashboardConfig {
-  eyebrow: string;
-  title: string;
-  description: string;
-  metrics: DashboardMetric[];
-  quickActions: Array<{
-    label: string;
-    description: string;
-    href: string;
-    permission?: Permission;
-    icon: "report" | "assign" | "verify" | "users" | "analytics" | "workOrder";
-  }>;
-  alert: {
-    title: string;
-    message: string;
-    tone: Severity;
-    actionLabel: string;
-  };
-}
-
-export type BarangayModule = "reports" | "incidents" | "work-orders" | "sla" | "repairs" | "analytics";
-
-export type BarangayPriority = "Critical" | "High" | "Medium" | "Low";
-export type BarangayStatus = "Pending Validation" | "Validated" | "Assigned" | "In Progress" | "Awaiting Verification" | "Resolved" | "Closed";
-
-export interface BarangayRecord {
-  id: string;
-  kind: "report" | "incident" | "work-order" | "repair";
-  title: string;
-  category: string;
-  priority: BarangayPriority;
-  status: BarangayStatus;
-  location: string;
-  barangay: string;
-  submittedAt: string;
-  reporter: string;
-  assignee?: string;
-  dueAt?: string;
-  aiConfidence?: number;
-  description: string;
-}
-
-export interface HelpTopic {
-  id: string;
-  category: string;
-  title: string;
-  summary: string;
-  articles: number;
-  keywords: string[];
 }
 
 export type RequestState = "idle" | "loading" | "success" | "error";

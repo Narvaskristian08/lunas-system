@@ -30,17 +30,17 @@ const response = () => {
   return res;
 };
 
-describe('75% work-order creation', () => {
+describe('Utility Provider work-order creation', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  test('creates an unassigned 0% primary work order from a validated routed incident', async () => {
+  test('creates an unassigned primary work order from a Utility Provider-routed incident', async () => {
     const incident = {
       _id: '507f191e810c19729de860b1',
-      status: 'validated',
+      status: 'provider_assigned',
       priority: 'high',
       routing: {
-        responsibleOrganization: 'City Engineering',
-        responsibleRole: 'city_engineering'
+        responsibleOrganization: 'Dagupan Water District',
+        responsibleRole: 'utility_provider'
       },
       jurisdiction: { barangay: 'Poblacion Oeste', city: 'Dagupan City' },
       sla: {
@@ -53,8 +53,8 @@ describe('75% work-order creation', () => {
       _id: '507f191e810c19729de860d1',
       orderNumber: 'WO-202608-000001',
       incident: incident._id,
-      responsibleOrganization: 'City Engineering',
-      responsibleRole: 'city_engineering',
+      responsibleOrganization: 'Dagupan Water District',
+      responsibleRole: 'utility_provider',
       jurisdiction: incident.jurisdiction,
       priority: 'high',
       createdBy: '507f191e810c19729de860a1',
@@ -73,7 +73,7 @@ describe('75% work-order creation', () => {
     const req = {
       params: { id: incident._id },
       body: { instructions: 'Repair pothole safely.' },
-      user: { _id: '507f191e810c19729de860a1', role: 'city_engineer' },
+      user: { _id: '507f191e810c19729de860a1', role: 'utility_provider', utilityCompany: 'Dagupan Water District' },
       headers: {},
       ip: '127.0.0.1'
     };
@@ -87,10 +87,10 @@ describe('75% work-order creation', () => {
       assignmentState: 'unassigned',
       progressPercent: 0,
       progressStage: 'assigned',
-      responsibleOrganization: 'City Engineering'
+      responsibleOrganization: 'Dagupan Water District'
     }));
     expect(Incident.findOneAndUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: incident._id, status: 'validated' }),
+      expect.objectContaining({ _id: incident._id, status: 'provider_assigned' }),
       expect.objectContaining({ $set: expect.objectContaining({ workOrder: workOrder._id }) }),
       { new: true }
     );
@@ -101,8 +101,8 @@ describe('75% work-order creation', () => {
   test('does not create a work order if a primary work order already exists', async () => {
     const incident = {
       _id: '507f191e810c19729de860b1',
-      status: 'validated',
-      routing: { responsibleOrganization: 'City Engineering', responsibleRole: 'city_engineering' },
+      status: 'provider_assigned',
+      routing: { responsibleOrganization: 'Dagupan Water District', responsibleRole: 'utility_provider' },
       jurisdiction: { barangay: 'Poblacion Oeste' }
     };
     Incident.findById.mockResolvedValue(incident);
@@ -110,7 +110,7 @@ describe('75% work-order creation', () => {
     const req = {
       params: { id: incident._id },
       body: {},
-      user: { _id: '507f191e810c19729de860a1', role: 'city_engineer' }
+      user: { _id: '507f191e810c19729de860a1', role: 'utility_provider', utilityCompany: 'Dagupan Water District' }
     };
     const res = response();
 

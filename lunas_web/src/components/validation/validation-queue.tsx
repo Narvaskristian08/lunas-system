@@ -75,6 +75,7 @@ export function ValidationQueue({
   summary?: ValidationSummary;
   summaryUnavailable?: boolean;
 }) {
+  const isCityEngineering = viewer.backendRole === "city_engineer";
   const [search, setSearch] = useState(filters.search ?? "");
   const [category, setCategory] = useState(filters.category ?? "");
   const [jurisdiction, setJurisdiction] = useState(filters.jurisdiction ?? "");
@@ -143,30 +144,34 @@ export function ValidationQueue({
     <div className="mx-auto max-w-[1580px]">
       <PageHeader
         eyebrow={`${viewer.organization} · Official workflow`}
-        title="Pending validation"
-        description="Review only submitted reports within your authorized jurisdiction. Decisions are recorded by the LUNAS service."
+        title={isCityEngineering ? "City Engineering review" : "Barangay report review"}
+        description={isCityEngineering
+          ? "Review incidents forwarded by Barangay Officials, then confirm, request clarification, assign priority, and route to a Utility Provider."
+          : "Review citizen reports in your assigned Barangay, inspect their evidence and location, then validate or reject with a reason."}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Validation" }]}
         actions={<span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-600"><ShieldCheck className="size-4 text-brand-700" aria-hidden="true" /> Authorized scope</span>}
       />
 
       {summary ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label="Awaiting validation" value={summary.pending} tone="warning" />
-          <SummaryCard label="Validated" value={summary.validated} tone="information" />
+          <SummaryCard label={isCityEngineering ? "Awaiting engineering review" : "Awaiting Barangay review"} value={summary.pending} tone="warning" />
+          <SummaryCard label={isCityEngineering ? "City confirmed" : "Forwarded to City Engineering"} value={summary.validated} tone="information" />
           <SummaryCard label="Rejected" value={summary.rejected} tone="critical" />
           <SummaryCard label="Marked duplicate" value={summary.duplicate} tone="neutral" />
         </div>
       ) : summaryUnavailable ? (
         <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <Sparkles className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          <p><span className="font-semibold">Validation summary is temporarily unavailable.</span> The queue below still reflects live submitted reports in your permitted scope.</p>
+          <p><span className="font-semibold">Review summary is temporarily unavailable.</span> The queue below still reflects live reports in your permitted scope.</p>
         </div>
       ) : null}
 
       <Card className="overflow-hidden">
         <CardHeader
-          title="Submitted report queue"
-          description="Search and filters are applied by the server; reports outside your backend-authorized scope are never returned."
+          title={isCityEngineering ? "Barangay-validated incident queue" : "Citizen report queue"}
+          description={isCityEngineering
+            ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
+            : "Search and filters are applied by the server; reports outside your assigned Barangay are never returned."}
           action={<span className="text-sm font-medium text-slate-600" aria-live="polite">{pending ? "Updating queue…" : `${queue.pagination.total} report${queue.pagination.total === 1 ? "" : "s"}`}</span>}
         />
         <form onSubmit={submitFilters} noValidate>
@@ -207,7 +212,7 @@ export function ValidationQueue({
         {queue.incidents.length ? (
           <>
             <DataTable
-              caption="Submitted reports awaiting official validation"
+              caption={isCityEngineering ? "Barangay-validated incidents awaiting City Engineering" : "Citizen reports awaiting Barangay review"}
               columns={[
                 { key: "reference", label: "Reference" },
                 { key: "evidence", label: "Evidence" },
@@ -227,7 +232,7 @@ export function ValidationQueue({
                   location: <span className="inline-flex max-w-56 items-start gap-1.5"><MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden="true" /><span>{locationLabel(incident.location)}</span></span>,
                   submitted: <span className="whitespace-nowrap text-sm text-slate-600">{compactDate(incident.createdAt)}</span>,
                   duplicate: <Badge tone={duplicateTone(incident.duplicateCandidateCount)}>{incident.duplicateCandidateCount ? `${incident.duplicateCandidateCount} candidate${incident.duplicateCandidateCount === 1 ? "" : "s"}` : "None"}</Badge>,
-                  status: <StatusBadge tone="warning">Submitted</StatusBadge>,
+                  status: <StatusBadge tone="warning">{isCityEngineering ? "Barangay validated" : incident.status === "clarification_required" ? "Clarification requested" : "Submitted"}</StatusBadge>,
                   action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`Review ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">Review <ChevronRight className="size-4" aria-hidden="true" /></Link>,
                 },
               }))}
@@ -235,7 +240,7 @@ export function ValidationQueue({
             <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page })} />
           </>
         ) : (
-          <EmptyState icon="records" title={hasFilters ? "No reports match these filters" : "No reports awaiting validation"} description={hasFilters ? "Try removing a filter or search term. Scope controls still apply to every result." : "Submitted citizen reports in your authorized jurisdiction will appear here when they are ready for review."} action={hasFilters ? { label: "Clear filters", onClick: clearFilters } : undefined} />
+          <EmptyState icon="records" title={hasFilters ? "No reports match these filters" : "No reports awaiting your review"} description={hasFilters ? "Try removing a filter or search term. Scope controls still apply to every result." : isCityEngineering ? "Barangay-validated reports will appear here for City Engineering review." : "Submitted citizen reports in your assigned Barangay will appear here for initial review."} action={hasFilters ? { label: "Clear filters", onClick: clearFilters } : undefined} />
         )}
       </Card>
     </div>

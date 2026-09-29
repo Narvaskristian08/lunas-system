@@ -11,10 +11,9 @@ const {
   workOrderHistoryEntry
 } = require('./workOrderService');
 
-// This is the single 50% SLA policy source. Deployments can tune the values
-// through environment configuration without changing validation controllers
-// or user interfaces. The proposal gives Critical as a range, so 48 hours is
-// the documented configurable default rather than an invented fixed rule.
+// City Engineering assigns priority; this is the single configured SLA policy
+// used to calculate the deadline. Deployments can tune values without changing
+// the decision controller or client.
 const DEFAULT_SLA_HOURS = Object.freeze({
   critical: 48,
   high: 72,
@@ -68,7 +67,7 @@ const notifyWorkOrderSla = async (workOrder, template) => {
 };
 
 /**
- * Invokable 75% work-order SLA checker. It uses the same backend deadline
+ * Invokable work-order SLA checker. It uses the same backend deadline
  * policy used by the API and records exactly one approaching and one overdue
  * alert per work order. Deployments may call it from their scheduler even when
  * the optional in-process cron monitor is disabled.
@@ -190,7 +189,7 @@ const checkSLAStatus = async () => {
     const overdueIncidents = await Incident.find({
       'sla.deadline': { $lt: new Date() },
       'sla.isOverdue': false,
-      status: { $nin: ['completed', 'verified', 'closed', 'rejected', 'duplicate'] },
+      status: { $nin: ['verified', 'resolved', 'closed', 'rejected', 'duplicate'] },
       'sla.state': 'active'
     });
 
@@ -243,32 +242,23 @@ const sendSLAReminders = async () => {
           $lte: deadlineTime
         },
         'sla.isOverdue': false,
-        status: { $nin: ['completed', 'verified', 'closed', 'rejected', 'duplicate'] },
+        status: { $nin: ['verified', 'resolved', 'closed', 'rejected', 'duplicate'] },
         'sla.state': 'active',
         'sla.remindersSent': { $lt: reminderThresholds.indexOf(threshold) + 1 }
-      }).populate('assignedTo');
+      });
 
       for (const incident of incidents) {
-        if (incident.assignedTo) {
-          const template = notificationTemplates.slaReminder(
-            incident.reportNumber,
-            threshold.hours
-          );
-
-          await createNotification({
-            recipient: incident.assignedTo._id,
-            ...template,
-            data: {
-              incidentId: incident._id,
-              link: `/incidents/${incident._id}`
-            }
-          });
-
-          incident.sla.remindersSent = reminderThresholds.indexOf(threshold) + 1;
-          await incident.save();
-
-          logger.info(`SLA reminder sent for incident ${incident.reportNumber}`);
-        }
+        const recipients = await incidentSlaRecipients(incident);
+        if (!recipients.length) continue;
+        const template = notificationTemplates.slaReminder(incident.reportNumber, threshold.hours);
+        await Promise.all(recipients.map((recipient) => createNotification({
+          recipient,
+          ...template,
+          data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
+        })));
+        incident.sla.remindersSent = reminderThresholds.indexOf(threshold) + 1;
+        await incident.save();
+        logger.info(`SLA reminder sent for incident ${incident.reportNumber}`);
       }
     }
 
@@ -285,42 +275,18 @@ const notifyOverdueIncident = async (incident) => {
   try {
     const template = notificationTemplates.slaEscalation(incident.reportNumber);
 
-    // Notify assigned personnel
-    if (incident.assignedTo) {
-      await createNotification({
-        recipient: incident.assignedTo,
-        ...template,
-        data: {
-          incidentId: incident._id,
-          link: `/incidents/${incident._id}`
-        }
-      });
-    }
-
-    // Notify barangay officials
-    const barangayOfficials = await User.find({
-      role: 'barangay_official',
-      barangay: incident.location.address.barangay,
-      isActive: true
-    });
-
-    for (const official of barangayOfficials) {
-      await createNotification({
-        recipient: official._id,
-        ...template,
-        data: {
-          incidentId: incident._id,
-          link: `/incidents/${incident._id}`
-        }
-      });
-    }
+    const recipients = await incidentSlaRecipients(incident);
+    await Promise.all(recipients.map((recipient) => createNotification({
+      recipient,
+      ...template,
+      data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
+    })));
 
     // If escalation level is high, notify city engineers
     if (incident.sla.escalationLevel >= 2) {
       const cityEngineers = await User.find({
-        role: 'city_engineer',
-        isActive: true
-      });
+        role: 'city_engineer', isActive: true, isArchived: { $ne: true }
+      }).select('_id');
 
       for (const engineer of cityEngineers) {
         await createNotification({
@@ -341,14 +307,30 @@ const notifyOverdueIncident = async (incident) => {
   }
 };
 
+const incidentSlaRecipients = async (incident) => {
+  if (incident.assignedUtility) {
+    return [(incident.assignedUtility._id || incident.assignedUtility).toString()];
+  }
+  if (['submitted', 'clarification_required'].includes(incident.status)) {
+    const barangay = incident.jurisdiction?.barangay || incident.location?.address?.barangay;
+    if (!barangay) return [];
+    const officials = await User.find({
+      role: 'barangay_official', barangay, isActive: true, isArchived: { $ne: true }
+    }).select('_id');
+    return officials.map((official) => official._id.toString());
+  }
+  const engineers = await User.find({
+    role: 'city_engineer', isActive: true, isArchived: { $ne: true }
+  }).select('_id');
+  return engineers.map((engineer) => engineer._id.toString());
+};
+
 /**
  * Start SLA monitoring cron jobs
  */
 exports.startSLAMonitor = () => {
-  // The 50% milestone initializes and displays SLA deadlines, but does not
-  // silently turn on the later escalation/reminder engine in a deployment.
-  // Existing installations that have completed and approved that operational
-  // policy may opt in explicitly.
+  // Deadline calculation is available independently. Do not silently enable
+  // scheduled reminders/escalations; deployments must opt in explicitly.
   if (!isSlaAutomationEnabled()) {
     logger.info('Work-order SLA checks are available by invocation; in-process cron monitoring is disabled');
     return;

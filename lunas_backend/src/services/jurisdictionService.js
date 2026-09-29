@@ -1,26 +1,20 @@
 const OFFICIAL_VALIDATION_ROLES = Object.freeze([
   'barangay_official',
   'city_engineer',
-  'utility_provider',
-  'admin'
+  'utility_provider'
 ]);
 
-// Utility providers are operationally official, but at this milestone their
-// server scope is limited to already routed incidents. They cannot decide a
+// Utility providers are operationally scoped, but their server scope is
+// limited to already routed incidents. They cannot decide a
 // newly submitted report; doing so would turn routing into a hidden repair or
 // provider-assignment workflow. Keep this narrower set reusable at route
 // boundaries instead of accepting a request and failing only inside a handler.
 const VALIDATION_DECISION_ROLES = Object.freeze([
   'barangay_official',
-  'city_engineer',
-  'admin'
+  'city_engineer'
 ]);
 
-const RESPONSIBLE_ROLES = Object.freeze([
-  'barangay',
-  'city_engineering',
-  'utility_provider'
-]);
+const RESPONSIBLE_ROLES = Object.freeze(['utility_provider']);
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -45,7 +39,7 @@ const isValidationDecisionOfficial = (user) => Boolean(user && VALIDATION_DECISI
 const buildIncidentScope = (user) => {
   if (!user) return { _id: null };
 
-  if (user.role === 'admin' || user.role === 'city_engineer') return {};
+  if (user.role === 'city_engineer') return {};
 
   if (user.role === 'citizen') return { reporter: user._id };
 
@@ -53,7 +47,7 @@ const buildIncidentScope = (user) => {
     const barangay = normalizeText(user.barangay);
     if (!barangay) return { _id: null };
 
-    // Existing 25% reports do not have `jurisdiction` yet. Keep them visible
+    // Older reports may not have a confirmed jurisdiction. Keep them visible
     // only when their submitted barangay matches the official's assignment.
     return {
       $or: [
@@ -86,7 +80,7 @@ const combineIncidentFilters = (...filters) => {
 
 const canAccessIncident = (user, incident) => {
   if (!user || !incident) return false;
-  if (user.role === 'admin' || user.role === 'city_engineer') return true;
+  if (user.role === 'city_engineer') return true;
 
   if (user.role === 'citizen') {
     return asId(incident.reporter) === asId(user._id);
@@ -106,45 +100,20 @@ const canAccessIncident = (user, incident) => {
 
 const canConfirmJurisdiction = (user, jurisdiction) => {
   if (!isValidationOfficial(user)) return false;
-  if (user.role === 'admin' || user.role === 'city_engineer') return true;
+  if (user.role === 'city_engineer') return true;
   if (user.role !== 'barangay_official') return false;
 
   return normalizeText(jurisdiction?.barangay) === normalizeText(user.barangay);
 };
 
-const canRouteIncident = (user, routing, jurisdiction) => {
-  if (!isValidationOfficial(user)) return false;
-  if (user.role === 'admin' || user.role === 'city_engineer') return true;
-
-  // A barangay official may keep an incident with their own barangay but may
-  // not route it to arbitrary providers or other barangays.
-  if (user.role === 'barangay_official') {
-    return routing?.responsibleRole === 'barangay'
-      && normalizeText(jurisdiction?.barangay) === normalizeText(user.barangay);
-  }
-
-  return false;
+const canRouteIncident = (user, routing) => {
+  return user?.role === 'city_engineer' && routing?.responsibleRole === 'utility_provider';
 };
 
 const defaultJurisdictionFor = (incident) => ({
   barangay: getIncidentBarangay(incident),
-  city: getIncidentCity(incident),
-  responsibility: incident?.jurisdiction?.responsibility || 'barangay'
+  city: getIncidentCity(incident)
 });
-
-const defaultRoutingFor = (user, jurisdiction) => {
-  if (user.role === 'barangay_official') {
-    return {
-      responsibleOrganization: `Barangay ${jurisdiction.barangay}`,
-      responsibleRole: 'barangay'
-    };
-  }
-
-  return {
-    responsibleOrganization: 'City Engineering',
-    responsibleRole: 'city_engineering'
-  };
-};
 
 module.exports = {
   OFFICIAL_VALIDATION_ROLES,
@@ -156,7 +125,6 @@ module.exports = {
   canConfirmJurisdiction,
   canRouteIncident,
   defaultJurisdictionFor,
-  defaultRoutingFor,
   getIncidentBarangay,
   getIncidentCity,
   isValidationOfficial,

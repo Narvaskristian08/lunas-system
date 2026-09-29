@@ -53,8 +53,8 @@ const sections: LegalSection[] = [
     id: "image-privacy",
     title: "Image privacy and redaction",
     paragraphs: [
-      "Draft outline: explain the approved safeguards for incident and repair images, including privacy-preserving review, automated or manual redaction, access limits, and treatment of faces, vehicle identifiers, or unrelated private details.",
-      "Clarify that automated hazard recognition and redaction outputs require the review procedures designated by the system owner.",
+      "Automated face and license-plate redaction is not configured in this release. Reporters should avoid submitting images that include people, vehicle identifiers, or unrelated private details.",
+      "Incident and repair evidence is available to authorized users through the role-scoped workflow. Confirm retention periods and approved handling procedures with the system owner before production use.",
     ],
   },
   {

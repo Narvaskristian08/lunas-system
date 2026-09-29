@@ -409,7 +409,7 @@ class RepairWorkOrderCard extends StatelessWidget {
   }
 }
 
-/// Server-backed work-order card used by the 75% repair workspace. It accepts
+/// Server-backed work-order card used in the Repair Personnel workspace. It accepts
 /// only a parsed API model, keeping dashboard/list screens free of fixtures.
 class LiveRepairWorkOrderCard extends StatelessWidget {
   const LiveRepairWorkOrderCard({
@@ -432,7 +432,8 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
     RepairWorkOrderStatus.pending => AppColorsLight.info,
     RepairWorkOrderStatus.accepted => AppColorsLight.success,
     RepairWorkOrderStatus.inProgress => AppColorsLight.alert,
-    RepairWorkOrderStatus.completed => AppColorsLight.success,
+    RepairWorkOrderStatus.completed => AppColorsLight.alert,
+    RepairWorkOrderStatus.reworkRequired => AppColorsLight.critical,
     RepairWorkOrderStatus.unknown => Theme.of(
       context,
     ).colorScheme.onSurfaceVariant,
@@ -616,89 +617,6 @@ class RepairInfoRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class RepairPlaceholderImage extends StatelessWidget {
-  const RepairPlaceholderImage({
-    required this.label,
-    this.icon = Icons.photo_outlined,
-    this.height = 160,
-    this.accentColor,
-    this.detail,
-    super.key,
-  });
-
-  final String label;
-  final String? detail;
-  final IconData icon;
-  final double height;
-  final Color? accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = accentColor ?? theme.colorScheme.primary;
-    return Semantics(
-      image: true,
-      label: label,
-      child: Container(
-        width: double.infinity,
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              accent.withValues(alpha: .20),
-              theme.colorScheme.surface,
-              accent.withValues(alpha: .08),
-            ],
-          ),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              top: height * .38,
-              child: Divider(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: .55),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withValues(alpha: .86),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: accent, size: 30),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: accent,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  if (detail != null) ...[
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(detail!, style: theme.textTheme.bodySmall),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

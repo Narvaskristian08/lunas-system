@@ -32,7 +32,9 @@ const historySchema = new mongoose.Schema({
     type: String,
     enum: [
       'created', 'assigned', 'reassigned', 'accepted', 'declined', 'started',
-      'progress', 'evidence_uploaded', 'ready_for_completion', 'sla_approaching', 'sla_overdue'
+      'progress', 'evidence_uploaded', 'ready_for_completion', 'repair_completed',
+      'provider_accepted', 'provider_correction_requested', 'city_returned',
+      'city_verified', 'correction_started', 'sla_approaching', 'sla_overdue'
     ],
     required: true
   },
@@ -88,6 +90,15 @@ const progressSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 }, { _id: true });
 
+const reviewSchema = new mongoose.Schema({
+  stage: { type: String, enum: ['utility_provider', 'city_engineer'], required: true },
+  decision: { type: String, enum: ['accepted', 'correction_required', 'verified'], required: true },
+  reason: { type: String, trim: true, maxlength: 2000 },
+  instructions: { type: String, trim: true, maxlength: 4000 },
+  actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdAt: { type: Date, default: Date.now }
+}, { _id: true });
+
 const workOrderSchema = new mongoose.Schema({
   orderNumber: {
     type: String,
@@ -95,7 +106,7 @@ const workOrderSchema = new mongoose.Schema({
     required: true
   },
   // One durable primary maintenance task represents a validated incident in
-  // the 75% workflow. Its assignment and progress records are append-only
+  // current workflow. Its assignment and progress records are append-only
   // subdocuments, not fields that overwrite operational history.
   incident: {
     type: mongoose.Schema.Types.ObjectId,
@@ -106,7 +117,7 @@ const workOrderSchema = new mongoose.Schema({
   responsibleOrganization: { type: String, required: true, trim: true, maxlength: 160 },
   responsibleRole: {
     type: String,
-    enum: ['barangay', 'city_engineering', 'utility_provider'],
+    enum: ['utility_provider'],
     required: true
   },
   jurisdiction: {
@@ -120,9 +131,10 @@ const workOrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    // The final two legacy values are retained only so existing persisted
-    // rows can still be read. The 75% transition service never creates them.
-    enum: ['pending', 'accepted', 'in_progress', 'completed', 'verified', 'rejected'],
+    enum: [
+      'pending', 'accepted', 'in_progress', 'completed', 'rework_required',
+      'provider_accepted', 'city_correction_required', 'verified'
+    ],
     default: 'pending'
   },
   assignmentState: {
@@ -141,8 +153,8 @@ const workOrderSchema = new mongoose.Schema({
   acceptedAt: Date,
   startedAt: Date,
   readyForCompletionAt: Date,
-  // Existing records may use these old field names. Do not use them for new
-  // verification/closure behavior in this milestone.
+  // Older records may use these field names; new completion and verification
+  // decisions use the controlled status/history fields below.
   actualStartTime: Date,
   actualCompletionTime: Date,
   instructions: { type: String, trim: true, maxlength: 4000 },
@@ -158,6 +170,7 @@ const workOrderSchema = new mongoose.Schema({
   },
   progressUpdates: { type: [progressSchema], default: [] },
   repairEvidence: { type: [evidenceSchema], default: [] },
+  reviews: { type: [reviewSchema], default: [] },
   history: { type: [historySchema], default: [] },
   sla: {
     targetResolutionTime: Number,

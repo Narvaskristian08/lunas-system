@@ -13,11 +13,11 @@ import { Card } from "@/components/ui/card";
 import { DateRangeFilter, FilterBar, FilterSelect, SortControl } from "@/components/ui/filters";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
-import { notificationService } from "@/lib/mock-api";
+import { listNotificationsAction, markAllNotificationsReadAction, markNotificationsReadAction } from "@/app/actions/notifications";
 import type { LunasNotification, NotificationCategory, Severity } from "@/types";
 
 const PAGE_SIZE = 5;
-const NOW = new Date("2026-08-01T10:30:00+08:00").getTime();
+const INITIAL_NOW = Date.now();
 
 type LoadState = "loading" | "success" | "error" | "offline";
 
@@ -63,8 +63,8 @@ function NotificationsWorkspace() {
 
   const load = useCallback(async () => {
     try {
-      const result = await notificationService.list();
-      setItems(result.data);
+      const result = await listNotificationsAction();
+      setItems(result);
       setSelected(new Set());
       setLoadState("success");
     } catch (error) {
@@ -96,7 +96,7 @@ function NotificationsWorkspace() {
       if (readState === "unread" && notification.read) return false;
       if (readState === "read" && !notification.read) return false;
       if (dateRange !== "all") {
-        const age = NOW - new Date(notification.timestamp).getTime();
+        const age = INITIAL_NOW - new Date(notification.timestamp).getTime();
         const maxAge = dateRange === "today" ? 24 * 60 * 60 * 1_000 : dateRange === "week" ? 7 * 24 * 60 * 60 * 1_000 : 30 * 24 * 60 * 60 * 1_000;
         if (age < 0 || age > maxAge) return false;
       }
@@ -132,8 +132,8 @@ function NotificationsWorkspace() {
     if (!ids.length || saving) return;
     setSaving(true);
     try {
-      if (all) await notificationService.markAllRead();
-      else await notificationService.markRead(ids);
+      if (all) await markAllNotificationsReadAction();
+      else await markNotificationsReadAction(ids);
       const idSet = new Set(ids);
       setItems((current) => current.map((notification) => idSet.has(notification.id) ? { ...notification, read: true } : notification));
       setSelected(new Set());
@@ -316,7 +316,7 @@ function NotificationsWorkspace() {
 
       <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-5 text-slate-600">
         <CircleAlert className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden="true" />
-        Deletion and archiving are not available in the current notification service integration.
+        This screen supports reading and filtering notifications. It does not provide delete or archive controls.
         <Button type="button" variant="ghost" size="sm" className="ml-auto hidden min-h-8 shrink-0 px-2 sm:inline-flex" onClick={retryLoad}>
           <RefreshCw className="size-3.5" aria-hidden="true" /> Refresh
         </Button>

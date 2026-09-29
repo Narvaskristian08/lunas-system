@@ -2,20 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 
 void main() {
-  test('citizens and official roles receive their authorized mobile homes', () {
+  test('only Citizen and Repair Personnel receive mobile workspaces', () {
     expect(mobileWorkspaceHome('citizen'), '/citizen');
-    expect(mobileWorkspaceHome('barangay_official'), '/official');
-    expect(mobileWorkspaceHome('city_engineer'), '/engineering');
-    expect(mobileWorkspaceHome('admin'), '/official');
+    expect(isSupportedMobileRole('citizen'), isTrue);
     expect(isSupportedMobileRole('repair_personnel'), isTrue);
     expect(mobileWorkspaceHome('repair_personnel'), '/repair');
-    expect(isSupportedMobileRole('utility_provider'), isTrue);
-    expect(mobileWorkspaceHome('utility_provider'), '/utility');
-  });
-
-  test('utility providers retain their official workflow boundary', () {
-    expect(isValidationOfficialRole('utility_provider'), isTrue);
-    expect(isUtilityProviderRole('utility_provider'), isTrue);
+    for (final role in [
+      'admin', 'barangay_official', 'city_engineer', 'utility_provider',
+    ]) {
+      expect(isSupportedMobileRole(role), isFalse);
+      expect(mobileWorkspaceHome(role), isNull);
+    }
   });
 
   test('unsupported roles fail closed instead of receiving citizen routes', () {

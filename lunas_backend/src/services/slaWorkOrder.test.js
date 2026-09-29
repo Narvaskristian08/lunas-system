@@ -31,7 +31,7 @@ const { createNotification } = require('./notificationService');
 const { getSlaProjection } = require('./workOrderService');
 const { runWorkOrderSlaCheck } = require('./slaService');
 
-describe('75% work-order SLA checking', () => {
+describe('work-order SLA checking', () => {
   beforeEach(() => jest.clearAllMocks());
 
   test('records a single approaching alert and avoids duplicate notifications', async () => {

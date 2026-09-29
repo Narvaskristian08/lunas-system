@@ -62,8 +62,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other']
   }],
-  // Repair staffing is intentionally lightweight for the 75% milestone. It
-  // supports assignment eligibility without pretending to be an HR scheduler.
+  // Repair staffing stores the assignment fields needed for eligibility;
+  // employment verification and HR scheduling remain outside LUNAS.
   repairOrganization: {
     type: String,
     trim: true,

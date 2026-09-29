@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ValidationReview } from "@/components/validation/validation-review";
 import { BackendApiError } from "@/lib/api/backend.server";
 import { requirePermission } from "@/lib/auth/dal.server";
-import { getValidationIncident } from "@/lib/validation.server";
+import { getValidationIncident, getUtilityProviderOrganizations } from "@/lib/validation.server";
 
 async function loadValidationIncident(id: string) {
   try {
@@ -20,6 +20,9 @@ export default async function ValidationReviewPage({
 }) {
   const viewer = await requirePermission("reports.view");
   const { id } = await params;
-  const incident = await loadValidationIncident(id);
-  return <ValidationReview viewer={viewer} incident={incident} />;
+  const [incident, utilityProviders] = await Promise.all([
+    loadValidationIncident(id),
+    viewer.backendRole === "city_engineer" ? getUtilityProviderOrganizations() : Promise.resolve([]),
+  ]);
+  return <ValidationReview viewer={viewer} incident={incident} utilityProviders={utilityProviders} />;
 }

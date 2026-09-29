@@ -12,15 +12,6 @@ export type WorkOrderActionResult = {
   workOrderId?: string;
 };
 
-type OfficialRole = "barangay_official" | "city_engineer" | "utility_provider" | "admin";
-
-const officialRoles = new Set<OfficialRole>([
-  "barangay_official",
-  "city_engineer",
-  "utility_provider",
-  "admin",
-]);
-
 const allowedEvidenceTypes = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const maxEvidenceFiles = 5;
 const maxEvidenceBytes = 10 * 1024 * 1024;
@@ -47,10 +38,18 @@ function isFile(value: FormDataEntryValue): value is File {
     && "type" in value;
 }
 
-async function requireOfficial() {
+async function requireUtilityProvider() {
   const viewer = await requirePermission("work_orders.manage");
-  if (!officialRoles.has(viewer.backendRole as OfficialRole)) {
-    throw new BackendApiError(403, "Your account cannot manage work orders.");
+  if (viewer.backendRole !== "utility_provider") {
+    throw new BackendApiError(403, "Only your assigned Utility Provider organization can manage these work orders.");
+  }
+  return viewer;
+}
+
+async function requireCityEngineer() {
+  const viewer = await requirePermission("repairs.verify");
+  if (viewer.backendRole !== "city_engineer") {
+    throw new BackendApiError(403, "Only City Engineering can make the final repair decision.");
   }
   return viewer;
 }
@@ -105,7 +104,7 @@ export async function createWorkOrderAction(input: {
   instructions?: string;
 }): Promise<WorkOrderActionResult> {
   try {
-    await requireOfficial();
+    await requireUtilityProvider();
     const incidentId = safeId(input.incidentId);
     if (!incidentId) return { ok: false, message: "A validated incident is required before creating a work order." };
     const result = await mutateWorkOrder(
@@ -126,7 +125,7 @@ export async function assignWorkOrderAction(input: {
   assigneeId: string;
 }): Promise<WorkOrderActionResult> {
   try {
-    await requireOfficial();
+    await requireUtilityProvider();
     const workOrderId = safeId(input.workOrderId);
     const assigneeId = safeId(input.assigneeId);
     if (!workOrderId || !assigneeId) return { ok: false, message: "Select an eligible repair person before assigning this work order." };
@@ -147,7 +146,7 @@ export async function reassignWorkOrderAction(input: {
   reason: string;
 }): Promise<WorkOrderActionResult> {
   try {
-    await requireOfficial();
+    await requireUtilityProvider();
     const workOrderId = safeId(input.workOrderId);
     const assigneeId = safeId(input.assigneeId);
     const reason = safeText(input.reason, 500);
@@ -255,6 +254,38 @@ export async function updateRepairProgressAction(input: {
   }
 }
 
+export async function completeRepairWorkAction(formData: FormData): Promise<WorkOrderActionResult> {
+  try {
+    await requireAssignedRepairPersonnel();
+    const workOrderId = safeId(String(formData.get("workOrderId") ?? ""));
+    const notes = safeText(String(formData.get("notes") ?? ""), 2000);
+    const fileValue = formData.get("finalEvidence");
+    if (!workOrderId) return { ok: false, message: "This work-order reference is invalid." };
+    if (!notes || notes.length < 2) return { ok: false, message: "Add a meaningful completion note before submitting repair completion." };
+    if (!fileValue || !isFile(fileValue)) return { ok: false, message: "Final post-maintenance evidence is required." };
+    const extension = fileValue.name.split(".").pop()?.toLowerCase();
+    if (!allowedEvidenceTypes.has(fileValue.type) || !["jpg", "jpeg", "png", "webp"].includes(extension ?? "")) {
+      return { ok: false, message: "Final evidence must be a JPEG, PNG, or WebP image with a matching file extension." };
+    }
+    if (fileValue.size < 1 || fileValue.size > maxEvidenceBytes) {
+      return { ok: false, message: "Final evidence must be no larger than 10 MB." };
+    }
+    const upload = new FormData();
+    upload.set("progressPercent", "100");
+    upload.set("stage", repairProgressStages[100]);
+    upload.set("notes", notes);
+    upload.append("evidence", fileValue, fileValue.name);
+    return mutateWorkOrder(
+      `/work-orders/${encodeURIComponent(workOrderId)}/progress`,
+      upload,
+      workOrderId,
+      "Repair completed and sent to the Utility Provider for review.",
+    );
+  } catch (error) {
+    return failedAction(error, "LUNAS could not submit the final repair evidence. Please try again.");
+  }
+}
+
 export async function uploadRepairEvidenceAction(formData: FormData): Promise<WorkOrderActionResult> {
   try {
     await requireAssignedRepairPersonnel();
@@ -287,5 +318,81 @@ export async function uploadRepairEvidenceAction(formData: FormData): Promise<Wo
     );
   } catch (error) {
     return failedAction(error, "LUNAS could not upload repair evidence. Please try again.");
+  }
+}
+
+export async function reviewCompletedWorkAction(input: {
+  workOrderId: string;
+  decision: "accepted" | "request_correction";
+  reason?: string;
+  instructions?: string;
+}): Promise<WorkOrderActionResult> {
+  try {
+    await requireUtilityProvider();
+    const workOrderId = safeId(input.workOrderId);
+    const reason = safeText(input.reason, 2000);
+    const instructions = safeText(input.instructions, 4000);
+    if (!workOrderId) return { ok: false, message: "This work-order reference is invalid." };
+    if (input.decision === "request_correction" && !reason) {
+      return { ok: false, message: "A reason is required before returning the work for correction." };
+    }
+    return mutateWorkOrder(
+      `/work-orders/${encodeURIComponent(workOrderId)}/provider-review`,
+      JSON.stringify({ decision: input.decision, reason, instructions }),
+      workOrderId,
+      input.decision === "accepted"
+        ? "Completion accepted and forwarded to City Engineering."
+        : "Corrective work sent to Repair Personnel.",
+    );
+  } catch (error) {
+    return failedAction(error, "LUNAS could not save the provider completion review. Please try again.");
+  }
+}
+
+export async function coordinateCityCorrectionAction(input: {
+  workOrderId: string;
+  instructions: string;
+}): Promise<WorkOrderActionResult> {
+  try {
+    await requireUtilityProvider();
+    const workOrderId = safeId(input.workOrderId);
+    const instructions = safeText(input.instructions, 4000);
+    if (!workOrderId || !instructions || instructions.length < 2) {
+      return { ok: false, message: "Add corrective instructions before returning work to Repair Personnel." };
+    }
+    return mutateWorkOrder(
+      `/work-orders/${encodeURIComponent(workOrderId)}/coordinate-correction`,
+      JSON.stringify({ instructions }),
+      workOrderId,
+      "Corrective work sent to Repair Personnel.",
+    );
+  } catch (error) {
+    return failedAction(error, "LUNAS could not coordinate the corrective work. Please try again.");
+  }
+}
+
+export async function finalReviewWorkOrderAction(input: {
+  workOrderId: string;
+  decision: "approved" | "return";
+  reason?: string;
+}): Promise<WorkOrderActionResult> {
+  try {
+    await requireCityEngineer();
+    const workOrderId = safeId(input.workOrderId);
+    const reason = safeText(input.reason, 2000);
+    if (!workOrderId) return { ok: false, message: "This work-order reference is invalid." };
+    if (input.decision === "return" && !reason) {
+      return { ok: false, message: "A reason is required before returning work for correction." };
+    }
+    return mutateWorkOrder(
+      `/work-orders/${encodeURIComponent(workOrderId)}/final-review`,
+      JSON.stringify({ decision: input.decision, reason }),
+      workOrderId,
+      input.decision === "approved"
+        ? "Repair verified and incident resolved."
+        : "Work returned to the Utility Provider for correction.",
+    );
+  } catch (error) {
+    return failedAction(error, "LUNAS could not save the final engineering review. Please try again.");
   }
 }

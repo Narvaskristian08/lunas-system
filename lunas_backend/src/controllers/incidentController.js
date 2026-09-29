@@ -12,12 +12,10 @@ const {
   canConfirmJurisdiction,
   canRouteIncident,
   defaultJurisdictionFor,
-  defaultRoutingFor,
-  getIncidentBarangay,
   normalizeText,
   RESPONSIBLE_ROLES
 } = require('../services/jurisdictionService');
-const { buildSubmittedTransition, transitionConflict } = require('../services/incidentTransitionService');
+const { buildIncidentTransition, canTransitionIncident, transitionConflict } = require('../services/incidentTransitionService');
 const {
   cleanupEvidence,
   getUploadedEvidenceFiles,
@@ -154,6 +152,7 @@ const serializeIncidentForCitizen = async (incident) => {
     updatedAt: source.updatedAt,
     rejectionReason: source.status === 'rejected' ? source.rejectionReason : undefined,
     duplicateReason: source.status === 'duplicate' ? source.duplicateReason : undefined,
+    clarificationReason: source.status === 'clarification_required' ? source.clarificationReason : undefined,
     statusHistory: serializeStatusHistoryForCitizen(source.statusHistory || []),
     // Citizens receive only the same category-relevant advisory summary that
     // an official sees; it cannot be used as an operational decision.
@@ -253,6 +252,7 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
     duplicateOf: safeDuplicateReference(source.duplicateOf),
     duplicateReason: source.duplicateReason,
     rejectionReason: source.rejectionReason,
+    clarificationReason: source.status === 'clarification_required' ? source.clarificationReason : undefined,
     jurisdiction: source.jurisdiction,
     routing: source.routing ? {
       responsibleOrganization: source.routing.responsibleOrganization,
@@ -302,17 +302,13 @@ const normalizeLegacyImages = (images = [], privacyAcknowledged = false) => imag
 
 // @desc    Create a new citizen incident report
 // @route   POST /api/v1/incidents
-// @access  Private (Citizen; legacy admin support retained)
+// @access  Private (Citizen)
 exports.createIncident = asyncHandler(async (req, res) => {
   const { category, subcategory, description, location } = req.body;
   const coordinates = location.coordinates.map(Number);
   const files = getUploadedEvidenceFiles(req);
   const privacyAcknowledged = req.body.privacyAcknowledged === true || req.body.privacyAcknowledged === 'true';
   let uploadedImages = [];
-
-  // A submitted report has no operational priority or live SLA. Those are
-  // official validation decisions at this milestone.
-  const priority = 'medium';
 
   const possibleDuplicateCandidates = await findPossibleDuplicateCandidates({
     category,
@@ -346,7 +342,6 @@ exports.createIncident = asyncHandler(async (req, res) => {
       },
       images,
       aiAnalysis,
-      priority,
       sla: {
         state: 'not_started'
       },
@@ -473,7 +468,6 @@ exports.getIncidents = asyncHandler(async (req, res) => {
   const criteria = combineIncidentFilters(buildIncidentScope(req.user), filter);
   const incidents = await Incident.find(criteria)
     .populate('reporter', 'firstName lastName')
-    .populate('assignedTo', 'firstName lastName role')
     .populate('validatedBy', 'firstName lastName')
     .populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt')
     .sort(safeSortBy)
@@ -610,18 +604,13 @@ const notifySafely = async (notification) => {
 
 const notifyRoutingOfficials = async (incident) => {
   const routing = incident.routing || {};
-  const criteria = { isActive: true };
-  if (routing.responsibleRole === 'barangay') {
-    criteria.role = 'barangay_official';
-    criteria.barangay = incident.jurisdiction?.barangay || getIncidentBarangay(incident);
-  } else if (routing.responsibleRole === 'city_engineering') {
-    criteria.role = 'city_engineer';
-  } else if (routing.responsibleRole === 'utility_provider') {
-    criteria.role = 'utility_provider';
-    criteria.utilityCompany = routing.responsibleOrganization;
-  } else {
-    return;
-  }
+  if (routing.responsibleRole !== 'utility_provider' || !routing.responsibleOrganization) return;
+  const criteria = {
+    role: 'utility_provider',
+    utilityCompany: routing.responsibleOrganization,
+    isActive: true,
+    isArchived: { $ne: true }
+  };
 
   const recipients = await User.find(criteria).select('_id');
   await Promise.all(recipients.map((recipient) => notifySafely({
@@ -631,6 +620,17 @@ const notifyRoutingOfficials = async (incident) => {
     message: `Incident ${incident.reportNumber} requires review by ${routing.responsibleOrganization}.`,
     data: { incidentId: incident._id, link: `/incidents/${incident._id}` },
     priority: incident.priority === 'critical' ? 'urgent' : incident.priority
+  })));
+};
+
+const notifyCityEngineers = async (incident, title, message) => {
+  const reviewers = await User.find({ role: 'city_engineer', isActive: true, isArchived: { $ne: true } }).select('_id');
+  await Promise.all(reviewers.map((reviewer) => notifySafely({
+    recipient: reviewer._id,
+    type: 'incident_validated',
+    title,
+    message,
+    data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
   })));
 };
 
@@ -650,27 +650,21 @@ const recordOfficialAction = async ({ action, incident, req, details, changes })
 const normalizeJurisdiction = (incident, input = {}) => ({
   ...defaultJurisdictionFor(incident),
   barangay: normalizeText(input.barangay) || defaultJurisdictionFor(incident).barangay,
-  city: normalizeText(input.city) || defaultJurisdictionFor(incident).city,
-  responsibility: input.responsibility || defaultJurisdictionFor(incident).responsibility || 'barangay'
+  city: normalizeText(input.city) || defaultJurisdictionFor(incident).city
 });
 
-const normalizeRouting = (user, jurisdiction, input = {}) => {
-  const defaults = defaultRoutingFor(user, jurisdiction);
+const normalizeRouting = (input = {}) => {
   return {
-    responsibleOrganization: normalizeText(input.responsibleOrganization) || defaults.responsibleOrganization,
-    responsibleRole: input.responsibleRole || defaults.responsibleRole,
+    responsibleOrganization: normalizeText(input.responsibleOrganization),
+    responsibleRole: input.responsibleRole,
     reason: normalizeText(input.reason)
   };
 };
 
-// A partial routing object must not combine a caller-supplied role with a
-// default organization (or vice versa). If routing is omitted entirely, the
-// safe role-specific default remains available; if it is supplied, the pair
-// has to be complete and valid before it can become an accountable route.
+// Routing must name the selected Utility Provider explicitly.
 const hasCompleteRoutingInput = (input = {}) => {
   const organization = normalizeText(input.responsibleOrganization);
   const role = normalizeText(input.responsibleRole);
-  if (!organization && !role) return true;
   return Boolean(organization) && RESPONSIBLE_ROLES.includes(role);
 };
 
@@ -687,12 +681,12 @@ const pushRoutingHistory = (previous, next, actor, now) => ([
   }
 ]);
 
-const transitionSubmitted = async (req, res, nextStatus, fields, notes, metadata) => {
+const transitionIncidentDecision = async (req, res, nextStatus, fields, notes, metadata) => {
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'submitted') return respondConflict(res);
-
-  const transition = buildSubmittedTransition({
+  if (!canTransitionIncident(before.status, nextStatus)) return respondConflict(res);
+  const transition = buildIncidentTransition({
+    currentStatus: before.status,
     nextStatus,
     actor: req.user._id,
     actorRole: req.user.role,
@@ -727,7 +721,9 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   const numericPage = Number(page);
   const numericLimit = Number(limit);
   const allowedSorts = new Set(['createdAt', '-createdAt', 'priority', '-priority']);
-  const filter = { status: 'submitted' };
+  const filter = req.user.role === 'city_engineer'
+    ? { status: 'barangay_validated' }
+    : { status: { $in: ['submitted', 'clarification_required'] } };
 
   if (category) filter.category = category;
   if (hasDuplicateCandidate === 'true') filter['duplicateDetection.candidateCount'] = { $gt: 0 };
@@ -821,93 +817,151 @@ exports.getIncidentSLA = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Validate a submitted incident, set its operational priority, and
-//          initialize jurisdiction/routing/SLA in one conditional update.
+// @desc    Barangay review validates a citizen report and forwards it to City Engineering.
 // @route   POST /api/v1/incidents/:id/validate
 exports.validateIncident = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'barangay_official') {
+    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official may perform initial validation' });
+  }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'submitted') return respondConflict(res);
-
-  const priority = String(req.body.priority || '').toLowerCase();
-  if (!['critical', 'high', 'medium', 'low'].includes(priority)) {
-    return res.status(400).json({ success: false, message: 'A valid priority is required to validate a report' });
-  }
+  if (!['submitted', 'clarification_required'].includes(before.status)) return respondConflict(res);
   const jurisdiction = normalizeJurisdiction(before, req.body.jurisdiction || {});
   if (!jurisdiction.barangay || !canConfirmJurisdiction(req.user, jurisdiction)) {
     return res.status(403).json({ success: false, message: 'You are not authorized to confirm this jurisdiction' });
   }
-  const routingInput = req.body.routing || {};
-  if (!hasCompleteRoutingInput(routingInput)) {
-    return res.status(400).json({ success: false, message: 'Routing must include both a responsible organization and a valid responsible role' });
-  }
-  const route = normalizeRouting(req.user, jurisdiction, routingInput);
-  if (!route.responsibleOrganization || !canRouteIncident(req.user, route, jurisdiction)) {
-    return res.status(403).json({ success: false, message: 'You are not authorized to route this report to that organization' });
-  }
-
   const now = new Date();
-  const confirmedJurisdiction = {
+  const reviewedJurisdiction = {
     ...jurisdiction,
     confirmedBy: req.user._id,
     confirmedAt: now
   };
-  const routing = {
-    ...route,
-    routedBy: req.user._id,
-    routedAt: now,
-    history: pushRoutingHistory(before.routing, route, req.user._id, now)
-  };
-  const updated = await transitionSubmitted(
+  const updated = await transitionIncidentDecision(
     req,
     res,
-    'validated',
+    'barangay_validated',
     {
-      priority,
-      priorityAssignedBy: req.user._id,
-      priorityAssignedAt: now,
       validatedBy: req.user._id,
       validatedAt: now,
-      jurisdiction: confirmedJurisdiction,
-      routing,
-      sla: initializeIncidentSLA(priority, now)
+      jurisdiction: reviewedJurisdiction,
+      clarificationReason: undefined,
+      clarificationRequestedBy: undefined,
+      clarificationRequestedAt: undefined
     },
-    normalizeText(req.body.notes) || 'Incident validated, prioritized, and routed',
+    normalizeText(req.body.notes) || 'Barangay validation completed; forwarded to City Engineering',
     {
-      priority,
       jurisdiction: {
-        barangay: confirmedJurisdiction.barangay,
-        city: confirmedJurisdiction.city,
-        responsibility: confirmedJurisdiction.responsibility
-      },
-      routing: {
-        responsibleOrganization: routing.responsibleOrganization,
-        responsibleRole: routing.responsibleRole
+        barangay: reviewedJurisdiction.barangay,
+        city: reviewedJurisdiction.city
       }
     }
   );
   if (!updated) return;
 
   await recordOfficialAction({
-    action: 'incident_validated',
+    action: 'incident_barangay_validated',
     incident: updated,
     req,
-    details: { priority, jurisdiction: confirmedJurisdiction, routing: route },
-    changes: { before: { status: 'submitted' }, after: { status: 'validated', priority } }
+    details: { jurisdiction: reviewedJurisdiction },
+    changes: { before: { status: before.status }, after: { status: 'barangay_validated' } }
   });
   await notifySafely({
     recipient: updated.reporter,
     ...notificationTemplates.incidentValidated(updated.reportNumber),
     data: { incidentId: updated._id, link: `/incidents/${updated._id}` },
-    priority: priority === 'critical' ? 'urgent' : priority
+    priority: 'medium'
   });
-  await notifyRoutingOfficials(updated);
+  await notifyCityEngineers(
+    updated,
+    'Barangay validated an incident',
+    `Incident ${updated.reportNumber} is ready for City Engineering review.`
+  );
 
   res.status(200).json({
     success: true,
-    message: 'Incident validated and routed successfully',
+    message: 'Incident validated by the Barangay Official and forwarded to City Engineering',
     data: await serializeIncidentForOfficial(updated, { includeCandidates: true })
   });
+});
+
+// @desc    Confirm a barangay-validated incident at City Engineering level
+// @route   POST /api/v1/incidents/:id/confirm
+exports.confirmIncident = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'city_engineer') {
+    return res.status(403).json({ success: false, message: 'Only City Engineering may confirm an incident' });
+  }
+  const before = await findScopedIncident(req);
+  if (!before) return respondNotFound(res);
+  if (before.status !== 'barangay_validated') return respondConflict(res);
+  const jurisdiction = normalizeJurisdiction(before, req.body.jurisdiction || {});
+  if (!jurisdiction.barangay) {
+    return res.status(400).json({ success: false, message: 'A barangay is required for City Engineering review' });
+  }
+  const now = new Date();
+  const confirmedJurisdiction = { ...jurisdiction, confirmedBy: req.user._id, confirmedAt: now };
+  const updated = await Incident.findOneAndUpdate(
+    { _id: before._id, status: 'barangay_validated' },
+    {
+      $set: { status: 'city_confirmed', cityConfirmedBy: req.user._id, cityConfirmedAt: now, jurisdiction: confirmedJurisdiction },
+      $push: { statusHistory: {
+        status: 'city_confirmed', changedBy: req.user._id, actorRole: req.user.role,
+        changedAt: now, notes: normalizeText(req.body.notes) || 'City Engineering confirmed the incident',
+        metadata: { barangay: confirmedJurisdiction.barangay, city: confirmedJurisdiction.city }
+      } }
+    },
+    { new: true, runValidators: true }
+  ).populate('reporter', 'firstName lastName');
+  if (!updated) return respondConflict(res);
+  await recordOfficialAction({
+    action: 'incident_city_confirmed', incident: updated, req,
+    details: { jurisdiction: confirmedJurisdiction },
+    changes: { before: { status: 'barangay_validated' }, after: { status: 'city_confirmed' } }
+  });
+  await notifySafely({
+    recipient: updated.reporter,
+    type: 'incident_validated',
+    title: 'City Engineering confirmed your report',
+    message: `Incident ${updated.reportNumber} has been confirmed for engineering response.`,
+    data: { incidentId: updated._id, link: `/incidents/${updated._id}` }
+  });
+  res.status(200).json({ success: true, message: 'Incident confirmed by City Engineering', data: await serializeIncidentForOfficial(updated) });
+});
+
+// @desc    Return a barangay-validated incident for clarification with a reason
+// @route   POST /api/v1/incidents/:id/clarification
+exports.requestIncidentClarification = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'city_engineer') {
+    return res.status(403).json({ success: false, message: 'Only City Engineering may request clarification' });
+  }
+  const reason = normalizeText(req.body.reason);
+  if (!reason) return res.status(400).json({ success: false, message: 'A clarification reason is required' });
+  const before = await findScopedIncident(req);
+  if (!before) return respondNotFound(res);
+  if (before.status !== 'barangay_validated') return respondConflict(res);
+  const now = new Date();
+  const updated = await Incident.findOneAndUpdate(
+    { _id: before._id, status: 'barangay_validated' },
+    {
+      $set: { status: 'clarification_required', clarificationReason: reason, clarificationRequestedBy: req.user._id, clarificationRequestedAt: now },
+      $push: { statusHistory: {
+        status: 'clarification_required', changedBy: req.user._id, actorRole: req.user.role,
+        changedAt: now, notes: reason, metadata: { returnTo: 'barangay_official' }
+      } }
+    },
+    { new: true, runValidators: true }
+  ).populate('reporter', 'firstName lastName');
+  if (!updated) return respondConflict(res);
+  await recordOfficialAction({
+    action: 'incident_clarification_requested', incident: updated, req,
+    details: { reason, returnTo: 'barangay_official' },
+    changes: { before: { status: 'barangay_validated' }, after: { status: 'clarification_required' } }
+  });
+  await notifySafely({
+    recipient: updated.reporter, type: 'status_update', title: 'More information is needed',
+    message: `City Engineering returned incident ${updated.reportNumber} for clarification: ${reason}`,
+    data: { incidentId: updated._id, link: `/incidents/${updated._id}` }
+  });
+  res.status(200).json({ success: true, message: 'Incident returned for clarification', data: await serializeIncidentForOfficial(updated) });
 });
 
 // @desc    Reject a submitted incident with a required citizen-visible reason
@@ -917,7 +971,7 @@ exports.rejectIncident = asyncHandler(async (req, res) => {
   if (!reason) return res.status(400).json({ success: false, message: 'A rejection reason is required' });
   const notes = normalizeText(req.body.notes);
   const now = new Date();
-  const updated = await transitionSubmitted(
+  const updated = await transitionIncidentDecision(
     req,
     res,
     'rejected',
@@ -994,7 +1048,7 @@ exports.markDuplicateIncident = asyncHandler(async (req, res) => {
   }
   const notes = normalizeText(req.body.notes);
   const now = new Date();
-  const updated = await transitionSubmitted(
+  const updated = await transitionIncidentDecision(
     req,
     res,
     'duplicate',
@@ -1035,7 +1089,7 @@ exports.markDuplicateIncident = asyncHandler(async (req, res) => {
 // @desc    Change priority after validation; raw status transitions stay unavailable
 // @route   PATCH /api/v1/incidents/:id/priority
 exports.updateIncidentPriority = asyncHandler(async (req, res) => {
-  if (!['barangay_official', 'city_engineer', 'admin'].includes(req.user.role)) {
+  if (req.user.role !== 'city_engineer') {
     return res.status(403).json({ success: false, message: 'You are not authorized to change incident priority' });
   }
   const priority = String(req.body.priority || '').toLowerCase();
@@ -1044,14 +1098,15 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'validated') {
-    return res.status(409).json({ success: false, message: 'Priority can only be changed for a validated incident' });
+  if (before.status !== 'city_confirmed') {
+    return res.status(409).json({ success: false, message: 'City Engineering must confirm an incident before assigning its priority' });
   }
   const now = new Date();
   const updated = await Incident.findOneAndUpdate(
-    combineIncidentFilters({ _id: before._id, status: 'validated' }, officialScope(req)),
+    combineIncidentFilters({ _id: before._id, status: 'city_confirmed' }, officialScope(req)),
     {
       $set: {
+        status: 'prioritized',
         priority,
         priorityAssignedBy: req.user._id,
         priorityAssignedAt: now,
@@ -1059,12 +1114,12 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
       },
       $push: {
         statusHistory: {
-          status: 'priority_updated',
+          status: 'prioritized',
           changedBy: req.user._id,
           actorRole: req.user.role,
           changedAt: now,
-          notes: `Priority changed to ${priority}`,
-          metadata: { priority }
+          notes: `City Engineering assigned ${priority} priority and calculated the SLA deadline`,
+          metadata: { priority, sla: initializeIncidentSLA(priority, now) }
         }
       }
     },
@@ -1076,7 +1131,7 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
     incident: updated,
     req,
     details: { priority },
-    changes: { before: { priority: before.priority }, after: { priority } }
+    changes: { before: { status: before.status, priority: before.priority }, after: { status: 'prioritized', priority } }
   });
   res.status(200).json({ success: true, message: 'Incident priority updated', data: await serializeIncidentForOfficial(updated) });
 });
@@ -1084,10 +1139,13 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
 // @desc    Confirm/correct a validated incident's jurisdiction
 // @route   PATCH /api/v1/incidents/:id/jurisdiction
 exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'city_engineer') {
+    return res.status(403).json({ success: false, message: 'Only City Engineering may confirm the city jurisdiction' });
+  }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'validated') {
-    return res.status(409).json({ success: false, message: 'Jurisdiction can only be updated for a validated incident' });
+  if (before.status !== 'city_confirmed') {
+    return res.status(409).json({ success: false, message: 'Jurisdiction can only be confirmed during City Engineering review' });
   }
   const jurisdiction = normalizeJurisdiction(before, req.body);
   if (!jurisdiction.barangay || !canConfirmJurisdiction(req.user, jurisdiction)) {
@@ -1096,7 +1154,7 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
   const now = new Date();
   const value = { ...jurisdiction, confirmedBy: req.user._id, confirmedAt: now };
   const updated = await Incident.findOneAndUpdate(
-    combineIncidentFilters({ _id: before._id, status: 'validated' }, officialScope(req)),
+    combineIncidentFilters({ _id: before._id, status: 'city_confirmed' }, officialScope(req)),
     {
       $set: { jurisdiction: value },
       $push: {
@@ -1106,7 +1164,7 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
           actorRole: req.user.role,
           changedAt: now,
           notes: 'Jurisdiction confirmed',
-          metadata: { barangay: value.barangay, city: value.city, responsibility: value.responsibility }
+          metadata: { barangay: value.barangay, city: value.city }
         }
       }
     },
@@ -1126,18 +1184,31 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
 // @desc    Route a validated incident to an accountable organization (not a work order)
 // @route   POST /api/v1/incidents/:id/route
 exports.routeIncident = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'city_engineer') {
+    return res.status(403).json({ success: false, message: 'Only City Engineering may select and assign a Utility Provider' });
+  }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'validated') {
-    return res.status(409).json({ success: false, message: 'Only validated incidents can be routed' });
+  if (before.status !== 'prioritized' || !before.priority || !before.sla?.deadline) {
+    return res.status(409).json({ success: false, message: 'Assign City Engineering priority and SLA before routing to a Utility Provider' });
   }
   const jurisdiction = normalizeJurisdiction(before, before.jurisdiction || {});
   if (!hasCompleteRoutingInput(req.body)) {
     return res.status(400).json({ success: false, message: 'Routing must include both a responsible organization and a valid responsible role' });
   }
-  const route = normalizeRouting(req.user, jurisdiction, req.body);
-  if (!route.responsibleOrganization || !canRouteIncident(req.user, route, jurisdiction)) {
+  const route = normalizeRouting(req.body);
+  if (!route.responsibleOrganization || route.responsibleRole !== 'utility_provider'
+    || !canRouteIncident(req.user, route, jurisdiction)) {
     return res.status(403).json({ success: false, message: 'You are not authorized to route this incident to that organization' });
+  }
+  const providerAccount = await User.findOne({
+    role: 'utility_provider',
+    utilityCompany: route.responsibleOrganization,
+    isActive: true,
+    isArchived: { $ne: true }
+  }).select('_id');
+  if (!providerAccount) {
+    return res.status(400).json({ success: false, message: 'No active Utility Provider account is provisioned for that organization' });
   }
   const now = new Date();
   const routing = {
@@ -1147,12 +1218,18 @@ exports.routeIncident = asyncHandler(async (req, res) => {
     history: pushRoutingHistory(before.routing, route, req.user._id, now)
   };
   const updated = await Incident.findOneAndUpdate(
-    combineIncidentFilters({ _id: before._id, status: 'validated' }, officialScope(req)),
+    combineIncidentFilters({ _id: before._id, status: 'prioritized' }, officialScope(req)),
     {
-      $set: { routing },
+      $set: {
+        status: 'provider_assigned',
+        routing,
+        assignedUtility: providerAccount._id,
+        providerAssignedBy: req.user._id,
+        providerAssignedAt: now
+      },
       $push: {
         statusHistory: {
-          status: 'routed',
+          status: 'provider_assigned',
           changedBy: req.user._id,
           actorRole: req.user.role,
           changedAt: now,
@@ -1169,7 +1246,7 @@ exports.routeIncident = asyncHandler(async (req, res) => {
     incident: updated,
     req,
     details: { routing: route },
-    changes: { before: { routing: before.routing }, after: { routing } }
+    changes: { before: { status: before.status, routing: before.routing }, after: { status: 'provider_assigned', routing } }
   });
   await notifyRoutingOfficials(updated);
   res.status(200).json({ success: true, message: 'Incident routed successfully', data: await serializeIncidentForOfficial(updated) });

@@ -16,10 +16,11 @@ export function priorityTone(priority: string | undefined): Severity {
 }
 
 export function workOrderStatusTone(status: string | undefined): Severity {
-  if (status === "completed") return "success";
+  if (status === "verified") return "success";
+  if (status === "completed" || status === "city_correction_required" || status === "rework_required" || status === "pending") return "warning";
+  if (status === "provider_accepted") return "information";
   if (status === "in_progress") return "information";
   if (status === "accepted") return "information";
-  if (status === "pending") return "warning";
   if (status === "rejected") return "critical";
   return "neutral";
 }

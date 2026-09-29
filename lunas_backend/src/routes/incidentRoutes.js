@@ -11,13 +11,14 @@ const {
   getIncidentSLA,
   updateIncident,
   validateIncident,
+  confirmIncident,
+  requestIncidentClarification,
   rejectIncident,
   markDuplicateIncident,
   updateIncidentPriority,
   updateIncidentJurisdiction,
   routeIncident,
   getNearbyIncidents,
-  deleteIncident
 } = require('../controllers/incidentController');
 const { createWorkOrder } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
@@ -33,6 +34,7 @@ const {
   updatePriorityValidation,
   updateJurisdictionValidation,
   routeIncidentValidation,
+  clarificationValidation,
   createWorkOrderValidation,
   pendingValidationQuery,
   paginationValidation,
@@ -49,7 +51,7 @@ const validationDecisionRoles = VALIDATION_DECISION_ROLES;
 router.get(
   '/nearby',
   protect,
-  authorize('barangay_official', 'city_engineer', 'utility_provider', 'repair_personnel', 'admin'),
+  authorize('city_engineer', 'utility_provider', 'repair_personnel'),
   nearbyCoordinatesValidation,
   validate,
   getNearbyIncidents
@@ -69,7 +71,7 @@ router.route('/')
   .get(protect, paginationValidation, validate, getIncidents)
   .post(
     protect,
-    authorize('citizen', 'admin'),
+    authorize('citizen'),
     uploadIncidentEvidence,
     parseIncidentPayload,
     createIncidentValidation,
@@ -77,13 +79,13 @@ router.route('/')
     createIncident
 );
 
-// A work order is created from a validated, routed incident. Keep this nested
+// A Utility Provider creates a work order after City Engineering routes the incident. Keep this nested
 // route next to incident operations while the detailed maintenance API stays
 // under /work-orders.
 router.post(
   '/:id/work-orders',
   protect,
-  authorize('barangay_official', 'city_engineer', 'utility_provider', 'admin'),
+  authorize('utility_provider'),
   mongoIdValidation,
   createWorkOrderValidation,
   validate,
@@ -92,8 +94,7 @@ router.post(
 
 router.route('/:id')
   .get(protect, mongoIdValidation, validate, getIncident)
-  .put(protect, authorize(...officialValidationRoles), mongoIdValidation, updateIncidentValidation, validate, updateIncident)
-  .delete(protect, authorize('admin'), mongoIdValidation, validate, deleteIncident);
+  .put(protect, authorize('barangay_official', 'city_engineer', 'utility_provider'), mongoIdValidation, updateIncidentValidation, validate, updateIncident);
 
 router.get('/:id/history', protect, mongoIdValidation, validate, getIncidentHistory);
 router.get(
@@ -109,16 +110,34 @@ router.get('/:id/sla', protect, mongoIdValidation, validate, getIncidentSLA);
 router.post(
   '/:id/validate',
   protect,
-  authorize(...validationDecisionRoles),
+  authorize('barangay_official'),
   mongoIdValidation,
   validateIncidentDecisionValidation,
   validate,
   validateIncident
 );
 router.post(
+  '/:id/confirm',
+  protect,
+  authorize('city_engineer'),
+  mongoIdValidation,
+  validateIncidentDecisionValidation,
+  validate,
+  confirmIncident
+);
+router.post(
+  '/:id/clarification',
+  protect,
+  authorize('city_engineer'),
+  mongoIdValidation,
+  clarificationValidation,
+  validate,
+  requestIncidentClarification
+);
+router.post(
   '/:id/reject',
   protect,
-  authorize(...validationDecisionRoles),
+  authorize('barangay_official'),
   mongoIdValidation,
   rejectIncidentDecisionValidation,
   validate,
@@ -127,7 +146,7 @@ router.post(
 router.post(
   '/:id/mark-duplicate',
   protect,
-  authorize(...validationDecisionRoles),
+  authorize('barangay_official'),
   mongoIdValidation,
   markDuplicateValidation,
   validate,
@@ -136,7 +155,7 @@ router.post(
 router.patch(
   '/:id/priority',
   protect,
-  authorize(...validationDecisionRoles),
+  authorize('city_engineer'),
   mongoIdValidation,
   updatePriorityValidation,
   validate,
@@ -145,7 +164,7 @@ router.patch(
 router.patch(
   '/:id/jurisdiction',
   protect,
-  authorize(...validationDecisionRoles),
+  authorize('city_engineer'),
   mongoIdValidation,
   updateJurisdictionValidation,
   validate,
@@ -154,11 +173,14 @@ router.patch(
 router.post(
   '/:id/route',
   protect,
-  authorize(...validationDecisionRoles),
+  authorize('city_engineer'),
   mongoIdValidation,
   routeIncidentValidation,
   validate,
   routeIncident
 );
+
+// Deletion is intentionally not exposed. Rejection, duplicate decisions and
+// closure preserve auditable incident history.
 
 module.exports = router;

@@ -42,8 +42,8 @@ test.describe("authorized account screens", () => {
   test.afterAll(async () => { if (server) await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); });
   test.beforeEach(() => { accounts = []; });
 
-  test("administrator creates an approved account, views Pending Activation, and confirms deactivation", async ({ page, context }) => {
-    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: "http://127.0.0.1:3100", httpOnly: true, sameSite: "Lax" }]);
+  test("administrator creates an approved account, views Pending Activation, and confirms deactivation", async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
     await page.goto("/admin/users");
     await expect(page.getByRole("heading", { name: "Authorized accounts", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Create Authorized Account", exact: true }).click();
@@ -69,19 +69,19 @@ test.describe("authorized account screens", () => {
     await dialog.getByRole("button", { name: "Deactivate", exact: true }).click();
     await expect(page.getByRole("cell", { name: "Deactivated", exact: true })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   });
-  test("citizen cannot open the protected administrator screen", async ({ page, context }) => {
-    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-citizen" }), url: "http://127.0.0.1:3100" }]);
+  test("citizen cannot open the protected administrator screen", async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-citizen" }), url: baseURL! }]);
     await page.goto("/admin/users");
-    await expect(page).toHaveURL(/\/unauthorized$/);
+    await expect(page).toHaveURL(/\/unauthorized(?:\?.*)?$/);
     await expect(page.getByRole("button", { name: "Create Authorized Account" })).toHaveCount(0);
   });
   test("activation uses the email fragment, removes it from history, and permits password setup", async ({ page }) => {
     await page.goto(`/activate-account#token=${"a".repeat(64)}`);
     await expect(page).toHaveURL(/\/activate-account$/);
-    await page.getByLabel("Create password", { exact: true }).fill("AccountTest2026!");
-    await page.getByLabel("Confirm password", { exact: true }).fill("AccountTest2026!");
+    await page.getByLabel(/^Create password/).fill("AccountTest2026!");
+    await page.getByLabel(/^Confirm password/).fill("AccountTest2026!");
     await page.getByRole("button", { name: "Activate account", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Account activated" })).toBeVisible();
   });

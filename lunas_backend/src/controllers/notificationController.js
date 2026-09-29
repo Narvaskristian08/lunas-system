@@ -36,6 +36,16 @@ exports.getNotifications = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get one notification belonging to the signed-in account
+// @route   GET /api/v1/notifications/:id
+exports.getNotification = asyncHandler(async (req, res) => {
+  const notification = await Notification.findOne({ _id: req.params.id, recipient: req.user._id });
+  if (!notification) {
+    return res.status(404).json({ success: false, message: 'Notification not found' });
+  }
+  return res.status(200).json({ success: true, data: notification });
+});
+
 // @desc    Mark notification as read
 // @route   PUT /api/v1/notifications/:id/read
 // @access  Private

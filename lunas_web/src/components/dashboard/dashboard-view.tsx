@@ -1,4 +1,5 @@
 import { CalendarDays } from "lucide-react";
+import Link from "next/link";
 import { EmptyState } from "@/components/states/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/ui/badge";
@@ -11,31 +12,13 @@ import type { Severity, UserProfile } from "@/types";
 function statusTone(status: string): Severity {
   const normalized = status.toLowerCase();
   if (normalized.includes("reject") || normalized.includes("overdue")) return "critical";
-  if (normalized.includes("submitted") || normalized.includes("pending")) return "warning";
-  if (normalized.includes("complete") || normalized.includes("verified") || normalized.includes("closed")) return "success";
+  if (normalized.includes("submitted") || normalized.includes("pending") || normalized.includes("awaiting") || normalized.includes("correction") || normalized.includes("rework")) return "warning";
+  if (normalized.includes("verified") || normalized.includes("resolved") || normalized.includes("closed")) return "success";
   if (normalized.includes("progress") || normalized.includes("assigned") || normalized.includes("validated")) return "information";
   return "neutral";
 }
 
 function dashboardCopy(viewer: UserProfile) {
-  if (viewer.backendRole === "citizen") {
-    return {
-      eyebrow: "Citizen reporting",
-      title: `Welcome, ${viewer.firstName}`,
-      description: "Review the current status of infrastructure reports linked to your account.",
-      recordsTitle: "My recent reports",
-      recordsDescription: "Only reports you submitted are shown here.",
-    };
-  }
-  if (viewer.backendRole === "repair_personnel") {
-    return {
-      eyebrow: `${viewer.organization} · Field operations`,
-      title: "Repair dashboard",
-      description: "Live work orders and deadline state assigned to your repair account.",
-      recordsTitle: "Assigned work orders",
-      recordsDescription: "Only work orders returned by the protected assignment scope are shown.",
-    };
-  }
   if (viewer.backendRole === "utility_provider") {
     return {
       eyebrow: `${viewer.organization} · Provider operations`,
@@ -45,13 +28,25 @@ function dashboardCopy(viewer: UserProfile) {
       recordsDescription: "Only records in the provider scope returned by the backend are shown.",
     };
   }
-  return {
-    eyebrow: `${viewer.organization} · Operations overview`,
-    title: "LUNAS dashboard",
-    description: "Current validation and maintenance activity from the LUNAS service, scoped to your authorized access.",
-    recordsTitle: "Recent operational activity",
-    recordsDescription: "Recent work orders or validation records in your authorized scope.",
-  };
+  if (viewer.backendRole === "barangay_official") {
+    return {
+      eyebrow: `${viewer.organization} · Barangay review`,
+      title: "Barangay review dashboard",
+      description: "Review citizen reports assigned to your Barangay and forward validated incidents to City Engineering.",
+      recordsTitle: "Reports awaiting Barangay review",
+      recordsDescription: "Only reports in your assigned Barangay are shown here.",
+    };
+  }
+  if (viewer.backendRole === "city_engineer") {
+    return {
+      eyebrow: "City Engineering · Citywide operations",
+      title: "Engineering dashboard",
+      description: "Review Barangay-validated reports, monitor provider repairs, and verify accepted completion before closure.",
+      recordsTitle: "Reports and repairs awaiting City Engineering",
+      recordsDescription: "Provider-approved repairs and Barangay-validated reports are linked to their review pages.",
+    };
+  }
+  throw new Error("This web dashboard is only available to operational web roles");
 }
 
 export function DashboardView({ viewer, data }: { viewer: UserProfile; data: RealDashboardData }) {
@@ -85,7 +80,9 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
             rows={data.records.map((record) => ({
               id: record.id,
               cells: {
-                report: <div><p className="font-semibold text-slate-900">{record.id}</p><p className="mt-0.5 text-xs text-slate-500">{record.category}</p></div>,
+                report: record.href
+                  ? <Link href={record.href} className="font-semibold text-brand-700 hover:underline"><span>{record.id}</span><span className="mt-0.5 block text-xs font-normal text-slate-500">{record.category}</span></Link>
+                  : <div><p className="font-semibold text-slate-900">{record.id}</p><p className="mt-0.5 text-xs text-slate-500">{record.category}</p></div>,
                 location: record.location,
                 priority: record.priority,
                 status: <StatusBadge tone={statusTone(record.status)}>{record.status}</StatusBadge>,

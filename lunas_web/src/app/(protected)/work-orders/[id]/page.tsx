@@ -4,8 +4,6 @@ import { BackendApiError } from "@/lib/api/backend.server";
 import { requirePermission } from "@/lib/auth/dal.server";
 import { getEligibleRepairPersonnel, getWorkOrder } from "@/lib/work-orders.server";
 
-const officialRoles = new Set(["barangay_official", "city_engineer", "utility_provider", "admin"]);
-
 export default async function WorkOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const viewer = await requirePermission("work_orders.view");
   const { id } = await params;
@@ -16,7 +14,9 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
     if (error instanceof BackendApiError && error.status === 404) notFound();
     throw error;
   }
-  const canManage = officialRoles.has(viewer.backendRole) && viewer.permissions.includes("work_orders.manage") && workOrder.status !== "completed";
+  const canManage = viewer.backendRole === "utility_provider"
+    && viewer.permissions.includes("work_orders.manage")
+    && ["pending", "accepted", "in_progress", "rework_required"].includes(workOrder.status);
   const eligiblePersonnel = canManage
     ? await getEligibleRepairPersonnel(workOrder.id)
     : [];

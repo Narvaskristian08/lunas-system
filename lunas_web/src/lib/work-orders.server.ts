@@ -7,7 +7,17 @@ import { repairProgressStages, type RepairProgressStage } from "@/lib/work-order
 export { repairProgressStages } from "@/lib/work-order-progress";
 export type { RepairProgressStage } from "@/lib/work-order-progress";
 
-export type WorkOrderStatus = "pending" | "accepted" | "in_progress" | "completed";
+export type WorkOrderStatus =
+  | "pending"
+  | "accepted"
+  | "in_progress"
+  | "completed"
+  | "rework_required"
+  | "provider_accepted"
+  | "city_correction_required"
+  | "verified"
+  | "declined"
+  | "reassigned";
 export type AssignmentState = "unassigned" | "pending" | "accepted" | "declined" | "reassigned";
 export type SlaState = "not_started" | "active" | "approaching" | "overdue" | "met";
 
@@ -95,6 +105,16 @@ export interface WorkOrderHistoryEntry {
   createdAt?: string;
 }
 
+export interface WorkOrderReview {
+  id: string;
+  stage?: "utility_provider" | "city_engineer" | string;
+  decision?: "accepted" | "correction_required" | "verified" | string;
+  reason?: string;
+  instructions?: string;
+  actor: WorkOrderPerson | null;
+  createdAt?: string;
+}
+
 export interface WorkOrderSla {
   targetResolutionTime?: number;
   startedAt?: string;
@@ -112,7 +132,7 @@ export interface WorkOrder {
   status: WorkOrderStatus | string;
   assignmentState: AssignmentState | string;
   responsibleOrganization?: string;
-  responsibleRole?: string;
+  responsibleRole?: "utility_provider";
   jurisdiction?: { barangay?: string; city?: string };
   instructions?: string;
   progressPercent: number;
@@ -131,6 +151,7 @@ export interface WorkOrder {
   evidence: WorkOrderEvidence[];
   progressUpdates: WorkOrderProgressUpdate[];
   history: WorkOrderHistoryEntry[];
+  reviews: WorkOrderReview[];
 }
 
 export interface EligibleRepairPersonnel extends WorkOrderPerson {
@@ -172,9 +193,15 @@ export interface WorkOrderSummary {
   approaching: number;
   overdue: number;
   readyForCompletion: number;
+  awaitingFinalVerification: number;
+  cityCorrections: number;
+  correctiveRepairs: number;
 }
 
-const validStatuses = new Set<WorkOrderStatus>(["pending", "accepted", "in_progress", "completed"]);
+const validStatuses = new Set<WorkOrderStatus>([
+  "pending", "accepted", "in_progress", "completed", "rework_required",
+  "provider_accepted", "city_correction_required", "verified", "declined", "reassigned",
+]);
 const validPriorities = new Set(["critical", "high", "medium", "low"]);
 const validAssignmentStates = new Set<AssignmentState>(["unassigned", "pending", "accepted", "declined"]);
 const validProgresses = new Set([0, 25, 50, 75, 100]);
@@ -307,6 +334,21 @@ function normalizeHistoryEntry(value: unknown): WorkOrderHistoryEntry | null {
   };
 }
 
+function normalizeReview(value: unknown): WorkOrderReview | null {
+  const source = asRecord(value);
+  const id = identifier(source);
+  if (!id) return null;
+  return {
+    id,
+    stage: asString(source.stage),
+    decision: asString(source.decision),
+    reason: asString(source.reason),
+    instructions: asString(source.instructions),
+    actor: normalizePerson(source.actor),
+    createdAt: asString(source.createdAt),
+  };
+}
+
 function normalizeIncident(value: unknown): WorkOrderIncident | null {
   const source = asRecord(value);
   const id = identifier(source);
@@ -353,7 +395,7 @@ export function normalizeWorkOrder(value: unknown): WorkOrder | null {
     status: asString(source.status) ?? "pending",
     assignmentState: asString(source.assignmentState) ?? currentAssignment?.status ?? "unassigned",
     responsibleOrganization: asString(source.responsibleOrganization),
-    responsibleRole: asString(source.responsibleRole),
+    responsibleRole: asString(source.responsibleRole) === "utility_provider" ? "utility_provider" : undefined,
     jurisdiction: (() => {
       const jurisdiction = asRecord(source.jurisdiction);
       return Object.keys(jurisdiction).length ? {
@@ -378,6 +420,7 @@ export function normalizeWorkOrder(value: unknown): WorkOrder | null {
     evidence: asArray(source.evidence ?? source.repairEvidence).map(normalizeEvidence),
     progressUpdates: asArray(source.progressUpdates ?? source.progress).map(normalizeProgressUpdate).filter((item): item is WorkOrderProgressUpdate => item !== null),
     history: asArray(source.history).map(normalizeHistoryEntry).filter((item): item is WorkOrderHistoryEntry => item !== null),
+    reviews: asArray(source.reviews).map(normalizeReview).filter((item): item is WorkOrderReview => item !== null),
   };
 }
 
@@ -545,5 +588,8 @@ export async function getWorkOrderSummary(): Promise<WorkOrderSummary> {
     approaching: count(values, "approaching", "approachingDeadlines"),
     overdue: count(values, "overdue", "overdueWorkOrders"),
     readyForCompletion: count(values, "readyForCompletion", "ready", "completed"),
+    awaitingFinalVerification: count(values, "awaitingFinalVerification", "providerAccepted"),
+    cityCorrections: count(values, "cityCorrections", "cityCorrectionRequired"),
+    correctiveRepairs: count(values, "correctiveRepairs", "reworkRequired"),
   };
 }

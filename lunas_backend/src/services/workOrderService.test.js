@@ -3,28 +3,30 @@ const {
   buildWorkOrderScope,
   canAccessWorkOrder,
   canManageWorkOrder,
+  canReviewFinalWorkOrder,
   getSlaProjection,
   isEligibleRepairPersonnel,
   validateProgressUpdate
 } = require('./workOrderService');
 
 const cityEngineer = { _id: '507f191e810c19729de860a1', role: 'city_engineer' };
+const utilityProvider = { _id: '507f191e810c19729de860a3', role: 'utility_provider', utilityCompany: 'Dagupan Water District' };
 const repairWorker = {
   _id: '507f191e810c19729de860a2',
   role: 'repair_personnel',
   isActive: true,
   availability: 'available',
-  repairOrganization: 'City Engineering',
+  repairOrganization: 'Dagupan Water District',
   barangay: 'Poblacion Oeste'
 };
 const workOrder = {
   assignedTo: repairWorker._id,
   assignmentState: 'accepted',
-  responsibleOrganization: 'City Engineering',
+  responsibleOrganization: 'Dagupan Water District',
   jurisdiction: { barangay: 'Poblacion Oeste' }
 };
 
-describe('75% work-order domain rules', () => {
+describe('work-order domain rules', () => {
   test('uses one central repair-progress stage mapping', () => {
     expect(PROGRESS_STAGES).toEqual({
       0: 'assigned',
@@ -91,7 +93,9 @@ describe('75% work-order domain rules', () => {
       ...repairWorker,
       _id: '507f191e810c19729de8699'
     }, workOrder)).toBe(false);
-    expect(canManageWorkOrder(cityEngineer, workOrder)).toBe(true);
+    expect(canManageWorkOrder(cityEngineer, workOrder)).toBe(false);
+    expect(canReviewFinalWorkOrder(cityEngineer, workOrder)).toBe(true);
+    expect(canManageWorkOrder(utilityProvider, workOrder)).toBe(true);
     expect(canManageWorkOrder({
       _id: '507f191e810c19729de860b',
       role: 'barangay_official',

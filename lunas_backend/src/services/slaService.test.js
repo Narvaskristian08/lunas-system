@@ -1,6 +1,6 @@
 const { getSLAHours, initializeIncidentSLA, isSlaAutomationEnabled } = require('./slaService');
 
-describe('50% SLA foundation', () => {
+describe('SLA foundation', () => {
   const originalHigh = process.env.SLA_HIGH;
   const originalAutomation = process.env.SLA_AUTOMATION_ENABLED;
 

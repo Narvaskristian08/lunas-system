@@ -11,6 +11,8 @@ const mongoose = require('mongoose');
 const User = require('../src/models/User');
 const Incident = require('../src/models/Incident');
 const AuditLog = require('../src/models/AuditLog');
+const Notification = require('../src/models/Notification');
+const WorkOrder = require('../src/models/WorkOrder');
 
 const DEMO_EMAIL_DOMAIN = '@lunas.test';
 const DEMO_EMAIL_PATTERN = new RegExp(`^demo\\..+${DEMO_EMAIL_DOMAIN.replace('.', '\\.')}$`, 'i');
@@ -83,7 +85,7 @@ function demoUser({
   };
 }
 
-function demoIncident({ reportNumber, reporter, category, subcategory, description, barangay, coordinates, status = 'submitted', priority = 'medium', changedBy }) {
+function demoIncident({ reportNumber, reporter, category, subcategory, description, barangay, coordinates }) {
   const changedAt = new Date();
   const result = {
     reportNumber,
@@ -102,8 +104,7 @@ function demoIncident({ reportNumber, reporter, category, subcategory, descripti
       }
     },
     images: [],
-    status,
-    priority,
+    status: 'submitted',
     statusHistory: [{
       status: 'submitted',
       changedBy: reporter,
@@ -111,7 +112,6 @@ function demoIncident({ reportNumber, reporter, category, subcategory, descripti
       changedAt,
       notes: 'Synthetic local QA fixture; not a real incident.'
     }],
-    isPublic: false,
     duplicateDetection: { candidateCount: 0, checkedAt: changedAt },
     aiAnalysis: {
       analysisStatus: 'unavailable',
@@ -121,34 +121,6 @@ function demoIncident({ reportNumber, reporter, category, subcategory, descripti
       advisoryOnly: true
     }
   };
-
-  if (status === 'validated') {
-    result.validatedBy = changedBy;
-    result.validatedAt = changedAt;
-    result.jurisdiction = {
-      barangay,
-      city: 'Dagupan City',
-      responsibility: 'city_engineering',
-      confirmedBy: changedBy,
-      confirmedAt: changedAt
-    };
-    result.routing = {
-      responsibleOrganization: 'Dagupan City Engineering Office',
-      responsibleRole: 'city_engineering',
-      reason: 'Synthetic QA routing fixture',
-      routedBy: changedBy,
-      routedAt: changedAt
-    };
-    result.sla = { targetResolutionTime: 72, startedAt: changedAt, deadline: new Date(changedAt.getTime() + 72 * 60 * 60 * 1000), state: 'active' };
-    result.statusHistory.push({ status: 'validated', changedBy, actorRole: 'city_engineer', changedAt, notes: 'Synthetic QA validation fixture.' });
-  }
-
-  if (status === 'rejected') {
-    result.rejectedBy = changedBy;
-    result.rejectedAt = changedAt;
-    result.rejectionReason = 'Synthetic QA fixture: insufficient evidence for a verified report.';
-    result.statusHistory.push({ status: 'rejected', changedBy, actorRole: 'city_engineer', changedAt, notes: 'Synthetic QA rejection fixture.' });
-  }
 
   return result;
 }
@@ -164,6 +136,16 @@ async function clearPreviousDemoData() {
   }).select('_id').lean();
   const incidentIds = incidents.map((incident) => incident._id);
   const resourceIds = [...userIds, ...incidentIds];
+
+  if (incidentIds.length) await WorkOrder.deleteMany({ incident: { $in: incidentIds } });
+  if (userIds.length || incidentIds.length) {
+    await Notification.deleteMany({
+      $or: [
+        ...(userIds.length ? [{ recipient: { $in: userIds } }] : []),
+        ...(incidentIds.length ? [{ 'data.incidentId': { $in: incidentIds } }] : [])
+      ]
+    });
+  }
 
   if (userIds.length || resourceIds.length) {
     await AuditLog.deleteMany({
@@ -191,7 +173,7 @@ async function seed() {
       province: 'Pangasinan',
       zipCode: '2400'
     };
-    const [admin, engineer, citizen, barangayOfficial, utilityProvider, repairPersonnel, disabledCitizen] = await User.create([
+    const seededUsers = await User.create([
       demoUser({
         firstName: 'Demo', lastName: 'Administrator', email: 'demo.admin@lunas.test',
         role: 'admin', phone: '09990000001', address: commonAddress
@@ -217,21 +199,17 @@ async function seed() {
       demoUser({
         firstName: 'Demo', lastName: 'Repair Personnel', email: 'demo.repair@lunas.test',
         role: 'repair_personnel', phone: '09990000006', address: commonAddress,
-        barangay: 'Poblacion Oeste', repairOrganization: 'Dagupan City Engineering Office',
+        barangay: 'Poblacion Oeste', repairOrganization: 'Dagupan Water District',
         repairTeam: 'Road Maintenance Team A', availability: 'available', expertise: ['road', 'drainage']
-      }),
-      demoUser({
-        firstName: 'Demo', lastName: 'Disabled Citizen', email: 'demo.disabled-citizen@lunas.test',
-        role: 'citizen', phone: '09990000007', isActive: false, address: commonAddress
       })
     ]);
+    const admin = seededUsers[0];
+    const citizen = seededUsers[2];
 
     const incidents = await Incident.create([
-      demoIncident({ reportNumber: 'DEMO-QA-001', reporter: citizen._id, category: 'road', subcategory: 'pothole', description: 'Synthetic deep pothole report for RBAC validation evidence.', barangay: 'Poblacion Oeste', coordinates: [120.3387, 16.0433] }),
-      demoIncident({ reportNumber: 'DEMO-QA-002', reporter: citizen._id, category: 'drainage', subcategory: 'blockage', description: 'Synthetic drainage blockage report for QA queue evidence.', barangay: 'Poblacion Oeste', coordinates: [120.3374, 16.0421] }),
-      demoIncident({ reportNumber: 'DEMO-QA-003', reporter: citizen._id, category: 'streetlight', subcategory: 'outage', description: 'Synthetic streetlight outage report for QA queue evidence.', barangay: 'Bonuan Gueset', coordinates: [120.3451, 16.0522] }),
-      demoIncident({ reportNumber: 'DEMO-QA-004', reporter: citizen._id, category: 'road', subcategory: 'crack', description: 'Synthetic validated report retained for dashboard counter evidence.', barangay: 'Poblacion Oeste', coordinates: [120.3398, 16.0445], status: 'validated', priority: 'high', changedBy: engineer._id }),
-      demoIncident({ reportNumber: 'DEMO-QA-005', reporter: citizen._id, category: 'water', subcategory: 'leak', description: 'Synthetic rejected report retained for citizen-status evidence.', barangay: 'Poblacion Oeste', coordinates: [120.3406, 16.0452], status: 'rejected', changedBy: engineer._id })
+      demoIncident({ reportNumber: 'DEMO-QA-001', reporter: citizen._id, category: 'water', subcategory: 'leak', description: 'Synthetic water leak report for the sequential workflow demonstration.', barangay: 'Poblacion Oeste', coordinates: [120.3387, 16.0433] }),
+      demoIncident({ reportNumber: 'DEMO-QA-002', reporter: citizen._id, category: 'drainage', subcategory: 'blockage', description: 'Synthetic drainage report for barangay queue and scope checks.', barangay: 'Poblacion Oeste', coordinates: [120.3374, 16.0421] }),
+      demoIncident({ reportNumber: 'DEMO-QA-003', reporter: citizen._id, category: 'streetlight', subcategory: 'outage', description: 'Synthetic report outside the Demo Barangay Official assignment.', barangay: 'Bonuan Gueset', coordinates: [120.3451, 16.0522] })
     ]);
 
     await AuditLog.create({
@@ -244,7 +222,7 @@ async function seed() {
       status: 'success'
     });
 
-    console.log(`Seeded ${[admin, engineer, citizen, barangayOfficial, utilityProvider, repairPersonnel, disabledCitizen].length} synthetic demo accounts and ${incidents.length} synthetic incidents in lunas_db.`);
+    console.log(`Seeded ${seededUsers.length} synthetic demo accounts and ${incidents.length} synthetic submitted incidents in lunas_db.`);
     console.log('Demo records use the demo.*@lunas.test namespace; no non-demo records were changed.');
   } finally {
     await mongoose.disconnect();

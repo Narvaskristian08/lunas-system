@@ -26,6 +26,7 @@ interface BackendUser {
   };
   barangay?: string;
   utilityCompany?: string;
+  repairOrganization?: string;
   organization?: string;
   unit?: string;
   personnelId?: string;
@@ -40,9 +41,9 @@ const roleLabels: Record<BackendUserRole, UserRole> = {
   citizen: "Citizen",
   repair_personnel: "Repair Personnel",
   barangay_official: "Barangay Official",
-  city_engineer: "City Engineering Office",
+  city_engineer: "City Engineer",
   utility_provider: "Utility Provider",
-  admin: "System Administrator",
+  admin: "Admin",
 };
 
 function isBackendRole(role: string | undefined): role is BackendUserRole {
@@ -52,11 +53,13 @@ function isBackendRole(role: string | undefined): role is BackendUserRole {
 function organizationFor(user: BackendUser, role: BackendUserRole) {
   if (user.organization?.trim()) return user.organization;
   if (user.utilityCompany?.trim()) return user.utilityCompany;
+  if (role === "repair_personnel" && user.repairOrganization?.trim()) return user.repairOrganization;
   if (role === "barangay_official" && user.barangay?.trim()) return `Barangay ${user.barangay}`;
   if (role === "citizen") return user.address?.barangay
     ? `Resident of ${user.address.barangay}`
     : "Dagupan City resident";
-  if (role === "city_engineer" || role === "repair_personnel") return "Dagupan City Engineering Office";
+  if (role === "city_engineer") return "Dagupan City Engineering Office";
+  if (role === "repair_personnel") return "Assigned repair organization";
   if (role === "admin") return "LUNAS Systems Operations";
   return "LUNAS partner organization";
 }
@@ -125,6 +128,14 @@ export async function requireViewer() {
   const user = await getViewer();
   if (!user || user.status !== "Active") redirect("/session-expired?reason=revoked");
   return user;
+}
+
+export async function requireWebWorkspace() {
+  const viewer = await requireViewer();
+  if (["citizen", "repair_personnel"].includes(viewer.backendRole)) {
+    redirect("/unauthorized?platform=mobile");
+  }
+  return viewer;
 }
 
 export async function requirePermission(permission: Permission) {

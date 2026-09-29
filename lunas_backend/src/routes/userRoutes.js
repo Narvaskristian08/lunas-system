@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getUsers,
-  getUser,
   archiveUser,
-  getRepairPersonnel
+  getRepairPersonnel,
+  getUtilityProviderOrganizations
 } = require('../controllers/userController');
 const { getMe, updateProfile } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/auth');
@@ -29,7 +28,8 @@ router.patch('/authorized/:id/status', protect, authorize('admin'), mongoIdValid
 router.post('/authorized/:id/activation', protect, authorize('admin'), mongoIdValidation,
   accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 
-router.get('/repair-personnel', protect, authorize('barangay_official', 'city_engineer', 'admin'), getRepairPersonnel);
+router.get('/repair-personnel', protect, authorize('utility_provider'), getRepairPersonnel);
+router.get('/utility-providers', protect, authorize('city_engineer'), getUtilityProviderOrganizations);
 
 // Keep an explicit self-service profile endpoint so clients do not need to
 // know an ObjectId or use administrative user routes.
@@ -38,8 +38,8 @@ router.route('/me')
   .patch(protect, updateProfileValidation, validate, updateProfile)
   .put(protect, updateProfileValidation, validate, updateProfile);
 
-router.route('/')
-  .get(protect, authorize('barangay_official', 'city_engineer', 'admin'), paginationValidation, validate, getUsers);
+// General user directory reads are intentionally absent. Admin uses the
+// approval-aware authorized-account API; providers use the scoped personnel list.
 
 router.patch(
   '/:id/archive',
@@ -52,7 +52,6 @@ router.patch(
 );
 
 router.route('/:id')
-  .get(protect, mongoIdValidation, validate, getUser)
   // Compatibility route now uses the same approved-field and role policy.
   .put(protect, authorize('admin'), mongoIdValidation, accountRules.updateAccountValidation, validate, accounts.updateAuthorizedAccount)
   // Backward-compatible alias. Despite the HTTP verb, this never deletes a

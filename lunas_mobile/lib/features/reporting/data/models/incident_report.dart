@@ -15,6 +15,7 @@ class IncidentReport {
     this.aiAnalysis,
     this.rejectionReason,
     this.duplicateReason,
+    this.clarificationReason,
     this.repair,
   });
 
@@ -31,16 +32,19 @@ class IncidentReport {
   final AiAnalysis? aiAnalysis;
   final String? rejectionReason;
   final String? duplicateReason;
+  final String? clarificationReason;
   final IncidentRepairSummary? repair;
 
   String get categoryLabel => categoryFromCode(category).label;
 
   /// Citizen-safe operational wording. Personnel, reassignment notes, SLA
   /// internals, and field evidence are deliberately absent from this model.
-  String get currentStatusLabel =>
-      repair?.citizenStatusLabel ?? _statusLabel(status);
-  String get statusChipLabel =>
-      repair?.citizenChipLabel ?? _statusLabel(status);
+  String get currentStatusLabel => status == 'resolved' || status == 'closed'
+      ? 'Resolved · verified by City Engineering'
+      : repair?.citizenStatusLabel ?? _statusLabel(status);
+  String get statusChipLabel => status == 'resolved' || status == 'closed'
+      ? 'Resolved'
+      : repair?.citizenChipLabel ?? _statusLabel(status);
 
   factory IncidentReport.fromJson(Map<String, dynamic> json) {
     final locationValue = _map(json['location']);
@@ -86,6 +90,7 @@ class IncidentReport {
           : AiAnalysis.fromJson(_map(json['aiAnalysis'])),
       rejectionReason: _text(json['rejectionReason']),
       duplicateReason: _text(json['duplicateReason']),
+      clarificationReason: _text(json['clarificationReason']),
       repair: _map(json['repair']).isEmpty
           ? null
           : IncidentRepairSummary.fromJson(_map(json['repair'])),
@@ -114,8 +119,17 @@ class IncidentRepairSummary {
   final DateTime? updatedAt;
 
   String get citizenStatusLabel {
-    if (readyForCompletion || status == 'completed' || progressPercent == 100) {
-      return 'Repair Progress: 100% · Awaiting Verification';
+    if (readyForCompletion || status == 'completed') {
+      return 'Repair completed · awaiting Utility Provider review';
+    }
+    if (status == 'provider_accepted') {
+      return 'Provider accepted · awaiting City Engineering verification';
+    }
+    if (status == 'city_correction_required') {
+      return 'City Engineering returned the repair for correction';
+    }
+    if (status == 'rework_required') {
+      return 'Corrective work requested';
     }
     if (status == 'in_progress' && progressPercent > 0) {
       return 'Repair Progress: $progressPercent%';
@@ -133,8 +147,14 @@ class IncidentRepairSummary {
   }
 
   String get citizenChipLabel {
-    if (readyForCompletion || status == 'completed' || progressPercent == 100) {
-      return 'Awaiting verification';
+    if (readyForCompletion || status == 'completed') {
+      return 'Provider review';
+    }
+    if (status == 'provider_accepted') {
+      return 'City verification';
+    }
+    if (status == 'city_correction_required' || status == 'rework_required') {
+      return 'Corrective work';
     }
     if (status == 'in_progress' && progressPercent > 0)
       return '$progressPercent% repair';
@@ -380,8 +400,21 @@ class ReportStatusEvent {
 
   String get citizenLabel {
     if (event == 'work_order_created') return 'Work Order Created';
-    if (progressPercent == 100)
-      return 'Repair Reached 100% · Awaiting Verification';
+    if (status == 'repair_completed' || status == 'provider_review')
+      return 'Repair completed · awaiting Utility Provider review';
+    if (status == 'provider_accepted')
+      return 'Utility Provider accepted · awaiting City Engineering verification';
+    if (status == 'city_verification')
+      return 'Awaiting City Engineering final verification';
+    if (status == 'rework_required' || status == 'city_correction_required')
+      return 'Corrective work required';
+    if (status == 'verified') return 'Verified by City Engineering';
+    if (status == 'resolved' || status == 'closed') return 'Resolved';
+    if (progressPercent == 100) return 'Repair progress reached 100%';
+    if (status == 'barangay_validated') return 'Validated by Barangay Official';
+    if (status == 'city_confirmed') return 'Confirmed by City Engineering';
+    if (status == 'provider_assigned') return 'Assigned to Utility Provider';
+    if (status == 'repair_assigned') return 'Repair Personnel assigned';
     if (progressPercent != null && progressPercent! > 0) {
       return 'Repair Progress: $progressPercent%';
     }

@@ -9,6 +9,18 @@ async function expectNoPageOverflow(page: Page) {
 }
 
 test("login has no preview credentials and validates required fields", async ({ page }) => {
+  // This test exercises form validation, not the external CAPTCHA service.
+  await page.route("https://challenges.cloudflare.com/turnstile/**", route => route.fulfill({
+    contentType: "application/javascript",
+    body: `window.turnstile = {
+      render(element, options) {
+        this.verify = () => options.callback('browser-test-captcha');
+        setTimeout(this.verify, 0);
+        return 'test-widget';
+      },
+      reset() { setTimeout(this.verify, 0); }
+    };`,
+  }));
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Sign in to LUNAS" })).toBeVisible();
   await expect(page.getByText("Role mockup accounts")).toHaveCount(0);

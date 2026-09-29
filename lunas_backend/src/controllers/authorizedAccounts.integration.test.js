@@ -79,7 +79,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     const user = await User.create({ firstName: 'Test', lastName: 'Actor', email: `${role}@example.test`,
       phone: '09123456789', password, role, isActive: true, isVerified: true,
       barangay: role === 'barangay_official' ? 'Pantal' : undefined,
-      repairOrganization: role === 'repair_personnel' ? 'City Engineering' : undefined,
+      repairOrganization: role === 'repair_personnel' ? 'Dagupan Water District' : undefined,
       utilityCompany: role === 'utility_provider' ? 'Utility A' : undefined, ...overrides });
     return { user, token: createAccessToken(user) };
   }
@@ -149,7 +149,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await activate(replacement);
     await request(app).post('/auth/activate-account').send({ token: replacement, password }).expect(400);
   });
-  test('9–10: activated barangay official can read own jurisdiction but not another or admin controls', async () => {
+  test('9–10: activated Barangay Official stays jurisdiction-scoped and cannot use account administration', async () => {
     const { account, token } = await provision(); await activate(token);
     const user = await User.findById(account.id).select('+tokenVersion');
     const access = createAccessToken(user);
@@ -159,10 +159,12 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await call('get', `/incidents/${reports[1].id}`, access).expect(404);
     await call('post', `/incidents/${reports[1].id}/validate`, access).send({ priority: 'high' }).expect(404);
     await call('post', '/users/authorized', access).send(approved).expect(403);
+    await call('get', '/users/authorized', access).expect(403);
     const { user: outside } = await actor('barangay_official', { barangay: 'Lucao' });
-    await call('get', `/users/${outside.id}`, access).expect(403);
-    const directory = await call('get', '/users?barangay=Lucao', access).expect(200);
-    expect(directory.body.data.every(person => person.barangay === 'Pantal')).toBe(true);
+    // General user-profile and directory reads are not exposed. Private
+    // records remain unavailable without a scoped, purpose-specific route.
+    await call('get', `/users/${outside.id}`, access).expect(404);
+    await call('get', '/users?barangay=Lucao', access).expect(404);
   });
   test('11: crafted self-profile updates cannot change role, status, approval or jurisdiction', async () => {
     const { user, token } = await actor('repair_personnel');
@@ -239,9 +241,9 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
   test('repair transfer removes access to old assignments without deleting work-order history', async () => {
     const { user, token } = await actor('repair_personnel', { barangay: 'Pantal' });
     const incident = await Incident.create({ reportNumber: 'TRANSFER', reporter: admin._id, category: 'road', description: 'Test repair transfer history', location: { type: 'Point', coordinates: [120.33, 16.04], address: { barangay: 'Pantal' } } });
-    const order = await WorkOrder.create({ incident: incident.id, responsibleOrganization: 'City Engineering', responsibleRole: 'city_engineering', priority: 'high', jurisdiction: { barangay: 'Pantal' }, createdBy: admin.id, assignedTo: user.id, assignmentState: 'pending' });
+    const order = await WorkOrder.create({ incident: incident.id, responsibleOrganization: 'Dagupan Water District', responsibleRole: 'utility_provider', priority: 'high', jurisdiction: { barangay: 'Pantal' }, createdBy: admin.id, assignedTo: user.id, assignmentState: 'pending' });
     await call('get', `/work-orders/${order.id}`, token).expect(200);
-    const update = await call('put', `/users/authorized/${user.id}`).send(updatePayload({ version: user.__v }, { role: 'repair_personnel', barangay: 'Lucao', repairOrganization: 'City Engineering' })).expect(200);
+    const update = await call('put', `/users/authorized/${user.id}`).send(updatePayload({ version: user.__v }, { role: 'repair_personnel', barangay: 'Lucao', repairOrganization: 'Dagupan Water District' })).expect(200);
     expect(update.body.data.barangay).toBe('Lucao');
     const refreshed = await User.findById(user.id).select('+tokenVersion');
     await call('get', `/work-orders/${order.id}`, createAccessToken(refreshed)).expect(404);

@@ -106,12 +106,10 @@ export interface ValidationIncident {
   duplicateCandidates: DuplicateCandidate[];
   history: ValidationHistoryEntry[];
   jurisdiction?: string;
-  jurisdictionResponsibility?: "barangay" | "city_engineering" | "utility_provider";
   responsibleOrganization?: string;
   routing?: {
-    jurisdiction?: string;
     responsibleOrganization?: string;
-    responsibleRole?: "barangay" | "city_engineering" | "utility_provider";
+    responsibleRole?: "utility_provider";
     routedAt?: string;
     routedBy?: string;
   };
@@ -130,6 +128,7 @@ export interface ValidationIncident {
     stage?: string;
   };
   rejectionReason?: string;
+  clarificationReason?: string;
   duplicateOf?: { id?: string; reportNumber?: string } | string;
 }
 
@@ -343,18 +342,10 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
     jurisdiction: asString(source.jurisdiction)
       ?? asString(jurisdiction.barangay)
       ?? asString(asRecord(asRecord(source.location).address).barangay),
-    jurisdictionResponsibility: (() => {
-      const value = asString(jurisdiction.responsibility);
-      return value === "barangay" || value === "city_engineering" || value === "utility_provider" ? value : undefined;
-    })(),
-    responsibleOrganization: asString(source.responsibleOrganization) ?? asString(source.responsibleOffice),
+    responsibleOrganization: asString(source.responsibleOrganization),
     routing: Object.keys(routing).length ? {
-      jurisdiction: asString(routing.jurisdiction) ?? asString(routing.barangay),
-      responsibleOrganization: asString(routing.responsibleOrganization) ?? asString(routing.responsibleOffice),
-      responsibleRole: (() => {
-        const value = asString(routing.responsibleRole);
-        return value === "barangay" || value === "city_engineering" || value === "utility_provider" ? value : undefined;
-      })(),
+      responsibleOrganization: asString(routing.responsibleOrganization),
+      responsibleRole: asString(routing.responsibleRole) === "utility_provider" ? "utility_provider" : undefined,
       routedAt: asString(routing.routedAt),
       routedBy: asString(routing.routedBy),
     } : undefined,
@@ -372,6 +363,7 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       };
     })(),
     rejectionReason: asString(source.rejectionReason),
+    clarificationReason: asString(source.clarificationReason),
     duplicateOf: (() => {
       const duplicateOf = source.duplicateOf;
       const duplicateRecord = asRecord(duplicateOf);
@@ -526,4 +518,14 @@ export async function getValidationIncident(id: string): Promise<ValidationIncid
     duplicateCandidateCount: candidates.length || incident.duplicateCandidateCount,
     sla: normalizeSla(queuePayload(slaPayload)) ?? incident.sla,
   };
+}
+
+export async function getUtilityProviderOrganizations(): Promise<string[]> {
+  const accessToken = await requireAccessToken();
+  const value = responseData(await backendRequest<unknown>("/users/utility-providers", { accessToken }));
+  if (Array.isArray(value)) return value.map(asString).filter((entry): entry is string => Boolean(entry));
+  const payload = queuePayload(value);
+  return asArray(payload.organizations ?? payload.providers ?? payload.data)
+    .map(asString)
+    .filter((entry): entry is string => Boolean(entry));
 }

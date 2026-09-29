@@ -159,35 +159,17 @@ const jurisdictionRules = [
     .withMessage('Jurisdiction barangay must be between 1 and 100 characters'),
   body('jurisdiction.city').optional().trim().isLength({ min: 1, max: 100 })
     .withMessage('Jurisdiction city must be between 1 and 100 characters'),
-  body('jurisdiction.responsibility').optional().isIn(['barangay', 'city_engineering', 'utility_provider'])
-    .withMessage('Jurisdiction responsibility is invalid')
-];
-
-const routingRules = [
-  body('routing').optional().isObject().withMessage('Routing must be an object'),
-  body('routing.responsibleOrganization').optional().trim().isLength({ min: 1, max: 160 })
-    .withMessage('Responsible organization must be between 1 and 160 characters'),
-  body('routing.responsibleRole').optional().isIn(['barangay', 'city_engineering', 'utility_provider'])
-    .withMessage('Responsible organization role is invalid'),
-  body('routing.reason').optional().trim().isLength({ max: 1000 })
-    .withMessage('Routing reason cannot exceed 1000 characters'),
-  body('routing').optional().custom((routing) => {
-    if (!routing || typeof routing !== 'object' || Array.isArray(routing)) return true;
-    const organization = typeof routing.responsibleOrganization === 'string' && routing.responsibleOrganization.trim();
-    const role = typeof routing.responsibleRole === 'string' && routing.responsibleRole.trim();
-    if (Boolean(organization) !== Boolean(role)) {
-      throw new Error('Routing must include both responsibleOrganization and responsibleRole');
-    }
-    return true;
-  })
 ];
 
 exports.validateIncidentDecisionValidation = [
-  priorityRule,
   ...jurisdictionRules,
-  ...routingRules,
   body('notes').optional().trim().isLength({ max: 2000 })
-    .withMessage('Validation notes cannot exceed 2000 characters')
+    .withMessage('Review notes cannot exceed 2000 characters')
+];
+
+exports.clarificationValidation = [
+  body('reason').trim().isLength({ min: 2, max: 2000 })
+    .withMessage('A clarification reason between 2 and 2000 characters is required')
 ];
 
 exports.rejectIncidentDecisionValidation = [
@@ -211,15 +193,13 @@ exports.updateJurisdictionValidation = [
   body('barangay').trim().isLength({ min: 1, max: 100 })
     .withMessage('Barangay is required'),
   body('city').optional().trim().isLength({ min: 1, max: 100 }),
-  body('responsibility').optional().isIn(['barangay', 'city_engineering', 'utility_provider'])
-    .withMessage('Jurisdiction responsibility is invalid')
 ];
 
 exports.routeIncidentValidation = [
   body('responsibleOrganization').trim().isLength({ min: 1, max: 160 })
     .withMessage('Responsible organization is required'),
-  body('responsibleRole').isIn(['barangay', 'city_engineering', 'utility_provider'])
-    .withMessage('Responsible organization role is invalid'),
+  body('responsibleRole').equals('utility_provider')
+    .withMessage('Incidents may only be routed to a Utility Provider'),
   body('reason').optional().trim().isLength({ max: 1000 })
     .withMessage('Routing reason cannot exceed 1000 characters')
 ];
@@ -297,6 +277,27 @@ exports.declineWorkOrderValidation = [
     .withMessage('Decline notes cannot exceed 2000 characters')
 ];
 
+exports.providerWorkOrderReviewValidation = [
+  body('decision').isIn(['accepted', 'request_correction'])
+    .withMessage('Choose accepted or request_correction'),
+  body('reason').if(body('decision').equals('request_correction')).trim().isLength({ min: 2, max: 2000 })
+    .withMessage('A correction reason between 2 and 2000 characters is required'),
+  body('reason').optional().trim().isLength({ max: 2000 }),
+  body('instructions').optional().trim().isLength({ max: 4000 })
+];
+
+exports.providerCorrectionValidation = [
+  body('instructions').trim().isLength({ min: 2, max: 4000 })
+    .withMessage('Corrective instructions between 2 and 4000 characters are required')
+];
+
+exports.cityFinalReviewValidation = [
+  body('decision').isIn(['approved', 'return']).withMessage('Choose approved or return'),
+  body('reason').if(body('decision').equals('return')).trim().isLength({ min: 2, max: 2000 })
+    .withMessage('A return reason between 2 and 2000 characters is required'),
+  body('reason').optional().trim().isLength({ max: 2000 })
+];
+
 exports.repairEvidenceValidation = [
   body('caption').optional().trim().isLength({ max: 500 })
     .withMessage('Evidence caption cannot exceed 500 characters'),
@@ -305,7 +306,10 @@ exports.repairEvidenceValidation = [
 ];
 
 exports.workOrderQueryValidation = [
-  query('status').optional().isIn(['pending', 'accepted', 'in_progress', 'completed']),
+  query('status').optional().isIn([
+    'pending', 'accepted', 'in_progress', 'completed', 'rework_required',
+    'provider_accepted', 'city_correction_required', 'verified', 'declined', 'reassigned'
+  ]),
   query('priority').optional().isIn(['critical', 'high', 'medium', 'low']),
   query('assignmentStatus').optional().isIn(['unassigned', 'pending', 'accepted', 'declined']),
   query('progress').optional().isIn(['0', '25', '50', '75', '100']),

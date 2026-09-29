@@ -273,7 +273,7 @@ class _ActionBar extends StatelessWidget {
     if (workOrder.isReadyForCompletion) {
       return _ActionContainer(
         child: const Text(
-          'Repair progress is 100%. This work order is ready for formal completion and verification; it has not been verified or closed.',
+          'Repair Personnel submitted completion. The Utility Provider must review it before City Engineering performs final verification.',
           textAlign: TextAlign.center,
         ),
       );
@@ -419,6 +419,23 @@ class _WorkOrderBody extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(workOrder.instructions!),
               ],
+              for (final event in workOrder.history.where((event) =>
+                  event.type == 'provider_correction_requested' || event.type == 'city_returned')) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Divider(),
+                ),
+                Text(
+                  event.type == 'city_returned' ? 'City Engineering correction' : 'Utility Provider correction',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(event.notes ?? 'No additional correction instructions were provided.'),
+                if (event.createdAt != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(formatReportDateTime(event.createdAt), style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ],
             ],
           ),
         ),
@@ -489,7 +506,8 @@ class _ProgressCard extends StatelessWidget {
                 RepairWorkOrderStatus.pending => AppColorsLight.info,
                 RepairWorkOrderStatus.accepted => AppColorsLight.success,
                 RepairWorkOrderStatus.inProgress => AppColorsLight.alert,
-                RepairWorkOrderStatus.completed => AppColorsLight.success,
+                RepairWorkOrderStatus.completed => AppColorsLight.alert,
+                RepairWorkOrderStatus.reworkRequired => AppColorsLight.critical,
                 RepairWorkOrderStatus.unknown => AppColorsLight.brandBase,
               },
             ),
@@ -506,7 +524,7 @@ class _ProgressCard extends StatelessWidget {
         Text(workOrder.progressStage.label),
         if (workOrder.isReadyForCompletion) ...[
           const SizedBox(height: AppSpacing.sm),
-          const Text('Ready for completion / verification. This is not a verified or closed repair.'),
+          const Text('Your completion is awaiting Utility Provider review. This repair is not yet verified or resolved.'),
         ],
       ],
     ),

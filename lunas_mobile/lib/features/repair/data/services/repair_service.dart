@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:http_parser/http_parser.dart';
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
@@ -160,6 +162,7 @@ class RepairService {
     required int progressPercent,
     required RepairProgressStage stage,
     required String notes,
+    EvidenceSelection? finalEvidence,
     double? latitude,
     double? longitude,
     int? version,
@@ -187,18 +190,39 @@ class RepairService {
         'Notes must be 2,000 characters or fewer',
       );
     }
-    final payload = await _apiClient.post(
-      '/work-orders/$workOrderId/progress',
-      body: {
-        // The server requires an explicit Start Work transition before this
-        // update; this request never asks it to verify or close a repair.
-        'progressPercent': progressPercent,
-        'stage': stage.apiValue,
-        if (trimmedNotes.isNotEmpty) 'notes': trimmedNotes,
-        ..._locationBody(latitude: latitude, longitude: longitude),
-        if (version != null) 'version': version,
-      },
-    );
+    final body = <String, dynamic>{
+      // The server requires an explicit Start Work transition before this
+      // update; this request never asks it to verify or close a repair.
+      'progressPercent': progressPercent,
+      'stage': stage.apiValue,
+      if (trimmedNotes.isNotEmpty) 'notes': trimmedNotes,
+      ..._locationBody(latitude: latitude, longitude: longitude),
+      if (version != null) 'version': version,
+    };
+    if (progressPercent == 100 && finalEvidence == null) {
+      throw ArgumentError.value(
+        finalEvidence,
+        'finalEvidence',
+        'Final post-maintenance evidence is required at 100%',
+      );
+    }
+    final payload = finalEvidence == null
+        ? await _apiClient.post('/work-orders/$workOrderId/progress', body: body)
+        : await _apiClient.multipart(
+            '/work-orders/$workOrderId/progress',
+            fields: body.map((key, value) => MapEntry(
+              key,
+              value is String ? value : jsonEncode(value),
+            )),
+            files: [
+              ApiMultipartFile(
+                fieldName: 'evidence',
+                filename: finalEvidence.filename,
+                bytes: await finalEvidence.readAsBytes(),
+                contentType: MediaType.parse(finalEvidence.mediaType),
+              ),
+            ],
+          );
     return RepairWorkOrder.fromJson(payload);
   }
 

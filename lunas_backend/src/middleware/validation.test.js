@@ -3,6 +3,7 @@ const {
   createIncidentValidation,
   registerValidation,
   validateIncidentDecisionValidation,
+  routeIncidentValidation,
   rejectIncidentDecisionValidation,
   markDuplicateValidation
 } = require('./validation');
@@ -13,7 +14,7 @@ const runRules = async (rules, body, files = {}, user = { role: 'citizen' }) => 
   return validationResult(req).array();
 };
 
-describe('25% milestone request validation', () => {
+describe('request validation', () => {
   test('public registration rejects a privileged requested role', async () => {
     const errors = await runRules(registerValidation, {
       firstName: 'Juan',
@@ -80,7 +81,7 @@ describe('25% milestone request validation', () => {
     ]));
   });
 
-  test('requires priority for validation and a nonblank reason for rejection', async () => {
+  test('priority has a separate City Engineering endpoint; Barangay validation requires no priority field', async () => {
     const validationErrors = await runRules(validateIncidentDecisionValidation, {
       priority: 'urgent'
     });
@@ -88,22 +89,19 @@ describe('25% milestone request validation', () => {
       reason: '   '
     });
 
-    expect(validationErrors).toEqual(expect.arrayContaining([
-      expect.objectContaining({ path: 'priority' })
-    ]));
+    expect(validationErrors).toEqual([]);
     expect(rejectionErrors).toEqual(expect.arrayContaining([
       expect.objectContaining({ path: 'reason' })
     ]));
   });
 
-  test('does not accept a partial routing object during validation', async () => {
-    const errors = await runRules(validateIncidentDecisionValidation, {
-      priority: 'high',
-      routing: { responsibleRole: 'utility_provider' }
+  test('requires a complete Utility Provider route', async () => {
+    const errors = await runRules(routeIncidentValidation, {
+      responsibleRole: 'utility_provider'
     }, {}, { role: 'city_engineer' });
 
     expect(errors).toEqual(expect.arrayContaining([
-      expect.objectContaining({ path: 'routing' })
+      expect.objectContaining({ path: 'responsibleOrganization' })
     ]));
   });
 

@@ -25,7 +25,7 @@ router.use('/audit-logs', auditLogRoutes);
 router.get(
   '/dashboard/work-orders-summary',
   protect,
-  authorize('barangay_official', 'city_engineer', 'utility_provider', 'repair_personnel', 'admin'),
+  authorize('city_engineer', 'utility_provider', 'repair_personnel'),
   getWorkOrderSummary
 );
 

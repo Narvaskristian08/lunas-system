@@ -1,10 +1,8 @@
 const { normalizeText, getIncidentBarangay } = require('./jurisdictionService');
 
 const OFFICIAL_WORK_ORDER_ROLES = Object.freeze([
-  'barangay_official',
   'city_engineer',
-  'utility_provider',
-  'admin'
+  'utility_provider'
 ]);
 
 const REPAIR_PERSONNEL_ROLE = 'repair_personnel';
@@ -21,7 +19,10 @@ const REPAIR_PROGRESS_VALUES = Object.freeze(
   Object.keys(PROGRESS_STAGES).map((value) => Number(value))
 );
 
-const ACTIVE_WORK_ORDER_STATUSES = Object.freeze(['pending', 'accepted', 'in_progress']);
+const ACTIVE_WORK_ORDER_STATUSES = Object.freeze([
+  'pending', 'accepted', 'in_progress', 'completed', 'rework_required',
+  'provider_accepted', 'city_correction_required'
+]);
 
 const objectIdString = (value) => (value?._id || value)?.toString();
 
@@ -37,16 +38,14 @@ const isOfficialWorkOrderRole = (user) => Boolean(
 
 const canManageWorkOrder = (user, workOrder) => {
   if (!isOfficialWorkOrderRole(user) || !workOrder) return false;
-  if (['admin', 'city_engineer'].includes(user.role)) return true;
-
-  if (user.role === 'barangay_official') {
-    return getWorkOrderBarangay(workOrder) === normalizeText(user.barangay);
-  }
-
   return user.role === 'utility_provider'
     && normalizeText(workOrder.responsibleOrganization)
       === normalizeText(user.utilityCompany);
 };
+
+const canReviewFinalWorkOrder = (user, workOrder) => Boolean(
+  user?.role === 'city_engineer' && workOrder
+);
 
 /**
  * Safe query scope used for server-side list/detail access. Any caller that
@@ -55,11 +54,7 @@ const canManageWorkOrder = (user, workOrder) => {
  */
 const buildWorkOrderScope = (user) => {
   if (!user) return { _id: null };
-  if (['admin', 'city_engineer'].includes(user.role)) return {};
-  if (user.role === 'barangay_official') {
-    const barangay = normalizeText(user.barangay);
-    return barangay ? { 'jurisdiction.barangay': barangay } : { _id: null };
-  }
+  if (user.role === 'city_engineer') return {};
   if (user.role === 'utility_provider') {
     const organization = normalizeText(user.utilityCompany);
     return organization ? { responsibleOrganization: organization } : { _id: null };
@@ -83,7 +78,7 @@ const canAccessWorkOrder = (user, workOrder) => {
       && normalizeText(user.repairOrganization) === normalizeText(workOrder.responsibleOrganization)
       && (!normalizeText(user.barangay) || normalizeText(user.barangay) === getWorkOrderBarangay(workOrder));
   }
-  return canManageWorkOrder(user, workOrder);
+  return canManageWorkOrder(user, workOrder) || canReviewFinalWorkOrder(user, workOrder);
 };
 
 const isEligibleRepairPersonnel = (personnel, workOrder) => {
@@ -185,6 +180,7 @@ module.exports = {
   buildWorkOrderScope,
   canAccessWorkOrder,
   canManageWorkOrder,
+  canReviewFinalWorkOrder,
   getSlaProjection,
   getStageForProgress,
   isEligibleRepairPersonnel,

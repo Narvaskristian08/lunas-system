@@ -14,6 +14,7 @@ import {
   ExternalLink,
   FileImage,
   MapPin,
+  ClipboardCheck,
   Play,
   Route,
   Upload,
@@ -25,8 +26,12 @@ import {
 import {
   acceptWorkOrderAction,
   assignWorkOrderAction,
+  completeRepairWorkAction,
+  coordinateCityCorrectionAction,
   declineWorkOrderAction,
+  finalReviewWorkOrderAction,
   reassignWorkOrderAction,
+  reviewCompletedWorkAction,
   startWorkOrderAction,
   updateRepairProgressAction,
   uploadRepairEvidenceAction,
@@ -54,7 +59,6 @@ import {
   workOrderStatusTone,
 } from "@/components/work-orders/work-order-ui";
 
-const officialRoles = new Set(["barangay_official", "city_engineer", "utility_provider", "admin"]);
 const progressValues = [25, 50, 75, 100] as const;
 
 function alertClass(kind: "success" | "error") {
@@ -86,7 +90,7 @@ function AssignmentPanel({
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
   const hasAssignment = Boolean(workOrder.currentAssignment || workOrder.assignee);
-  const canChangeAssignment = workOrder.status !== "completed";
+  const canChangeAssignment = ["pending", "accepted", "in_progress", "rework_required", "declined", "reassigned"].includes(workOrder.status);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -128,7 +132,7 @@ function AssignmentPanel({
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} required minLength={2} maxLength={500} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain why this assignment must change" />
           </label> : null}
           {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={hasAssignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{hasAssignment ? "Reassign work order" : "Assign work order"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No eligible repair personnel are currently available for this work order. Availability and organization scope are determined by the backend.</p>}
-        </form> : <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">This repair reached 100% and is ready for formal completion and verification. Assignment changes are no longer available in this milestone.</p>}
+        </form> : <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">Assignment is locked while this work awaits provider or City Engineering review.</p>}
       </div>
     </Card>
   );
@@ -141,10 +145,13 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
   const [progressNotes, setProgressNotes] = useState("");
   const [pending, startTransition] = useTransition();
   const [confirmStart, setConfirmStart] = useState(false);
-  const canAccept = workOrder.status === "pending" && workOrder.assignmentState === "pending";
-  const canStart = workOrder.status === "accepted" && workOrder.assignmentState === "accepted";
-  const canProgress = workOrder.status === "in_progress" && workOrder.assignmentState === "accepted";
-  const nextValues = progressValues.filter((value) => value > workOrder.progressPercent);
+  const isCorrectionResubmission = workOrder.status === "in_progress"
+    && workOrder.progressPercent === 100
+    && workOrder.history.some((event) => event.type === "provider_correction_requested" || event.type === "city_returned");
+  const canAccept = ["pending", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "pending";
+  const canStart = ["accepted", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "accepted";
+  const canProgress = ["in_progress"].includes(workOrder.status) && workOrder.assignmentState === "accepted";
+  const nextValues = isCorrectionResubmission ? [100] : progressValues.filter((value) => value > workOrder.progressPercent);
 
   const run = (operation: () => Promise<WorkOrderActionResult>) => {
     startTransition(async () => onResult(await operation()));
@@ -168,26 +175,99 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
 
         {canStart ? <Button type="button" className="w-full" loading={pending} loadingLabel="Starting…" onClick={() => setConfirmStart(true)}><Play className="size-4" />Start repair work</Button> : null}
 
-        {canProgress ? <form onSubmit={(event) => { event.preventDefault(); run(() => updateRepairProgressAction({ workOrderId: workOrder.id, progressPercent, notes: progressNotes })); }} className="space-y-3 rounded-xl border border-slate-200 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-950">Update repair progress</p><Badge tone="information">Current: {workOrder.progressPercent}%</Badge></div>
+        {canProgress ? <form onSubmit={(event) => { event.preventDefault(); if (progressPercent === 100) { const formData = new FormData(event.currentTarget); run(() => completeRepairWorkAction(formData)); } else { run(() => updateRepairProgressAction({ workOrderId: workOrder.id, progressPercent, notes: progressNotes })); } }} className="space-y-3 rounded-xl border border-slate-200 p-4">
+          <input type="hidden" name="workOrderId" value={workOrder.id} />
+          <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-950">{isCorrectionResubmission ? "Resubmit corrected completion" : "Update repair progress"}</p><Badge tone="information">Current: {workOrder.progressPercent}%</Badge></div>
           <label className="block text-sm font-semibold text-slate-800">New progress
             <select value={progressPercent} onChange={(event) => setProgressPercent(Number(event.target.value) as 25 | 50 | 75 | 100)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
-              {nextValues.map((value) => <option key={value} value={value}>{value}% · {titleCase(repairProgressStages[value])}</option>)}
+              {nextValues.map((value) => <option key={value} value={value}>{value}% · {isCorrectionResubmission ? "Resubmit completion" : titleCase(repairProgressStages[value as keyof typeof repairProgressStages])}</option>)}
             </select>
           </label>
           <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Repair stage is set centrally to <strong>{titleCase(repairProgressStages[progressPercent])}</strong>. Progress cannot move backward.</p>
           <label className="block text-sm font-semibold text-slate-800">Progress note {progressPercent === 100 ? <span className="text-red-700">(required at 100%)</span> : <span className="font-normal text-slate-500">(optional)</span>}
-            <textarea value={progressNotes} onChange={(event) => setProgressNotes(event.target.value)} required={progressPercent === 100} minLength={progressPercent === 100 ? 2 : undefined} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Describe field conditions or work completed" />
+            <textarea name="notes" value={progressNotes} onChange={(event) => setProgressNotes(event.target.value)} required={progressPercent === 100} minLength={progressPercent === 100 ? 2 : undefined} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Describe field conditions or work completed" />
           </label>
-          <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving progress…"><Wrench className="size-4" />{progressPercent === 100 ? "Mark ready for completion" : "Save progress update"}</Button>
+          {progressPercent === 100 ? <label className="block text-sm font-semibold text-slate-800">Final post-maintenance evidence <span className="text-red-700">(required)</span><input name="finalEvidence" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800" /><span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG, or WebP; up to 10 MB. Submitted atomically with completion.</span></label> : null}
+          <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving progress…"><Wrench className="size-4" />{progressPercent === 100 ? "Complete repair and submit evidence" : "Save progress update"}</Button>
         </form> : null}
 
-        {workOrder.status === "completed" ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><p className="font-semibold">Ready for Completion / Verification</p><p className="mt-1">Field repair reached 100%. Formal submission, verification, approval, rework, and closure are intentionally deferred to the 100% milestone.</p></div> : null}
+        {workOrder.status === "completed" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Repair completed · awaiting Utility Provider review</p><p className="mt-1">Your completion and final evidence are submitted. The incident remains open until the provider and City Engineering finish their reviews.</p></div> : null}
+        {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective work requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and submit final evidence again at 100%.</p></div> : null}
         {!canAccept && !canStart && !canProgress && workOrder.status !== "completed" ? <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">This work order is waiting for its next controlled assignment or repair transition.</p> : null}
       </div>
       <ConfirmationDialog open={confirmStart} icon="none" title="Start repair work" description="This records the start time and changes the work order to in progress. It does not complete or verify the repair." confirmLabel="Start work" loading={pending} onClose={() => !pending && setConfirmStart(false)} onConfirm={() => { setConfirmStart(false); run(() => startWorkOrderAction(workOrder.id)); }} />
     </Card>
   );
+}
+
+function CompletionReviewPanel({
+  workOrder,
+  viewer,
+  onResult,
+}: {
+  workOrder: WorkOrder;
+  viewer: UserProfile;
+  onResult: (result: WorkOrderActionResult) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [pending, startTransition] = useTransition();
+  const isProvider = viewer.backendRole === "utility_provider" && viewer.permissions.includes("work_orders.manage");
+  const isCityEngineer = viewer.backendRole === "city_engineer" && viewer.permissions.includes("repairs.verify");
+  const canProviderReview = isProvider && workOrder.status === "completed";
+  const canCoordinateCorrection = isProvider && workOrder.status === "city_correction_required";
+  const canFinalReview = isCityEngineer && workOrder.status === "provider_accepted";
+
+  const run = (operation: () => Promise<WorkOrderActionResult>) => {
+    startTransition(async () => onResult(await operation()));
+  };
+
+  if (!canProviderReview && !canCoordinateCorrection && !canFinalReview) return null;
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader
+        title={canProviderReview ? "Utility Provider completion review" : canCoordinateCorrection ? "Coordinate corrective work" : "City Engineering final verification"}
+        description={canProviderReview
+          ? "Review the repair notes and final evidence before accepting the work or returning it for correction."
+          : canCoordinateCorrection
+            ? "City Engineering returned this repair. Add instructions for the assigned Repair Personnel before restarting work."
+            : "Provider acceptance is a handoff, not closure. Approve the repair or return it to the Utility Provider with a reason."}
+      />
+      <div className="space-y-4 p-5">
+        {canProviderReview ? <>
+          <label className="block text-sm font-semibold text-slate-800">Review note or correction reason {<span className="font-normal text-slate-500">(required for correction)</span>}
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain what must change, if any" />
+          </label>
+          <label className="block text-sm font-semibold text-slate-800">Repair instructions <span className="font-normal text-slate-500">(used for corrective work)</span>
+            <textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} maxLength={4000} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" />
+          </label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button type="button" loading={pending} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason, instructions }))}><ClipboardCheck className="size-4" />Accept and forward to City Engineering</Button>
+            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions }))}><Wrench className="size-4" />Request corrective work</Button>
+          </div>
+        </> : null}
+        {canCoordinateCorrection ? <>
+          <label className="block text-sm font-semibold text-slate-800">Corrective instructions<textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} required minLength={2} maxLength={4000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain the City Engineering return and the work needed" /></label>
+          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => run(() => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }))}><Wrench className="size-4" />Send correction to Repair Personnel</Button>
+        </> : null}
+        {canFinalReview ? <>
+          <label className="block text-sm font-semibold text-slate-800">Final review note or return reason {<span className="font-normal text-slate-500">(required when returning)</span>}
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" />
+          </label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button type="button" loading={pending} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "approved", reason }))}><ClipboardCheck className="size-4" />Verify and resolve incident</Button>
+            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "return", reason }))}><Wrench className="size-4" />Return to Utility Provider</Button>
+          </div>
+        </> : null}
+      </div>
+    </Card>
+  );
+}
+
+function WorkOrderReviews({ workOrder }: { workOrder: WorkOrder }) {
+  if (!workOrder.reviews.length) return null;
+  return <Card className="overflow-hidden"><CardHeader title="Completion review history" description="Provider and City Engineering decisions recorded by the backend." /><ol className="divide-y divide-slate-200">{workOrder.reviews.map((review) => <li key={review.id} className="space-y-1 px-5 py-4"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{titleCase(review.stage)} · {titleCase(review.decision)}</p>{review.createdAt ? <span className="text-xs text-slate-500">{formatDateTime(review.createdAt)}</span> : null}</div>{review.reason ? <p className="text-sm leading-6 text-slate-700">{review.reason}</p> : null}{review.instructions && review.instructions !== review.reason ? <p className="text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p> : null}</li>)}</ol></Card>;
 }
 
 function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; onResult: (result: WorkOrderActionResult) => void }) {
@@ -258,7 +338,7 @@ export function WorkOrderDetail({
   const router = useRouter();
   const { notify } = useToast();
   const [notice, setNotice] = useState<{ message: string; kind: "success" | "error" }>();
-  const official = officialRoles.has(viewer.backendRole) && viewer.permissions.includes("work_orders.manage");
+  const official = viewer.backendRole === "utility_provider" && viewer.permissions.includes("work_orders.manage");
   const repairAssignee = viewer.backendRole === "repair_personnel" && workOrder.assignee?.id === viewer.id;
   const incidentLocation = workOrder.incident?.location;
   const [longitude, latitude] = incidentLocation?.coordinates ?? [];
@@ -279,7 +359,7 @@ export function WorkOrderDetail({
         eyebrow={`${workOrder.responsibleOrganization ?? "Maintenance"} · ${workOrder.jurisdiction?.barangay ?? "Authorized scope"}`}
         title={workOrder.reference}
         description={workOrder.incident?.category ? `${titleCase(workOrder.incident.category)} repair work order` : "Maintenance work order"}
-        actions={<><StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrder.status === "completed" ? "Ready for completion" : titleCase(workOrder.status)}</StatusBadge><StatusBadge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)}</StatusBadge></>}
+        actions={<><StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrder.status === "completed" ? "Completed · provider review" : titleCase(workOrder.status)}</StatusBadge><StatusBadge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)}</StatusBadge></>}
       />
       <ActionNotice message={notice?.message} kind={notice?.kind} />
 
@@ -310,6 +390,7 @@ export function WorkOrderDetail({
 
           <EvidenceGallery title="Citizen evidence" description="Signed, privacy-processed evidence URLs are supplied by the protected API." evidence={workOrder.incident?.images ?? []} />
           <EvidenceGallery title="Repair field evidence" description="Traceable maintenance evidence uploaded during repair progress." evidence={workOrder.evidence} />
+          <WorkOrderReviews workOrder={workOrder} />
           <WorkOrderTimeline workOrder={workOrder} />
         </div>
 
@@ -317,6 +398,7 @@ export function WorkOrderDetail({
           <Card className="overflow-hidden"><CardHeader title="SLA monitoring" description="The API is the source of truth for deadline state." /><div className="space-y-4 p-5"><SlaBadges sla={workOrder.sla} includeDeadline />{workOrder.sla.targetResolutionTime ? <p className="text-sm text-slate-700">Target: {workOrder.sla.targetResolutionTime} hours</p> : null}{workOrder.sla.isApproaching ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><Clock3 className="mr-1 inline size-4" /> Deadline is approaching. Keep the responsible organization and assigned team informed.</p> : null}{workOrder.sla.isOverdue ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950"><AlertTriangle className="mr-1 inline size-4" /> This work order is overdue. It remains open and is not automatically closed or rejected.</p> : null}</div></Card>
           {official ? <AssignmentPanel workOrder={workOrder} eligiblePersonnel={eligiblePersonnel} onResult={result} /> : null}
           {repairAssignee ? <><RepairActions workOrder={workOrder} onResult={result} /><RepairEvidenceUpload workOrder={workOrder} onResult={result} /></> : null}
+          <CompletionReviewPanel workOrder={workOrder} viewer={viewer} onResult={result} />
           <Card className="overflow-hidden"><CardHeader title="Assignment history" description="Previous assignments remain available for audit and reassignment context." />{workOrder.assignments.length ? <ol className="divide-y divide-slate-200">{workOrder.assignments.map((assignment) => <li key={assignment.id} className="p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-900">{formatPerson(assignment.assignee?.firstName, assignment.assignee?.lastName)}</p><StatusBadge tone={assignmentTone(assignment.status)}>{titleCase(assignment.status)}</StatusBadge></div>{assignment.assignedAt ? <p className="mt-1 text-xs text-slate-600">Assigned {formatDateTime(assignment.assignedAt)}</p> : null}{assignment.endedAt ? <p className="mt-1 text-xs text-slate-600">Ended {formatDateTime(assignment.endedAt)}</p> : null}{assignment.declineReason ? <p className="mt-2 text-sm leading-6 text-red-800">Decline reason: {assignment.declineReason}</p> : null}{assignment.endedReason ? <p className="mt-2 text-sm leading-6 text-slate-600">Reassignment: {assignment.endedReason}</p> : null}</li>)}</ol> : <p className="p-5 text-sm text-slate-600">No assignment history is available yet.</p>}</Card>
           <Link href="/work-orders" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"><Route className="size-4" />Return to work orders<ChevronRight className="size-4" /></Link>
         </aside>

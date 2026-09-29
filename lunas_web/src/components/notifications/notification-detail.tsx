@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { SkeletonCard, SkeletonLine } from "@/components/states/loading";
 import { ErrorState, OfflineState } from "@/components/states/system-state";
 import { buttonStyles } from "@/components/ui/button";
-import { notificationService } from "@/lib/mock-api";
+import { getNotificationAction, markNotificationsReadAction } from "@/app/actions/notifications";
 import type { LunasNotification } from "@/types";
 
 type DetailState = "loading" | "ready" | "missing" | "offline" | "error";
@@ -44,19 +44,19 @@ function NotificationDetailWorkspace({ id }: { id: string }) {
 
   const load = useCallback(async () => {
     try {
-      const result = await notificationService.get(id);
-      if (!result.data) {
+      const result = await getNotificationAction(id);
+      if (!result) {
         setNotification(null);
         setState("missing");
         return;
       }
-      let next = result.data;
+      let next = result;
       setNotification(next);
       setState("ready");
 
       if (!next.read) {
         try {
-          await notificationService.markRead([next.id]);
+          await markNotificationsReadAction([next.id]);
           next = { ...next, read: true };
           setNotification(next);
         } catch (error) {

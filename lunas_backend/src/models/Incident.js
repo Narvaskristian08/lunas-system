@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { INCIDENT_CATEGORY_CODES } = require('../utils/incidentCategories');
+const { INCIDENT_STATES } = require('../services/incidentTransitionService');
 
 const incidentSchema = new mongoose.Schema({
   reportNumber: {
@@ -101,7 +102,7 @@ const incidentSchema = new mongoose.Schema({
   priority: {
     type: String,
     enum: ['critical', 'high', 'medium', 'low'],
-    default: 'medium'
+    default: undefined
   },
   priorityAssignedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -110,12 +111,8 @@ const incidentSchema = new mongoose.Schema({
   priorityAssignedAt: Date,
   status: {
     type: String,
-    enum: ['submitted', 'validated', 'assigned', 'in_progress', 'completed', 'verified', 'rejected', 'duplicate', 'closed'],
+    enum: INCIDENT_STATES,
     default: 'submitted'
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
   },
   assignedUtility: {
     type: mongoose.Schema.Types.ObjectId,
@@ -130,6 +127,19 @@ const incidentSchema = new mongoose.Schema({
     ref: 'User'
   },
   validatedAt: Date,
+  cityConfirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  cityConfirmedAt: Date,
+  providerAssignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  providerAssignedAt: Date,
+  repairCompletedAt: Date,
+  providerAcceptedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  providerAcceptedAt: Date,
+  finalVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  finalVerifiedAt: Date,
+  closedAt: Date,
+  clarificationReason: { type: String, maxlength: 2000 },
+  clarificationRequestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  clarificationRequestedAt: Date,
   rejectedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -156,36 +166,30 @@ const incidentSchema = new mongoose.Schema({
     ref: 'User'
   },
   duplicateMarkedAt: Date,
-  // Jurisdiction is confirmed by an authorized official during validation.
-  // The submitted location remains immutable source evidence; confirmation is
-  // intentionally stored separately so corrections remain auditable.
+  // The submitted location remains source evidence. Barangay review and city
+  // confirmation are separate decisions; this stores the confirmed location.
   jurisdiction: {
     barangay: { type: String, trim: true, maxlength: 100 },
     city: { type: String, trim: true, maxlength: 100, default: 'Dagupan City' },
-    responsibility: {
-      type: String,
-      enum: ['barangay', 'city_engineering', 'utility_provider'],
-      default: 'barangay'
-    },
     confirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     confirmedAt: Date
   },
   // Routing identifies the accountable organization only. It is deliberately
-  // distinct from a 75% work-order/repair-personnel assignment.
+  // distinct from a work-order/repair-personnel assignment.
   routing: {
     responsibleOrganization: { type: String, trim: true, maxlength: 160 },
     responsibleRole: {
       type: String,
-      enum: ['barangay', 'city_engineering', 'utility_provider']
+      enum: ['utility_provider']
     },
     reason: { type: String, trim: true, maxlength: 1000 },
     routedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     routedAt: Date,
     history: [{
       fromOrganization: { type: String, trim: true, maxlength: 160 },
-      fromRole: { type: String, enum: ['barangay', 'city_engineering', 'utility_provider'] },
+      fromRole: { type: String, enum: ['utility_provider'] },
       toOrganization: { type: String, trim: true, maxlength: 160 },
-      toRole: { type: String, enum: ['barangay', 'city_engineering', 'utility_provider'] },
+      toRole: { type: String, enum: ['utility_provider'] },
       reason: { type: String, trim: true, maxlength: 1000 },
       routedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       routedAt: { type: Date, default: Date.now }
@@ -231,11 +235,7 @@ const incidentSchema = new mongoose.Schema({
     metadata: mongoose.Schema.Types.Mixed
   }],
   rejectionReason: String,
-  notes: String,
-  isPublic: {
-    type: Boolean,
-    default: false
-  }
+  notes: String
 }, {
   timestamps: true
 });

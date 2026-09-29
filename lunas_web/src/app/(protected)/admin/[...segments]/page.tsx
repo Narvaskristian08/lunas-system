@@ -1,8 +1,8 @@
-import { MilestoneUnavailable } from "@/components/states/milestone-unavailable";
 import { AuditLogView } from "@/components/admin/audit-log-view";
 import { BackendApiError } from "@/lib/api/backend.server";
 import { getAuditLogs } from "@/lib/audit-logs.server";
 import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
+import { notFound } from "next/navigation";
 
 export default async function AdminSection({
   params,
@@ -33,5 +33,5 @@ export default async function AdminSection({
     }
     return <AuditLogView page={auditPage ?? { records: [], pagination: { page: 1, limit: 50, total: 0, pages: 0 } }} filters={filters} error={errorMessage} />;
   }
-  return <MilestoneUnavailable title="Administration is not available yet" description="Administrative governance features are planned after the foundational milestone." />;
+  notFound();
 }

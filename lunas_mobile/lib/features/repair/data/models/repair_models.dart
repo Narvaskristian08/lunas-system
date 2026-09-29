@@ -1,7 +1,7 @@
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
-/// The only repair percentages accepted by the 75% workflow. These values
-/// describe a single work order, not the project's development milestone.
+/// The only repair progress percentages accepted by the backend for a work
+/// order.
 const repairProgressValues = <int>{0, 25, 50, 75, 100};
 
 enum RepairProgressStage {
@@ -26,7 +26,7 @@ extension RepairProgressStageValue on RepairProgressStage {
     RepairProgressStage.sitePreparation => 'Site preparation',
     RepairProgressStage.mainRepair => 'Main repair underway',
     RepairProgressStage.finishing => 'Finishing work',
-    RepairProgressStage.readyForCompletion => 'Ready for completion',
+    RepairProgressStage.readyForCompletion => 'Completion submitted · awaiting provider review',
   };
 }
 
@@ -53,7 +53,7 @@ RepairProgressStage repairProgressStageFromJson(Object? value, {int? progress}) 
   };
 }
 
-enum RepairWorkOrderStatus { pending, accepted, inProgress, completed, unknown }
+enum RepairWorkOrderStatus { pending, accepted, inProgress, completed, reworkRequired, unknown }
 
 extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
   String get apiValue => switch (this) {
@@ -61,6 +61,7 @@ extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
     RepairWorkOrderStatus.accepted => 'accepted',
     RepairWorkOrderStatus.inProgress => 'in_progress',
     RepairWorkOrderStatus.completed => 'completed',
+    RepairWorkOrderStatus.reworkRequired => 'rework_required',
     RepairWorkOrderStatus.unknown => 'unknown',
   };
 
@@ -68,7 +69,8 @@ extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
     RepairWorkOrderStatus.pending => 'Pending acceptance',
     RepairWorkOrderStatus.accepted => 'Accepted',
     RepairWorkOrderStatus.inProgress => 'In progress',
-    RepairWorkOrderStatus.completed => 'Ready for completion / verification',
+    RepairWorkOrderStatus.completed => 'Completed · awaiting provider review',
+    RepairWorkOrderStatus.reworkRequired => 'Corrective work requested',
     RepairWorkOrderStatus.unknown => 'Status unavailable',
   };
 }
@@ -79,8 +81,36 @@ RepairWorkOrderStatus repairWorkOrderStatusFromJson(Object? value) {
     'accepted' => RepairWorkOrderStatus.accepted,
     'in_progress' || 'in progress' => RepairWorkOrderStatus.inProgress,
     'completed' || 'ready_for_completion' => RepairWorkOrderStatus.completed,
+    'rework_required' || 'city_correction_required' => RepairWorkOrderStatus.reworkRequired,
     _ => RepairWorkOrderStatus.unknown,
   };
+}
+
+class RepairWorkOrderEvent {
+  const RepairWorkOrderEvent({
+    required this.id,
+    this.type,
+    this.status,
+    this.notes,
+    this.createdAt,
+  });
+
+  final String id;
+  final String? type;
+  final String? status;
+  final String? notes;
+  final DateTime? createdAt;
+
+  factory RepairWorkOrderEvent.fromJson(Object? value) {
+    final json = _map(value);
+    return RepairWorkOrderEvent(
+      id: _id(json),
+      type: _text(json['type']),
+      status: _text(json['status']),
+      notes: _text(json['notes']),
+      createdAt: _date(json['createdAt']),
+    );
+  }
 }
 
 class RepairSla {
@@ -304,6 +334,7 @@ class RepairWorkOrder {
     required this.citizenEvidence,
     required this.assignments,
     required this.progressUpdates,
+    required this.history,
     required this.repairEvidence,
     required this.sla,
     this.priority,
@@ -338,6 +369,7 @@ class RepairWorkOrder {
   final RepairAssignment? currentAssignment;
   final List<RepairAssignment> assignments;
   final List<RepairProgressUpdate> progressUpdates;
+  final List<RepairWorkOrderEvent> history;
   final List<RepairEvidence> repairEvidence;
   final RepairSla sla;
   final DateTime? acceptedAt;
@@ -362,19 +394,23 @@ class RepairWorkOrder {
   /// actions.
   bool get isPendingAcceptance =>
       (status == RepairWorkOrderStatus.pending ||
-          status == RepairWorkOrderStatus.inProgress) &&
+          status == RepairWorkOrderStatus.inProgress ||
+          status == RepairWorkOrderStatus.reworkRequired) &&
       (_hasPendingAssignment ||
           (status == RepairWorkOrderStatus.pending && assignmentState == null));
 
   bool get canStart =>
-      status == RepairWorkOrderStatus.accepted &&
+      (status == RepairWorkOrderStatus.accepted ||
+          status == RepairWorkOrderStatus.reworkRequired) &&
       (_hasAcceptedAssignment || assignmentState == null);
 
   bool get canUpdateProgress =>
       status == RepairWorkOrderStatus.inProgress &&
       (_hasAcceptedAssignment || assignmentState == null);
-  bool get isReadyForCompletion =>
-      status == RepairWorkOrderStatus.completed || progressPercent == 100;
+  bool get isReadyForCompletion => status == RepairWorkOrderStatus.completed;
+
+  bool get isCorrectionResubmission =>
+      status == RepairWorkOrderStatus.inProgress && progressPercent == 100;
 
   factory RepairWorkOrder.fromJson(Object? value) {
     final json = _unwrapWorkOrder(_map(value));
@@ -428,6 +464,9 @@ class RepairWorkOrder {
           .toList(growable: false),
       progressUpdates: _list(json['progressUpdates'] ?? json['progressHistory'])
           .map(RepairProgressUpdate.fromJson)
+          .toList(growable: false),
+      history: _list(json['history'])
+          .map(RepairWorkOrderEvent.fromJson)
           .toList(growable: false),
       repairEvidence: _list(json['repairEvidence'] ?? json['evidence'])
           .map(RepairEvidence.fromJson)
