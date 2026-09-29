@@ -1,9 +1,12 @@
 jest.mock('onesignal-node', () => ({ Client: jest.fn() }));
 jest.mock('../models/Notification', () => ({ create: jest.fn() }));
+jest.mock('../models/Incident', () => ({ findById: jest.fn(), findOne: jest.fn() }));
+jest.mock('../models/WorkOrder', () => ({ findById: jest.fn() }));
 jest.mock('../models/User', () => ({ findById: jest.fn() }));
 jest.mock('../utils/logger', () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }));
 
 const Notification = require('../models/Notification');
+const Incident = require('../models/Incident');
 const User = require('../models/User');
 const notificationService = require('./notificationService');
 
@@ -65,5 +68,29 @@ describe('notification delivery boundary', () => {
 
     await expect(notificationService.createNotification({ type: 'work_order_progress' }))
       .resolves.toBe(notification);
+  });
+
+  test('persists the actual incident id and report number for linked notifications', async () => {
+    const incidentId = '507f191e810c19729de860a1';
+    const select = jest.fn().mockResolvedValue({
+      _id: incidentId,
+      reportNumber: 'DEMO-QA-001'
+    });
+    Incident.findById.mockReturnValue({ select });
+    Notification.create.mockImplementation(async (value) => value);
+
+    const result = await notificationService.createNotification({
+      recipient: '507f191e810c19729de860a2',
+      type: 'incident_submitted',
+      title: 'Report Submitted',
+      message: 'A report was submitted.',
+      data: { incidentId }
+    });
+
+    expect(result.data).toEqual({
+      incidentId,
+      reportNumber: 'DEMO-QA-001'
+    });
+    expect(Incident.findById).toHaveBeenCalledWith(incidentId);
   });
 });

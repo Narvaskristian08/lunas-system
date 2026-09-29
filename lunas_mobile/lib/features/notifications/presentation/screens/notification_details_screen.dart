@@ -83,18 +83,18 @@ class NotificationDetailsScreen extends StatelessWidget {
                       ).textTheme.bodyMedium?.copyWith(height: 1.6),
                     ),
                   ),
-                  if (item.reportId != null || item.location != null) ...[
+                  if (item.incidentId != null || item.location != null) ...[
                     const SizedBox(height: AppSpacing.md),
                     LunasCard(
                       child: Column(
                         children: [
-                          if (item.reportId != null)
+                          if (item.incidentId != null)
                             _DetailRow(
                               icon: Icons.description_outlined,
                               label: 'Report ID',
-                              value: item.reportId!,
+                              value: item.reportNumber ?? 'Linked report',
                             ),
-                          if (item.reportId != null && item.location != null)
+                          if (item.incidentId != null && item.location != null)
                             const Divider(height: AppSpacing.xl),
                           if (item.location != null)
                             _DetailRow(
@@ -106,15 +106,13 @@ class NotificationDetailsScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (item.reportId != null) ...[
+                  if (item.incidentId != null) ...[
                     const SizedBox(height: AppSpacing.xl),
                     LunasButton(
                       label: 'View Report',
                       icon: Icons.arrow_forward_rounded,
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        '/reports/details',
-                        arguments: item.reportId,
+                      onPressed: () => context.push(
+                        '/reports/${Uri.encodeComponent(item.incidentId!)}',
                       ),
                     ),
                   ],

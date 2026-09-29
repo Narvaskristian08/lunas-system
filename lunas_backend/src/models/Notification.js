@@ -42,6 +42,10 @@ const notificationSchema = new mongoose.Schema({
   },
   data: {
     incidentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Incident' },
+    // Stable report link used by clients. incidentId is the database
+    // reference; reportNumber is display-only and must never be used for the
+    // incident detail endpoint.
+    reportNumber: { type: String, trim: true },
     workOrderId: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrder' },
     link: String,
     additionalInfo: mongoose.Schema.Types.Mixed

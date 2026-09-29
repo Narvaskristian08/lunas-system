@@ -40,10 +40,10 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
       _historyNotice = null;
     });
     try {
-      final report = await reportService.getReport(widget.reportId);
+      final report = await reportService.getReportById(widget.reportId);
       List<ReportStatusEvent>? history;
       try {
-        history = await reportService.getHistory(widget.reportId);
+        history = await reportService.getHistory(report.id);
       } on ApiException catch (error) {
         // The incident record itself includes server-authored status history.
         // Keep it visible if the dedicated history endpoint is temporarily down.

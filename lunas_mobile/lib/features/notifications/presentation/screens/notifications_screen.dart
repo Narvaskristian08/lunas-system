@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
+import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
@@ -14,74 +14,68 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final Set<String> _readItems = {'notification-3'};
+  List<NotificationData> _items = const [];
+  final Set<String> _readItems = {};
   NotificationKind? _filter;
+  bool _loading = true;
+  String? _error;
 
-  static const _items = [
-    NotificationData(
-      id: 'notification-1',
-      title: 'Your report is now in progress',
-      message:
-          'A repair team has been assigned to the broken streetlight you reported.',
-      time: '12 min',
-      icon: Icons.engineering_outlined,
-      color: AppColorsLight.alert,
-      kind: NotificationKind.update,
-      reportId: 'RPT-2026-0142',
-      location: 'Rizal Avenue, Barangay 5',
-    ),
-    NotificationData(
-      id: 'notification-2',
-      title: 'Report verified',
-      message: 'A LUNAS review team verified your road surface damage report.',
-      time: '45 min',
-      icon: Icons.verified_outlined,
-      color: AppColorsLight.info,
-      kind: NotificationKind.activity,
-      reportId: 'RPT-2026-0118',
-      location: 'Mabini Street, Barangay 8',
-    ),
-    NotificationData(
-      id: 'notification-3',
-      title: 'Report resolved',
-      message:
-          'The clogged drainage on Quezon Street has been repaired and closed.',
-      time: '2 hr',
-      icon: Icons.check_circle_outline_rounded,
-      color: AppColorsLight.success,
-      kind: NotificationKind.update,
-      reportId: 'RPT-2026-0093',
-      location: 'Quezon Street, Barangay 6',
-    ),
-    NotificationData(
-      id: 'notification-4',
-      title: 'Flooding advisory nearby',
-      message:
-          'Heavy rainfall may affect low-lying streets in Barangay 4. Travel carefully.',
-      time: 'Today',
-      icon: Icons.warning_amber_rounded,
-      color: AppColorsLight.critical,
-      kind: NotificationKind.alert,
-      location: 'Barangay 4',
-    ),
-    NotificationData(
-      id: 'notification-5',
-      title: 'Community activity',
-      message:
-          'Three new public-safety reports were submitted within two kilometers.',
-      time: 'Yesterday',
-      icon: Icons.groups_outlined,
-      color: AppColorsLight.brandBase,
-      kind: NotificationKind.activity,
-    ),
-  ];
-
-  void _markAllRead() {
-    setState(() => _readItems.addAll(_items.map((item) => item.id)));
+  @override
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  void _open(NotificationData item) {
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final page = await notificationService.getNotifications();
+      if (!mounted) return;
+      setState(() {
+        _items = page.items;
+        _readItems
+          ..clear()
+          ..addAll(page.items.where((item) => item.isRead).map((item) => item.id));
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = error.toString();
+      });
+    }
+  }
+
+  Future<void> _markAllRead() async {
+    try {
+      await notificationService.markAllAsRead();
+      if (mounted) {
+        setState(() => _readItems.addAll(_items.map((item) => item.id)));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not mark notifications as read: $error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _open(NotificationData item) async {
     setState(() => _readItems.add(item.id));
+    if (!item.isRead) {
+      try {
+        await notificationService.markAsRead(item.id);
+      } catch (_) {
+        // Opening the notification remains useful even if read-state sync is
+        // temporarily unavailable.
+      }
+    }
+    if (!mounted) return;
     context.push('/notifications/details', extra: item);
   }
 
@@ -103,6 +97,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (_loading)
+            const LunasStateView(
+              state: LunasViewState.loading,
+              title: 'Loading notifications',
+              message: 'Getting your latest LUNAS updates.',
+            )
+          else if (_error != null)
+            LunasStateView(
+              state: LunasViewState.error,
+              title: 'Could not load notifications',
+              message: _error!,
+              actionLabel: 'Try again',
+              onAction: _load,
+            )
+          else ...[
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -159,6 +168,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
+          ],
         ],
       ),
     );

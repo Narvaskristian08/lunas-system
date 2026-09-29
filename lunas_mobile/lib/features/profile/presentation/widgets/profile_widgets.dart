@@ -134,6 +134,33 @@ class ProfileSection extends StatelessWidget {
   );
 }
 
+/// A field-shaped value display with the same visual treatment as the app's
+/// outlined inputs, but with no focus, cursor, keyboard, or hover behavior.
+class ProfileReadOnlyField extends StatelessWidget {
+  const ProfileReadOnlyField({
+    required this.label,
+    required this.value,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      isEmpty: value.isEmpty,
+      decoration: InputDecoration(labelText: label),
+      child: Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodyLarge,
+      ),
+    );
+  }
+}
+
 class ProfileMenuTile extends StatelessWidget {
   const ProfileMenuTile({
     required this.icon,

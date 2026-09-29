@@ -212,6 +212,20 @@ async function seed() {
       demoIncident({ reportNumber: 'DEMO-QA-003', reporter: citizen._id, category: 'streetlight', subcategory: 'outage', description: 'Synthetic report outside the Demo Barangay Official assignment.', barangay: 'Bonuan Gueset', coordinates: [120.3451, 16.0522] })
     ]);
 
+    await Notification.insertMany(incidents.map((incident) => ({
+      recipient: citizen._id,
+      type: 'incident_submitted',
+      title: 'Report Submitted',
+      message: `Your incident report ${incident.reportNumber} has been submitted successfully and is pending validation.`,
+      data: {
+        incidentId: incident._id,
+        reportNumber: incident.reportNumber,
+        link: `/incidents/${incident._id}`
+      },
+      priority: 'medium',
+      sentVia: ['in_app']
+    })));
+
     await AuditLog.create({
       action: 'user_created',
       performedBy: admin._id,

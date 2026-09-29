@@ -373,6 +373,12 @@ exports.createIncident = asyncHandler(async (req, res) => {
       userAgent: req.headers['user-agent']
     });
 
+    await notifySafely({
+      recipient: incident.reporter,
+      ...notificationTemplates.incidentSubmitted(incident.reportNumber),
+      data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
+    });
+
     if (uploadedImages.length) {
       await createAuditLog({
         action: 'file_uploaded',

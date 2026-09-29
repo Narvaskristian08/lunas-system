@@ -16,6 +16,16 @@ jest.mock('../services/evidenceService', () => ({
   processAndUploadEvidence: jest.fn()
 }));
 jest.mock('../services/storageService', () => ({ getEvidenceUrl: jest.fn() }));
+jest.mock('../services/notificationService', () => ({
+  createNotification: jest.fn().mockResolvedValue(null),
+  notificationTemplates: {
+    incidentSubmitted: jest.fn((reportNumber) => ({
+      type: 'incident_submitted',
+      title: 'Report Submitted',
+      message: `Report ${reportNumber} submitted`
+    }))
+  }
+}));
 
 const Incident = require('../models/Incident');
 const { createAuditLog } = require('../utils/auditLogger');

@@ -23,6 +23,9 @@ class ReportService {
     return IncidentReport.fromJson(_dataMap(payload));
   }
 
+  /// Opens a report using its MongoDB Incident `_id`.
+  Future<IncidentReport> getReportById(String id) => getReport(id);
+
   Future<List<ReportStatusEvent>> getHistory(String id) async {
     final payload = await _apiClient.get('/incidents/$id/history');
     final data = payload['data'];

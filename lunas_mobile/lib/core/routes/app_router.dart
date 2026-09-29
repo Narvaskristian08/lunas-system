@@ -82,14 +82,9 @@ final GoRouter appRouter = GoRouter(
             location == '/role-unavailable') {
           return home;
         }
-<<<<<<< Updated upstream
-        // Mobile exposes only Citizen and Repair Personnel workspaces. This is
-        // a presentation guard; the backend remains authoritative for access.
-=======
-        // Mobile only exposes citizen and repair-personnel workspaces. This
-        // guard is presentation-only; backend authorization remains the
-        // source of truth for every API request.
->>>>>>> Stashed changes
+        // Mobile exposes only Citizen and Repair Personnel workspaces. This
+        // is a presentation guard; the backend remains authoritative for
+        // access and every API request.
         if (authController.isCitizen) {
           return isCitizenLocation ? null : home;
         }

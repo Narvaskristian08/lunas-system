@@ -3,32 +3,8 @@ import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
-
-enum NotificationKind { update, activity, alert }
-
-class NotificationData {
-  const NotificationData({
-    required this.id,
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.icon,
-    required this.color,
-    required this.kind,
-    this.reportId,
-    this.location,
-  });
-
-  final String id;
-  final String title;
-  final String message;
-  final String time;
-  final IconData icon;
-  final Color color;
-  final NotificationKind kind;
-  final String? reportId;
-  final String? location;
-}
+import 'package:lunas_mobile/features/notifications/data/models/notification_data.dart';
+export 'package:lunas_mobile/features/notifications/data/models/notification_data.dart';
 
 class NotificationCard extends StatelessWidget {
   const NotificationCard({
@@ -116,10 +92,10 @@ class NotificationCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                if (item.reportId != null) ...[
+                if (item.incidentId != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    item.reportId!,
+                    item.reportNumber ?? 'Linked report',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColorsLight.brandBase,
                     ),

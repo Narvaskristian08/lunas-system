@@ -1,5 +1,7 @@
 const OneSignal = require('onesignal-node');
 const Notification = require('../models/Notification');
+const Incident = require('../models/Incident');
+const WorkOrder = require('../models/WorkOrder');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
@@ -20,6 +22,56 @@ const initializeOneSignal = () => {
   }
 };
 
+const objectIdValue = (value) => {
+  if (!value) return undefined;
+  return value._id || value.id || value;
+};
+
+const isMongoId = (value) => /^[a-f\d]{24}$/i.test(value?.toString() || '');
+
+/**
+ * Keep report-linked notifications resolvable across every producer. Older
+ * producers may only know the incident through a work order, so normalize the
+ * relationship at the notification boundary before persisting or pushing it.
+ */
+const normalizeNotificationData = async (data = {}) => {
+  const normalized = { ...data };
+  const incidentCandidate = objectIdValue(normalized.incidentId);
+  let incidentId = isMongoId(incidentCandidate) ? incidentCandidate : undefined;
+  if (!incidentId && normalized.reportId && !normalized.reportNumber) {
+    normalized.reportNumber = normalized.reportId;
+  }
+  const workOrderId = objectIdValue(normalized.workOrderId);
+
+  try {
+    if (!incidentId && workOrderId) {
+      const workOrder = await WorkOrder.findById(workOrderId).select('incident');
+      incidentId = objectIdValue(workOrder?.incident);
+    }
+
+    if (!incidentId && normalized.reportNumber) {
+      const incident = await Incident.findOne({ reportNumber: normalized.reportNumber })
+        .select('_id reportNumber');
+      incidentId = objectIdValue(incident);
+    }
+
+    if (incidentId) {
+      const incident = await Incident.findById(incidentId).select('_id reportNumber');
+      if (incident) {
+        normalized.incidentId = incident._id;
+        normalized.reportNumber = normalized.reportNumber || incident.reportNumber;
+      }
+    }
+  } catch (error) {
+    // Preserve the original relationship if enrichment is temporarily
+    // unavailable. Notification creation must not block the workflow.
+    logger.warn(`Report notification enrichment skipped: ${error.message}`);
+  }
+
+  delete normalized.reportId;
+  return normalized;
+};
+
 /**
  * Create and send notification
  * @param {Object} notificationData - Notification data
@@ -27,7 +79,8 @@ const initializeOneSignal = () => {
  */
 exports.createNotification = async (notificationData) => {
   try {
-    const notification = await Notification.create(notificationData);
+    const data = await normalizeNotificationData(notificationData.data);
+    const notification = await Notification.create({ ...notificationData, data });
     
     // Notification.recipient is normally an ObjectId, not a populated User.
     // Resolve device tokens only when push delivery is configured, while the
@@ -112,13 +165,13 @@ exports.sendPushNotification = async (playerIds, title, body, data = {}) => {
  */
 exports.sendBulkNotifications = async (userIds, type, title, message, data = {}) => {
   try {
-    const notifications = userIds.map(userId => ({
+    const notifications = await Promise.all(userIds.map(async userId => ({
       recipient: userId,
       type,
       title,
       message,
-      data
-    }));
+      data: await normalizeNotificationData(data)
+    })));
 
     return await Notification.insertMany(notifications);
   } catch (error) {

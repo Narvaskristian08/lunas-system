@@ -1,5 +1,49 @@
 const Notification = require('../models/Notification');
+const Incident = require('../models/Incident');
 const asyncHandler = require('../middleware/asyncHandler');
+
+const serializeNotifications = async (notifications) => {
+  const values = notifications.map((notification) => (
+    notification.toObject ? notification.toObject() : notification
+  ));
+  const incidentIds = [...new Set(values
+    .map((notification) => notification.data?.incidentId?.toString())
+    .filter(Boolean))];
+  const legacyReportNumbers = [...new Set(values
+    .filter((notification) => !notification.data?.incidentId)
+    .map((notification) => notification.data?.reportNumber)
+    .filter(Boolean))];
+  if (!incidentIds.length && !legacyReportNumbers.length) return values;
+
+  const incidents = await Incident.find({
+    $or: [
+      ...(incidentIds.length ? [{ _id: { $in: incidentIds } }] : []),
+      ...(legacyReportNumbers.length ? [{ reportNumber: { $in: legacyReportNumbers } }] : [])
+    ]
+  })
+    .select('_id reportNumber')
+    .lean();
+  const incidentsById = new Map(
+    incidents.map((incident) => [incident._id.toString(), incident])
+  );
+
+  return values.map((notification) => {
+    const incidentId = notification.data?.incidentId?.toString();
+    const legacyReportNumber = notification.data?.reportNumber;
+    const incident = incidentId
+      ? incidentsById.get(incidentId)
+      : incidents.find((value) => value.reportNumber === legacyReportNumber);
+    if (!incident) return notification;
+    return {
+      ...notification,
+      data: {
+        ...notification.data,
+        incidentId: incident._id,
+        reportNumber: incident.reportNumber
+      }
+    };
+  });
+};
 
 // @desc    Get user notifications
 // @route   GET /api/v1/notifications
@@ -16,6 +60,7 @@ exports.getNotifications = asyncHandler(async (req, res) => {
     .sort('-createdAt')
     .limit(parseInt(limit))
     .skip((parseInt(page) - 1) * parseInt(limit));
+  const serializedNotifications = await serializeNotifications(notifications);
 
   const total = await Notification.countDocuments(filter);
   const unreadCount = await Notification.countDocuments({ 
@@ -25,7 +70,7 @@ exports.getNotifications = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: notifications,
+    data: serializedNotifications,
     unreadCount,
     pagination: {
       page: parseInt(page),
@@ -43,7 +88,8 @@ exports.getNotification = asyncHandler(async (req, res) => {
   if (!notification) {
     return res.status(404).json({ success: false, message: 'Notification not found' });
   }
-  return res.status(200).json({ success: true, data: notification });
+  const [serialized] = await serializeNotifications([notification]);
+  return res.status(200).json({ success: true, data: serialized });
 });
 
 // @desc    Mark notification as read
@@ -63,9 +109,10 @@ exports.markAsRead = asyncHandler(async (req, res) => {
     });
   }
 
+  const [serialized] = await serializeNotifications([notification]);
   res.status(200).json({
     success: true,
-    data: notification
+    data: serialized
   });
 });
 
