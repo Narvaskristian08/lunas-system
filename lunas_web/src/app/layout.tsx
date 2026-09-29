@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   },
   description:
     "AI-assisted urban infrastructure maintenance and monitoring for Dagupan City.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

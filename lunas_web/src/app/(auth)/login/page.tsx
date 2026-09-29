@@ -25,6 +25,10 @@ export default async function LoginPage({
       <LoginForm
         returnTo={safeReturnPath(rawNext)}
         turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+        captchaDisabled={
+          process.env.NODE_ENV !== "production" &&
+          process.env.NEXT_PUBLIC_LUNAS_DISABLE_LOGIN_CAPTCHA === "true"
+        }
       />
     </AuthShell>
   );

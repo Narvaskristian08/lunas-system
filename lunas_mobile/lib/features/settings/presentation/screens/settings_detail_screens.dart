@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
@@ -129,16 +128,17 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
   @override
-  Widget build(BuildContext context) => const _Page(
+  Widget build(BuildContext context) => _Page(
     title: 'About LUNAS',
     subtitle: 'Your city reporting platform',
     children: [
       Center(
-        child: Icon(
-          Icons.location_city_rounded,
-          size: 72,
-          color: AppColorsLight.brandBase,
-        ),
+          child: Image.asset(
+            'assets/icons/lunas_logo.png',
+            width: 96,
+            height: 96,
+            fit: BoxFit.contain,
+          ),
       ),
       SizedBox(height: AppSpacing.md),
       Center(

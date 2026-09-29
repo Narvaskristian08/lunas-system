@@ -20,6 +20,8 @@ const {
 } = require('../services/registrationMfaService');
 
 const MAX_REFRESH_TOKENS = Math.max(1, parseInt(process.env.MAX_REFRESH_TOKENS_PER_USER, 10) || 5);
+const loginCaptchaBypassEnabled =
+  process.env.NODE_ENV !== 'production' && process.env.LUNAS_DISABLE_LOGIN_CAPTCHA === 'true';
 
 const requestSource = (platform) => {
   if (platform === 'web') return 'web';
@@ -335,7 +337,7 @@ exports.login = asyncHandler(async (req, res) => {
   const { email, password, deviceToken, platform, captchaToken } = req.body;
   const normalizedEmail = email.toLowerCase();
 
-  if (platform === 'web') {
+  if (platform === 'web' && !loginCaptchaBypassEnabled) {
     if (!captchaToken) {
       await createAuditLog({
         action: 'login_captcha_failed',

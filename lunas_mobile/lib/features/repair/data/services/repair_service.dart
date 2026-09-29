@@ -36,74 +36,9 @@ class RepairService {
     return RepairWorkOrderPage.fromPayload(payload);
   }
 
-  /// Scoped official monitoring list. The API must filter by the caller's
-  /// organization and jurisdiction; this method never filters a broad list on
-  /// device.
-  Future<RepairWorkOrderPage> getWorkOrders({
-    int page = 1,
-    int limit = 20,
-    RepairWorkOrderStatus? status,
-    String? slaState,
-  }) async {
-    _checkPage(page, limit);
-    final payload = await _apiClient.get(
-      '/work-orders',
-      queryParameters: {
-        'page': '$page',
-        'limit': '$limit',
-        if (status != null && status != RepairWorkOrderStatus.unknown)
-          'status': status.apiValue,
-        'slaState': ?slaState,
-      },
-    );
-    return RepairWorkOrderPage.fromPayload(payload);
-  }
-
   Future<RepairWorkOrder> getWorkOrder(String workOrderId) async {
     _requireId(workOrderId);
     final payload = await _apiClient.get('/work-orders/$workOrderId');
-    return RepairWorkOrder.fromJson(payload);
-  }
-
-  /// Create a work order from a validated incident using the backend lifecycle.
-  Future<RepairWorkOrder> createWorkOrderFromIncident(
-    String incidentId, {
-    String? instructions,
-  }) async {
-    _requireId(incidentId);
-    final payload = await _apiClient.post(
-      '/incidents/$incidentId/work-orders',
-      body: {
-        if (instructions?.trim().isNotEmpty == true)
-          'instructions': instructions!.trim(),
-      },
-    );
-    return RepairWorkOrder.fromJson(payload);
-  }
-
-  Future<List<RepairPerson>> getEligiblePersonnel(String workOrderId) async {
-    _requireId(workOrderId);
-    final payload = await _apiClient.get(
-      '/work-orders/$workOrderId/eligible-personnel',
-    );
-    final data = payload['data'];
-    final people = data is List ? data : const <dynamic>[];
-    return people
-        .map(RepairPerson.fromJson)
-        .where((person) => person.id.isNotEmpty)
-        .toList(growable: false);
-  }
-
-  Future<RepairWorkOrder> assignPersonnel(
-    String workOrderId, {
-    required String personnelId,
-  }) async {
-    _requireId(workOrderId);
-    _requireId(personnelId);
-    final payload = await _apiClient.post(
-      '/work-orders/$workOrderId/assign',
-      body: {'assigneeId': personnelId},
-    );
     return RepairWorkOrder.fromJson(payload);
   }
 

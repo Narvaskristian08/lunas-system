@@ -49,6 +49,9 @@ const safeFailures: Record<AuthFailureCode, string> = {
   CAPTCHA_REQUIRED: "Complete the security check before signing in.",
 };
 
+const loginCaptchaBypassEnabled =
+  process.env.NODE_ENV !== "production" && process.env.LUNAS_DISABLE_LOGIN_CAPTCHA === "true";
+
 function authenticationFailure(error: unknown): Pick<LoginActionState, "code" | "message"> {
   if (!isBackendApiError(error)) {
     return { code: "SERVER_UNAVAILABLE", message: safeFailures.SERVER_UNAVAILABLE };
@@ -85,7 +88,7 @@ export async function loginAction(
   if (!email) fieldErrors.email = "Enter your authorized email address.";
   else if (!isValidEmail(email)) fieldErrors.email = "Enter a valid email address.";
   if (!password) fieldErrors.password = "Enter your password.";
-  if (!captchaToken) fieldErrors.captcha = "Complete the CAPTCHA challenge.";
+  if (!loginCaptchaBypassEnabled && !captchaToken) fieldErrors.captcha = "Complete the CAPTCHA challenge.";
   if (Object.keys(fieldErrors).length) {
     return { status: "error", attempt, message: "Review the highlighted fields.", email, fieldErrors };
   }

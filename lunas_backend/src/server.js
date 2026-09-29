@@ -20,11 +20,15 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+const isLocalDevelopmentOrigin = (origin) => process.env.NODE_ENV !== 'production'
+  && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 app.use(cors({
   origin(origin, callback) {
     // Native mobile applications and server-to-server requests do not send an
     // Origin header. Browser origins must be explicitly configured.
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (!origin || allowedOrigins.includes(origin) || isLocalDevelopmentOrigin(origin)) {
+      return callback(null, true);
+    }
 
     const error = new Error('Origin is not allowed by CORS policy');
     error.statusCode = 403;

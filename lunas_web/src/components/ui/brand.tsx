@@ -1,22 +1,23 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function LunasMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-700 text-white shadow-sm",
+        "inline-flex size-10 shrink-0 items-center justify-center",
         className,
       )}
       aria-hidden="true"
     >
-      <svg viewBox="0 0 32 32" className="size-7" fill="none">
-        <path d="M6 6h8v8H6V6Z" fill="currentColor" opacity=".96" />
-        <path d="M18 6h8v8h-8V6Z" fill="currentColor" opacity=".68" />
-        <path d="M6 18h8v8H6v-8Z" fill="currentColor" opacity=".68" />
-        <path d="M18 18h8v8h-8v-8Z" fill="currentColor" opacity=".96" />
-        <path d="M12.2 16h7.6" stroke="#004D99" strokeWidth="2" />
-      </svg>
+      <Image
+        src="/images/lunas_logo.png"
+        alt=""
+        width={40}
+        height={40}
+        className="size-full object-contain"
+      />
     </span>
   );
 }

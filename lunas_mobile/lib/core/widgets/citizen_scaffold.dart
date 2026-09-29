@@ -4,7 +4,7 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 
 /// Shell for citizen reporting routes. Server authorization remains the source
-/// of truth for every API request; the official workspace has its own shell.
+/// of truth for every API request; repair personnel use their own shell.
 class CitizenScaffold extends StatelessWidget {
   const CitizenScaffold({
     required this.title,

@@ -81,7 +81,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                   LunasTextField(
                     controller: _emailController,
                     label: 'Email',
-                    hint: 'name@agency.gov',
+                    hint: 'name@example.com',
                     prefixIcon: Icons.person_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
@@ -113,30 +113,12 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                         : null,
                   ),
                   Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: true,
-                            onChanged: null,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          'Secure session',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: auth.isSubmitting
-                              ? null
-                              : () => context.push('/forgot-password'),
-                          child: const Text('Forgot Password?'),
-                        ),
-                      ],
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: auth.isSubmitting
+                          ? null
+                          : () => context.push('/forgot-password'),
+                      child: const Text('Forgot Password?'),
                     ),
                   ),
                   if (auth.message != null) ...[
@@ -149,29 +131,6 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                     isLoading: auth.isSubmitting,
                     onPressed: auth.isSubmitting ? null : _submit,
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  const _AuthDivider(),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _showUnavailable('Agency SSO'),
-                          icon: const Icon(Icons.business_outlined, size: 16),
-                          label: const Text('Agency SSO'),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _showUnavailable('Passkey'),
-                          icon: const Icon(Icons.vpn_key_outlined, size: 16),
-                          label: const Text('Passkey'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
                 ],
               ),
             ),
@@ -205,33 +164,6 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
     );
   }
 
-  void _showUnavailable(String method) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$method sign-in is not available yet.')),
-    );
-  }
-}
-
-class _AuthDivider extends StatelessWidget {
-  const _AuthDivider();
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      const Expanded(child: Divider(color: Color(0xFFD9DEE8))),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        child: Text(
-          'OR CONTINUE WITH',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: const Color(0xFF7B8494),
-            letterSpacing: .4,
-          ),
-        ),
-      ),
-      const Expanded(child: Divider(color: Color(0xFFD9DEE8))),
-    ],
-  );
 }
 
 class AuthMessage extends StatelessWidget {

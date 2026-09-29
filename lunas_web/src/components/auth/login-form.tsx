@@ -22,7 +22,15 @@ const outcomeActions = {
 
 const initialLoginState: LoginActionState = { status: "idle", attempt: 0 };
 
-export function LoginForm({ returnTo = "/dashboard", turnstileSiteKey }: { returnTo?: string; turnstileSiteKey: string }) {
+export function LoginForm({
+  returnTo = "/dashboard",
+  turnstileSiteKey,
+  captchaDisabled = false,
+}: {
+  returnTo?: string;
+  turnstileSiteKey: string;
+  captchaDisabled?: boolean;
+}) {
   const [state, formAction, pending] = useActionState(loginAction, initialLoginState);
   const { online, checked } = useConnectivity();
   const alertRef = useRef<HTMLDivElement>(null);
@@ -124,14 +132,18 @@ export function LoginForm({ returnTo = "/dashboard", turnstileSiteKey }: { retur
           </Link>
         </div>
 
-        <TurnstileWidget
-          siteKey={turnstileSiteKey}
-          resetKey={String(state.attempt ?? 0)}
-          onVerificationChange={onCaptchaVerificationChange}
-        />
-        {state.fieldErrors?.captcha ? <p className="text-sm font-medium text-red-700">{state.fieldErrors.captcha}</p> : null}
+        {!captchaDisabled ? (
+          <>
+            <TurnstileWidget
+              siteKey={turnstileSiteKey}
+              resetKey={String(state.attempt ?? 0)}
+              onVerificationChange={onCaptchaVerificationChange}
+            />
+            {state.fieldErrors?.captcha ? <p className="text-sm font-medium text-red-700">{state.fieldErrors.captcha}</p> : null}
+          </>
+        ) : null}
 
-        <Button type="submit" size="lg" className="w-full" loading={pending} loadingLabel="Signing in…" disabled={(checked && !online) || !captchaVerified}>
+        <Button type="submit" size="lg" className="w-full" loading={pending} loadingLabel="Signing in…" disabled={(checked && !online) || (!captchaDisabled && !captchaVerified)}>
           <LockKeyhole className="size-4.5" aria-hidden="true" />
           Sign in to command center
         </Button>

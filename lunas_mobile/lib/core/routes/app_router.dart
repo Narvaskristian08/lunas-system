@@ -17,6 +17,8 @@ import 'package:lunas_mobile/features/citizen_extra/presentation/screens/report_
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/screens/notifications_screen.dart';
+import 'package:lunas_mobile/features/notifications/presentation/screens/notification_details_screen.dart';
+import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/citizen_profile_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/assigned_work_orders_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_dashboard_screen.dart';
@@ -80,8 +82,14 @@ final GoRouter appRouter = GoRouter(
             location == '/role-unavailable') {
           return home;
         }
+<<<<<<< Updated upstream
         // Mobile exposes only Citizen and Repair Personnel workspaces. This is
         // a presentation guard; the backend remains authoritative for access.
+=======
+        // Mobile only exposes citizen and repair-personnel workspaces. This
+        // guard is presentation-only; backend authorization remains the
+        // source of truth for every API request.
+>>>>>>> Stashed changes
         if (authController.isCitizen) {
           return isCitizenLocation ? null : home;
         }
@@ -147,6 +155,8 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/reports/location',
           builder: (_, state) => MapPickerScreen(
+            showLocationConfirmation:
+                state.uri.queryParameters['mode'] == 'picker',
             initialLocation: state.extra is SelectedLocation
                 ? state.extra as SelectedLocation
                 : null,
@@ -197,6 +207,14 @@ final GoRouter appRouter = GoRouter(
           path: '/notifications',
           builder: (_, _) => const NotificationsScreen(),
         ),
+        GoRoute(
+          path: '/notifications/details',
+          builder: (_, state) => NotificationDetailsScreen(
+            item: state.extra is NotificationData
+                ? state.extra as NotificationData
+                : null,
+          ),
+        ),
       ],
     ),
     GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
@@ -245,6 +263,7 @@ bool _isCitizenLocation(String location) =>
     location == '/citizen' ||
     location == '/profile' ||
     location == '/notifications' ||
+    location.startsWith('/notifications/') ||
     location == '/reports' ||
     location.startsWith('/reports/');
 

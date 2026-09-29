@@ -5,7 +5,7 @@ import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart'
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 
-/// Account and secure-session controls for the repair workspace. Profile edits
+/// Account controls for the repair workspace. Profile edits
 /// continue to use the established authenticated account flow.
 class RepairProfileScreen extends StatefulWidget {
   const RepairProfileScreen({super.key});
@@ -64,7 +64,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
         content: const Text(
-          'Your secure session will be removed from this device.',
+          'You will be signed out on this device.',
         ),
         actions: [
           TextButton(
@@ -92,7 +92,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
     return RepairPage(
       appBar: const RepairAppBar(
         title: 'Repair account',
-        subtitle: 'Profile and secure session',
+        subtitle: 'Profile and account access',
       ),
       selectedNavigationIndex: 2,
       child: Form(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -8,12 +9,15 @@ import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
 
 class NotificationDetailsScreen extends StatelessWidget {
-  const NotificationDetailsScreen({super.key});
+  const NotificationDetailsScreen({this.item, super.key});
+
+  final NotificationData? item;
 
   @override
   Widget build(BuildContext context) {
     final item =
-        ModalRoute.of(context)?.settings.arguments as NotificationData? ??
+        this.item ??
+        GoRouterState.of(context).extra as NotificationData? ??
         const NotificationData(
           id: 'notification',
           title: 'LUNAS update',

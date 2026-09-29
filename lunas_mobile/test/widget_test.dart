@@ -15,6 +15,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Restoring your secure session…'), findsOneWidget);
+    expect(find.text('Loading your account…'), findsOneWidget);
   });
 }

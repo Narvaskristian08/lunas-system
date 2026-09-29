@@ -66,7 +66,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
         content: const Text(
-          'Your secure session will be removed from this device.',
+          'You will be signed out on this device.',
         ),
         actions: [
           TextButton(

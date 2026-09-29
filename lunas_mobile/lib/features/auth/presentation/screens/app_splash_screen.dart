@@ -62,7 +62,7 @@ class AppSplashScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            const Text('Restoring your secure session…'),
+            const Text('Loading your account…'),
           ],
           const Spacer(flex: 2),
           Row(

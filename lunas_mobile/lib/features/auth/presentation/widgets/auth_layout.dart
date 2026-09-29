@@ -129,22 +129,12 @@ class LunasBrand extends StatelessWidget {
           ),
       ],
     );
-    final mark = Container(
-      width: large ? 72 : 42,
-      height: large ? 72 : 42,
-      padding: EdgeInsets.all(large ? 13 : 8),
-      decoration: BoxDecoration(
-        color: AppColorsLight.brandBase,
-        borderRadius: BorderRadius.circular(large ? 18 : 11),
-        boxShadow: [
-          BoxShadow(
-            color: AppColorsLight.brandBase.withValues(alpha: .18),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+    final mark = SizedBox.square(
+      dimension: large ? 72 : 42,
+      child: Image.asset(
+        'assets/icons/lunas_logo.png',
+        fit: BoxFit.contain,
       ),
-      child: const _LunasGlyph(),
     );
     if (centered) {
       return Column(
@@ -167,34 +157,6 @@ class LunasBrand extends StatelessWidget {
           title,
         ],
       ],
-    );
-  }
-}
-
-class _LunasGlyph extends StatelessWidget {
-  const _LunasGlyph();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox.square(
-        dimension: 28,
-        child: GridView.count(
-          crossAxisCount: 2,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          mainAxisSpacing: 4,
-          crossAxisSpacing: 4,
-          children: List.generate(
-            4,
-            (_) => DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 3),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

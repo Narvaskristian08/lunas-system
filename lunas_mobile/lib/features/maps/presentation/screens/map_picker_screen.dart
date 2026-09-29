@@ -12,11 +12,13 @@ import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart'
 class MapPickerScreen extends StatefulWidget {
   const MapPickerScreen({
     this.initialLocation,
+    this.showLocationConfirmation = true,
     this.locationService = const LocationService(),
     super.key,
   });
 
   final SelectedLocation? initialLocation;
+  final bool showLocationConfirmation;
   final LocationService locationService;
 
   static Future<SelectedLocation?> open(
@@ -25,7 +27,10 @@ class MapPickerScreen extends StatefulWidget {
   }) {
     return Navigator.of(context).push<SelectedLocation>(
       MaterialPageRoute(
-        builder: (_) => MapPickerScreen(initialLocation: initialLocation),
+        builder: (_) => MapPickerScreen(
+          initialLocation: initialLocation,
+          showLocationConfirmation: true,
+        ),
       ),
     );
   }
@@ -43,8 +48,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   bool _isLocating = false;
   bool _isGeocoding = false;
   bool _hasLocationPermission = false;
-  LocationFailure? _locationFailure;
-  String? _locationMessage;
 
   @override
   void initState() {
@@ -57,7 +60,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         initialLocation.longitude,
       );
     }
-    _moveToCurrentLocation();
+    _moveToCurrentLocation(userInitiated: false);
   }
 
   @override
@@ -66,19 +69,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     super.dispose();
   }
 
-  Future<void> _moveToCurrentLocation() async {
+  Future<void> _moveToCurrentLocation({required bool userInitiated}) async {
     if (!mounted || _isLocating) return;
     setState(() {
       _isLocating = true;
-      _locationFailure = null;
-      _locationMessage = null;
     });
     try {
       final position = await widget.locationService.determinePosition();
       if (!mounted) return;
       setState(() {
         _hasLocationPermission = true;
-        _locationFailure = null;
       });
       final target = LatLng(position.latitude, position.longitude);
       await _selectPoint(target);
@@ -87,18 +87,36 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       if (!mounted) return;
       setState(() {
         _hasLocationPermission = false;
-        _locationFailure = error.failure;
-        _locationMessage = _messageFor(error.failure);
       });
+      if (userInitiated) {
+        _showLocationFeedback(
+          _messageFor(error.failure),
+          onSettings: error.failure == LocationFailure.permissionDeniedForever
+              ? _openAppSettings
+              : null,
+        );
+      }
     } catch (_) {
       if (!mounted) return;
-      setState(
-        () => _locationMessage =
-            'We could not retrieve your location. Please try again.',
-      );
+      if (userInitiated) {
+        _showLocationFeedback(
+          'We could not retrieve your location. Please try again.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLocating = false);
     }
+  }
+
+  void _showLocationFeedback(String message, {VoidCallback? onSettings}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: onSettings == null
+            ? null
+            : SnackBarAction(label: 'Settings', onPressed: onSettings),
+      ),
+    );
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -159,7 +177,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       LocationFailure.permissionDenied =>
         'Location permission was denied. You can still tap the map to choose a location.',
       LocationFailure.permissionDeniedForever =>
-        'Location permission is blocked. Enable it in your device settings, or tap the map.',
+        'Location access is disabled. Enable it in device settings to use your current location.',
     };
   }
 
@@ -178,11 +196,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final theme = Theme.of(context);
     final selected = _selectedLocation;
     return Scaffold(
-      appBar: const LunasAppBar(
-        title: 'Choose Location',
-        subtitle: 'Tap the map to place the report pin',
-        showBackButton: true,
-      ),
+      appBar: widget.showLocationConfirmation
+          ? const LunasAppBar(
+              title: 'Choose Location',
+              subtitle: 'Tap the map to place the report pin',
+              showBackButton: true,
+            )
+          : null,
       body: Stack(
         children: [
           GoogleMap(
@@ -226,11 +246,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               child: FloatingActionButton.small(
                 heroTag: 'map-picker-current-location',
                 tooltip: 'Center on my location',
-                onPressed: _moveToCurrentLocation,
+                onPressed: () =>
+                    _moveToCurrentLocation(userInitiated: true),
                 child: const Icon(Icons.my_location_rounded),
               ),
             ),
-          if (!_isLocating)
+          if (!_isLocating && widget.showLocationConfirmation)
             Positioned(
               left: AppSpacing.md,
               right: AppSpacing.md,
@@ -240,32 +261,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_locationMessage != null) ...[
-                      Material(
-                        color: theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.location_disabled_outlined,
-                                color: theme.colorScheme.onErrorContainer,
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(child: Text(_locationMessage!)),
-                              if (_locationFailure ==
-                                  LocationFailure.permissionDeniedForever)
-                                TextButton(
-                                  onPressed: _openAppSettings,
-                                  child: const Text('Settings'),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
                     LunasCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

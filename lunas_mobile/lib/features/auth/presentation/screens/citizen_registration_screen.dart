@@ -68,8 +68,6 @@ class _CitizenRegistrationScreenState extends State<CitizenRegistrationScreen> {
       showBackButton: true,
       child: Column(
         children: [
-          const LunasBrand(centered: true, showSubtitle: false),
-          const SizedBox(height: AppSpacing.xl),
           AuthPanel(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Form(

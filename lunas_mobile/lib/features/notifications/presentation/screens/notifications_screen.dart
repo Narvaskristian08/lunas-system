@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
@@ -32,7 +33,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     NotificationData(
       id: 'notification-2',
       title: 'Report verified',
-      message: 'Barangay personnel verified your road surface damage report.',
+      message: 'A LUNAS review team verified your road surface damage report.',
       time: '45 min',
       icon: Icons.verified_outlined,
       color: AppColorsLight.info,
@@ -81,7 +82,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _open(NotificationData item) {
     setState(() => _readItems.add(item.id));
-    Navigator.pushNamed(context, '/notifications/details', arguments: item);
+    context.push('/notifications/details', extra: item);
   }
 
   @override

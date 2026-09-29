@@ -12,22 +12,37 @@ class RoleUnavailableScreen extends StatelessWidget {
     final auth = AuthScope.of(context);
     final rawRole = auth.user?.role;
     final role = rawRole?.replaceAll('_', ' ') ?? 'this account role';
+    final isWebOnlyRole = const {
+      'barangay_official',
+      'city_engineer',
+      'utility_provider',
+      'admin',
+    }.contains(rawRole);
     return AuthLayout(
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(),
-          const Icon(Icons.admin_panel_settings_outlined, size: 72),
+          Icon(
+            isWebOnlyRole
+                ? Icons.open_in_new_rounded
+                : Icons.admin_panel_settings_outlined,
+            size: 72,
+          ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            'A LUNAS mobile workspace is not available for $role.',
+            isWebOnlyRole
+                ? 'This account is intended for the LUNAS Web Command Center.'
+                : 'A LUNAS mobile workspace is not available for $role.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'This account does not have an implemented mobile workspace for its role. Your permissions continue to be enforced by the server.',
+            isWebOnlyRole
+                ? 'Please use the web application to access official management functions. No operational screen is available for this role in the mobile app.'
+                : 'This account does not have an implemented mobile workspace for its role. Your permissions continue to be enforced by the server.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xxl),
