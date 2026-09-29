@@ -9,7 +9,25 @@ const allowedHostnames = () => String(process.env.TURNSTILE_ALLOWED_HOSTNAMES ||
   .map((value) => value.trim().toLowerCase())
   .filter(Boolean);
 
+/**
+ * Check if CAPTCHA is enabled
+ * Set CAPTCHA_ENABLED=false in .env to disable CAPTCHA
+ * Set CAPTCHA_ENABLED=true in .env to enable CAPTCHA
+ * Default: false (disabled)
+ */
+const isCaptchaEnabled = () => {
+  const enabled = process.env.CAPTCHA_ENABLED === 'true';
+  logger.debug(`CAPTCHA enabled: ${enabled}`);
+  return enabled;
+};
+
 exports.verifyLoginCaptcha = async ({ token, remoteIp }) => {
+  // If CAPTCHA is disabled, always return success
+  if (!isCaptchaEnabled()) {
+    logger.info('CAPTCHA is disabled - skipping verification');
+    return { success: true, unavailable: false };
+  }
+
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) {
     logger.error('Web login CAPTCHA is required but TURNSTILE_SECRET_KEY is not configured');
