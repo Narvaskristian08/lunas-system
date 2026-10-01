@@ -41,6 +41,9 @@ test("protected web routes redirect an anonymous visitor to real sign-in", async
 
   await page.goto("/work-orders");
   await expect(page).toHaveURL(/\/login\?next=%2Fwork-orders|\/login\?next=\/work-orders/);
+
+  await page.goto("/work-orders/intake");
+  await expect(page).toHaveURL(/\/login\?next=%2Fwork-orders%2Fintake|\/login\?next=\/work-orders\/intake/);
 });
 
 test("password reset requires a real token and public legal states render", async ({ page }) => {

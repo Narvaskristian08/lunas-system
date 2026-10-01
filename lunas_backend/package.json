@@ -9,7 +9,8 @@
     "test": "jest --coverage",
     "lint": "eslint src/**/*.js scripts/**/*.js",
     "seed:demo": "node scripts/seed-demo-data.js",
-    "migrate:account-retention": "node scripts/remove-audit-ttl.js"
+    "migrate:account-retention": "node scripts/remove-audit-ttl.js",
+    "audit:incident-barangays": "node scripts/audit-incident-barangays.js"
   },
   "keywords": [
     "infrastructure",

@@ -1,3 +1,5 @@
+const { canonicalizeBarangay } = require('../data/dagupanBarangays');
+
 const OFFICIAL_VALIDATION_ROLES = Object.freeze([
   'barangay_official',
   'city_engineer',
@@ -20,9 +22,12 @@ const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '')
 
 const asId = (value) => (value?._id || value)?.toString();
 
-const getIncidentBarangay = (incident) => normalizeText(
-  incident?.jurisdiction?.barangay || incident?.location?.address?.barangay
-);
+const getIncidentBarangay = (incident) => {
+  const value = normalizeText(
+    incident?.jurisdiction?.barangay || incident?.location?.address?.barangay
+  );
+  return canonicalizeBarangay(value) || value;
+};
 
 const getIncidentCity = (incident) => normalizeText(
   incident?.jurisdiction?.city || incident?.location?.address?.city || 'Dagupan City'
@@ -44,7 +49,7 @@ const buildIncidentScope = (user) => {
   if (user.role === 'citizen') return { reporter: user._id };
 
   if (user.role === 'barangay_official') {
-    const barangay = normalizeText(user.barangay);
+    const barangay = canonicalizeBarangay(user.barangay);
     if (!barangay) return { _id: null };
 
     // Older reports may not have a confirmed jurisdiction. Keep them visible
@@ -87,7 +92,7 @@ const canAccessIncident = (user, incident) => {
   }
 
   if (user.role === 'barangay_official') {
-    return getIncidentBarangay(incident) === normalizeText(user.barangay);
+    return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
   }
 
   if (user.role === 'utility_provider') {
@@ -103,7 +108,9 @@ const canConfirmJurisdiction = (user, jurisdiction) => {
   if (user.role === 'city_engineer') return true;
   if (user.role !== 'barangay_official') return false;
 
-  return normalizeText(jurisdiction?.barangay) === normalizeText(user.barangay);
+  const jurisdictionBarangay = canonicalizeBarangay(jurisdiction?.barangay);
+  return Boolean(jurisdictionBarangay)
+    && jurisdictionBarangay === canonicalizeBarangay(user.barangay);
 };
 
 const canRouteIncident = (user, routing) => {

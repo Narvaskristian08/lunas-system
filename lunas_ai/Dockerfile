@@ -33,7 +33,7 @@ EXPOSE 5001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5001/api/v1/health')"
+    CMD python -c "import requests; requests.get('http://localhost:5001/api/v1/health', timeout=5).raise_for_status()"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

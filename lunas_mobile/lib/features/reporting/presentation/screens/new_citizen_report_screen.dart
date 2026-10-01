@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -7,12 +8,17 @@ import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
+import 'package:lunas_mobile/features/reporting/domain/models/barangay_suggestion.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
+typedef BarangayLoader = Future<List<String>> Function();
+
 class NewCitizenReportScreen extends StatefulWidget {
-  const NewCitizenReportScreen({super.key});
+  const NewCitizenReportScreen({this.barangayLoader, super.key});
+
+  final BarangayLoader? barangayLoader;
 
   @override
   State<NewCitizenReportScreen> createState() => _NewCitizenReportScreenState();
@@ -21,16 +27,48 @@ class NewCitizenReportScreen extends StatefulWidget {
 class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _barangayController = TextEditingController();
   CategoryOption? _category;
   EvidenceSelection? _evidence;
   SelectedLocation? _location;
+  String? _barangay;
+  List<String> _barangays = const [];
+  BarangaySuggestion? _barangaySuggestion;
+  bool _loadingBarangays = true;
+  String? _barangayError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBarangays();
+  }
 
   @override
   void dispose() {
     _descriptionController.dispose();
-    _barangayController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadBarangays() async {
+    setState(() {
+      _loadingBarangays = true;
+      _barangayError = null;
+    });
+    try {
+      final values =
+          await (widget.barangayLoader ?? reportService.getBarangays)();
+      if (!mounted) return;
+      setState(() {
+        _barangays = values;
+        _loadingBarangays = false;
+        _updateBarangaySuggestion();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadingBarangays = false;
+        _barangayError = error.toString();
+      });
+    }
   }
 
   Future<void> _chooseEvidence() async {
@@ -51,7 +89,38 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
       '/reports/location?mode=picker',
       extra: _location,
     );
-    if (mounted && location != null) setState(() => _location = location);
+    if (mounted && location != null) {
+      setState(() {
+        _location = location;
+        _barangay = null;
+        _updateBarangaySuggestion();
+      });
+    }
+  }
+
+  void _updateBarangaySuggestion() {
+    final location = _location;
+    if (location == null || _barangays.isEmpty) {
+      _barangaySuggestion = null;
+      return;
+    }
+    _barangaySuggestion = resolveBarangaySuggestion(location, _barangays);
+  }
+
+  Future<void> _chooseBarangay() async {
+    if (_loadingBarangays || _barangayError != null) return;
+    final selected = await showSearch<String>(
+      context: context,
+      delegate: _BarangaySearchDelegate(_barangays),
+    );
+    if (mounted && selected != null && selected.trim().isNotEmpty) {
+      setState(() => _barangay = selected);
+    }
+  }
+
+  void _useBarangaySuggestion() {
+    final suggested = _barangaySuggestion?.barangay;
+    if (suggested != null) setState(() => _barangay = suggested);
   }
 
   void _review() {
@@ -69,11 +138,15 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
       _showRequired('Choose and confirm a valid report location.');
       return;
     }
+    if (_barangay == null) {
+      _showRequired('Choose and confirm the barangay for this location.');
+      return;
+    }
     final draft = CitizenReportDraft(
       category: _category!,
       description: _descriptionController.text.trim(),
       location: _location!,
-      barangay: _barangayController.text.trim(),
+      barangay: _barangay!,
       evidence: _evidence!,
       privacyAcknowledged: false,
     );
@@ -107,7 +180,10 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
             children: [
               const ReportProgressIndicator(current: 1, total: 3),
               const SizedBox(height: AppSpacing.xl),
-              Text('Step 1 of 3: Details', style: Theme.of(context).textTheme.labelMedium),
+              Text(
+                'Step 1 of 3: Details',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
               const SizedBox(height: AppSpacing.sm),
               _StepLabel(number: '1', label: 'Evidence'),
               const SizedBox(height: AppSpacing.sm),
@@ -236,18 +312,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _barangayController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Barangay',
-                  hintText: 'e.g. Barangay 5',
-                  prefixIcon: Icon(Icons.account_balance_outlined),
-                ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter the barangay where the issue is located.'
-                    : null,
-              ),
+              _barangaySelector(context),
               const SizedBox(height: AppSpacing.xxl),
               LunasButton(
                 label: 'Continue to Location',
@@ -260,6 +325,173 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
       ),
     ),
   );
+
+  Widget _barangaySelector(BuildContext context) {
+    if (_loadingBarangays) {
+      return const LunasCard(
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(child: Text('Loading recognized barangays…')),
+          ],
+        ),
+      );
+    }
+    if (_barangayError != null) {
+      return LunasCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Barangay list unavailable'),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Check your connection and try again. A recognized barangay is required.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _loadBarangays,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Try again'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final suggestion = _barangaySuggestion;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LunasCard(
+          onTap: _chooseBarangay,
+          child: Row(
+            children: [
+              const Icon(Icons.account_balance_outlined),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_barangay ?? 'Select barangay'),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      _barangay == null
+                          ? 'Required · search the recognized Dagupan list'
+                          : 'Confirmed for this report location',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.search_rounded),
+            ],
+          ),
+        ),
+        if (_barangay == null && suggestion != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          if (suggestion.status == BarangaySuggestionStatus.matched)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Address lookup suggests ${suggestion.barangay}. Confirm before continuing.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _useBarangaySuggestion,
+                  child: const Text('Use suggestion'),
+                ),
+              ],
+            )
+          else
+            Text(switch (suggestion.status) {
+              BarangaySuggestionStatus.ambiguous =>
+                'Address lookup returned more than one possible barangay. Choose the correct one.',
+              BarangaySuggestionStatus.unavailable =>
+                'Address lookup is unavailable. Choose the barangay from the recognized list.',
+              BarangaySuggestionStatus.noMatch =>
+                'Address lookup could not identify a recognized barangay. Choose it manually.',
+              BarangaySuggestionStatus.matched => '',
+            }, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ],
+    );
+  }
+}
+
+class _BarangaySearchDelegate extends SearchDelegate<String> {
+  _BarangaySearchDelegate(this.barangays);
+
+  final List<String> barangays;
+
+  List<String> get _matches {
+    final needle = query.trim().toLowerCase();
+    if (needle.isEmpty) return barangays;
+    return barangays
+        .where((barangay) => barangay.toLowerCase().contains(needle))
+        .toList(growable: false);
+  }
+
+  @override
+  String get searchFieldLabel => 'Search barangays';
+
+  @override
+  List<Widget>? buildActions(BuildContext context) => [
+    if (query.isNotEmpty)
+      IconButton(
+        tooltip: 'Clear search',
+        onPressed: () => query = '',
+        icon: const Icon(Icons.clear_rounded),
+      ),
+  ];
+
+  @override
+  Widget? buildLeading(BuildContext context) => IconButton(
+    tooltip: 'Back',
+    onPressed: () => close(context, ''),
+    icon: const Icon(Icons.arrow_back_rounded),
+  );
+
+  @override
+  Widget buildResults(BuildContext context) => _results(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _results(context);
+
+  Widget _results(BuildContext context) {
+    final matches = _matches;
+    if (matches.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Text(
+            'No recognized barangay matches that search. Check the spelling or clear the search.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    return ListView.separated(
+      itemCount: matches.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final barangay = matches[index];
+        return ListTile(
+          leading: const Icon(Icons.account_balance_outlined),
+          title: Text(barangay),
+          onTap: () => close(context, barangay),
+        );
+      },
+    );
+  }
 }
 
 class _StepLabel extends StatelessWidget {

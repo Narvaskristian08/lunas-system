@@ -6,6 +6,7 @@ const { createAuditLog } = require('../utils/auditLogger');
 const { createNotification, notificationTemplates } = require('../services/notificationService');
 const { processAndUploadRepairEvidence, cleanupEvidence } = require('../services/evidenceService');
 const { getEvidenceUrl } = require('../services/storageService');
+const logger = require('../utils/logger');
 const asyncHandler = require('../middleware/asyncHandler');
 const {
   ACTIVE_WORK_ORDER_STATUSES,
@@ -251,15 +252,22 @@ const updateIncidentForWorkOrder = async ({ incidentId, status, actor, notes, me
 
 const notify = async (recipient, template, workOrder) => {
   if (!recipient) return;
-  await createNotification({
-    recipient: recipient._id || recipient,
-    ...template,
-    data: {
-      incidentId: workOrder.incident && workOrder.incident._id ? workOrder.incident._id : workOrder.incident,
-      workOrderId: workOrder._id,
-      link: '/work-orders/' + workOrder._id
-    }
-  });
+  try {
+    await createNotification({
+      recipient: recipient._id || recipient,
+      ...template,
+      data: {
+        incidentId: workOrder.incident && workOrder.incident._id ? workOrder.incident._id : workOrder.incident,
+        workOrderId: workOrder._id,
+        link: '/work-orders/' + workOrder._id
+      }
+    });
+  } catch (error) {
+    // The guarded work-order mutation has already committed. Notification
+    // delivery is best-effort and must not make the caller retry a successful
+    // workflow mutation (which could create a misleading conflict).
+    logger.warn(`Work-order notification skipped after committed mutation: ${error.message}`);
+  }
 };
 
 const setAvailability = async (personnelId, availability) => {
@@ -498,7 +506,14 @@ const assign = async (req, res, reassign) => {
   const activeAssignment = (workOrder.assignments || []).find(
     (assignment) => getId(assignment._id) === getId(workOrder.currentAssignment) && assignment.active
   );
-  if (reassign && !activeAssignment) return fail(res, 409, 'This work order has no active assignment to reassign');
+  const previousAssignment = activeAssignment || [...(workOrder.assignments || [])]
+    .reverse()
+    .find((assignment) => assignment.status === 'declined');
+  const reassignAfterDecline = reassign && !activeAssignment
+    && workOrder.status === 'in_progress' && workOrder.assignmentState === 'declined';
+  if (reassign && !activeAssignment && !reassignAfterDecline) {
+    return fail(res, 409, 'This work order has no active assignment to reassign');
+  }
   if (!reassign && activeAssignment) return fail(res, 409, 'This work order already has an active assignment; use reassignment');
 
   const assignee = await User.findById(req.body.assigneeId || req.body.assignedTo);
@@ -547,7 +562,9 @@ const assign = async (req, res, reassign) => {
         assignment: assignmentId,
         metadata: {
           assigneeId: assignee._id,
-          previousAssignmentId: activeAssignment && activeAssignment._id
+          previousAssignmentId: previousAssignment && previousAssignment._id,
+          previousAssigneeId: previousAssignment && previousAssignment.assignee,
+          reason: reassign ? reason : undefined
         },
         now
       })
@@ -555,7 +572,7 @@ const assign = async (req, res, reassign) => {
     $inc: { version: 1 }
   };
   const options = { new: true };
-  if (reassign) {
+  if (reassign && activeAssignment) {
     // MongoDB cannot safely combine a positional update and a push against
     // the same array in one document update. Replace the historical array
     // atomically under the optimistic version predicate instead.
@@ -580,9 +597,14 @@ const assign = async (req, res, reassign) => {
     status: { $in: ACTIVE_WORK_ORDER_STATUSES }
   };
   if (reassign) {
-    condition.currentAssignment = activeAssignment._id;
-    condition['assignments._id'] = activeAssignment._id;
-    condition['assignments.active'] = true;
+    if (activeAssignment) {
+      condition.currentAssignment = activeAssignment._id;
+      condition.assignments = { $elemMatch: { _id: activeAssignment._id, active: true } };
+    } else {
+      condition.currentAssignment = null;
+      condition.assignmentState = 'declined';
+      condition.assignments = { $not: { $elemMatch: { active: true } } };
+    }
   } else {
     // A declined assignment intentionally leaves the work order pending and
     // available for a new normal assignment.
@@ -614,7 +636,13 @@ const assign = async (req, res, reassign) => {
     affectedUser: assignee._id,
     resourceType: 'WorkOrder',
     resourceId: updated._id,
-    details: { assignmentId, assigneeId: assignee._id, reason: reassign ? reason : undefined },
+    details: {
+      assignmentId,
+      assigneeId: assignee._id,
+      previousAssignmentId: previousAssignment && previousAssignment._id,
+      previousAssigneeId: previousAssignment && previousAssignment.assignee,
+      reason: reassign ? reason : undefined
+    },
     ipAddress: req.ip,
     userAgent: req.headers['user-agent']
   });
@@ -631,7 +659,8 @@ exports.reassignWorkOrder = asyncHandler(async (req, res) => assign(req, res, tr
 exports.acceptWorkOrder = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
-  if (workOrder.assignmentState !== 'pending' || !['pending', 'rework_required'].includes(workOrder.status)) {
+  if (workOrder.assignmentState !== 'pending'
+    || !['pending', 'in_progress', 'rework_required'].includes(workOrder.status)) {
     return fail(res, 409, transitionMessage(workOrder.status, 'accept'));
   }
   const assignment = (workOrder.assignments || []).find(
@@ -640,7 +669,9 @@ exports.acceptWorkOrder = asyncHandler(async (req, res) => {
   );
   if (!assignment) return fail(res, 403, 'You do not have an active assignment for this work order');
   const now = new Date();
-  const nextStatus = workOrder.status === 'pending' ? 'accepted' : 'rework_required';
+  // A replacement who accepts an in-progress handoff resumes the same repair;
+  // startedAt, progress, evidence, history, and SLA remain untouched.
+  const nextStatus = workOrder.status === 'pending' ? 'accepted' : workOrder.status;
   const updated = await WorkOrder.findOneAndUpdate(
     {
       _id: workOrder._id,
@@ -697,7 +728,8 @@ exports.declineWorkOrder = asyncHandler(async (req, res) => {
   if (reason.length < 2) return fail(res, 400, 'A decline reason is required');
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
-  if (!['pending', 'rework_required'].includes(workOrder.status) || workOrder.assignmentState !== 'pending') {
+  if (!['pending', 'in_progress', 'rework_required'].includes(workOrder.status)
+    || workOrder.assignmentState !== 'pending') {
     return fail(res, 409, 'Only a pending assignment can be declined');
   }
   const assignment = (workOrder.assignments || []).find(
@@ -750,7 +782,9 @@ exports.declineWorkOrder = asyncHandler(async (req, res) => {
   await setAvailability(req.user._id, 'available');
   await updateIncidentForWorkOrder({
     incidentId: updated.incident,
-    status: workOrder.status === 'rework_required' ? 'rework_required' : 'provider_assigned',
+    status: workOrder.status === 'in_progress'
+      ? 'in_progress'
+      : workOrder.status === 'rework_required' ? 'rework_required' : 'provider_assigned',
     actor: req.user,
     notes: 'Repair assignment declined; awaiting reassignment',
     metadata: { workOrderId: updated._id }
@@ -1130,14 +1164,12 @@ const addWorkOrderReview = async ({ workOrder, req, stage, decision, reason, ins
 
 const notifyRepairPersonnel = async (workOrder, title, message) => {
   if (!workOrder.assignedTo) return;
-  await createNotification({
-    recipient: workOrder.assignedTo._id || workOrder.assignedTo,
+  await notify(workOrder.assignedTo, {
     type: 'status_update',
     title,
     message,
-    data: { incidentId: workOrder.incident?._id || workOrder.incident, workOrderId: workOrder._id, link: `/repair/work-orders/${workOrder._id}` },
     priority: 'high'
-  });
+  }, workOrder);
 };
 
 exports.reviewCompletedWork = asyncHandler(async (req, res) => {

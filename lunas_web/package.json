@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "npm run prepare:standalone && node .next/standalone/server.js",
+    "prepare:standalone": "node scripts/prepare-standalone.mjs",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "npm run build && npm run prepare:standalone && node scripts/run-playwright.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.28.0",

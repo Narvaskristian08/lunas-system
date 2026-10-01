@@ -400,7 +400,9 @@ class ReportStatusEvent {
 
   String get citizenLabel {
     if (event == 'work_order_created') return 'Work Order Created';
-    if (status == 'repair_completed' || status == 'provider_review')
+    if (status == 'completed' ||
+        status == 'repair_completed' ||
+        status == 'provider_review')
       return 'Repair completed · awaiting Utility Provider review';
     if (status == 'provider_accepted')
       return 'Utility Provider accepted · awaiting City Engineering verification';

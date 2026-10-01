@@ -119,4 +119,35 @@ describe('Utility Provider work-order creation', () => {
     expect(WorkOrder.create).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(409);
   });
+
+  test('rejects a Utility Provider from another organization before creating a work order', async () => {
+    const incident = {
+      _id: '507f191e810c19729de860b1',
+      status: 'provider_assigned',
+      routing: {
+        responsibleOrganization: 'Dagupan Water District',
+        responsibleRole: 'utility_provider'
+      },
+      jurisdiction: { barangay: 'Poblacion Oeste' }
+    };
+    Incident.findById.mockResolvedValue(incident);
+    const res = response();
+
+    await createWorkOrder({
+      params: { id: incident._id },
+      body: {},
+      user: {
+        _id: '507f191e810c19729de860f1',
+        role: 'utility_provider',
+        utilityCompany: 'Different Utility Organization'
+      }
+    }, res, jest.fn());
+
+    expect(WorkOrder.findOne).not.toHaveBeenCalled();
+    expect(WorkOrder.create).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Only the assigned Utility Provider organization may create a work order'
+    }));
+  });
 });

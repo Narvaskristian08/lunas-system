@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const {
+  DAGUPAN_BARANGAYS,
+  canonicalizeBarangay,
+  isRecognizedBarangay
+} = require('../data/dagupanBarangays');
 
 /**
  * Validate MongoDB ObjectId
@@ -113,14 +118,6 @@ exports.sanitizeInput = (input) => {
  * @param {String} barangay - Barangay name
  * @returns {Boolean} Is valid
  */
-const BARANGAYS = [
-    'Bacayao Norte', 'Bacayao Sur', 'Barangay I', 'Barangay II', 'Barangay III',
-    'Barangay IV', 'Bolosan', 'Bonuan Binloc', 'Bonuan Boquig', 'Bonuan Gueset',
-    'Calmay', 'Carael', 'Caranglaan', 'Herrero', 'Lasip Chico', 'Lasip Grande',
-    'Lomboy', 'Lucao', 'Malued', 'Mamalingling', 'Mangin', 'Mayombo', 'Pantal',
-    'Poblacion Oeste', 'Pogo Chico', 'Pogo Grande', 'Pugaro Suit', 'Salapingao',
-    'Salisay', 'Tambac', 'Tapuac', 'Tebeng'
-  ];
-
-exports.BARANGAYS = Object.freeze(BARANGAYS);
-exports.isValidBarangay = barangay => BARANGAYS.includes(barangay);
+exports.BARANGAYS = DAGUPAN_BARANGAYS;
+exports.canonicalizeBarangay = canonicalizeBarangay;
+exports.isValidBarangay = isRecognizedBarangay;

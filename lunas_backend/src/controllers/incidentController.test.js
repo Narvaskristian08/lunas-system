@@ -33,6 +33,7 @@ const { findPossibleDuplicateCandidates } = require('../services/duplicateDetect
 const evidenceService = require('../services/evidenceService');
 const {
   createIncident,
+  getBarangays,
   getIncident,
   getIncidentHistory,
   getMyIncidents,
@@ -92,7 +93,7 @@ describe('citizen incident reporting', () => {
         location: {
           type: 'Point',
           coordinates: ['120.3387', '16.0433'],
-          address: { barangay: 'Poblacion Oeste', city: 'Dagupan City' }
+          address: { barangay: '  poblacion oeste ', city: 'dagupan city' }
         },
         priority: 'critical',
         privacyAcknowledged: true,
@@ -113,6 +114,10 @@ describe('citizen incident reporting', () => {
     expect(payload.reporter).toBe(req.user._id);
     expect(payload.priority).toBeUndefined();
     expect(payload.status).toBe('submitted');
+    expect(payload.location.address).toEqual(expect.objectContaining({
+      barangay: 'Poblacion Oeste',
+      city: 'Dagupan City'
+    }));
     expect(payload.statusHistory).toEqual(expect.arrayContaining([
       expect.objectContaining({ status: 'submitted', changedBy: req.user._id })
     ]));
@@ -124,6 +129,16 @@ describe('citizen incident reporting', () => {
       possibleDuplicateCandidateCount: 1
     }));
     expect(res.json.mock.calls[0][0].data).not.toHaveProperty('duplicateCandidates');
+  });
+
+  test('returns the canonical barangay options used by incident validation', () => {
+    const res = createResponse();
+    getBarangays({}, res);
+
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.data).toContain('Poblacion Oeste');
+    expect(payload.data).toContain('Barangay I');
+    expect(new Set(payload.data).size).toBe(payload.data.length);
   });
 
   test('does not let a citizen retrieve another citizen’s report', async () => {

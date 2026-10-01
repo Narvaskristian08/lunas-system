@@ -202,6 +202,71 @@ describe('work-order controller boundaries', () => {
     }));
   });
 
+  test('assigns an eligible same-organization worker and hands the incident to repair', async () => {
+    const workOrder = pendingWorkOrder();
+    const worker = {
+      ...assignedWorker,
+      isActive: true,
+      availability: 'available',
+      barangay: 'Poblacion Oeste'
+    };
+    const updated = pendingWorkOrder({
+      assignedTo: worker._id,
+      assignedBy: utilityProvider._id,
+      assignmentState: 'pending',
+      assignments: [{
+        _id: '507f191e810c19729de860e1',
+        assignee: worker._id,
+        assignedBy: utilityProvider._id,
+        status: 'pending',
+        active: true
+      }],
+      currentAssignment: '507f191e810c19729de860e1'
+    });
+    WorkOrder.findOne.mockReturnValue(scopedQuery(workOrder));
+    User.findById.mockResolvedValue(worker);
+    WorkOrder.findOneAndUpdate.mockResolvedValue(updated);
+    User.findByIdAndUpdate.mockResolvedValue(null);
+    Incident.findById.mockReturnValue(scopedQuery({ status: 'provider_assigned' }));
+    Incident.findOneAndUpdate.mockResolvedValue({ status: 'repair_assigned' });
+    const res = response();
+
+    await assignWorkOrder({
+      params: { id: workOrder._id },
+      body: { assigneeId: worker._id },
+      user: utilityProvider,
+      headers: {},
+      ip: '127.0.0.1'
+    }, res, jest.fn());
+
+    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: workOrder._id,
+        version: workOrder.version,
+        assignmentState: { $in: ['unassigned', 'declined'] }
+      }),
+      expect.objectContaining({
+        $set: expect.objectContaining({ assignedTo: worker._id, assignmentState: 'pending' })
+      }),
+      { new: true }
+    );
+    expect(User.findByIdAndUpdate).toHaveBeenCalledWith(worker._id, { availability: 'assigned' });
+    expect(Incident.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'provider_assigned' }),
+      expect.objectContaining({ $set: expect.objectContaining({ status: 'repair_assigned' }) }),
+      expect.objectContaining({ new: true, runValidators: true })
+    );
+    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
+      recipient: worker._id,
+      type: 'work_order_assigned',
+      data: expect.objectContaining({
+        incidentId: workOrder.incident,
+        workOrderId: workOrder._id
+      })
+    }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   test('records a worker decline only against that worker active assignment and reopens staffing', async () => {
     const assignment = {
       _id: '507f191e810c19729de860e1',

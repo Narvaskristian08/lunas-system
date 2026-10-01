@@ -113,7 +113,11 @@ export async function createWorkOrderAction(input: {
       undefined,
       "Work order created and ready for assignment.",
     );
-    if (result.ok) revalidatePath(`/validation-routing/${encodeURIComponent(incidentId)}`);
+    if (result.ok) {
+      revalidatePath("/work-orders/intake");
+      revalidatePath(`/work-orders/intake/${encodeURIComponent(incidentId)}`);
+      revalidatePath(`/validation-routing/${encodeURIComponent(incidentId)}`);
+    }
     return result;
   } catch (error) {
     return failedAction(error, "LUNAS could not create this work order. Please try again.");

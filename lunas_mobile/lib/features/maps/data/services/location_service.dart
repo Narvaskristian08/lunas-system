@@ -60,21 +60,30 @@ class LocationService {
         longitude,
       );
       final placemark = placemarks.firstOrNull;
+      if (placemark == null) throw const FormatException('No placemark');
       final parts = <String?>[
-        placemark?.street,
-        placemark?.subLocality,
-        placemark?.locality,
-        placemark?.administrativeArea,
-        placemark?.postalCode,
+        placemark.street,
+        placemark.subLocality,
+        placemark.locality,
+        placemark.administrativeArea,
+        placemark.postalCode,
+      ].whereType<String>().where((part) => part.trim().isNotEmpty).toSet();
+      final barangayCandidates = <String?>[
+        placemark.subLocality,
+        placemark.locality,
+        placemark.name,
       ].whereType<String>().where((part) => part.trim().isNotEmpty).toSet();
 
-      if (parts.isNotEmpty) {
-        return SelectedLocation(
-          latitude: latitude,
-          longitude: longitude,
-          address: parts.join(', '),
-        );
-      }
+      return SelectedLocation(
+        latitude: latitude,
+        longitude: longitude,
+        address: parts.isEmpty
+            ? 'Selected location (${latitude.toStringAsFixed(5)}, '
+                  '${longitude.toStringAsFixed(5)})'
+            : parts.join(', '),
+        barangayCandidates: barangayCandidates.toList(growable: false),
+        reverseGeocodingSucceeded: true,
+      );
     } catch (_) {
       // The geocoding plugin is unavailable on some web browsers. Coordinates
       // remain a useful, readable fallback instead of blocking selection.
@@ -86,6 +95,7 @@ class LocationService {
       address:
           'Selected location (${latitude.toStringAsFixed(5)}, '
           '${longitude.toStringAsFixed(5)})',
+      reverseGeocodingSucceeded: false,
     );
   }
 }

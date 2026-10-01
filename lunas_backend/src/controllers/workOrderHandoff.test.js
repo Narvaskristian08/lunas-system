@@ -13,7 +13,11 @@ const WorkOrder = require('../models/WorkOrder');
 const Incident = require('../models/Incident');
 const User = require('../models/User');
 const { createNotification } = require('../services/notificationService');
-const { reviewCompletedWork, finalReviewWorkOrder } = require('./workOrderController');
+const {
+  coordinateCityCorrection,
+  reviewCompletedWork,
+  finalReviewWorkOrder
+} = require('./workOrderController');
 
 const response = () => {
   const res = {};
@@ -86,7 +90,47 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
     );
     expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
       recipient: workOrder.assignedTo,
-      title: 'Corrective work requested'
+      title: 'Corrective work requested',
+      data: expect.objectContaining({
+        incidentId: workOrder.incident,
+        workOrderId: workOrder._id
+      })
+    }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('Utility Provider coordinates a City correction to the current Repair Personnel', async () => {
+    const workOrder = workOrderFixture('city_correction_required');
+    const updated = workOrderFixture('rework_required');
+    WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
+    WorkOrder.findOneAndUpdate.mockResolvedValue(updated);
+    Incident.findById.mockReturnValue(queryFor({ status: 'city_correction_required' }));
+    Incident.findOneAndUpdate.mockResolvedValue({
+      _id: workOrder.incident,
+      status: 'rework_required'
+    });
+    User.findByIdAndUpdate.mockResolvedValue(null);
+    const res = response();
+
+    await coordinateCityCorrection({
+      params: { id: workOrder._id },
+      user: {
+        _id: 'provider-1',
+        role: 'utility_provider',
+        utilityCompany: 'Dagupan Water District'
+      },
+      body: { instructions: 'Replace the failed seal and upload new evidence.' },
+      headers: {},
+      ip: '127.0.0.1'
+    }, res, jest.fn());
+
+    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
+      recipient: workOrder.assignedTo,
+      title: 'City Engineering requested corrective work',
+      data: expect.objectContaining({
+        incidentId: workOrder.incident,
+        workOrderId: workOrder._id
+      })
     }));
     expect(res.status).toHaveBeenCalledWith(200);
   });

@@ -17,6 +17,18 @@ high-entropy `LUNAS_SESSION_SECRET`. Open `http://localhost:3000`. The Next.js
 server-side session keeps backend tokens out of browser JavaScript. Backend
 configuration remains authoritative.
 
+`LUNAS_API_URL` is private server runtime configuration. In Docker it must use
+`http://backend:5000/api/v1`; never use host `localhost` to address the backend
+container. `NEXT_PUBLIC_API_URL` is a separate build-time, browser-facing URL.
+Production startup fails when `LUNAS_API_URL` or a non-placeholder
+`LUNAS_SESSION_SECRET` of at least 32 characters is missing.
+
+The Docker image uses Next.js standalone output and starts `server.js`
+directly. Playwright uses the same standalone server via
+`scripts/prepare-standalone.mjs`, which stages public/static assets before
+`scripts/run-playwright.mjs` starts and reliably stops that server. This avoids
+the unsupported `next start`/standalone combination and orphaned test servers.
+
 ## Role workspaces
 
 | Role | Web responsibility |

@@ -170,6 +170,43 @@ export interface WorkOrderQueueData {
   pagination: WorkOrderPagination;
 }
 
+export interface ProviderIncidentWorkOrder {
+  id: string;
+  reference?: string;
+  status?: string;
+  assignmentState?: string;
+}
+
+export interface ProviderRoutedIncident {
+  id: string;
+  reportNumber: string;
+  category?: string;
+  description?: string;
+  priority?: "critical" | "high" | "medium" | "low";
+  status: string;
+  createdAt?: string;
+  routedAt?: string;
+  responsibleOrganization?: string;
+  location: WorkOrderLocation;
+  images: WorkOrderEvidence[];
+  sla: WorkOrderSla;
+  workOrder?: ProviderIncidentWorkOrder;
+}
+
+export interface ProviderIncidentQueueData {
+  incidents: ProviderRoutedIncident[];
+  pagination: WorkOrderPagination;
+}
+
+export interface ProviderIncidentFilters {
+  page: number;
+  limit: number;
+  search?: string;
+  priority?: "critical" | "high" | "medium" | "low";
+  category?: string;
+  sortBy?: "newest" | "oldest" | "priority";
+}
+
 export interface WorkOrderFilters {
   page: number;
   limit: number;
@@ -365,6 +402,39 @@ function normalizeIncident(value: unknown): WorkOrderIncident | null {
   };
 }
 
+function normalizeProviderIncident(value: unknown): ProviderRoutedIncident | null {
+  const source = asRecord(value);
+  const id = identifier(source);
+  if (!id) return null;
+  const routing = asRecord(source.routing);
+  const rawPriority = asString(source.priority);
+  const priority = rawPriority && validPriorities.has(rawPriority)
+    ? rawPriority as ProviderRoutedIncident["priority"]
+    : undefined;
+  const rawWorkOrder = asRecord(source.workOrder);
+  const workOrderId = identifier(rawWorkOrder);
+  return {
+    id,
+    reportNumber: asString(source.reportNumber) ?? `Report ${id.slice(-6)}`,
+    category: asString(source.category),
+    description: asString(source.description),
+    priority,
+    status: asString(source.status) ?? "provider_assigned",
+    createdAt: asString(source.createdAt),
+    routedAt: asString(routing.routedAt),
+    responsibleOrganization: asString(routing.responsibleOrganization),
+    location: normalizeLocation(source.location),
+    images: asArray(source.images).map(normalizeEvidence),
+    sla: normalizeSla(source.sla),
+    workOrder: workOrderId ? {
+      id: workOrderId,
+      reference: asString(rawWorkOrder.reference) ?? asString(rawWorkOrder.orderNumber),
+      status: asString(rawWorkOrder.status),
+      assignmentState: asString(rawWorkOrder.assignmentState),
+    } : undefined,
+  };
+}
+
 function normalizeSla(value: unknown): WorkOrderSla {
   const source = asRecord(value);
   const state = asString(source.state) ?? asString(source.status) ?? "not_started";
@@ -454,6 +524,48 @@ export const defaultWorkOrderFilters: WorkOrderFilters = {
   sortBy: "newest",
 };
 
+export const defaultProviderIncidentFilters: ProviderIncidentFilters = {
+  page: 1,
+  limit: 20,
+  sortBy: "newest",
+};
+
+export function readProviderIncidentFilters(
+  searchParams: Record<string, string | string[] | undefined>,
+): ProviderIncidentFilters {
+  const page = Number(one(searchParams, "page"));
+  const limit = Number(one(searchParams, "limit"));
+  const priority = one(searchParams, "priority");
+  const sortBy = one(searchParams, "sortBy");
+  return {
+    page: Number.isInteger(page) && page > 0 ? page : defaultProviderIncidentFilters.page,
+    limit: Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : defaultProviderIncidentFilters.limit,
+    search: one(searchParams, "search")?.trim().slice(0, 100) || undefined,
+    priority: priority && validPriorities.has(priority)
+      ? priority as ProviderIncidentFilters["priority"]
+      : undefined,
+    category: one(searchParams, "category")?.trim().slice(0, 80) || undefined,
+    sortBy: sortBy === "oldest" || sortBy === "priority" || sortBy === "newest"
+      ? sortBy
+      : defaultProviderIncidentFilters.sortBy,
+  };
+}
+
+function providerIncidentQuery(filters: ProviderIncidentFilters) {
+  const query = new URLSearchParams({
+    page: String(filters.page),
+    limit: String(filters.limit),
+    status: "provider_assigned",
+    sortBy: filters.sortBy === "oldest"
+      ? "createdAt"
+      : filters.sortBy === "priority" ? "-priority" : "-createdAt",
+  });
+  if (filters.search) query.set("search", filters.search);
+  if (filters.priority) query.set("priority", filters.priority);
+  if (filters.category) query.set("category", filters.category);
+  return query.toString();
+}
+
 export function readWorkOrderFilters(searchParams: Record<string, string | string[] | undefined>): WorkOrderFilters {
   const page = Number(one(searchParams, "page"));
   const limit = Number(one(searchParams, "limit"));
@@ -512,6 +624,35 @@ export async function getWorkOrders(filters: WorkOrderFilters): Promise<WorkOrde
       total: pagination.total || (workOrders.length < pagination.limit ? workOrders.length : pagination.total),
     },
   };
+}
+
+export async function getProviderIncidentQueue(
+  filters: ProviderIncidentFilters,
+): Promise<ProviderIncidentQueueData> {
+  const accessToken = await requireAccessToken();
+  const response = await backendRequest<unknown>(`/incidents?${providerIncidentQuery(filters)}`, { accessToken });
+  const payload = responseData(response);
+  const incidents = responseEntries(payload)
+    .map(normalizeProviderIncident)
+    .filter((item): item is ProviderRoutedIncident => item !== null);
+  const pagination = readPagination(asRecord(response).pagination, filters);
+  return {
+    incidents,
+    pagination: {
+      ...pagination,
+      total: pagination.total || (incidents.length < pagination.limit ? incidents.length : pagination.total),
+    },
+  };
+}
+
+export async function getProviderIncident(id: string): Promise<ProviderRoutedIncident> {
+  const accessToken = await requireAccessToken();
+  const payload = responseData(await backendRequest<unknown>(`/incidents/${encodeURIComponent(id)}`, { accessToken }));
+  const incident = normalizeProviderIncident(payload);
+  if (!incident) {
+    throw new BackendApiError(502, "The LUNAS service returned an incomplete routed-incident record.");
+  }
+  return incident;
 }
 
 async function optionalResponse(path: string, accessToken: string): Promise<unknown | undefined> {

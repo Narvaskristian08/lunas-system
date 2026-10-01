@@ -178,6 +178,28 @@ describe('sequential incident review workflow', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  test('City Engineering cannot confirm an unrecognized legacy jurisdiction', async () => {
+    const legacy = {
+      ...submitted,
+      status: 'barangay_validated',
+      location: { ...submitted.location, address: { barangay: 'Poblacion West' } }
+    };
+    Incident.findOne.mockReturnValueOnce(queryFor(legacy));
+    const res = response();
+
+    await confirmIncident({
+      params: { id: legacy._id },
+      user: cityEngineer,
+      body: {}
+    }, res, jest.fn());
+
+    expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('recognized Dagupan barangay')
+    }));
+  });
+
   test('City Engineering clarification requires a reason and returns the report to Barangay review', async () => {
     const req = {
       params: { id: submitted._id },

@@ -88,20 +88,33 @@ function AssignmentPanel({
 }) {
   const [assigneeId, setAssigneeId] = useState("");
   const [reason, setReason] = useState("");
+  const [confirmReassignment, setConfirmReassignment] = useState(false);
   const [pending, startTransition] = useTransition();
   const hasAssignment = Boolean(workOrder.currentAssignment || workOrder.assignee);
+  const isDeclinedHandoff = workOrder.status === "in_progress" && workOrder.assignmentState === "declined";
+  const isReassignment = hasAssignment || isDeclinedHandoff;
   const canChangeAssignment = ["pending", "accepted", "in_progress", "rework_required", "declined", "reassigned"].includes(workOrder.status);
+  const selectedPerson = eligiblePersonnel.find((person) => person.id === assigneeId);
+
+  const runAssignment = () => {
+    startTransition(async () => {
+      const result = isReassignment
+        ? await reassignWorkOrderAction({ workOrderId: workOrder.id, assigneeId, reason })
+        : await assignWorkOrderAction({ workOrderId: workOrder.id, assigneeId });
+      setConfirmReassignment(false);
+      onResult(result);
+    });
+  };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!assigneeId || !canChangeAssignment) return;
-    if (hasAssignment && !reason.trim()) return;
-    startTransition(async () => {
-      const result = hasAssignment
-        ? await reassignWorkOrderAction({ workOrderId: workOrder.id, assigneeId, reason })
-        : await assignWorkOrderAction({ workOrderId: workOrder.id, assigneeId });
-      onResult(result);
-    });
+    if (isReassignment && !reason.trim()) return;
+    if (isReassignment) {
+      setConfirmReassignment(true);
+      return;
+    }
+    runAssignment();
   };
 
   return (
@@ -118,22 +131,35 @@ function AssignmentPanel({
             <StatusBadge tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge>
           </div>
           {workOrder.currentAssignment?.assignedAt ? <p className="mt-3 text-xs text-slate-600">Assigned {formatDateTime(workOrder.currentAssignment.assignedAt)}</p> : null}
+          {workOrder.assignmentState === "pending" && workOrder.status === "in_progress" ? <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><span className="font-semibold">Pending reassignment acceptance.</span> Repair progress remains at {workOrder.progressPercent}% and field updates are paused until the new assignee accepts.</p> : null}
           {workOrder.currentAssignment?.declineReason ? <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-900"><span className="font-semibold">Declined:</span> {workOrder.currentAssignment.declineReason}</p> : null}
         </div>
 
         {canChangeAssignment ? <form onSubmit={submit} className="space-y-3">
-          <label className="block text-sm font-semibold text-slate-800">{hasAssignment ? "Reassign to" : "Assign repair personnel"}
+          <label className="block text-sm font-semibold text-slate-800">{isReassignment ? "Reassign to" : "Assign repair personnel"}
             <select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)} required className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
               <option value="">Select eligible personnel</option>
               {eligiblePersonnel.map((person) => <option key={person.id} value={person.id}>{personName(person)}{person.team ? ` · ${person.team}` : ""}{person.availability ? ` · ${titleCase(person.availability)}` : ""}</option>)}
             </select>
           </label>
-          {hasAssignment ? <label className="block text-sm font-semibold text-slate-800">Reassignment reason
+          {isReassignment ? <label className="block text-sm font-semibold text-slate-800">Reassignment reason
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} required minLength={2} maxLength={500} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain why this assignment must change" />
           </label> : null}
-          {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={hasAssignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{hasAssignment ? "Reassign work order" : "Assign work order"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No eligible repair personnel are currently available for this work order. Availability and organization scope are determined by the backend.</p>}
+          {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={isReassignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{isReassignment ? "Reassign work order" : "Assign work order"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No eligible repair personnel are currently available for this work order. Availability and organization scope are determined by the backend.</p>}
         </form> : <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">Assignment is locked while this work awaits provider or City Engineering review.</p>}
       </div>
+      <ConfirmationDialog
+        open={confirmReassignment}
+        icon="none"
+        title="Confirm repair handoff"
+        description={`Reassign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected repair personnel"}? Existing progress, evidence, history, and the SLA deadline will be preserved, and field updates will pause until acceptance.`}
+        confirmLabel="Confirm reassignment"
+        loading={pending}
+        onClose={() => !pending && setConfirmReassignment(false)}
+        onConfirm={runAssignment}
+      >
+        <p className="rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700"><span className="font-semibold">Reason:</span> {reason.trim()}</p>
+      </ConfirmationDialog>
     </Card>
   );
 }
@@ -148,7 +174,7 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
   const isCorrectionResubmission = workOrder.status === "in_progress"
     && workOrder.progressPercent === 100
     && workOrder.history.some((event) => event.type === "provider_correction_requested" || event.type === "city_returned");
-  const canAccept = ["pending", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "pending";
+  const canAccept = ["pending", "in_progress", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "pending";
   const canStart = ["accepted", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "accepted";
   const canProgress = ["in_progress"].includes(workOrder.status) && workOrder.assignmentState === "accepted";
   const nextValues = isCorrectionResubmission ? [100] : progressValues.filter((value) => value > workOrder.progressPercent);

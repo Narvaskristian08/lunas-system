@@ -11,6 +11,7 @@ const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
 const { startSLAMonitor } = require('./services/slaService');
+const { validateRuntimeConfig } = require('./config/runtime');
 
 const app = express();
 
@@ -67,6 +68,17 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Readiness includes the database dependency used by every durable workflow.
+// Optional integrations (AI, push, email and storage) report their own errors
+// without preventing the core API from starting.
+app.get('/health/ready', (req, res) => {
+  const databaseConnected = mongoose.connection.readyState === 1;
+  res.status(databaseConnected ? 200 : 503).json({
+    status: databaseConnected ? 'ready' : 'not_ready',
+    dependencies: { mongodb: databaseConnected ? 'connected' : 'disconnected' }
+  });
+});
+
 // API routes
 app.use(`/api/${process.env.API_VERSION || 'v1'}`, routes);
 
@@ -84,10 +96,7 @@ app.use(errorHandler);
 // MongoDB connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
     logger.info('MongoDB connected successfully');
   } catch (error) {
     logger.error('MongoDB connection error:', error);
@@ -100,6 +109,7 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    validateRuntimeConfig();
     await connectDB();
     
     app.listen(PORT, () => {

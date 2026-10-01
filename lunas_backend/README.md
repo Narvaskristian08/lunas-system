@@ -20,6 +20,11 @@ Private evidence storage, activation email, Maps, optional push, and AI
 inference require their matching environment configuration. A health response
 does not establish that those integrations are available.
 
+`/health` is process liveness. `/health/ready` returns success only while the
+MongoDB connection required by durable workflows is connected. Production
+startup rejects missing or placeholder JWT secrets, reused access/refresh
+secrets, an invalid MongoDB URI, and missing Turnstile configuration.
+
 ## Enforcement summary
 
 - Citizens self-register as `citizen` and can read only their own reports.

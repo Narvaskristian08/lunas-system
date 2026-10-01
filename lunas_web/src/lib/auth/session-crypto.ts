@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { sessionSecret } from "@/lib/config/runtime";
 
 export const SESSION_DURATION_SECONDS = 60 * 60 * 8;
 export const SESSION_VERSION = 2;
@@ -22,12 +23,8 @@ export type DecryptedSession = {
 };
 
 function getSessionKey() {
-  const secret = process.env.LUNAS_SESSION_SECRET;
-  if (!secret && process.env.NODE_ENV === "production") {
-    throw new Error("LUNAS_SESSION_SECRET must be configured in production.");
-  }
   return createHash("sha256")
-    .update(secret ?? "lunas-local-development-session-secret")
+    .update(sessionSecret())
     .digest();
 }
 

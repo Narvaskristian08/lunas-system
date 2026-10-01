@@ -59,8 +59,8 @@ final GoRouter appRouter = GoRouter(
       '/reset-password',
     };
     final isPublic = publicLocations.contains(location);
-    final isCitizenLocation = _isCitizenLocation(location);
-    final isRepairLocation = _isRepairLocation(location);
+    final isCitizenLocation = isCitizenWorkspaceLocation(location);
+    final isRepairLocation = isRepairWorkspaceLocation(location);
     switch (authController.status) {
       case AuthStatus.initializing:
         return location == '/splash' ? null : '/splash';
@@ -246,6 +246,19 @@ final GoRouter appRouter = GoRouter(
           WorkOrderDetailsScreen(workOrderId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
+      path: '/repair/notifications',
+      builder: (_, _) => const NotificationsScreen(repairWorkspace: true),
+    ),
+    GoRoute(
+      path: '/repair/notifications/details',
+      builder: (_, state) => NotificationDetailsScreen(
+        repairWorkspace: true,
+        item: state.extra is NotificationData
+            ? state.extra as NotificationData
+            : null,
+      ),
+    ),
+    GoRoute(
       path: '/repair/profile',
       builder: (_, _) => const RepairProfileScreen(),
     ),
@@ -254,7 +267,7 @@ final GoRouter appRouter = GoRouter(
       Scaffold(body: Center(child: Text('Page not found: ${state.uri.path}'))),
 );
 
-bool _isCitizenLocation(String location) =>
+bool isCitizenWorkspaceLocation(String location) =>
     location == '/citizen' ||
     location == '/profile' ||
     location == '/notifications' ||
@@ -262,7 +275,7 @@ bool _isCitizenLocation(String location) =>
     location == '/reports' ||
     location.startsWith('/reports/');
 
-bool _isRepairLocation(String location) =>
+bool isRepairWorkspaceLocation(String location) =>
     location == '/repair' || location.startsWith('/repair/');
 
 class _MissingRouteDataScreen extends StatelessWidget {

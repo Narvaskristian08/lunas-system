@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const {
   createIncidentValidation,
+  updateJurisdictionValidation,
   registerValidation,
   validateIncidentDecisionValidation,
   routeIncidentValidation,
@@ -12,6 +13,12 @@ const runRules = async (rules, body, files = {}, user = { role: 'citizen' }) => 
   const req = { body, files, user };
   await Promise.all(rules.map((rule) => rule.run(req)));
   return validationResult(req).array();
+};
+
+const runRulesWithRequest = async (rules, body, files = {}, user = { role: 'citizen' }) => {
+  const req = { body, files, user };
+  for (const rule of rules) await rule.run(req);
+  return { req, errors: validationResult(req).array() };
 };
 
 describe('request validation', () => {
@@ -48,20 +55,62 @@ describe('request validation', () => {
   });
 
   test('a well-formed JSON report with evidence metadata validates', async () => {
-    const errors = await runRules(createIncidentValidation, {
+    const { req, errors } = await runRulesWithRequest(createIncidentValidation, {
       category: 'road',
       subcategory: 'pothole',
       description: 'A large pothole is causing a hazard for motorists.',
       location: {
         type: 'Point',
         coordinates: [120.3387, 16.0433],
-        address: { barangay: 'Poblacion Oeste', city: 'Dagupan City' }
+        address: { barangay: '  poblacion   oeste ', city: 'dagupan city' }
       },
       images: [{ url: 'https://storage.example/evidence.jpg' }],
       privacyAcknowledged: true
     });
 
     expect(errors).toEqual([]);
+    expect(req.body.location.address).toEqual(expect.objectContaining({
+      barangay: 'Poblacion Oeste',
+      city: 'Dagupan City'
+    }));
+  });
+
+  test('rejects invalid and misspelled incident barangays', async () => {
+    const errors = await runRules(createIncidentValidation, {
+      category: 'road',
+      description: 'A large pothole is causing a hazard for motorists.',
+      location: {
+        type: 'Point',
+        coordinates: [120.3387, 16.0433],
+        address: { barangay: 'Poblacion West', city: 'Dagupan City' }
+      },
+      images: [{ url: 'https://storage.example/evidence.jpg' }],
+      privacyAcknowledged: true
+    });
+
+    expect(errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        path: 'location.address.barangay',
+        msg: 'Choose a recognized Dagupan barangay'
+      })
+    ]));
+  });
+
+  test('normalizes and validates authorized jurisdiction updates', async () => {
+    const valid = await runRulesWithRequest(updateJurisdictionValidation, {
+      barangay: 'pantal',
+      city: 'DAGUPAN CITY'
+    }, {}, { role: 'city_engineer' });
+    const invalid = await runRules(updateJurisdictionValidation, {
+      barangay: 'Pantall',
+      city: 'Dagupan City'
+    }, {}, { role: 'city_engineer' });
+
+    expect(valid.errors).toEqual([]);
+    expect(valid.req.body).toEqual({ barangay: 'Pantal', city: 'Dagupan City' });
+    expect(invalid).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'barangay' })
+    ]));
   });
 
   test('requires citizen acknowledgement when evidence cannot be server-redacted', async () => {

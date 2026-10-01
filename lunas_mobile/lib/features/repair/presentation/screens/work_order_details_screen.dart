@@ -522,6 +522,13 @@ class _ProgressCard extends StatelessWidget {
         LinearProgressIndicator(value: workOrder.progressPercent / 100),
         const SizedBox(height: AppSpacing.sm),
         Text(workOrder.progressStage.label),
+        if (workOrder.isPendingAcceptance &&
+            workOrder.status == RepairWorkOrderStatus.inProgress) ...[
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
+            'This is an in-progress handoff awaiting your acceptance. Existing progress and evidence are preserved; accept to resume from the current milestone.',
+          ),
+        ],
         if (workOrder.isReadyForCompletion) ...[
           const SizedBox(height: AppSpacing.sm),
           const Text('Your completion is awaiting Utility Provider review. This repair is not yet verified or resolved.'),

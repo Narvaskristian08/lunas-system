@@ -22,6 +22,12 @@ const {
   processAndUploadEvidence
 } = require('../services/evidenceService');
 const logger = require('../utils/logger');
+const {
+  DAGUPAN_BARANGAYS,
+  DAGUPAN_CITY,
+  canonicalizeBarangay,
+  canonicalizeDagupanCity
+} = require('../data/dagupanBarangays');
 
 const clampUnit = (value) => {
   const numericValue = Number(value);
@@ -305,6 +311,14 @@ const normalizeLegacyImages = (images = [], privacyAcknowledged = false) => imag
 // @access  Private (Citizen)
 exports.createIncident = asyncHandler(async (req, res) => {
   const { category, subcategory, description, location } = req.body;
+  const barangay = canonicalizeBarangay(location?.address?.barangay);
+  const city = canonicalizeDagupanCity(location?.address?.city);
+  if (!barangay || !city) {
+    return res.status(400).json({
+      success: false,
+      message: 'Choose a recognized Dagupan barangay and confirm Dagupan City'
+    });
+  }
   const coordinates = location.coordinates.map(Number);
   const files = getUploadedEvidenceFiles(req);
   const privacyAcknowledged = req.body.privacyAcknowledged === true || req.body.privacyAcknowledged === 'true';
@@ -338,7 +352,12 @@ exports.createIncident = asyncHandler(async (req, res) => {
       location: {
         ...location,
         type: 'Point',
-        coordinates
+        coordinates,
+        address: {
+          ...location.address,
+          barangay,
+          city: DAGUPAN_CITY
+        }
       },
       images,
       aiAnalysis,
@@ -366,6 +385,7 @@ exports.createIncident = asyncHandler(async (req, res) => {
       details: {
         reportNumber: incident.reportNumber,
         category: incident.category,
+        barangay,
         possibleDuplicateCandidateCount: possibleDuplicateCandidates.length,
         privacyAcknowledged
       },
@@ -431,6 +451,14 @@ exports.createIncident = asyncHandler(async (req, res) => {
     }
     throw error;
   }
+});
+
+// @desc    Get canonical Dagupan barangays for authenticated client selection
+// @route   GET /api/v1/incidents/barangays
+// @access  Private
+exports.getBarangays = (req, res) => res.status(200).json({
+  success: true,
+  data: DAGUPAN_BARANGAYS
 });
 
 // @desc    Get incidents visible to the current user
@@ -653,11 +681,16 @@ const recordOfficialAction = async ({ action, incident, req, details, changes })
   });
 };
 
-const normalizeJurisdiction = (incident, input = {}) => ({
-  ...defaultJurisdictionFor(incident),
-  barangay: normalizeText(input.barangay) || defaultJurisdictionFor(incident).barangay,
-  city: normalizeText(input.city) || defaultJurisdictionFor(incident).city
-});
+const normalizeJurisdiction = (incident, input = {}) => {
+  const fallback = defaultJurisdictionFor(incident);
+  return {
+    ...fallback,
+    barangay: canonicalizeBarangay(
+      normalizeText(input.barangay) || fallback.barangay
+    ),
+    city: canonicalizeDagupanCity(normalizeText(input.city) || fallback.city)
+  };
+};
 
 const normalizeRouting = (input = {}) => {
   return {
@@ -833,7 +866,10 @@ exports.validateIncident = asyncHandler(async (req, res) => {
   if (!before) return respondNotFound(res);
   if (!['submitted', 'clarification_required'].includes(before.status)) return respondConflict(res);
   const jurisdiction = normalizeJurisdiction(before, req.body.jurisdiction || {});
-  if (!jurisdiction.barangay || !canConfirmJurisdiction(req.user, jurisdiction)) {
+  if (!jurisdiction.barangay || !jurisdiction.city) {
+    return res.status(400).json({ success: false, message: 'Choose a recognized Dagupan barangay' });
+  }
+  if (!canConfirmJurisdiction(req.user, jurisdiction)) {
     return res.status(403).json({ success: false, message: 'You are not authorized to confirm this jurisdiction' });
   }
   const now = new Date();
@@ -900,8 +936,8 @@ exports.confirmIncident = asyncHandler(async (req, res) => {
   if (!before) return respondNotFound(res);
   if (before.status !== 'barangay_validated') return respondConflict(res);
   const jurisdiction = normalizeJurisdiction(before, req.body.jurisdiction || {});
-  if (!jurisdiction.barangay) {
-    return res.status(400).json({ success: false, message: 'A barangay is required for City Engineering review' });
+  if (!jurisdiction.barangay || !jurisdiction.city) {
+    return res.status(400).json({ success: false, message: 'Choose a recognized Dagupan barangay for City Engineering review' });
   }
   const now = new Date();
   const confirmedJurisdiction = { ...jurisdiction, confirmedBy: req.user._id, confirmedAt: now };
@@ -1154,7 +1190,10 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
     return res.status(409).json({ success: false, message: 'Jurisdiction can only be confirmed during City Engineering review' });
   }
   const jurisdiction = normalizeJurisdiction(before, req.body);
-  if (!jurisdiction.barangay || !canConfirmJurisdiction(req.user, jurisdiction)) {
+  if (!jurisdiction.barangay || !jurisdiction.city) {
+    return res.status(400).json({ success: false, message: 'Choose a recognized Dagupan barangay' });
+  }
+  if (!canConfirmJurisdiction(req.user, jurisdiction)) {
     return res.status(403).json({ success: false, message: 'You are not authorized to set this jurisdiction' });
   }
   const now = new Date();

@@ -68,8 +68,13 @@ class Config:
         
         # Security
         self.MAX_REQUEST_SIZE = int(os.getenv('MAX_REQUEST_SIZE', 10485760))
-        # Allow all origins for local QA testing (file://, localhost, etc.)
-        self.ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*').split(',')
+        # Restrict the default to the local backend. Additional local QA
+        # origins must be opted into explicitly through the environment.
+        self.ALLOWED_ORIGINS = [
+            origin.strip()
+            for origin in os.getenv('ALLOWED_ORIGINS', 'http://localhost:5000').split(',')
+            if origin.strip()
+        ]
         self.API_KEY = os.getenv('API_KEY', None)
         
         # Logging

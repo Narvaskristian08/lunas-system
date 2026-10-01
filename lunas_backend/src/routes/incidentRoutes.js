@@ -19,6 +19,7 @@ const {
   updateIncidentJurisdiction,
   routeIncident,
   getNearbyIncidents,
+  getBarangays,
 } = require('../controllers/incidentController');
 const { createWorkOrder } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
@@ -57,6 +58,7 @@ router.get(
   getNearbyIncidents
 );
 router.get('/my', protect, authorize('citizen'), paginationValidation, validate, getMyIncidents);
+router.get('/barangays', protect, getBarangays);
 router.get(
   '/pending-validation',
   protect,

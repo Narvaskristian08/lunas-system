@@ -8,6 +8,7 @@ import {
   ScrollText,
   Timer,
   UserRound,
+  Route,
 } from "lucide-react";
 import type { Permission } from "@/types";
 
@@ -31,6 +32,7 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Maintenance operations",
     items: [
+      { label: "Routed incidents", href: "/work-orders/intake", icon: Route, permission: "work_orders.manage" },
       { label: "Work orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view" },
       { label: "SLA monitor", href: "/sla", icon: Timer, permission: "sla.view" },
     ],

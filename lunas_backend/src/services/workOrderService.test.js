@@ -101,9 +101,14 @@ describe('work-order domain rules', () => {
       role: 'barangay_official',
       barangay: 'Other Barangay'
     }, workOrder)).toBe(false);
-    expect(buildWorkOrderScope(repairWorker)).toEqual(expect.objectContaining({
-      assignedTo: repairWorker._id
-    }));
+    // This exact scope backs both GET /work-orders/my (used by the repair
+    // mobile app) and repair-personnel detail reads.
+    expect(buildWorkOrderScope(repairWorker)).toEqual({
+      assignedTo: repairWorker._id,
+      assignmentState: { $in: ['pending', 'accepted'] },
+      responsibleOrganization: 'Dagupan Water District',
+      'jurisdiction.barangay': 'Poblacion Oeste'
+    });
   });
 
   test('derives approaching and overdue SLA state in the backend', () => {

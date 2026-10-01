@@ -1,6 +1,6 @@
 const { body, query } = require('express-validator');
 const { AUTHORIZED_ROLES, ACCOUNT_STATUSES } = require('../utils/accountPolicy');
-const { isValidBarangay } = require('../utils/validators');
+const { canonicalizeBarangay, isValidBarangay } = require('../utils/validators');
 
 const PROFILE_FIELDS = ['firstName', 'lastName', 'phone', 'personnelId', 'position', 'organization', 'role',
   'barangay', 'utilityCompany', 'repairOrganization', 'repairTeam', 'approvalAuthority', 'approvalReference'];
@@ -21,7 +21,9 @@ const profileRules = [
   body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
   text('personnelId', 80, true), text('position', 120), text('organization', 160),
   body('role').isIn(AUTHORIZED_ROLES).withMessage('Choose a supported personnel role'),
-  body('barangay').optional().isString().bail().trim().custom(value => !value || isValidBarangay(value))
+  body('barangay').optional().isString().bail().trim()
+    .customSanitizer(value => canonicalizeBarangay(value) || value)
+    .custom(value => !value || isValidBarangay(value))
     .withMessage('Choose a recognized Dagupan barangay'),
   text('utilityCompany', 160, true), text('repairOrganization', 160, true), text('repairTeam', 120, true),
   text('approvalAuthority', 160), text('approvalReference', 500),

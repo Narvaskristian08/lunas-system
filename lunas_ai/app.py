@@ -23,10 +23,11 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = config.MAX_REQUEST_SIZE
     app.config['JSON_SORT_KEYS'] = False
     
-    # CORS - Allow all origins for local QA testing
+    # Browser origins are explicit even though the production container is
+    # private to the backend network. Local QA can opt into additional origins.
     CORS(app, resources={
         r"/api/*": {
-            "origins": "*",
+            "origins": config.ALLOWED_ORIGINS,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "expose_headers": ["Content-Type"],

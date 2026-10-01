@@ -19,9 +19,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
-        content: const Text(
-          'You will be signed out on this device.',
-        ),
+        content: const Text('You will be signed out on this device.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -49,7 +47,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
         title: 'Repair account',
         subtitle: 'Profile and account access',
       ),
-      selectedNavigationIndex: 2,
+      selectedNavigationIndex: 3,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

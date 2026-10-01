@@ -7,16 +7,37 @@ import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+
+/// Returns a role-safe destination derived only from a server resource ID.
+/// Notification-provided URL strings are intentionally ignored.
+String? notificationDestination(
+  NotificationData item, {
+  required bool repairWorkspace,
+}) {
+  final resourceId = repairWorkspace ? item.workOrderId : item.incidentId;
+  if (resourceId == null || resourceId.trim().isEmpty) return null;
+  final encodedId = Uri.encodeComponent(resourceId);
+  return repairWorkspace
+      ? RepairRoutes.workOrder(encodedId)
+      : '/reports/$encodedId';
+}
 
 class NotificationDetailsScreen extends StatelessWidget {
-  const NotificationDetailsScreen({this.item, super.key});
+  const NotificationDetailsScreen({
+    this.item,
+    this.repairWorkspace = false,
+    super.key,
+  });
 
   final NotificationData? item;
+  final bool repairWorkspace;
 
   @override
   Widget build(BuildContext context) {
-    final item =
-        this.item ??
+    final resolvedItem =
+        item ??
         GoRouterState.of(context).extra as NotificationData? ??
         const NotificationData(
           id: 'notification',
@@ -27,11 +48,20 @@ class NotificationDetailsScreen extends StatelessWidget {
           color: AppColorsLight.brandBase,
           kind: NotificationKind.update,
         );
+    final destination = notificationDestination(
+      resolvedItem,
+      repairWorkspace: repairWorkspace,
+    );
     return Scaffold(
-      appBar: const LunasAppBar(
-        title: 'Notification Details',
-        showBackButton: true,
-      ),
+      appBar: repairWorkspace
+          ? const RepairAppBar(
+              title: 'Notification details',
+              showBackButton: true,
+            )
+          : const LunasAppBar(
+              title: 'Notification Details',
+              showBackButton: true,
+            ),
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -53,15 +83,19 @@ class NotificationDetailsScreen extends StatelessWidget {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        color: item.color.withValues(alpha: .1),
+                        color: resolvedItem.color.withValues(alpha: .1),
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
-                      child: Icon(item.icon, color: item.color, size: 35),
+                      child: Icon(
+                        resolvedItem.icon,
+                        color: resolvedItem.color,
+                        size: 35,
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   Text(
-                    item.title,
+                    resolvedItem.title,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontSize: 27,
@@ -70,50 +104,67 @@ class NotificationDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    item.time,
+                    resolvedItem.time,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: AppSpacing.xxl),
                   LunasCard(
                     child: Text(
-                      item.message,
+                      resolvedItem.message,
                       style: Theme.of(
                         context,
                       ).textTheme.bodyMedium?.copyWith(height: 1.6),
                     ),
                   ),
-                  if (item.incidentId != null || item.location != null) ...[
+                  if (_hasContext(resolvedItem)) ...[
                     const SizedBox(height: AppSpacing.md),
                     LunasCard(
                       child: Column(
                         children: [
-                          if (item.incidentId != null)
+                          if (repairWorkspace &&
+                              resolvedItem.workOrderId != null)
+                            const _DetailRow(
+                              icon: Icons.engineering_outlined,
+                              label: 'Work order',
+                              value: 'Linked assigned work',
+                            ),
+                          if (!repairWorkspace &&
+                              resolvedItem.incidentId != null)
                             _DetailRow(
                               icon: Icons.description_outlined,
                               label: 'Report ID',
-                              value: item.reportNumber ?? 'Linked report',
+                              value:
+                                  resolvedItem.reportNumber ?? 'Linked report',
                             ),
-                          if (item.incidentId != null && item.location != null)
+                          if (_hasResource(resolvedItem) &&
+                              resolvedItem.location != null)
                             const Divider(height: AppSpacing.xl),
-                          if (item.location != null)
+                          if (resolvedItem.location != null)
                             _DetailRow(
                               icon: Icons.location_on_outlined,
                               label: 'Location',
-                              value: item.location!,
+                              value: resolvedItem.location!,
                             ),
                         ],
                       ),
                     ),
                   ],
-                  if (item.incidentId != null) ...[
+                  if (destination != null) ...[
                     const SizedBox(height: AppSpacing.xl),
                     LunasButton(
-                      label: 'View Report',
+                      label: repairWorkspace
+                          ? 'View Assigned Work'
+                          : 'View Report',
                       icon: Icons.arrow_forward_rounded,
-                      onPressed: () => context.push(
-                        '/reports/${Uri.encodeComponent(item.incidentId!)}',
-                      ),
+                      onPressed: () => context.push(destination),
+                    ),
+                  ] else if (repairWorkspace) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      'This notification is not linked to an accessible assigned work order.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ],
@@ -124,6 +175,12 @@ class NotificationDetailsScreen extends StatelessWidget {
       ),
     );
   }
+
+  bool _hasResource(NotificationData value) =>
+      repairWorkspace ? value.workOrderId != null : value.incidentId != null;
+
+  bool _hasContext(NotificationData value) =>
+      _hasResource(value) || value.location != null;
 }
 
 class _DetailRow extends StatelessWidget {

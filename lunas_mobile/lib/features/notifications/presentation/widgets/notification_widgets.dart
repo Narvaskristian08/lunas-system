@@ -92,10 +92,12 @@ class NotificationCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                if (item.incidentId != null) ...[
+                if (item.workOrderId != null || item.incidentId != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    item.reportNumber ?? 'Linked report',
+                    item.workOrderId != null
+                        ? 'Linked work order'
+                        : item.reportNumber ?? 'Linked report',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColorsLight.brandBase,
                     ),

@@ -10,6 +10,21 @@ class ReportService {
 
   final ApiClient _apiClient;
 
+  Future<List<String>> getBarangays() async {
+    final payload = await _apiClient.get('/incidents/barangays');
+    final data = payload['data'];
+    final values = data is List
+        ? data
+              .map((value) => value.toString().trim())
+              .where((value) => value.isNotEmpty)
+              .toList(growable: false)
+        : const <String>[];
+    if (values.isEmpty) {
+      throw StateError('No recognized Dagupan barangays are available.');
+    }
+    return values;
+  }
+
   Future<List<IncidentReport>> getMyReports({int limit = 20}) async {
     final payload = await _apiClient.get(
       '/incidents/my',
@@ -36,7 +51,10 @@ class ReportService {
         : const [];
     return rawHistory
         .whereType<Map>()
-        .map((event) => ReportStatusEvent.fromJson(Map<String, dynamic>.from(event)))
+        .map(
+          (event) =>
+              ReportStatusEvent.fromJson(Map<String, dynamic>.from(event)),
+        )
         .toList(growable: false);
   }
 
@@ -84,7 +102,9 @@ class ReportService {
         : const [];
     return values
         .whereType<Map>()
-        .map((value) => IncidentReport.fromJson(Map<String, dynamic>.from(value)))
+        .map(
+          (value) => IncidentReport.fromJson(Map<String, dynamic>.from(value)),
+        )
         .toList(growable: false);
   }
 

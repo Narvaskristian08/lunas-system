@@ -2,14 +2,12 @@ import { defineConfig } from "@playwright/test";
 
 const port = Number(process.env.PLAYWRIGHT_PORT || 3100);
 const baseURL = `http://127.0.0.1:${port}`;
-const accountUiTests = process.env.ACCOUNT_UI_TESTS === "true";
 
-// The production server requires a configured session key. Give the isolated
-// local account UI fixture one stable key when the opt-in test mode is used;
-// real deployments must continue to provide their own high-entropy value.
-if (accountUiTests && !process.env.LUNAS_SESSION_SECRET) {
-  process.env.LUNAS_SESSION_SECRET = "lunas-playwright-account-ui-test-secret";
-}
+// The standalone server always runs in production mode and therefore requires
+// explicit isolated test configuration. Real deployments must provide their
+// own unrelated, high-entropy session secret.
+process.env.LUNAS_SESSION_SECRET ??= "lunas-playwright-isolated-session-secret-only";
+process.env.LUNAS_API_URL ??= "http://127.0.0.1:5119/api/v1";
 
 export default defineConfig({
   testDir: "./tests",
@@ -24,11 +22,5 @@ export default defineConfig({
     headless: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-  },
-  webServer: {
-    command: `npm run start -- -p ${port}`,
-    url: `${baseURL}/login`,
-    reuseExistingServer: !accountUiTests,
-    timeout: 60_000,
   },
 });

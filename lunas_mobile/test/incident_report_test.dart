@@ -54,40 +54,37 @@ void main() {
     expect(report.statusChipLabel, '50% repair');
   });
 
-  test(
-    'keeps 100 percent repair visibility high level and awaiting verification',
-    () {
-      final report = IncidentReport.fromJson({
-        'id': 'incident-ready',
+  test('keeps completed repair visibility in Utility Provider review', () {
+    final report = IncidentReport.fromJson({
+      'id': 'incident-ready',
+      'status': 'completed',
+      'location': {
+        'coordinates': [120.3333, 16.0433],
+      },
+      'repair': {
         'status': 'completed',
-        'location': {
-          'coordinates': [120.3333, 16.0433],
-        },
-        'repair': {
+        'progressPercent': 100,
+        'readyForCompletion': true,
+      },
+      'statusHistory': [
+        {
           'status': 'completed',
           'progressPercent': 100,
-          'readyForCompletion': true,
+          'repairStage': 'ready_for_completion',
         },
-        'statusHistory': [
-          {
-            'status': 'completed',
-            'progressPercent': 100,
-            'repairStage': 'ready_for_completion',
-          },
-        ],
-      });
+      ],
+    });
 
-      expect(
-        report.currentStatusLabel,
-        'Repair Progress: 100% · Awaiting Verification',
-      );
-      expect(report.statusChipLabel, 'Awaiting verification');
-      expect(
-        report.statusHistory.single.citizenLabel,
-        contains('Awaiting Verification'),
-      );
-    },
-  );
+    expect(
+      report.currentStatusLabel,
+      'Repair completed · awaiting Utility Provider review',
+    );
+    expect(report.statusChipLabel, 'Provider review');
+    expect(
+      report.statusHistory.single.citizenLabel,
+      contains('awaiting Utility Provider review'),
+    );
+  });
 
   test(
     'keeps only the permitted server-provided decision reason for citizens',

@@ -14,6 +14,7 @@ class NotificationData {
     required this.kind,
     this.type = 'status_update',
     this.incidentId,
+    this.workOrderId,
     this.reportNumber,
     this.location,
     this.isRead = false,
@@ -28,8 +29,14 @@ class NotificationData {
   final IconData icon;
   final Color color;
   final NotificationKind kind;
+
   /// The MongoDB Incident `_id`. This is the only value used for navigation.
   final String? incidentId;
+
+  /// The backend work-order `_id`. Repair navigation is derived from this
+  /// resource identifier; server-provided link strings are never followed.
+  final String? workOrderId;
+
   /// Human-readable report number; display-only.
   final String? reportNumber;
   final String? location;
@@ -52,6 +59,7 @@ class NotificationData {
       color: _colorFor(type),
       kind: _kindFor(type),
       incidentId: _text(data['incidentId']),
+      workOrderId: _text(data['workOrderId']),
       reportNumber: _text(data['reportNumber']),
       location: _text(data['location'] ?? data['address']),
       isRead: json['isRead'] == true,
@@ -86,11 +94,14 @@ IconData _iconFor(String type) => switch (type) {
   'incident_validated' => Icons.verified_outlined,
   'incident_rejected' || 'duplicate_detected' => Icons.warning_amber_rounded,
   'incident_routed' => Icons.route_outlined,
-  'work_order_assigned' || 'work_order_reassigned' => Icons.engineering_outlined,
+  'work_order_assigned' ||
+  'work_order_reassigned' => Icons.engineering_outlined,
   'work_order_accepted' => Icons.assignment_turned_in_outlined,
   'work_order_declined' || 'repair_rejected' => Icons.replay_outlined,
-  'work_order_in_progress' || 'work_order_progress' => Icons.construction_outlined,
-  'work_order_completed' || 'repair_verified' => Icons.check_circle_outline_rounded,
+  'work_order_in_progress' ||
+  'work_order_progress' => Icons.construction_outlined,
+  'work_order_completed' ||
+  'repair_verified' => Icons.check_circle_outline_rounded,
   'sla_approaching' || 'sla_reminder' => Icons.schedule_outlined,
   'sla_overdue' || 'sla_escalation' => Icons.priority_high_rounded,
   _ => Icons.notifications_outlined,

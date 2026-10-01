@@ -36,6 +36,16 @@ See the [backend](./lunas_backend/README.md), [web](./lunas_web/README.md), and
 Private evidence storage, registration/activation email, Maps, optional push,
 and AI service behavior depend on real deployment configuration.
 
+## Docker Compose
+
+Copy the root `.env.example` to `.env`, replace all placeholder credentials,
+then run `docker compose config --quiet`, `docker compose build`, and
+`docker compose up -d`. The web BFF reaches the API over the private Compose
+hostname `backend:5000`; browser-facing URLs remain separate. MongoDB and AI
+are not published to the host, while web/API ports bind to loopback by default.
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for required secrets, optional
+integrations, health checks, profiles, and production reverse-proxy guidance.
+
 ## Local end-to-end demonstration
 
 The synthetic seed is explicitly local-only. Set `MONGODB_URI` to a local

@@ -11,6 +11,18 @@ describe('API security baseline', () => {
       });
   });
 
+  test('reports not ready until the required MongoDB dependency is connected', async () => {
+    await request(app)
+      .get('/health/ready')
+      .expect(503)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          status: 'not_ready',
+          dependencies: { mongodb: 'disconnected' }
+        });
+      });
+  });
+
   test('protects citizen report routes when no access token is supplied', async () => {
     await request(app)
       .get('/api/v1/incidents/my')

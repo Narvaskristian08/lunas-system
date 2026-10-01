@@ -8,18 +8,20 @@ configuration. The [root README](./README.md) is the canonical local setup and
 demo guide; product roles and transitions are defined in
 [LUNAS_PROJECT_SCOPE.md](./LUNAS_PROJECT_SCOPE.md).
 
-## Start MongoDB only
+## Database development
 
-For host-run backend/web development, start the Compose database:
+The Compose MongoDB service is intentionally private and is consumed by the
+containerized backend through the `mongodb` service hostname. Start the core
+stack with:
 
 ```bash
-docker compose up -d mongodb
+docker compose up -d mongodb backend web
 ```
 
-The default local URI is
-`mongodb://admin:admin123@localhost:27017/lunas_db?authSource=admin`.
-Replace the development credentials before exposing this database outside the
-local machine.
+For a backend running directly on the host, use a separately installed local
+MongoDB instance and `mongodb://localhost:27017/lunas_db`. Do not publish the
+Compose database unless an explicit, loopback-only development override is in
+place.
 
 ## Start the Compose services
 
@@ -35,9 +37,9 @@ docker compose logs -f backend web
 ```
 
 The API health URL is `http://localhost:5000/health`; the web app is
-`http://localhost:3000`; AI health, when enabled, is
-`http://localhost:5001/api/v1/health`. MongoDB data is held in the Compose
-volume. `docker compose down` stops services; removing volumes deletes local
+`http://localhost:3000`. AI and MongoDB are private Compose services and do not
+publish host ports. MongoDB data is held in the Compose volume.
+`docker compose down` stops services; removing volumes deletes local
 database state.
 
 The demo seeder intentionally accepts only a local hostname (`localhost`,

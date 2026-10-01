@@ -70,6 +70,7 @@ class RepairPage extends StatelessWidget {
     required this.child,
     this.appBar,
     this.selectedNavigationIndex,
+    this.notificationUnreadCount = 0,
     this.bottomActionBar,
     this.floatingActionButton,
     this.padding = const EdgeInsets.fromLTRB(
@@ -84,6 +85,7 @@ class RepairPage extends StatelessWidget {
   final Widget child;
   final PreferredSizeWidget? appBar;
   final int? selectedNavigationIndex;
+  final int notificationUnreadCount;
   final Widget? bottomActionBar;
   final Widget? floatingActionButton;
   final EdgeInsetsGeometry padding;
@@ -125,15 +127,32 @@ class RepairPage extends StatelessWidget {
               ? null
               : RepairBottomNavigation(
                   selectedIndex: selectedNavigationIndex!,
+                  notificationUnreadCount: notificationUnreadCount,
                 )),
     );
   }
 }
 
 class RepairBottomNavigation extends StatelessWidget {
-  const RepairBottomNavigation({required this.selectedIndex, super.key});
+  const RepairBottomNavigation({
+    required this.selectedIndex,
+    this.notificationUnreadCount = 0,
+    super.key,
+  });
 
   final int selectedIndex;
+  final int notificationUnreadCount;
+
+  Widget _notificationIcon(IconData icon) {
+    final child = Icon(icon);
+    if (notificationUnreadCount <= 0) return child;
+    return Badge(
+      label: Text(
+        notificationUnreadCount > 99 ? '99+' : '$notificationUnreadCount',
+      ),
+      child: child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,22 +164,28 @@ class RepairBottomNavigation extends StatelessWidget {
         final route = switch (index) {
           0 => RepairRoutes.dashboard,
           1 => RepairRoutes.workOrders,
+          2 => RepairRoutes.notifications,
           _ => RepairRoutes.profile,
         };
         context.go(route);
       },
-      destinations: const [
-        NavigationDestination(
+      destinations: [
+        const NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home_rounded),
           label: 'Home',
         ),
-        NavigationDestination(
+        const NavigationDestination(
           icon: Icon(Icons.assignment_outlined),
           selectedIcon: Icon(Icons.assignment_rounded),
           label: 'Tasks',
         ),
         NavigationDestination(
+          icon: _notificationIcon(Icons.notifications_outlined),
+          selectedIcon: _notificationIcon(Icons.notifications_rounded),
+          label: 'Updates',
+        ),
+        const NavigationDestination(
           icon: Icon(Icons.person_outline_rounded),
           selectedIcon: Icon(Icons.person_rounded),
           label: 'Profile',
@@ -531,7 +556,9 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
                     Row(
                       children: [
                         RepairStatusChip(
-                          label: workOrder.status.label,
+                          label: workOrder.isPendingAcceptance
+                              ? 'Awaiting acceptance'
+                              : workOrder.status.label,
                           color: statusColor,
                         ),
                         const Spacer(),

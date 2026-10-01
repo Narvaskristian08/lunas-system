@@ -23,6 +23,81 @@ authority, account governance, and incident/work-order transitions.
   registration creates Citizens only. Provision other authorized personnel
   after external approval using the Admin account process.
 
+## Docker Compose deployment
+
+The default Compose deployment contains MongoDB, the Express API, the Next.js
+BFF, and the advisory AI service. MongoDB and AI are private to the Compose
+network. Web and API ports bind to `127.0.0.1` unless their bind-address
+variables are deliberately changed for an approved reverse proxy or firewall.
+The optional mongo-express service is available only with the `dev` profile.
+
+1. Copy `.env.example` to `.env` at the repository root.
+2. Replace every `replace_...`/`your_...` value. At minimum Compose requires:
+   `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, `JWT_SECRET`,
+   `JWT_REFRESH_SECRET`, `LUNAS_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`,
+   `TURNSTILE_ALLOWED_HOSTNAMES`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, and
+   `CORS_ORIGIN`.
+3. Use distinct, randomly generated values of at least 32 characters for the
+   JWT access, JWT refresh, web session, and registration MFA secrets. MongoDB
+   credentials used by this Compose file must be URL-safe.
+4. Validate and start the deployment:
+
+```bash
+docker compose config --quiet
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+The BFF uses the private runtime URL
+`LUNAS_API_URL=http://backend:5000/api/v1`. `NEXT_PUBLIC_API_URL` is a separate
+browser-facing build variable and must never be set to a Docker-only hostname.
+The web service runs `.next/standalone/server.js`, not `next start`.
+
+Readiness checks are dependency-aware: MongoDB authenticates before becoming
+healthy, the API requires a live MongoDB connection at `/health/ready`, and the
+web check at `/api/health` verifies that its internal API route can reach the
+backend. Compose dependency conditions replace fixed startup sleeps.
+
+For local database inspection only:
+
+```bash
+docker compose --profile dev up -d mongo-express
+```
+
+Do not enable that profile on a public host. To stop the stack without deleting
+database volumes, run `docker compose down`. Do not add `-v` unless permanent
+database removal is intentional.
+
+## Required and optional integrations
+
+- Required for core container startup: MongoDB, distinct JWT secrets, the web
+  session secret, internal BFF API URL, and Turnstile configuration.
+- Required for real incident evidence: private Supabase storage credentials.
+- Required for citizen registration and personnel activation: the configured
+  delivery webhook/provider and its token.
+- Optional/degradable: AI inference, OneSignal push, password-reset delivery,
+  and Maps. Set `AI_SERVICE_ENABLED=false` and
+  `AI_EVIDENCE_ANALYSIS_ENABLED=false` when the AI container/models are not
+  deployed; reports remain subject to manual review.
+
+The AI image excludes model weights and mounts `lunas_ai/models` at runtime.
+Production operators must provision approved weights there before claiming AI
+availability. A healthy AI process does not prove every model is loaded.
+
+## Troubleshooting
+
+- `LUNAS_SESSION_SECRET must be configured`: generate a new deployment-only
+  secret; do not reuse either JWT secret.
+- Web reports backend `unreachable`: verify `backend` is healthy and that the
+  web runtime uses `http://backend:5000/api/v1`, not localhost.
+- Backend remains unhealthy: inspect MongoDB authentication and ensure the root
+  username/password match the URL-safe values used to construct `MONGODB_URI`.
+- Login CAPTCHA fails: verify the public/secret Turnstile key pair and exact
+  public hostname allowlist. Dummy keys are local QA only.
+- Browser CORS fails: add the exact public web origin to `CORS_ORIGIN`; do not
+  add Docker service hostnames as browser origins.
+
 ## Operational checks
 
 Before a release or demonstration, verify service health, login/refresh,

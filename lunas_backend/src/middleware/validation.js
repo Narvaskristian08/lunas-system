@@ -1,5 +1,30 @@
 const { body, param, query, validationResult } = require('express-validator');
 const { INCIDENT_CATEGORY_CODES } = require('../utils/incidentCategories');
+const {
+  canonicalizeBarangay,
+  canonicalizeDagupanCity,
+  isRecognizedBarangay
+} = require('../data/dagupanBarangays');
+
+const canonicalBarangay = (field, { optional = false } = {}) => {
+  let rule = body(field);
+  if (optional) rule = rule.optional();
+  return rule
+    .isString().withMessage('Choose a recognized Dagupan barangay').bail()
+    .customSanitizer((value) => canonicalizeBarangay(value) || value)
+    .custom(isRecognizedBarangay)
+    .withMessage('Choose a recognized Dagupan barangay');
+};
+
+const dagupanCity = (field, { optional = false } = {}) => {
+  let rule = body(field);
+  if (optional) rule = rule.optional();
+  return rule
+    .isString().withMessage('City must be Dagupan City').bail()
+    .customSanitizer((value) => canonicalizeDagupanCity(value) || value)
+    .custom((value) => canonicalizeDagupanCity(value) !== null)
+    .withMessage('City must be Dagupan City');
+};
 
 const passwordValidationRule = (field) => body(field)
   .isLength({ min: 8, max: 128 }).withMessage('Password must be between 8 and 128 characters')
@@ -112,9 +137,9 @@ exports.createIncidentValidation = [
   body('location.coordinates.0').isFloat({ min: -180, max: 180 }).withMessage('Longitude must be between -180 and 180'),
   body('location.coordinates.1').isFloat({ min: -90, max: 90 }).withMessage('Latitude must be between -90 and 90'),
   body('location.address').isObject().withMessage('Location address is required'),
-  body('location.address.barangay').trim().isLength({ min: 1, max: 100 }).withMessage('Barangay is required'),
+  canonicalBarangay('location.address.barangay'),
   body('location.address.street').optional().trim().isLength({ max: 160 }),
-  body('location.address.city').optional().trim().isLength({ max: 100 }),
+  dagupanCity('location.address.city', { optional: true }),
   body('location.address.landmark').optional().trim().isLength({ max: 160 }),
   body('images').optional().isArray({ max: 5 }).withMessage('A maximum of five evidence images is allowed'),
   body('images.*.url').if((value, { req }) => Array.isArray(req.body.images))
@@ -155,10 +180,8 @@ const priorityRule = body('priority').isIn(['critical', 'high', 'medium', 'low']
 
 const jurisdictionRules = [
   body('jurisdiction').optional().isObject().withMessage('Jurisdiction must be an object'),
-  body('jurisdiction.barangay').optional().trim().isLength({ min: 1, max: 100 })
-    .withMessage('Jurisdiction barangay must be between 1 and 100 characters'),
-  body('jurisdiction.city').optional().trim().isLength({ min: 1, max: 100 })
-    .withMessage('Jurisdiction city must be between 1 and 100 characters'),
+  canonicalBarangay('jurisdiction.barangay', { optional: true }),
+  dagupanCity('jurisdiction.city', { optional: true }),
 ];
 
 exports.validateIncidentDecisionValidation = [
@@ -190,9 +213,8 @@ exports.markDuplicateValidation = [
 exports.updatePriorityValidation = [priorityRule];
 
 exports.updateJurisdictionValidation = [
-  body('barangay').trim().isLength({ min: 1, max: 100 })
-    .withMessage('Barangay is required'),
-  body('city').optional().trim().isLength({ min: 1, max: 100 }),
+  canonicalBarangay('barangay'),
+  dagupanCity('city', { optional: true }),
 ];
 
 exports.routeIncidentValidation = [
@@ -208,7 +230,9 @@ exports.pendingValidationQuery = [
   query('search').optional().trim().isLength({ max: 100 }),
   query('category').optional().isIn(INCIDENT_CATEGORY_CODES)
     .withMessage('Invalid category filter'),
-  query('barangay').optional().trim().isLength({ min: 1, max: 100 }),
+  query('barangay').optional().isString().bail()
+    .customSanitizer((value) => canonicalizeBarangay(value) || value)
+    .custom(isRecognizedBarangay).withMessage('Choose a recognized Dagupan barangay'),
   query('hasDuplicateCandidate').optional().isBoolean()
     .withMessage('hasDuplicateCandidate must be true or false'),
   query('sortBy').optional().isIn(['createdAt', '-createdAt', 'priority', '-priority'])

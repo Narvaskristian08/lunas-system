@@ -3,11 +3,18 @@ class SelectedLocation {
     required this.latitude,
     required this.longitude,
     required this.address,
+    this.barangayCandidates = const [],
+    this.reverseGeocodingSucceeded = false,
   });
 
   final double latitude;
   final double longitude;
   final String address;
+
+  /// Raw locality candidates from the platform geocoder. They are suggestions
+  /// only and must be matched against the backend-provided canonical list.
+  final List<String> barangayCandidates;
+  final bool reverseGeocodingSucceeded;
 
   bool get isValid =>
       latitude.isFinite &&

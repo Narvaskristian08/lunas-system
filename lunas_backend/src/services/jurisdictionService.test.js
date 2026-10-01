@@ -21,6 +21,17 @@ describe('jurisdiction authorization', () => {
     });
   });
 
+  test('canonicalizes official assignments and denies invalid legacy assignments', () => {
+    expect(buildIncidentScope({
+      ...barangayOfficial,
+      barangay: '  poblacion   oeste '
+    })).toEqual(buildIncidentScope(barangayOfficial));
+    expect(buildIncidentScope({
+      ...barangayOfficial,
+      barangay: 'Barangay III'
+    })).toEqual({ _id: null });
+  });
+
   test('denies cross-barangay incident access and route changes', () => {
     const incident = {
       location: { address: { barangay: 'Bonuan Gueset' } },
