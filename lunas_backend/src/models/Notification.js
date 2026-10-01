@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
+  idempotencyKey: String,
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -77,6 +78,9 @@ const notificationSchema = new mongoose.Schema({
 notificationSchema.index({ recipient: 1, createdAt: -1 });
 notificationSchema.index({ isRead: 1 });
 notificationSchema.index({ type: 1 });
+notificationSchema.index({ idempotencyKey: 1 }, {
+  unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } }
+});
 notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
 
 module.exports = mongoose.model('Notification', notificationSchema);

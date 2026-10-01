@@ -40,7 +40,8 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     : [0, 0, 0];
 
   // Get SLA statistics
-  const overdueIncidents = await Incident.countDocuments({ ...filter, 'sla.isOverdue': true });
+  const overdueIncidents = await Incident.countDocuments({ ...filter, 'sla.deadline': { $lt: new Date() },
+    status: { $nin: ['verified', 'resolved', 'closed', 'rejected', 'duplicate'] } });
 
   // Recent incidents
   const recentIncidents = await Incident.find(filter)

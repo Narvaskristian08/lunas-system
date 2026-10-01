@@ -106,9 +106,57 @@ enforcement, the full persisted incident handoff, notification configuration,
 backup/restore, and audit retention against the target environment. A health
 endpoint or a successful build alone does not prove end-to-end operation.
 
-Priority-to-SLA deadline calculation is implemented in the API. Check
-`SLA_AUTOMATION_ENABLED` and the deployed scheduler before claiming scheduled
-reminders or escalations. AI output remains advisory even when inference runs.
+The API starts SLA at City prioritization and preserves that deadline through
+repair, Provider review, corrective work, and City verification. Compose and both
+environment examples now enable its in-process scheduler. AI output remains
+advisory even when inference runs.
+
+### SLA scheduler
+
+- `SLA_AUTOMATION_ENABLED=true` enables monitoring after MongoDB connects. An
+  unset flag or any value other than `true` disables it. Set it explicitly to
+  `false` in tests, development sessions without monitoring, and API replicas
+  that are not the designated scheduler. Existing `.env` files are not rewritten;
+  remove a previous `false` override when enabling a deployed instance.
+- `SLA_POLL_INTERVAL_MINUTES=5` checks incidents and work orders at five-minute
+  boundaries and once at startup. Valid values are integers 1-59; this is a cron
+  minute step, so choose a divisor of 60 for uniform spacing. Jobs use elapsed
+  UTC timestamps; no business-hour calculations or pauses are introduced.
+- Enable exactly one API process/replica per deployment. Repeated startup calls
+  reuse the task; overlapping ticks in that process are skipped. Concurrent
+  replica execution is protected against duplicate in-app notifications by a
+  unique notification index, but there is no distributed scheduler lease.
+- Startup creates the partial unique `idempotencyKey` notification index even
+  if Mongoose automatic indexes are disabled. The database account must be able
+  to create that index; startup fails instead of running without this guarantee.
+- Deadline policy remains Critical 48, High 72, Medium 168, Low 336 elapsed hours.
+  Keep the existing `SLA_*` environment overrides at these approved values.
+  `SLA_APPROACHING_THRESHOLD_HOURS=24` remains the work-order warning threshold.
+- Incident reminders retain 24/12/6/2 hours before the deadline. Overdue incidents
+  enter the existing initial escalation stage. The assigned Utility Provider is
+  notified; unrouted prioritized incidents notify active City Engineers. Work
+  orders notify their current assignee and unique assigning/creating officials.
+  Existing escalation level 2 includes active City Engineers, but the repository
+  defines no time trigger for promotion to level 2; none is invented here.
+- Repair completion and Provider acceptance do not stop SLA. City closure stores
+  `met` or `breached` on both records based on the original deadline and closure
+  timestamp. Rejection/duplicate store `cancelled`. Terminal records are no
+  longer currently overdue; historical breach and deadlines remain available.
+- Failed database operations and in-app deliveries are retried on later polls.
+  Durable per-recipient keys prevent duplicate notifications after concurrent
+  execution or a crash before delivery acknowledgment. Push delivery remains
+  best effort through the existing notification service.
+
+Run `npm run test:sla:live` from `lunas_backend` against a local MongoDB server.
+Optionally set `SLA_TEST_MONGODB_URI` to an isolated test server. This check does
+not load `.env`, disables OneSignal, generates and removes its own disposable
+database, and waits up to 90 seconds for a real recurring cron callback. It
+checks scheduled warning/escalation delivery, real unique-index idempotency,
+concurrent retries, notification persistence failure recovery, and closure
+normalization. This is local integration evidence; verify logs and persisted
+alerts in the deployed environment before claiming deployment verification.
+See [Revision 6 validation report](./REVISION_6_SLA_REPORT.md) for findings and
+remaining limitations.
 
 ## Local-only data
 

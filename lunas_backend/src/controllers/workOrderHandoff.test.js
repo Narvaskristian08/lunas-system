@@ -16,7 +16,8 @@ const { createNotification } = require('../services/notificationService');
 const {
   coordinateCityCorrection,
   reviewCompletedWork,
-  finalReviewWorkOrder
+  finalReviewWorkOrder,
+  getWorkOrderSLA
 } = require('./workOrderController');
 
 const response = () => {
@@ -53,6 +54,8 @@ const workOrderFixture = (status, overrides = {}) => ({
   history: [],
   assignments: [],
   reviews: [],
+  sla: { startedAt: new Date('2026-10-01T00:00:00Z'), deadline: new Date('2026-10-04T00:00:00Z'), state: 'active' },
+  actualCompletionTime: new Date('2026-10-02T00:00:00Z'),
   ...overrides
 });
 
@@ -96,6 +99,9 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
         workOrderId: workOrder._id
       })
     }));
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla');
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.deadline');
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.state');
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
@@ -132,6 +138,9 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
         workOrderId: workOrder._id
       })
     }));
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla');
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.deadline');
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.state');
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
@@ -158,12 +167,16 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
     const incidentUpdate = Incident.findOneAndUpdate.mock.calls[0][1];
     expect(incidentUpdate.$push.statusHistory.$each.map((entry) => entry.status))
       .toEqual(['provider_accepted', 'city_verification']);
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.state');
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.deadline');
+    expect(incidentUpdate.$set).not.toHaveProperty('closedAt');
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       message: 'Completion accepted and forwarded to City Engineering'
     }));
   });
 
-  test('City Engineer final approval records verification, resolution, and closure before notifying Citizen', async () => {
+  test.each([['2026-10-03T00:00:00Z', 'met'], ['2026-10-05T00:00:00Z', 'breached']])('City closure at %s persists %s on both records and preserves completion history', async (time, outcome) => {
+    jest.useFakeTimers().setSystemTime(new Date(time));
     const workOrder = workOrderFixture('provider_accepted', {
       incident: { _id: '507f191e810c19729de860b1', reportNumber: 'LUNAS-202608-000001' }
     });
@@ -186,7 +199,13 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
       ip: '127.0.0.1'
     }, res, jest.fn());
 
+    const workOrderUpdate = WorkOrder.findOneAndUpdate.mock.calls[0][1];
+    expect(workOrderUpdate.$set).toMatchObject({ 'sla.state': outcome, 'sla.isOverdue': false, 'sla.closedAt': new Date(time) });
+    expect(workOrderUpdate.$set).not.toHaveProperty('sla.deadline');
+    expect(workOrderUpdate.$set).not.toHaveProperty('actualCompletionTime');
     const incidentUpdate = Incident.findOneAndUpdate.mock.calls[0][1];
+    expect(incidentUpdate.$set).toMatchObject({ 'sla.state': outcome, 'sla.isOverdue': false });
+    expect(incidentUpdate.$set).not.toHaveProperty('sla.deadline');
     expect(incidentUpdate.$set).toEqual(expect.objectContaining({
       status: 'closed',
       finalVerifiedBy: 'engineer-1'
@@ -198,5 +217,19 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
       title: 'Your report has been resolved'
     }));
     expect(res.status).toHaveBeenCalledWith(200);
+    jest.useRealTimers();
   });
+});
+
+
+test('work-order SLA API preserves a breached terminal outcome instead of forcing met', async () => {
+  const workOrder = workOrderFixture('verified', {
+    sla: { deadline: new Date('2026-10-01T00:00:00Z'), closedAt: new Date('2026-10-02T00:00:00Z'), state: 'breached' }
+  });
+  WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
+  const res = response();
+  const next = jest.fn();
+  await getWorkOrderSLA({ params: { id: workOrder._id }, user: { role: 'city_engineer' } }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  expect(res.json.mock.calls[0][0].data).toMatchObject({ state: 'breached', isOverdue: false, isApproaching: false });
 });

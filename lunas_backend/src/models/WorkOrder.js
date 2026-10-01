@@ -178,10 +178,11 @@ const workOrderSchema = new mongoose.Schema({
     deadline: Date,
     state: {
       type: String,
-      enum: ['not_started', 'active', 'approaching', 'overdue', 'met'],
+      enum: ['not_started', 'active', 'approaching', 'overdue', 'met', 'breached', 'cancelled'],
       default: 'not_started'
     },
     isOverdue: { type: Boolean, default: false },
+    closedAt: Date,
     approachingNotifiedAt: Date,
     overdueNotifiedAt: Date
   },

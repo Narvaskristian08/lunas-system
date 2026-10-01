@@ -16,6 +16,8 @@ const {
   canManageWorkOrder,
   canReviewFinalWorkOrder,
   getSlaProjection,
+  getClosedSlaFields,
+  getApproachingThresholdHours,
   isEligibleRepairPersonnel,
   sameId,
   transitionMessage,
@@ -164,7 +166,8 @@ const serializeWorkOrder = async (workOrder, detail = true) => {
       targetResolutionTime: source.sla && source.sla.targetResolutionTime,
       startedAt: source.sla && source.sla.startedAt,
       deadline: projection.deadline,
-      state: source.status === 'verified' ? 'met' : projection.state,
+      closedAt: source.sla?.closedAt,
+      state: projection.state,
       isOverdue: source.status !== 'verified' && projection.isOverdue,
       isApproaching: source.status !== 'verified' && projection.isApproaching,
       remainingMilliseconds: projection.remainingMilliseconds
@@ -298,11 +301,13 @@ const listFilter = async (req) => {
     filter.incident = { $in: incidents.map((incident) => incident._id) };
   }
   const now = new Date();
-  const thresholdHours = Number.parseInt(process.env.SLA_APPROACHING_THRESHOLD_HOURS, 10) || 24;
+  const thresholdHours = getApproachingThresholdHours();
   if (query.slaState === 'overdue') {
+    filter['sla.state'] = { $nin: ['met', 'breached', 'cancelled'] };
     filter['sla.deadline'] = { $lt: now };
     filter.status = { $in: ACTIVE_WORK_ORDER_STATUSES };
   } else if (query.slaState === 'approaching') {
+    filter['sla.state'] = { $nin: ['met', 'breached', 'cancelled'] };
     filter['sla.deadline'] = {
       $gte: now,
       $lte: new Date(now.getTime() + thresholdHours * 60 * 60 * 1000)
@@ -1134,14 +1139,13 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
   }
 });
 
-const addWorkOrderReview = async ({ workOrder, req, stage, decision, reason, instructions, nextStatus, historyType }) => {
-  const now = new Date();
+const addWorkOrderReview = async ({ workOrder, req, stage, decision, reason, instructions, nextStatus, historyType, now = new Date() }) => {
   return WorkOrder.findOneAndUpdate(
     { _id: workOrder._id, version: workOrder.version, status: workOrder.status },
     {
       $set: {
         status: nextStatus,
-        ...(decision === 'verified' ? { 'sla.state': 'met', 'sla.isOverdue': false } : {})
+        ...(decision === 'verified' ? getClosedSlaFields(workOrder.sla, now) : {})
       },
       $push: {
         reviews: { stage, decision, reason, instructions, actor: req.user._id, createdAt: now },
@@ -1298,7 +1302,7 @@ exports.finalReviewWorkOrder = asyncHandler(async (req, res) => {
 
   const updated = await addWorkOrderReview({
     workOrder, req, stage: 'city_engineer', decision: 'verified',
-    reason: reason || undefined, nextStatus: 'verified', historyType: 'city_verified'
+    reason: reason || undefined, nextStatus: 'verified', historyType: 'city_verified', now
   });
   if (!updated) return fail(res, 409, 'The final review changed. Refresh and try again.');
   const incident = await updateIncidentForWorkOrder({
@@ -1306,7 +1310,8 @@ exports.finalReviewWorkOrder = asyncHandler(async (req, res) => {
     events: ['verified', 'resolved', 'closed'],
     notes: reason || 'City Engineering verified the repair and closed the incident',
     metadata: { workOrderId: updated._id },
-    fields: { finalVerifiedBy: req.user._id, finalVerifiedAt: now, closedAt: now }
+    fields: { finalVerifiedBy: req.user._id, finalVerifiedAt: now, closedAt: now,
+      ...getClosedSlaFields(workOrder.sla, now) }
   });
   if (incident?.reporter) {
     await createNotification({
@@ -1352,7 +1357,8 @@ exports.getWorkOrderSLA = asyncHandler(async (req, res) => {
     data: {
       priority: workOrder.priority,
       deadline: projection.deadline,
-      state: workOrder.status === 'verified' ? 'met' : projection.state,
+      closedAt: workOrder.sla?.closedAt,
+      state: projection.state,
       isApproaching: workOrder.status !== 'verified' && projection.isApproaching,
       isOverdue: workOrder.status !== 'verified' && projection.isOverdue,
       remainingMilliseconds: projection.remainingMilliseconds
@@ -1363,7 +1369,7 @@ exports.getWorkOrderSLA = asyncHandler(async (req, res) => {
 exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
   const scope = buildWorkOrderScope(req.user);
   const now = new Date();
-  const thresholdHours = Number.parseInt(process.env.SLA_APPROACHING_THRESHOLD_HOURS, 10) || 24;
+  const thresholdHours = getApproachingThresholdHours();
   const deadline = new Date(now.getTime() + thresholdHours * 60 * 60 * 1000);
   const count = (filter) => WorkOrder.countDocuments({ ...scope, ...filter });
   const result = await Promise.all([
@@ -1372,8 +1378,8 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
     count({ status: 'accepted' }),
     count({ status: { $in: ['in_progress', 'rework_required'] } }),
     count({ status: 'completed', progressPercent: 100 }),
-    count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.deadline': { $gte: now, $lte: deadline } }),
-    count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.deadline': { $lt: now } }),
+    count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $gte: now, $lte: deadline } }),
+    count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $lt: now } }),
     count({ status: 'provider_accepted' }),
     count({ status: 'city_correction_required' }),
     count({ status: 'rework_required' })

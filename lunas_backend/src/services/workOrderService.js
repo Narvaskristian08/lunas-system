@@ -132,7 +132,19 @@ const transitionMessage = (status, action) => {
   return messages[action] || `Work order cannot transition from ${status}`;
 };
 
+const getApproachingThresholdHours = () => {
+  const hours = Number.parseInt(process.env.SLA_APPROACHING_THRESHOLD_HOURS, 10);
+  return Number.isFinite(hours) && hours > 0 ? hours : 24;
+};
+
 const getSlaProjection = (sla = {}, now = new Date()) => {
+  if (sla.closedAt && sla.deadline) {
+    sla = { ...sla, state: new Date(sla.deadline) < new Date(sla.closedAt) ? 'breached' : 'met' };
+  }
+  if (['met', 'breached', 'cancelled'].includes(sla.state)) {
+    return { deadline: sla.deadline || null, state: sla.state, isOverdue: false,
+      isApproaching: false, remainingMilliseconds: null };
+  }
   const deadline = sla.deadline ? new Date(sla.deadline) : null;
   if (!deadline || Number.isNaN(deadline.getTime())) {
     return {
@@ -144,10 +156,7 @@ const getSlaProjection = (sla = {}, now = new Date()) => {
     };
   }
   const remainingMilliseconds = deadline.getTime() - now.getTime();
-  const thresholdHours = Number.parseInt(process.env.SLA_APPROACHING_THRESHOLD_HOURS, 10);
-  const thresholdMilliseconds = (Number.isFinite(thresholdHours) && thresholdHours > 0
-    ? thresholdHours
-    : 24) * 60 * 60 * 1000;
+  const thresholdMilliseconds = getApproachingThresholdHours() * 3600000;
   const isOverdue = remainingMilliseconds < 0;
   return {
     deadline,
@@ -172,6 +181,13 @@ const workOrderHistoryEntry = ({ type, actor, status, progressPercent, stage, no
 });
 
 module.exports = {
+  getApproachingThresholdHours,
+  getClosedSlaFields: (sla, now = new Date()) => ({
+    'sla.state': !sla?.deadline ? 'not_started'
+      : (new Date(sla.deadline) < now ? 'breached' : 'met'),
+    'sla.isOverdue': false,
+    'sla.closedAt': now
+  }),
   ACTIVE_WORK_ORDER_STATUSES,
   OFFICIAL_WORK_ORDER_ROLES,
   PROGRESS_STAGES,

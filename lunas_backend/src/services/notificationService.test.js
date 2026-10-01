@@ -1,5 +1,5 @@
 jest.mock('onesignal-node', () => ({ Client: jest.fn() }));
-jest.mock('../models/Notification', () => ({ create: jest.fn() }));
+jest.mock('../models/Notification', () => ({ create: jest.fn(), findOne: jest.fn() }));
 jest.mock('../models/Incident', () => ({ findById: jest.fn(), findOne: jest.fn() }));
 jest.mock('../models/WorkOrder', () => ({ findById: jest.fn() }));
 jest.mock('../models/User', () => ({ findById: jest.fn() }));
@@ -93,4 +93,20 @@ describe('notification delivery boundary', () => {
     });
     expect(Incident.findById).toHaveBeenCalledWith(incidentId);
   });
+});
+
+
+test('a duplicate SLA key returns the existing durable notification without repeating push', async () => {
+  const existing = { idempotencyKey: 'sla:incident:deadline:stage:recipient' };
+  Notification.create.mockRejectedValueOnce(Object.assign(new Error('duplicate'), { code: 11000 }));
+  Notification.findOne.mockResolvedValueOnce(existing);
+  const push = jest.spyOn(notificationService, 'sendPushNotification').mockClear();
+  await expect(notificationService.createNotification(existing)).resolves.toBe(existing);
+  expect(push).not.toHaveBeenCalled();
+});
+
+test('notification persistence failures propagate so the scheduler can retry', async () => {
+  Notification.create.mockRejectedValueOnce(new Error('database unavailable'));
+  await expect(notificationService.createNotification({ idempotencyKey: 'retry-me' }))
+    .rejects.toThrow('database unavailable');
 });

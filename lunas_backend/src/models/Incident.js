@@ -218,12 +218,15 @@ const incidentSchema = new mongoose.Schema({
     deadline: Date,
     state: {
       type: String,
-      enum: ['not_started', 'active', 'met', 'breached'],
+      enum: ['not_started', 'active', 'approaching', 'overdue', 'met', 'breached', 'cancelled'],
       default: 'not_started'
     },
     isOverdue: { type: Boolean, default: false },
     escalationLevel: { type: Number, default: 0 },
     lastEscalatedAt: Date,
+    closedAt: Date,
+    overdueNotifiedAt: Date,
+    reminderThresholdsSent: [Number],
     remindersSent: { type: Number, default: 0 }
   },
   statusHistory: [{
@@ -268,13 +271,13 @@ incidentSchema.pre('validate', async function(next) {
   next();
 });
 
-// Method to check if SLA is overdue
-incidentSchema.methods.checkSLAStatus = function() {
-  if (this.sla.deadline && new Date() > this.sla.deadline) {
-    this.sla.isOverdue = true;
-    return true;
-  }
-  return false;
+// Use the same live deadline calculation as APIs and scheduled monitoring.
+incidentSchema.methods.checkSLAStatus = function(now = new Date()) {
+  if (['closed', 'resolved', 'verified', 'rejected', 'duplicate'].includes(this.status)) return false;
+  const projection = require('../services/workOrderService').getSlaProjection(this.sla, now);
+  this.sla.state = projection.state;
+  this.sla.isOverdue = projection.isOverdue;
+  return projection.isOverdue;
 };
 
 module.exports = mongoose.model('Incident', incidentSchema);

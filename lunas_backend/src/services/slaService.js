@@ -8,6 +8,8 @@ const { createAuditLog } = require('../utils/auditLogger');
 const {
   ACTIVE_WORK_ORDER_STATUSES,
   getSlaProjection,
+  getClosedSlaFields,
+  getApproachingThresholdHours,
   workOrderHistoryEntry
 } = require('./workOrderService');
 
@@ -52,10 +54,13 @@ const workOrderRecipients = (workOrder) => {
   return [...new Set(ids)];
 };
 
+const notificationKey = (record, stage, recipient) => `sla:${record._id}:${new Date(record.sla.deadline).toISOString()}:${stage}:${recipient}`;
+
 const notifyWorkOrderSla = async (workOrder, template) => {
   for (const recipient of workOrderRecipients(workOrder)) {
     await createNotification({
       recipient,
+      idempotencyKey: notificationKey(workOrder, template.type, recipient),
       ...template,
       data: {
         incidentId: workOrder.incident,
@@ -66,244 +71,142 @@ const notifyWorkOrderSla = async (workOrder, template) => {
   }
 };
 
-/**
- * Invokable work-order SLA checker. It uses the same backend deadline
- * policy used by the API and records exactly one approaching and one overdue
- * alert per work order. Deployments may call it from their scheduler even when
- * the optional in-process cron monitor is disabled.
- */
+/** Notify first, then acknowledge delivery. Unique notification keys permit
+ * overlapping runners and retries after crashes without duplicate in-app alerts. */
 const runWorkOrderSlaCheck = async (now = new Date()) => {
-  const thresholdHours = Number.parseInt(process.env.SLA_APPROACHING_THRESHOLD_HOURS, 10) || 24;
-  const horizon = new Date(now.getTime() + thresholdHours * 60 * 60 * 1000);
-  const candidates = await WorkOrder.find({
-    status: { $in: ACTIVE_WORK_ORDER_STATUSES },
-    'sla.deadline': { $lte: horizon }
-  });
-  let approaching = 0;
-  let overdue = 0;
-
+  const candidates = await WorkOrder.find({ status: { $in: ACTIVE_WORK_ORDER_STATUSES },
+    'sla.deadline': { $lte: new Date(now.getTime()
+      + getApproachingThresholdHours() * 3600000) } });
+  const counts = { approaching: 0, overdue: 0 };
   for (const workOrder of candidates) {
-    const projection = getSlaProjection(workOrder.sla, now);
-    if (projection.isOverdue && !workOrder.sla?.overdueNotifiedAt) {
-      const updated = await WorkOrder.findOneAndUpdate(
-        {
-          _id: workOrder._id,
-          status: { $in: ACTIVE_WORK_ORDER_STATUSES },
-          $or: [
-            { 'sla.overdueNotifiedAt': { $exists: false } },
-            { 'sla.overdueNotifiedAt': null }
-          ]
-        },
-        {
-          $set: {
-            'sla.state': 'overdue',
-            'sla.isOverdue': true,
-            'sla.overdueNotifiedAt': now
-          },
-          $push: {
-            history: workOrderHistoryEntry({
-              type: 'sla_overdue',
-              actor: workOrder.createdBy,
-              status: workOrder.status,
-              progressPercent: workOrder.progressPercent,
-              stage: workOrder.progressStage,
-              notes: 'SLA deadline passed before repair was ready for completion',
-              metadata: { systemEvent: true },
-              now
-            })
-          },
-          $inc: { version: 1 }
-        },
-        { new: true }
-      );
-      if (updated) {
-        overdue += 1;
-        await notifyWorkOrderSla(updated, notificationTemplates.workOrderSlaOverdue(updated.orderNumber));
-        await createAuditLog({
-          action: 'sla_overdue',
-          performedBy: updated.createdBy,
-          resourceType: 'WorkOrder',
-          resourceId: updated._id,
-          details: { systemEvent: true, deadline: updated.sla.deadline }
-        });
+    try {
+      const projection = getSlaProjection(workOrder.sla, now);
+      const stage = projection.isOverdue ? 'overdue' : projection.isApproaching ? 'approaching' : null;
+      if (!stage) continue;
+      const marker = `sla.${stage}NotifiedAt`;
+      const updated = await WorkOrder.findOneAndUpdate({
+        _id: workOrder._id, status: { $in: ACTIVE_WORK_ORDER_STATUSES }
+      }, { $set: { 'sla.state': projection.state || stage, 'sla.isOverdue': projection.isOverdue } }, { new: true });
+      if (!updated || updated.sla?.[`${stage}NotifiedAt`]) continue;
+      await notifyWorkOrderSla(updated, stage === 'overdue'
+        ? notificationTemplates.workOrderSlaOverdue(updated.orderNumber)
+        : notificationTemplates.workOrderSlaApproaching(updated.orderNumber));
+      const acknowledged = await WorkOrder.findOneAndUpdate({ _id: updated._id,
+        status: { $in: ACTIVE_WORK_ORDER_STATUSES }, [marker]: null }, {
+        $set: { [marker]: now },
+        $push: { history: workOrderHistoryEntry({ type: `sla_${stage}`, actor: updated.createdBy,
+          status: updated.status, progressPercent: updated.progressPercent, stage: updated.progressStage,
+          notes: `SLA deadline ${stage}; incident remains open until City Engineering closure`,
+          metadata: { systemEvent: true }, now }) }, $inc: { version: 1 }
+      }, { new: true });
+      if (acknowledged) {
+        counts[stage] += 1;
+        await createAuditLog({ action: `sla_${stage}`, performedBy: updated.createdBy,
+          resourceType: 'WorkOrder', resourceId: updated._id,
+          details: { systemEvent: true, deadline: updated.sla.deadline } });
       }
-      continue;
-    }
-
-    if (projection.isApproaching && !workOrder.sla?.approachingNotifiedAt) {
-      const updated = await WorkOrder.findOneAndUpdate(
-        {
-          _id: workOrder._id,
-          status: { $in: ACTIVE_WORK_ORDER_STATUSES },
-          $or: [
-            { 'sla.approachingNotifiedAt': { $exists: false } },
-            { 'sla.approachingNotifiedAt': null }
-          ]
-        },
-        {
-          $set: {
-            'sla.state': 'approaching',
-            'sla.isOverdue': false,
-            'sla.approachingNotifiedAt': now
-          },
-          $push: {
-            history: workOrderHistoryEntry({
-              type: 'sla_approaching',
-              actor: workOrder.createdBy,
-              status: workOrder.status,
-              progressPercent: workOrder.progressPercent,
-              stage: workOrder.progressStage,
-              notes: 'Work-order SLA deadline is approaching',
-              metadata: { systemEvent: true, thresholdHours },
-              now
-            })
-          },
-          $inc: { version: 1 }
-        },
-        { new: true }
-      );
-      if (updated) {
-        approaching += 1;
-        await notifyWorkOrderSla(updated, notificationTemplates.workOrderSlaApproaching(updated.orderNumber));
-        await createAuditLog({
-          action: 'sla_approaching',
-          performedBy: updated.createdBy,
-          resourceType: 'WorkOrder',
-          resourceId: updated._id,
-          details: { systemEvent: true, deadline: updated.sla.deadline, thresholdHours }
-        });
-      }
+    } catch (error) {
+      logger.error(`Work-order SLA check failed for ${workOrder._id}; will retry`, error);
     }
   }
-  return { approaching, overdue };
+  return counts;
 };
 
-/**
- * Check and update SLA status for incidents and work orders
- */
-const checkSLAStatus = async () => {
-  try {
-    logger.info('Running SLA status check...');
+const TERMINAL_INCIDENT_STATUSES = ['verified', 'resolved', 'closed', 'rejected', 'duplicate'];
+const REMINDER_THRESHOLDS = [24, 12, 6, 2];
+const activeIncidentFilter = {
+  status: { $nin: TERMINAL_INCIDENT_STATUSES },
+  'sla.deadline': { $ne: null }
+};
 
-    // Find incidents that are overdue but not marked as such
-    const overdueIncidents = await Incident.find({
-      'sla.deadline': { $lt: new Date() },
-      'sla.isOverdue': false,
-      status: { $nin: ['verified', 'resolved', 'closed', 'rejected', 'duplicate'] },
-      'sla.state': 'active'
+// Persist state independently of delivery. A failed recipient is retried on the
+// next poll; the notification's unique key protects recipients already served.
+const notifyIncident = async (incident, stage, template) => {
+  const recipients = await incidentSlaRecipients(incident);
+  if (incident.sla.escalationLevel >= 2 && stage === 'escalation') {
+    const engineers = await User.find({
+      role: 'city_engineer', isActive: true, isArchived: { $ne: true }
+    }).select('_id');
+    recipients.push(...engineers.map((user) => user._id.toString()));
+  }
+  for (const recipient of [...new Set(recipients)]) {
+    await createNotification({ recipient, ...template,
+      idempotencyKey: notificationKey(incident, `${stage}:${incident.sla.escalationLevel || 0}`, recipient),
+      data: { incidentId: incident._id, link: `/incidents/${incident._id}`,
+        additionalInfo: { deadline: incident.sla.deadline, stage } }
     });
-
-    // Mark incidents as overdue
-    for (const incident of overdueIncidents) {
-      incident.sla.isOverdue = true;
-      incident.sla.escalationLevel += 1;
-      incident.sla.lastEscalatedAt = new Date();
-      await incident.save();
-
-      logger.warn(`Incident ${incident.reportNumber} is now overdue`);
-
-      // Notify relevant personnel
-      await notifyOverdueIncident(incident);
-    }
-
-    const workOrderResult = await runWorkOrderSlaCheck();
-    logger.info(
-      'SLA check complete: ' + overdueIncidents.length
-      + ' incidents, ' + workOrderResult.approaching
-      + ' approaching work orders, ' + workOrderResult.overdue
-      + ' overdue work orders'
-    );
-  } catch (error) {
-    logger.error('SLA status check error:', error);
   }
+  return recipients.length > 0;
 };
 
-/**
- * Send SLA reminders before deadline
- */
-const sendSLAReminders = async () => {
-  try {
-    logger.info('Sending SLA reminders...');
-
-    const now = new Date();
-    const reminderThresholds = [
-      { hours: 24, sent: 'reminder_24h' },
-      { hours: 12, sent: 'reminder_12h' },
-      { hours: 6, sent: 'reminder_6h' },
-      { hours: 2, sent: 'reminder_2h' }
-    ];
-
-    for (const threshold of reminderThresholds) {
-      const deadlineTime = new Date(now.getTime() + threshold.hours * 60 * 60 * 1000);
-      
-      const incidents = await Incident.find({
-        'sla.deadline': { 
-          $gte: now,
-          $lte: deadlineTime
-        },
-        'sla.isOverdue': false,
-        status: { $nin: ['verified', 'resolved', 'closed', 'rejected', 'duplicate'] },
-        'sla.state': 'active',
-        'sla.remindersSent': { $lt: reminderThresholds.indexOf(threshold) + 1 }
-      });
-
-      for (const incident of incidents) {
-        const recipients = await incidentSlaRecipients(incident);
-        if (!recipients.length) continue;
-        const template = notificationTemplates.slaReminder(incident.reportNumber, threshold.hours);
-        await Promise.all(recipients.map((recipient) => createNotification({
-          recipient,
-          ...template,
-          data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
-        })));
-        incident.sla.remindersSent = reminderThresholds.indexOf(threshold) + 1;
-        await incident.save();
-        logger.info(`SLA reminder sent for incident ${incident.reportNumber}`);
-      }
-    }
-
-    logger.info('SLA reminders sent');
-  } catch (error) {
-    logger.error('SLA reminder error:', error);
-  }
-};
-
-/**
- * Notify relevant personnel about overdue incident
- */
-const notifyOverdueIncident = async (incident) => {
-  try {
-    const template = notificationTemplates.slaEscalation(incident.reportNumber);
-
-    const recipients = await incidentSlaRecipients(incident);
-    await Promise.all(recipients.map((recipient) => createNotification({
-      recipient,
-      ...template,
-      data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
-    })));
-
-    // If escalation level is high, notify city engineers
-    if (incident.sla.escalationLevel >= 2) {
-      const cityEngineers = await User.find({
-        role: 'city_engineer', isActive: true, isArchived: { $ne: true }
-      }).select('_id');
-
-      for (const engineer of cityEngineers) {
-        await createNotification({
-          recipient: engineer._id,
-          type: 'sla_escalation',
-          title: 'Critical SLA Escalation',
-          message: `Incident ${incident.reportNumber} has been escalated to level ${incident.sla.escalationLevel}. Immediate action required.`,
-          priority: 'urgent',
-          data: {
-            incidentId: incident._id,
-            link: `/incidents/${incident._id}`
-          }
+const runIncidentSlaCheck = async (now = new Date()) => {
+  const incidents = await Incident.find(activeIncidentFilter);
+  for (const incident of incidents) {
+    try {
+      const projection = getSlaProjection(incident.sla, now);
+      const updated = await Incident.findOneAndUpdate({
+        _id: incident._id, ...activeIncidentFilter
+      }, { $set: { 'sla.state': projection.state, 'sla.isOverdue': projection.isOverdue } }, { new: true });
+      if (!updated) continue;
+      // Revision 1-5 persisted a threshold counter. Preserve its acknowledgments
+      // when the explicit threshold list has not yet been populated.
+      if (!updated.sla.reminderThresholdsSent?.length && updated.sla.remindersSent > 0) {
+        updated.sla.reminderThresholdsSent = REMINDER_THRESHOLDS.slice(0, updated.sla.remindersSent);
+        await Incident.updateOne({ _id: updated._id, ...activeIncidentFilter }, {
+          $addToSet: { 'sla.reminderThresholdsSent': { $each: updated.sla.reminderThresholdsSent } }
         });
       }
+      if (projection.isOverdue) {
+        // The existing policy establishes the initial overdue escalation only.
+        // No second-stage timing is configured; do not invent a trigger.
+        await Incident.updateOne({ _id: incident._id, ...activeIncidentFilter,
+          'sla.escalationLevel': 0 }, { $set: {
+          'sla.escalationLevel': 1, 'sla.lastEscalatedAt': now
+        } });
+        updated.sla.escalationLevel = Math.max(1, updated.sla.escalationLevel || 0);
+        if (!updated.sla.overdueNotifiedAt && await notifyIncident(updated, 'escalation',
+          notificationTemplates.slaEscalation(updated.reportNumber))) {
+          await Incident.updateOne({ _id: updated._id, ...activeIncidentFilter }, {
+            $set: { 'sla.overdueNotifiedAt': now }
+          });
+        }
+      } else {
+        for (const hours of REMINDER_THRESHOLDS) {
+          if (projection.remainingMilliseconds > hours * 3600000
+            || updated.sla.reminderThresholdsSent?.includes(hours)) continue;
+          if (await notifyIncident(updated, `reminder:${hours}`, notificationTemplates.slaReminder(updated.reportNumber, hours))) {
+            await Incident.updateOne({ _id: updated._id, ...activeIncidentFilter,
+              'sla.reminderThresholdsSent': { $ne: hours } }, {
+              $addToSet: { 'sla.reminderThresholdsSent': hours }, $inc: { 'sla.remindersSent': 1 }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      logger.error(`Incident SLA monitoring failed for ${incident._id}; will retry`, error);
     }
-  } catch (error) {
-    logger.error('Overdue notification error:', error);
+  }
+};
+
+const normalizeTerminalSla = async () => {
+  const incidents = await Incident.find({ status: { $in: TERMINAL_INCIDENT_STATUSES } });
+  for (const incident of incidents) {
+    const cancelled = ['rejected', 'duplicate'].includes(incident.status);
+    const closedAt = incident.closedAt || incident.finalVerifiedAt
+      || incident.statusHistory?.findLast((entry) => ['closed', 'resolved', 'verified'].includes(entry.status))?.changedAt;
+    if (!cancelled && !closedAt) continue; // Never fabricate historical closure time.
+    const fields = cancelled ? { 'sla.state': 'cancelled', 'sla.isOverdue': false }
+      : getClosedSlaFields(incident.sla, new Date(closedAt));
+    await Incident.updateOne({ _id: incident._id, status: incident.status }, { $set: fields });
+    await WorkOrder.updateMany({ incident: incident._id }, { $set: fields });
+  }
+};
+
+const checkSLAStatus = async (now = new Date()) => {
+  // Separate failures so an incident query outage does not suppress work orders.
+  for (const check of [normalizeTerminalSla, runIncidentSlaCheck, runWorkOrderSlaCheck]) {
+    try { await check(now); }
+    catch (error) { logger.error('SLA status check failed; next poll will retry', error); }
   }
 };
 
@@ -325,33 +228,35 @@ const incidentSlaRecipients = async (incident) => {
   return engineers.map((engineer) => engineer._id.toString());
 };
 
-/**
- * Start SLA monitoring cron jobs
- */
-exports.startSLAMonitor = () => {
-  // Deadline calculation is available independently. Do not silently enable
-  // scheduled reminders/escalations; deployments must opt in explicitly.
-  if (!isSlaAutomationEnabled()) {
-    logger.info('Work-order SLA checks are available by invocation; in-process cron monitoring is disabled');
-    return;
+let monitorTask = null;
+let running = false;
+const getPollingMinutes = () => {
+  const minutes = Number(process.env.SLA_POLL_INTERVAL_MINUTES || 5);
+  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 59) {
+    throw new Error('SLA_POLL_INTERVAL_MINUTES must be an integer from 1 to 59');
   }
-
-  // Check SLA status every hour
-  cron.schedule('0 * * * *', () => {
-    checkSLAStatus();
-  });
-
-  // Send reminders every 30 minutes
-  cron.schedule('*/30 * * * *', () => {
-    sendSLAReminders();
-  });
-
-  logger.info('SLA monitoring cron jobs started');
-  
-  // Run initial check
-  checkSLAStatus();
-  sendSLAReminders();
+  return minutes;
 };
+const monitorTick = async () => {
+  if (running) return;
+  running = true;
+  try { await checkSLAStatus(); }
+  finally { running = false; }
+};
+exports.startSLAMonitor = ({ runImmediately = true } = {}) => {
+  if (!isSlaAutomationEnabled() || monitorTask) return monitorTask;
+  monitorTask = cron.schedule(`*/${getPollingMinutes()} * * * *`, monitorTick);
+  logger.info(`SLA monitoring enabled: every ${getPollingMinutes()} minutes`);
+  if (runImmediately) void monitorTick();
+  return monitorTask;
+};
+exports.stopSLAMonitor = () => {
+  if (monitorTask) monitorTask.stop();
+  monitorTask = null;
+};
+exports.runIncidentSlaCheck = runIncidentSlaCheck;
+exports.normalizeTerminalSla = normalizeTerminalSla;
+exports.getPollingMinutes = getPollingMinutes;
 
 /**
  * Calculate SLA deadline based on priority

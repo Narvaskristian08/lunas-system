@@ -231,6 +231,36 @@ describe('sequential incident review workflow', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+  test('rejection cancels SLA monitoring without deleting audit dates', async () => {
+    Incident.findOne.mockReturnValue(queryFor(submitted));
+    Incident.findOneAndUpdate.mockReturnValue(queryFor({ ...submitted, status: 'rejected', sla: { state: 'cancelled' } }));
+    const res = response();
+    const next = jest.fn();
+    await rejectIncident({ params: { id: submitted._id }, user: barangayOfficial,
+      body: { reason: 'Outside report scope' }, headers: {} }, res, next);
+    expect(next).not.toHaveBeenCalled();
+    const fields = Incident.findOneAndUpdate.mock.calls[0][1].$set;
+    expect(fields).toMatchObject({ 'sla.state': 'cancelled', 'sla.isOverdue': false });
+    expect(fields).not.toHaveProperty('sla.deadline');
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('marking a duplicate cancels SLA monitoring and retains the canonical relationship', async () => {
+    const canonical = { _id: '507f191e810c19729de860b2', reportNumber: 'LUNAS-CANONICAL', status: 'submitted' };
+    Incident.findOne.mockReturnValueOnce(queryFor(submitted))
+      .mockReturnValueOnce(queryFor(canonical)).mockReturnValueOnce(queryFor(submitted));
+    Incident.findOneAndUpdate.mockReturnValue(queryFor({ ...submitted, status: 'duplicate', sla: { state: 'cancelled' } }));
+    const res = response();
+    const next = jest.fn();
+    await markDuplicateIncident({ params: { id: submitted._id }, user: barangayOfficial,
+      body: { duplicateOf: canonical._id, reason: 'Same defect and location' }, headers: {} }, res, next);
+    expect(next).not.toHaveBeenCalled();
+    const fields = Incident.findOneAndUpdate.mock.calls[0][1].$set;
+    expect(fields).toMatchObject({ duplicateOf: canonical._id, 'sla.state': 'cancelled', 'sla.isOverdue': false });
+    expect(fields).not.toHaveProperty('sla.deadline');
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   test('prevents a duplicate report from referencing itself', async () => {
     Incident.findOne.mockReturnValueOnce(queryFor(submitted));
     const req = {

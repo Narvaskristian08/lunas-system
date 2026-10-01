@@ -22,6 +22,7 @@ jest.mock('./notificationService', () => ({
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
 jest.mock('./workOrderService', () => ({
   ACTIVE_WORK_ORDER_STATUSES: ['pending', 'accepted', 'in_progress'],
+  getApproachingThresholdHours: () => 24,
   getSlaProjection: jest.fn(),
   workOrderHistoryEntry: jest.fn((entry) => entry)
 }));
@@ -55,10 +56,9 @@ describe('work-order SLA checking', () => {
         ...workOrder,
         sla: { ...workOrder.sla, approachingNotifiedAt: now }
       }]);
-    WorkOrder.findOneAndUpdate.mockResolvedValue({
-      ...workOrder,
-      sla: { ...workOrder.sla, approachingNotifiedAt: now }
-    });
+    WorkOrder.findOneAndUpdate
+      .mockResolvedValueOnce(workOrder)
+      .mockResolvedValue({ ...workOrder, sla: { ...workOrder.sla, approachingNotifiedAt: now } });
     getSlaProjection.mockReturnValue({
       isApproaching: true,
       isOverdue: false,
@@ -70,7 +70,7 @@ describe('work-order SLA checking', () => {
 
     // Assignee and creating/assigning official are unique recipients.
     expect(createNotification).toHaveBeenCalledTimes(2);
-    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledTimes(1);
+    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledTimes(3);
   });
 
   test('does not notify when another SLA runner has already claimed the overdue alert', async () => {

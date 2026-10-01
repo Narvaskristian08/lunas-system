@@ -10,7 +10,7 @@ const rateLimit = require('express-rate-limit');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
-const { startSLAMonitor } = require('./services/slaService');
+const { startSLAMonitor, isSlaAutomationEnabled, getPollingMinutes } = require('./services/slaService');
 const { validateRuntimeConfig } = require('./config/runtime');
 
 const app = express();
@@ -110,14 +110,21 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     validateRuntimeConfig();
+    if (isSlaAutomationEnabled()) getPollingMinutes();
     await connectDB();
+    if (isSlaAutomationEnabled()) {
+      // This unique index is a delivery guarantee, including autoIndex=false deployments.
+      await require('./models/Notification').collection.createIndex({ idempotencyKey: 1 }, {
+        unique: true, partialFilterExpression: { idempotencyKey: { $type: 'string' } }
+      });
+    }
     
     app.listen(PORT, () => {
       logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
       
       // Start SLA monitoring cron job
       startSLAMonitor();
-      logger.info('SLA monitoring service started');
+
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

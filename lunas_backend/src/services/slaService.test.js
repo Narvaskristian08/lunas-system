@@ -39,3 +39,17 @@ describe('SLA foundation', () => {
     expect(isSlaAutomationEnabled()).toBe(true);
   });
 });
+
+
+test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
+  '%s deadline starts at prioritization and lasts %i elapsed hours', (priority, hours) => {
+    const key = `SLA_${priority.toUpperCase()}`;
+    const previous = process.env[key];
+    delete process.env[key];
+    const start = new Date('2026-10-02T00:00:00Z');
+    const sla = initializeIncidentSLA(priority, start);
+    expect(sla.startedAt).toEqual(start);
+    expect(sla.deadline.getTime() - start.getTime()).toBe(hours * 3600000);
+    if (previous !== undefined) process.env[key] = previous;
+  }
+);

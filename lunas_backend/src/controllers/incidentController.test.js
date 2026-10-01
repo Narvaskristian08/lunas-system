@@ -38,7 +38,9 @@ const {
   getIncidentHistory,
   getMyIncidents,
   serializeIncidentForCitizen,
-  serializeIncidentForOfficial
+  serializeIncidentForOfficial,
+  updateIncidentPriority,
+  getIncidentSLA
 } = require('./incidentController');
 
 const createResponse = () => {
@@ -366,4 +368,48 @@ describe('citizen incident reporting', () => {
       }]
     });
   });
+});
+
+
+const slaQuery = (value) => {
+  const query = { populate: jest.fn(), select: jest.fn() };
+  query.populate.mockReturnValue(query);
+  query.select.mockReturnValue(query);
+  query.then = (resolve, reject) => Promise.resolve(value).then(resolve, reject);
+  return query;
+};
+
+test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
+  'City prioritization starts the %s SLA after submission (%i hours)', async (priority, hours) => {
+    jest.clearAllMocks();
+    const time = new Date('2026-10-02T00:00:00Z');
+    jest.useFakeTimers().setSystemTime(time);
+    const record = { _id: '507f191e810c19729de860b1', status: 'city_confirmed',
+      createdAt: new Date('2026-09-01T00:00:00Z'), reportNumber: 'SLA-001', sla: {} };
+    Incident.findOne.mockReturnValue(slaQuery(record));
+    Incident.findOneAndUpdate.mockReturnValue(slaQuery({ ...record, status: 'prioritized' }));
+    const res = createResponse();
+    const next = jest.fn();
+    await updateIncidentPriority({ params: { id: record._id }, body: { priority },
+      user: { _id: '507f191e810c19729de860a1', role: 'city_engineer' }, headers: {} }, res, next);
+    expect(next).not.toHaveBeenCalled();
+    const sla = Incident.findOneAndUpdate.mock.calls[0][1].$set.sla;
+    expect(sla.startedAt).toEqual(time);
+    expect(sla.deadline.getTime() - time.getTime()).toBe(hours * 3600000);
+    expect(res.status).toHaveBeenCalledWith(200);
+    jest.useRealTimers();
+  }
+);
+
+test('incident SLA API projects an overdue deadline during City verification even before polling', async () => {
+  jest.clearAllMocks();
+  jest.useFakeTimers().setSystemTime(new Date('2026-10-02T00:00:00Z'));
+  Incident.findOne.mockReturnValue(slaQuery({ _id: 'incident', status: 'city_verification',
+    sla: { deadline: new Date('2026-10-01T00:00:00Z'), state: 'active', isOverdue: false } }));
+  const res = createResponse();
+  const next = jest.fn();
+  await getIncidentSLA({ params: { id: 'incident' }, user: { role: 'city_engineer' } }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  expect(res.json.mock.calls[0][0].data).toMatchObject({ state: 'overdue', isOverdue: true });
+  jest.useRealTimers();
 });

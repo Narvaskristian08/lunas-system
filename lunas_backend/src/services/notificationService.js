@@ -105,6 +105,9 @@ exports.createNotification = async (notificationData) => {
 
     return notification;
   } catch (error) {
+    if (error.code === 11000 && notificationData.idempotencyKey) {
+      return Notification.findOne({ idempotencyKey: notificationData.idempotencyKey });
+    }
     logger.error('Notification creation error:', error);
     throw error;
   }
@@ -352,7 +355,7 @@ exports.notificationTemplates = {
   slaReminder: (reportNumber, hoursRemaining) => ({
     type: 'sla_reminder',
     title: 'SLA Reminder',
-    message: `Incident ${reportNumber} is due in ${hoursRemaining} hours. Please expedite resolution.`,
+    message: `Incident ${reportNumber} is due within ${hoursRemaining} hours. Please expedite resolution.`,
     priority: 'high'
   }),
   

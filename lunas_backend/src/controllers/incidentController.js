@@ -1,3 +1,4 @@
+const { getSlaProjection } = require('../services/workOrderService');
 const Incident = require('../models/Incident');
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
@@ -266,7 +267,7 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       reason: source.routing.reason,
       routedAt: source.routing.routedAt
     } : undefined,
-    sla: source.sla,
+    sla: { ...source.sla, ...getSlaProjection(source.sla) },
     validatedAt: source.validatedAt,
     validatedBy: safeReporterForOfficial(source.validatedBy),
     workOrder: source.workOrder && typeof source.workOrder === 'object'
@@ -850,8 +851,7 @@ exports.getIncidentSLA = asyncHandler(async (req, res) => {
       targetResolutionTime: incident.sla?.targetResolutionTime,
       startedAt: incident.sla?.startedAt,
       deadline: incident.sla?.deadline,
-      state: incident.sla?.state || 'not_started',
-      isOverdue: Boolean(incident.sla?.isOverdue)
+      ...getSlaProjection(incident.sla)
     }
   });
 });
@@ -1021,7 +1021,8 @@ exports.rejectIncident = asyncHandler(async (req, res) => {
       rejectionReason: reason,
       rejectionNotes: notes || undefined,
       rejectedBy: req.user._id,
-      rejectedAt: now
+      rejectedAt: now,
+      'sla.state': 'cancelled', 'sla.isOverdue': false
     },
     reason,
     { reason }
@@ -1099,7 +1100,8 @@ exports.markDuplicateIncident = asyncHandler(async (req, res) => {
       duplicateReason: reason,
       duplicateNotes: notes || undefined,
       duplicateMarkedBy: req.user._id,
-      duplicateMarkedAt: now
+      duplicateMarkedAt: now,
+      'sla.state': 'cancelled', 'sla.isOverdue': false
     },
     reason,
     { duplicateOf: canonical._id, canonicalReportNumber: canonical.reportNumber, reason }
