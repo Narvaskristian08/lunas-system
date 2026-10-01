@@ -148,7 +148,7 @@ function Evidence({ incident }: { incident: ValidationIncident }) {
             {image.url ? <a href={image.url} target="_blank" rel="noreferrer" className="block bg-slate-100" style={{ aspectRatio: image.width && image.height ? `${image.width} / ${image.height}` : "4 / 3" }}><div className="relative size-full"><img src={image.url} alt={`Submitted evidence ${index + 1}`} className="size-full object-contain" />{image.aiFindings.map(renderFinding)}</div></a> : <div className="flex aspect-[4/3] items-center justify-center text-slate-500"><FileImage className="size-8" aria-hidden="true" /></div>}
             <div className="flex flex-wrap gap-2 border-t border-slate-200 px-3 py-2.5 text-xs text-slate-600">
               {image.quality?.status ? <Badge tone={image.quality.status === "passed" ? "success" : "neutral"}>Quality: {titleCase(image.quality.status)}</Badge> : null}
-              {image.privacyProcessing?.status === "not_available" ? <Badge tone="warning">Automated redaction unavailable</Badge> : null}
+              {image.privacyProcessing?.status === "not_available" ? <Badge tone="warning">Automatic masking is outside current scope</Badge> : null}
               {image.aiFindings.length ? <Badge tone="warning">AI highlights: {image.aiFindings.length}</Badge> : null}
             </div>
           </div>

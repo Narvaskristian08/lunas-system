@@ -129,66 +129,6 @@ class DetectionService:
                 'total_detections': 0
             }
     
-    def detect_privacy_concerns(
-        self,
-        image: Image.Image,
-        confidence: Optional[float] = None
-    ) -> Dict[str, Any]:
-        """
-        Detect privacy-sensitive objects (people, vehicles)
-        
-        Args:
-            image: PIL Image object
-            confidence: Confidence threshold (optional)
-            
-        Returns:
-            Dictionary with privacy detections
-        """
-        try:
-            # Load privacy model
-            model = self.model_manager.load_model('privacy_detection')
-            
-            # Get model config
-            model_config = config.get_model_config('privacy_detection')
-            conf_threshold = confidence or model_config.get('confidence_threshold', 0.40)
-            
-            # Run inference
-            logger.info("Running privacy detection...")
-            results = model.predict(
-                source=image,
-                conf=conf_threshold,
-                device=self.model_manager.device,
-                verbose=False
-            )
-            
-            # Parse results
-            detections = self._parse_detection_results(results[0], model_config, image)
-            
-            # Filter to privacy-relevant classes
-            privacy_classes = ['person', 'car', 'truck', 'bus', 'motorcycle']
-            privacy_detections = [
-                d for d in detections 
-                if d['class'] in privacy_classes
-            ]
-            
-            return {
-                'success': True,
-                'has_privacy_concerns': len(privacy_detections) > 0,
-                'detections': privacy_detections,
-                'summary': f"Found {len(privacy_detections)} privacy-sensitive object(s)",
-                'total_detections': len(privacy_detections)
-            }
-            
-        except Exception as e:
-            logger.error(f"Privacy detection failed: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'has_privacy_concerns': False,
-                'detections': [],
-                'total_detections': 0
-            }
-    
     def detect_environmental_hazards(
         self,
         image: Image.Image,

@@ -7,17 +7,6 @@ const permittedFormats = () => (process.env.ALLOWED_IMAGE_FORMATS || 'jpeg,png,w
   .filter(Boolean);
 
 /**
- * Privacy redaction needs a real detector and redaction engine. Returning the
- * input buffer would make callers falsely believe it has been masked, so this
- * boundary fails closed until a provider is configured.
- */
-exports.applyPrivacyMask = async () => {
-  const error = new Error('Privacy redaction is not configured');
-  error.code = 'PRIVACY_REDACTION_UNAVAILABLE';
-  throw error;
-};
-
-/**
  * An explicit no-model response for legacy callers. It does not fabricate an
  * AI classification and leaves manual category selection as the fallback.
  */

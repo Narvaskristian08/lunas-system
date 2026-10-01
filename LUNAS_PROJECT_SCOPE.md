@@ -176,6 +176,14 @@ timestamp, state, and applicable reason or instructions.
 
 ## AI, evidence, and privacy boundary
 
+Automatic face blurring, license-plate masking, visual redaction, privacy-detection
+models, and image anonymization are excluded from the current LUNAS scope. Evidence
+validation, safe decoding/re-encoding, EXIF/GPS metadata stripping, SHA-256 checksums,
+private storage, signed URLs, access controls, and required acknowledgements remain in
+scope. Metadata stripping does not anonymize visible image content. Historical privacy
+fields are retained for compatibility; new uploads record `not_available`,
+`applied=false`, and `isPrivacyMasked=false`.
+
 AI analysis, if enabled and connected, is advisory evidence support. It cannot
 validate, confirm, prioritize, route, assign, accept repair, verify, or close an
 incident. Duplicate suggestions are based on configured report/location

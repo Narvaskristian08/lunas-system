@@ -5,6 +5,7 @@ jest.mock('./storageService', () => ({
 jest.mock('./aiService', () => ({ analyzeIncidentImage: jest.fn() }));
 
 const sharp = require('sharp');
+const crypto = require('crypto');
 const storageService = require('./storageService');
 const aiService = require('./aiService');
 const { processAndUploadEvidence, processAndUploadRepairEvidence } = require('./evidenceService');
@@ -68,6 +69,8 @@ describe('secure incident evidence processing', () => {
       })
     }));
     expect(result.images[0].checksum).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.images[0].checksum).toBe(crypto.createHash('sha256').update(storedBuffer).digest('hex'));
+    expect(result.images[0].isPrivacyMasked).toBe(false);
     expect(result.aiAnalysis).toEqual(expect.objectContaining({
       analysisStatus: 'unavailable',
       requiresManualReview: true,
@@ -91,7 +94,9 @@ describe('secure incident evidence processing', () => {
       // Deliberately false to prove the backend owns this invariant.
       requiresManualReview: false,
       aiEnabled: true,
-      detections: { road_damage: 1, cracks: 0 },
+      detections: { road_damage: 1, cracks: 0, privacy_concerns: true },
+      isPrivacyMasked: true,
+      privacyProcessing: { status: 'applied', applied: true },
       findings: [{
         label: 'pothole',
         confidence: 0.92,
@@ -130,6 +135,52 @@ describe('secure incident evidence processing', () => {
       confidence: 0.92,
       bbox: { x1: 0.1, y1: 0.2, x2: 0.7, y2: 0.8 }
     }]);
+    expect(result.aiAnalysis.needsPrivacyMasking).toBe(false);
+    expect(result.images[0]).toMatchObject({ isPrivacyMasked: false,
+      privacyProcessing: { status: 'not_available', applied: false } });
+  });
+
+  test('strips real EXIF/GPS metadata while retaining valid evidence without a privacy detector', async () => {
+    const source = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#9c1d36' } })
+      .withMetadata({ exif: { IFD0: { Artist: 'Metadata test' },
+        IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '16/1 2/1 0/1', GPSLongitudeRef: 'E', GPSLongitude: '120/1 20/1 0/1' } } })
+      .jpeg().toBuffer();
+    expect((await sharp(source).metadata()).exif).toBeDefined();
+    storageService.uploadToStorage.mockResolvedValue({ key: 'incidents/test/evidence.webp' });
+    await processAndUploadEvidence([{ buffer: source }], { reporterId: 'test', category: 'road', privacyAcknowledged: true });
+    const stored = await sharp(storageService.uploadToStorage.mock.calls[0][0]).metadata();
+    expect(stored.format).toBe('webp');
+    expect(stored.exif).toBeUndefined();
+    expect(stored.xmp).toBeUndefined();
+    expect(stored.iptc).toBeUndefined();
+  });
+
+  test('still rejects an image below minimum dimensions before storage', async () => {
+    const buffer = await sharp({ create: { width: 100, height: 100, channels: 3, background: '#000' } }).png().toBuffer();
+    await expect(processAndUploadEvidence([{ buffer }], { reporterId: 'test', category: 'road' }))
+      .rejects.toThrow('quality validation');
+    expect(storageService.uploadToStorage).not.toHaveBeenCalled();
+  });
+
+  test('decoded formats outside the allowlist remain rejected', async () => {
+    const buffer = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#000' } }).gif().toBuffer();
+    await expect(processAndUploadEvidence([{ buffer }], { reporterId: 'test', category: 'road' }))
+      .rejects.toThrow('Unsupported image format');
+    expect(storageService.uploadToStorage).not.toHaveBeenCalled();
+  });
+
+  test('the configured byte-size limit remains enforced before storage', async () => {
+    const previous = process.env.MAX_FILE_SIZE;
+    try {
+      process.env.MAX_FILE_SIZE = '16';
+      const buffer = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#000' } }).png().toBuffer();
+      await expect(processAndUploadEvidence([{ buffer }], { reporterId: 'test', category: 'road' }))
+        .rejects.toThrow('File size too large');
+      expect(storageService.uploadToStorage).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.MAX_FILE_SIZE;
+      else process.env.MAX_FILE_SIZE = previous;
+    }
   });
 
   test('keeps the report path available when AI fails', async () => {

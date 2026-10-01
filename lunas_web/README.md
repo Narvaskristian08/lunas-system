@@ -65,3 +65,14 @@ The end-to-end tests require a browser install and a running web server/API
 configuration as specified in `playwright.config.ts`. Passing static checks
 does not prove live account provisioning, private evidence storage, or the
 complete incident handoff. See the [root demo guide](../README.md).
+
+
+## Current image privacy scope (Revision 7)
+
+Automatic face blurring, license-plate masking, visual redaction, privacy-detection
+models, and image anonymization are excluded from the current LUNAS scope. Evidence
+validation, safe decoding/re-encoding, EXIF/GPS metadata stripping, SHA-256 checksums,
+private storage, signed URLs, access controls, and required acknowledgements remain in
+scope. Metadata stripping does not anonymize visible image content. Historical privacy
+fields are retained for compatibility; new uploads record `not_available`,
+`applied=false`, and `isPrivacyMasked=false`.

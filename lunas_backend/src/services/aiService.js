@@ -150,53 +150,6 @@ exports.detectCracks = async (imageBuffer, options = {}) => {
 };
 
 /**
- * Detect privacy-sensitive objects
- * 
- * @param {Buffer} imageBuffer - Image buffer
- * @returns {Promise<Object>} Detection results
- */
-exports.detectPrivacyConcerns = async (imageBuffer) => {
-  if (!AI_SERVICE_ENABLED) {
-    return {
-      success: false,
-      enabled: false,
-      has_privacy_concerns: false,
-      detections: []
-    };
-  }
-
-  try {
-    const form = new FormData();
-    form.append('image', imageBuffer, 'incident.jpg');
-
-    const response = await axios.post(
-      `${AI_SERVICE_URL}/api/v1/detect/privacy`,
-      form,
-      {
-        headers: form.getHeaders(),
-        timeout: AI_SERVICE_TIMEOUT
-      }
-    );
-
-    return {
-      ...response.data,
-      enabled: true
-    };
-
-  } catch (error) {
-    logger.error(`Privacy detection failed: ${error.message}`);
-    
-    return {
-      success: false,
-      enabled: true,
-      has_privacy_concerns: false,
-      detections: [],
-      error: error.message
-    };
-  }
-};
-
-/**
  * Comprehensive detection based on incident category
  * 
  * @param {Buffer} imageBuffer - Image buffer

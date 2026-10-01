@@ -68,8 +68,8 @@ class ReportService {
       fields: {
         'category': draft.category.code,
         'description': draft.description,
-        // The server requires an explicit acknowledgement until an approved
-        // face/license-plate redaction provider is available.
+        // The server retains explicit acknowledgement: automatic visual
+        // privacy masking is outside the current scope.
         'privacyAcknowledged': draft.privacyAcknowledged.toString(),
         'location': jsonEncode({
           'type': 'Point',

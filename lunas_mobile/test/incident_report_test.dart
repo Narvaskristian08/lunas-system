@@ -2,6 +2,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
 void main() {
+  test('historical evidence remains readable without inventing masking status', () {
+    final report = IncidentReport.fromJson({
+      'id': 'historical',
+      'status': 'submitted',
+      'images': [
+        {'url': 'https://legacy.example/evidence.jpg'},
+        {
+          'url': 'https://legacy.example/processed.jpg',
+          'isPrivacyMasked': true,
+          'privacyProcessing': {'status': 'applied', 'applied': true},
+        },
+      ],
+    });
+    expect(report.images.first.url, 'https://legacy.example/evidence.jpg');
+    expect(report.images.first.privacyProcessingStatus, isNull);
+    expect(report.images.last.isPrivacyMasked, isTrue);
+    expect(report.images.last.privacyProcessingApplied, isTrue);
+  });
   test('parses the citizen-safe incident response and real status history', () {
     final report = IncidentReport.fromJson({
       'id': 'incident-1',

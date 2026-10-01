@@ -111,7 +111,7 @@ class _EvidencePickerScreenState extends State<EvidencePickerScreen> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Privacy processing is unavailable because no approved face or license-plate model is bundled. LUNAS cannot confirm this image has been redacted. Avoid images containing people, plates, or private information.',
+                        'Automatic face blurring, license-plate masking, and visual redaction are outside the current LUNAS scope. Metadata removal does not anonymize images. Avoid images containing people, plates, or private information.',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onErrorContainer,
                         ),

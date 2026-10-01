@@ -157,7 +157,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   'I reviewed this image for private information.',
                 ),
                 subtitle: const Text(
-                  'I understand LUNAS cannot confirm faces or license plates were redacted in this build.',
+                  'I understand LUNAS does not automatically blur faces, mask license plates, or anonymize uploaded images.',
                 ),
               ),
             ],

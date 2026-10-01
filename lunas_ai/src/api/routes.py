@@ -179,39 +179,13 @@ def detect_cracks():
 
 @api.route('/detect/privacy', methods=['POST'])
 def detect_privacy():
-    """Detect privacy-sensitive objects (people, vehicles)"""
-    start_time = time.time()
-    
-    try:
-        # Validate image
-        file = request.files.get('image')
-        is_valid, error, image = validate_image(file)
-        
-        if not is_valid:
-            return jsonify({
-                'success': False,
-                'error': error
-            }), 400
-        
-        # Get optional confidence threshold
-        confidence = request.form.get('confidence', type=float)
-        
-        # Run detection
-        result = detection_service.detect_privacy_concerns(image, confidence)
-        
-        # Add timing
-        result['processing_time'] = round(time.time() - start_time, 3)
-        
-        logger.info(f"Privacy detection completed in {result['processing_time']}s")
-        
-        return jsonify(result), 200
-        
-    except Exception as e:
-        logger.error(f"Detection failed: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    """Compatibility tombstone: automatic visual privacy processing is out of scope."""
+    return jsonify({
+        'success': False,
+        'status': 'not_available',
+        'applied': False,
+        'error': 'Automatic image privacy masking and detection are excluded from the current LUNAS scope.'
+    }), 410
 
 
 def _run_category_detection(category: str):

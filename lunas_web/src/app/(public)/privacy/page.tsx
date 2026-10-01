@@ -53,7 +53,7 @@ const sections: LegalSection[] = [
     id: "image-privacy",
     title: "Image privacy and redaction",
     paragraphs: [
-      "Automated face and license-plate redaction is not configured in this release. Reporters should avoid submitting images that include people, vehicle identifiers, or unrelated private details.",
+      "Automatic face blurring, license-plate masking, and visual redaction are excluded from the current LUNAS scope. Metadata removal does not anonymize image content. Reporters should avoid submitting images that include people, vehicle identifiers, or unrelated private details.",
       "Incident and repair evidence is available to authorized users through the role-scoped workflow. Confirm retention periods and approved handling procedures with the system owner before production use.",
     ],
   },

@@ -10,6 +10,7 @@ incident priority, validate a report, select a provider, approve a repair, or
 resolve/close an incident. A missing or failed model means manual review; do
 not infer that the image contains no damage.
 
-The standalone `/detect/privacy` route detects configured person/vehicle
-objects. It does not redact them or alter stored evidence. See the
+Automatic privacy detection and visual masking are excluded from current
+scope. The legacy `/detect/privacy` route returns HTTP 410 without inference.
+Backend metadata stripping does not anonymize visible image content. See the
 [AI service setup and route catalog](./README.md).

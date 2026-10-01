@@ -83,7 +83,8 @@ const normalizeAiAnalysis = (analysis) => {
       roadDamage: toDetectionCount(analysis?.detections?.roadDamage ?? analysis?.detections?.road_damage),
       cracks: toDetectionCount(analysis?.detections?.cracks)
     },
-    needsPrivacyMasking: completed && Boolean(analysis?.detections?.privacy_concerns),
+    // Legacy compatibility field; visual masking is excluded from current scope.
+    needsPrivacyMasking: false,
     // This invariant is intentionally owned by the backend, regardless of AI output.
     requiresManualReview: true,
     advisoryOnly: true,
@@ -140,9 +141,8 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
         issues: []
       },
       aiFindings: aiAnalysis.findings,
-      // No face/license-plate detector capable of producing a redacted image
-      // is configured in this backend. This truthful state prevents clients
-      // from claiming that redaction happened when it did not.
+      // Visual privacy masking is excluded from current scope. Retain truthful
+      // legacy fields without interpreting metadata stripping as redaction.
       privacyProcessing: {
         status: 'not_available',
         applied: false,

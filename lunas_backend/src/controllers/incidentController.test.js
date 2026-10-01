@@ -50,6 +50,17 @@ const createResponse = () => {
   return response;
 };
 
+test('historical evidence and recorded privacy fields remain readable without exposing private keys', async () => {
+  const incident = { _id: 'historical', status: 'submitted', images: [
+    { url: 'https://legacy.example/evidence.jpg', isPrivacyMasked: true,
+      privacyProcessing: { status: 'applied', applied: true, acknowledgedByReporter: true } }
+  ] };
+  const result = await serializeIncidentForCitizen(incident);
+  expect(result.images[0]).toMatchObject({ url: 'https://legacy.example/evidence.jpg',
+    isPrivacyMasked: true, privacyProcessing: { status: 'applied', applied: true } });
+  expect(result.images[0]).not.toHaveProperty('key');
+});
+
 describe('citizen incident reporting', () => {
   beforeEach(() => {
     jest.clearAllMocks();

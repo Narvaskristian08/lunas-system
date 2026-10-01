@@ -163,24 +163,6 @@ models:
       normalize: true
       resize: true
   
-  privacy_detection:
-    name: "YOLOv8n Privacy Detection"
-    path: "models/yolov8n.pt"
-    type: "detection"
-    classes:
-      - person
-      - car
-      - truck
-      - bus
-      - motorcycle
-      - license_plate
-    confidence_threshold: 0.40
-    iou_threshold: 0.45
-    input_size: 640
-    preprocessing:
-      normalize: true
-      resize: true
-
 category_models:
   # These keys are the canonical category codes shared by the web, mobile,
   # and backend incident APIs. A null value is intentionally manual-only.

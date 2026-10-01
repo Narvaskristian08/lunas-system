@@ -403,7 +403,7 @@ class _EvidenceProcessingStatus extends StatelessWidget {
     final privacyText = privacyStatus == null
         ? 'Privacy-processing status was not returned for this evidence.'
         : privacyStatus == 'not_available'
-        ? 'Server privacy redaction is not available for this evidence.'
+        ? 'Automatic visual privacy masking is outside the current LUNAS scope.'
         : 'Automated redaction status is not available for this evidence.';
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),

@@ -1,3 +1,5 @@
+> Revision 7 scope clarification: automatic visual privacy masking and its detector are excluded, rather than unfinished release requirements. Evidence security and privacy acknowledgement remain required. Non-privacy findings below retain their original audit context; consult the Revision 1-6 changes and Revision 6 report for subsequent fixes.
+
 # LUNAS Current Project Scope and Technical Audit
 
 **Audit date:** 2026-10-01
@@ -28,7 +30,7 @@ The implemented happy path is:
 
 The current code also supports Barangay rejection and duplicate decisions, a City-to-Barangay clarification loop, repair-personnel decline/reassignment, Utility Provider corrective work, and a City final-review return loop. It does **not** support incident deletion, citizen editing/cancellation after submission, automatic jurisdiction assignment, multiple work orders per incident, workflow cancellation, or automatic AI decisions. The canonical incident states are defined in `lunas_backend/src/services/incidentTransitionService.js:2-40`; the platform split is enforced by `lunas_mobile/lib/core/routes/app_router.dart:51-95` and `lunas_web/src/app/(protected)/layout.tsx:5-10`.
 
-The repository is substantial but not release-ready. Critical blockers include the missing Utility Provider UI entry point for creating the first work order, a default Docker web-to-backend URL that resolves to the web container itself, a production session secret omitted from Compose, an in-progress reassignment state that the new repair assignee cannot accept, disabled-by-default SLA scheduling, and unavailable automated privacy redaction. These findings are detailed in Sections 22-25.
+The repository is substantial but not release-ready. Critical blockers include the missing Utility Provider UI entry point for creating the first work order, a default Docker web-to-backend URL that resolves to the web container itself, a production session secret omitted from Compose, an in-progress reassignment state that the new repair assignee cannot accept, disabled-by-default SLA scheduling, and the other operational findings below. These findings are detailed in Sections 22-25.
 
 ### Purpose, users, and boundaries
 
@@ -505,7 +507,7 @@ All paths below are under `/api/v1` unless stated. “Any auth” means every ac
 
 ### AI HTTP surface
 
-The unauthenticated Flask service exposes `GET /`, `/qa`, `/api/v1/health`, `/models`, `/ping` and POST detection endpoints for road damage, cracks, privacy, drainage, electrical, comprehensive category inference, and a deprecated `all-hazards` route (`lunas_ai/app.py:37-68`; `lunas_ai/src/api/routes.py:66-308`). It should be private-network-only; Flask CORS currently permits every origin for `/api/*` (`app.py:26-35`).
+The unauthenticated Flask service exposes `GET /`, `/qa`, `/api/v1/health`, `/models`, `/ping` and POST detection endpoints for road damage, cracks, drainage, electrical, comprehensive category inference, and a deprecated `all-hazards` route (`lunas_ai/app.py:37-68`; `lunas_ai/src/api/routes.py:66-308`). It should be private-network-only; Flask CORS currently permits every origin for `/api/*` (`app.py:26-35`).
 
 ## 14. Database Models and Relationships
 
@@ -561,7 +563,7 @@ Relationship and consistency notes:
 | Other | `environmental_hazards`, 0.25; checked-in weight | Fallen tree, fire source, garbage, open manhole findings | **IMPLEMENTED BUT NOT RUNTIME VERIFIED** |
 | Gas | Config points to gas-infrastructure weight at 0.35 | Required `.pt` file is absent; comprehensive endpoint should report model unavailable | **NOT IMPLEMENTED** for inference; manual official review remains |
 | Crack segmentation | Config and endpoint exist | Configured weight file is absent | **PARTIALLY IMPLEMENTED** |
-| Privacy detection/redaction | Generic privacy model config and detection endpoint exist | Configured weight file is absent; backend does not call it in evidence pipeline and `applyPrivacyMask` throws | **NOT IMPLEMENTED** for actual masking |
+| Automatic privacy detection/redaction | Explicitly excluded from current scope | Unused detector/client/mask stub removed; legacy endpoint returns 410 without inference; compatibility fields retained | **OUT OF SCOPE** |
 | Severity estimation | Area thresholds appear in YAML | No workflow controller uses them to set priority/SLA | **MOCK / UI ONLY** configuration, no product decision path |
 
 The category mapping is explicit at `lunas_ai/config.yaml:184-193`; thresholds and model paths are at `config.yaml:4-179`. The model manager lazily loads models and attempts to preload road damage. The service returns an honest `unavailable` result when a configured file is absent. The backend calls only comprehensive category inference when both AI flags are enabled (`evidenceService.js:13,94-116`; `aiService.js:206-280`). AI failure never blocks report storage and all normalized results set `requiresManualReview` and `advisoryOnly` (`evidenceService.js:68-90`).
@@ -674,7 +676,7 @@ Audit creation is normally nonblocking/best-effort (`utils/auditLogger.js`). It 
 | Critical | Supplied Compose cannot correctly run the production web BFF by default | `apiBaseUrl` requires internal `LUNAS_API_URL`, but Compose provides only a localhost `NEXT_PUBLIC_API_URL`; it also omits mandatory production `LUNAS_SESSION_SECRET` (`lunas_web/src/lib/api/url.ts:1-9`; `session-crypto.ts:24-31`; `docker-compose.yml`) |
 | High | Shared demo and local database credentials are committed in repository documentation/config/source | Values are deliberately omitted here. They must never be reused outside isolated local demo environments and should be removed/rotated before publication. |
 | High | AI HTTP endpoints are unauthenticated and configured with wildcard CORS | If port 5001 is exposed beyond trusted network, arbitrary clients can consume compute/model metadata (`lunas_ai/app.py:26-38`; Compose publishes the port) |
-| High | No automated privacy masking despite evidence containing people/plates | Backend truthfully records `not_available`; acknowledgement is not redaction or legal compliance (`evidenceService.js:143-151`) |
+| Scope limitation | Automatic image privacy masking is excluded; visible people/plates can remain | Backend records `not_available` and `applied=false`; reporter acknowledgement and access controls remain. Metadata stripping is not visual redaction or legal compliance. |
 | High | Cross-document/external workflow writes are nontransactional | WorkOrder can update before Incident, notification, audit, or availability fails; client may retry a mutation that already happened |
 | Medium | `/incidents/nearby` returns raw Incident documents rather than safe serialized projections | Operational users may receive internal storage keys/history/IDs beyond least-necessary response; repair role nevertheless receives none because of scope (`incidentController.js:1283-1312`) |
 | Medium | Incident/jurisdiction barangay and coordinates are not constrained to Dagupan | Crafted API report can bypass static recognized list, create scope mismatches, or claim an unrelated pin |
@@ -727,8 +729,8 @@ No row is **IMPLEMENTED AND VERIFIED** because this audit did not execute the cu
 | Login, refresh rotation, logout/revocation | **IMPLEMENTED BUT NOT RUNTIME VERIFIED** | auth controller/tokens; web proxy; mobile API client | Refresh-secret fallback; Compose long token; no session-management UI | Backend auth/token tests |
 | Citizen report submission | **IMPLEMENTED BUT NOT RUNTIME VERIFIED** | active mobile wizard; `POST /incidents`; evidence service | One mobile image only; needs Supabase; no offline queue | Backend incident/upload/evidence tests; mobile model/widget tests |
 | Image quality, EXIF stripping, checksums, private URLs | **IMPLEMENTED BUT NOT RUNTIME VERIFIED** | evidence/image/storage services | External URL evidence bypass; no malware scanner | Backend evidence/upload tests |
-| Automated privacy redaction | **NOT IMPLEMENTED** | explicit `not_available`; missing configured weight; throwing mask utility | Select detector/redactor, integrate, validate and govern | No end-to-end privacy masking test |
-| Advisory category AI | **PARTIALLY IMPLEMENTED** | Flask/YOLO service, weights, backend integration | Gas unavailable; crack/privacy weights absent; no runtime/model-quality verification | Backend AI-client tests only; no Python test suite found |
+| Automated privacy redaction | **OUT OF SCOPE** | explicit `not_available`, `applied=false`; detector configuration and unused mask utility removed | No replacement model planned in current scope | Scope-exclusion/evidence-security regression tests; no masking claim |
+| Advisory category AI | **PARTIALLY IMPLEMENTED** | Flask/YOLO service, weights, backend integration | Gas unavailable; crack weights absent; no runtime/model-quality verification | Backend AI-client tests only; no Python test suite found |
 | Duplicate candidate detection | **IMPLEMENTED BUT NOT RUNTIME VERIFIED** | duplicate service and Barangay UI/API | Category/time/location only; no merge/image matching | Incident controller/validation tests |
 | Barangay validation/reject/duplicate | **IMPLEMENTED BUT NOT RUNTIME VERIFIED** | validation routes/controllers/web review | Free-form Incident barangay can fall outside official scopes | Incident validation and jurisdiction tests |
 | City confirmation/clarification | **PARTIALLY IMPLEMENTED** | transition/controller/web action | Citizen is notified but cannot answer/amend; no structured Barangay response | Transition/controller tests |
@@ -814,7 +816,7 @@ Implemented but underemphasized in documentation: query-level record scopes, tok
 - Work-order cancellation, suspension, multi-team/subtask work, multiple work orders per Incident, material/cost tracking, scheduling, and signatures.
 - Automatic/barangay-polygon jurisdiction, Dagupan coordinate bounds, and an official/citizen incident map.
 - SLA pause, business calendars, extensions, reassignment/escalation policies, and admin configuration UI.
-- Production privacy masking, retention/deletion policy, consent versioning, evidence export, legal-hold rules, and tamper-evident audit.
+- Retention/deletion policy, consent versioning, evidence export, legal-hold rules, and tamper-evident audit.
 - Email/SMS workflow notifications, push enrollment, notification preferences, delivery receipts, and a Repair notification center.
 - Analytics web UI, report export, public transparency dashboard, and support ticketing.
 - Offline draft/submission queue and resumable evidence upload.
@@ -861,13 +863,13 @@ The direct API call in step 3 is the only workflow workaround required by static
 1. **Scope:** Dagupan-oriented but not geospatially enforced; static Barangay names and organization strings are fragile master data.
 2. **Workflow:** strictly one provider and one primary work order per Incident; no cancellation, escalation reassignment policy, or citizen collaboration after submission.
 3. **Platform:** Citizen/Repair are mobile-only and officials/admin are web-only. Repair notifications and provider pre-work-order Incident handling fall between those boundaries.
-4. **Evidence:** requires external storage for real submissions; automated redaction is absent; external URL evidence weakens guarantees.
-5. **AI:** advisory and availability-dependent, with missing gas/privacy/crack weights; no independent model accuracy, bias, licensing, or Philippine field validation was established.
+4. **Evidence:** requires external storage for real submissions; automatic visual redaction is excluded; external URL evidence weakens guarantees.
+5. **AI:** advisory and availability-dependent, with missing gas/crack weights; no independent model accuracy, bias, licensing, or Philippine field validation was established.
 6. **Maps:** pin selection and reverse geocoding only; no barangay polygons, routing/directions service integration, or incident visualization layer.
 7. **SLA:** elapsed wall-clock targets only; scheduler opt-in and absent from supplied Compose; no pause/calendar/extension UI.
 8. **Notifications:** in-app is primary; mobile push enrollment is missing; email/SMS workflow delivery is absent.
 9. **Data integrity:** optimistic per-document checks exist, but no MongoDB transaction/outbox coordinates cross-document state, notification, audit, storage, and AI calls.
-10. **Security/privacy:** useful controls exist, but credential hygiene, AI exposure, retention/governance, redaction, and tamper evidence need production work.
+10. **Security/privacy:** useful controls exist, but credential hygiene, AI exposure, retention/governance and tamper evidence need production work.
 11. **Operations:** Compose is development-oriented and misconfigured for the web BFF defaults; no CI/CD, production orchestration, backup/restore proof, migrations framework, or monitoring stack.
 12. **Verification:** test source is broad on the backend but narrow on web/mobile end-to-end behavior; AI has no discovered automated suite; no current results were generated by this audit.
 
@@ -882,7 +884,7 @@ The direct API call in step 3 is the only workflow workaround required by static
 7. Which source is authoritative for barangay: reverse geocoder, citizen choice, polygon lookup, Barangay decision, or City decision? What are the permitted city bounds?
 8. Are SLA targets continuous hours or business hours? Who may pause/extend them, and should a breached Incident remain active, auto-escalate, or require acknowledgment?
 9. Should SLA policy live in environment variables or the currently unused `SLAConfig`/`SystemConfig` collections, and who governs it?
-10. What privacy-redaction standard, retention schedule, consent wording/versioning, evidence-access policy, and legal hold/export procedure are required?
+10. With visual redaction excluded, what retention schedule, consent wording/versioning, evidence-access policy, and legal hold/export procedure are required?
 11. Should the AI service be reachable only from backend private networking? What measured accuracy/licensing criteria must a model satisfy before deployment?
 12. Which notification channels are mandatory by event/role, and how should device enrollment, preferences, delivery receipts, retries, and escalation work?
 13. Must audit records be immutable/tamper-evident and exported to a separate security system? Who can delete ordinary notifications?
@@ -900,5 +902,5 @@ LUNAS currently implements a source-complete core for reporting and coordinating
 
 The authoritative lifecycle and authorization logic are in the backend, with mobile limited to Citizen/Repair and web limited to official/admin roles. Rejection, duplicate, clarification, decline/reassignment, provider rework, and City return loops exist. AI never changes category, priority, routing, status, or closure. SLA deadlines start at City priority assignment; scheduled monitoring is optional and disabled in the supplied deployment.
 
-The project is **not yet demonstrably production-ready**. The most important gaps are the missing Provider UI for initial work-order creation, broken default web Compose connectivity/session configuration, in-progress reassignment deadlock, no automated privacy masking, incomplete mobile push/Repair notifications, manual/unvalidated jurisdiction, nontransactional cross-service handoffs, and absent current runtime verification. With the provider handoff and deployment configuration repaired—and external storage/auth/map dependencies configured—the codebase contains the remainder of the intended single-incident/single-work-order workflow, but it still requires integrated testing, security/privacy governance, and operational hardening before being treated as a deployable municipal system.
+The project is **not yet demonstrably production-ready**. The most important gaps are the missing Provider UI for initial work-order creation, broken default web Compose connectivity/session configuration, in-progress reassignment deadlock, incomplete mobile push/Repair notifications, manual/unvalidated jurisdiction, nontransactional cross-service handoffs, and absent current runtime verification. With the provider handoff and deployment configuration repaired—and external storage/auth/map dependencies configured—the codebase contains the remainder of the intended single-incident/single-work-order workflow, but it still requires integrated testing, security/privacy governance, and operational hardening before being treated as a deployable municipal system.
 

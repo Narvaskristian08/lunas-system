@@ -45,3 +45,14 @@ Configure mobile platform credentials in the provider dashboard and use the
 documented SDK flow to register device tokens. Confirm a real test-device
 delivery; a successful API write alone does not prove push delivery. Never
 commit provider secrets or include them in client builds.
+
+
+## Current image privacy scope (Revision 7)
+
+Automatic face blurring, license-plate masking, visual redaction, privacy-detection
+models, and image anonymization are excluded from the current LUNAS scope. Evidence
+validation, safe decoding/re-encoding, EXIF/GPS metadata stripping, SHA-256 checksums,
+private storage, signed URLs, access controls, and required acknowledgements remain in
+scope. Metadata stripping does not anonymize visible image content. Historical privacy
+fields are retained for compatibility; new uploads record `not_available`,
+`applied=false`, and `isPrivacyMasked=false`.
