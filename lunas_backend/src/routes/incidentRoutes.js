@@ -59,6 +59,13 @@ router.get(
 );
 router.get('/my', protect, authorize('citizen'), paginationValidation, validate, getMyIncidents);
 router.get('/barangays', protect, getBarangays);
+router.get('/location-policy', protect, (req, res) => res.json({
+  success: true, data: require('../services/locationIntegrityService').getLocationPolicy()
+}));
+router.get('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer'), mongoIdValidation, validate,
+  require('../controllers/falseReportReviewController').getReview);
+router.post('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer'), mongoIdValidation, validate,
+  require('../controllers/falseReportReviewController').saveReview);
 router.get(
   '/pending-validation',
   protect,

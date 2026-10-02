@@ -16,6 +16,7 @@ import {
   routeIncidentAction,
   validateIncidentAction,
 } from "@/app/actions/validation";
+import { FalseReportReview } from "@/components/validation/false-report-review";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,14 +104,25 @@ function Coordinates({ incident }: { incident: ValidationIncident }) {
     : undefined;
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Location review" description="Citizen-submitted location; officials can confirm its jurisdiction before validating." />
+      <CardHeader title="Location review" description="Citizen-confirmed pin; geographic jurisdiction is unverified. Human verification is required." />
+      <div className="space-y-2 px-5 pt-5 text-sm">
+        <p className="font-semibold">{incident.locationIntegrity?.comparison === "discrepancy" ? "Location differs from current GPS - location requires verification"
+          : incident.locationIntegrity?.comparison === "consistent" ? "No significant discrepancy detected"
+            : incident.locationIntegrity?.comparison === "inconclusive" ? "Comparison inconclusive" : "Comparison unavailable"}</p>
+        <p>Pin source: {titleCase(incident.locationIntegrity?.pinSource, "Not recorded (historical report)")}</p>
+        {incident.locationIntegrity?.distanceMeters !== undefined ? <p>Distance: {Math.round(incident.locationIntegrity.distanceMeters)} m; reported GPS accuracy: {incident.locationIntegrity.accuracyMeters} m</p> : null}
+        {incident.locationIntegrity?.unavailableReason ? <p>Comparison detail: {titleCase(incident.locationIntegrity.unavailableReason)}</p> : null}
+        {incident.locationIntegrity?.explanation?.reason ? <p>Citizen explanation: {titleCase(incident.locationIntegrity.explanation.reason)} {incident.locationIntegrity.explanation.text}</p> : null}
+        <p>Pin confirmation: {incident.locationIntegrity?.confirmedAt ? formatDateTime(incident.locationIntegrity.confirmedAt) : "Not recorded (historical report)"}</p>
+        <p>GPS is an untrusted advisory signal and does not establish photo capture location. Delayed and manual reporting are allowed.</p>
+      </div>
       <div className="p-5">
         <div className="flex items-start gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><MapPin className="size-5" aria-hidden="true" /></span>
           <div className="min-w-0">
             <p className="font-semibold text-slate-950">{[incident.location.address.street, incident.location.address.barangay, incident.location.address.city].filter(Boolean).join(", ") || "Location details unavailable"}</p>
             {coordinateText ? <p className="mt-1 font-mono text-xs text-slate-600">{coordinateText}</p> : <p className="mt-1 text-sm text-amber-800">Coordinates were unavailable in this report.</p>}
-            {mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">Open verified coordinates in maps <ExternalLink className="size-3.5" aria-hidden="true" /></a> : null}
+            {mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">Open reported pin in maps <ExternalLink className="size-3.5" aria-hidden="true" /></a> : null}
           </div>
         </div>
       </div>
@@ -289,6 +301,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
           <AiAssistance incident={incident} />
           <Card className="overflow-hidden"><CardHeader title="Citizen report" description={incident.createdAt ? `Submitted ${formatDateTime(incident.createdAt)}` : "Submission time unavailable"} /><div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{titleCase(incident.category)}</Badge>{incident.subcategory ? <Badge>{titleCase(incident.subcategory)}</Badge> : null}{incident.aiAnalysis?.hazardType ? <Badge tone="neutral">AI suggestion: {titleCase(incident.aiAnalysis.hazardType)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{incident.description}</p></div></Card>
           <Coordinates incident={incident} />
+          {(isBarangay || isCityEngineer) ? <FalseReportReview incidentId={incident.id} status={incident.status} /> : null}
           <ValidationRoutingSummary incident={incident} />
           <Timeline incident={incident} />
         </div>

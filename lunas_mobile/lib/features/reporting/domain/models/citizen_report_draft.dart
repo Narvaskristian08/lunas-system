@@ -10,8 +10,14 @@ class CitizenReportDraft {
     required this.barangay,
     required this.evidence,
     required this.privacyAcknowledged,
+    this.locationConfirmed = false,
+    this.locationExplanationReason,
+    this.locationExplanationText,
   });
 
+  final bool locationConfirmed;
+  final String? locationExplanationReason;
+  final String? locationExplanationText;
   final CategoryOption category;
   final String description;
   final SelectedLocation location;

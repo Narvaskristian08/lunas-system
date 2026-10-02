@@ -1,6 +1,7 @@
 const { getSlaProjection } = require('../services/workOrderService');
 const Incident = require('../models/Incident');
 const User = require('../models/User');
+const { buildLocationIntegrity, safeLocationIntegrity } = require('../services/locationIntegrityService');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
 const storageService = require('../services/storageService');
@@ -201,7 +202,7 @@ const safeDuplicateReference = (duplicateOf) => {
   return id ? { id: id.toString(), reportNumber: source.reportNumber } : undefined;
 };
 
-const serializeIncidentForOfficial = async (incident, { includeHistory = true, includeCandidates = false } = {}) => {
+const serializeIncidentForOfficial = async (incident, { includeHistory = true, includeCandidates = false, includeLocationIntegrity = true } = {}) => {
   const source = incident.toObject ? incident.toObject() : incident;
   const aiAnalysis = source.aiAnalysis;
   const hasConfidence = typeof aiAnalysis?.confidence === 'number' && Number.isFinite(aiAnalysis.confidence);
@@ -226,6 +227,7 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
     description: source.description,
     location: source.location,
     images,
+    locationIntegrity: includeLocationIntegrity ? safeLocationIntegrity(source.locationIntegrity) : undefined,
     evidenceThumbnail: images[0]?.url || null,
     status: source.status,
     priority: source.priority,
@@ -321,6 +323,7 @@ exports.createIncident = asyncHandler(async (req, res) => {
     });
   }
   const coordinates = location.coordinates.map(Number);
+  const locationIntegrity = buildLocationIntegrity(req.body.locationIntegrity, coordinates);
   const files = getUploadedEvidenceFiles(req);
   const privacyAcknowledged = req.body.privacyAcknowledged === true || req.body.privacyAcknowledged === 'true';
   let uploadedImages = [];
@@ -360,6 +363,7 @@ exports.createIncident = asyncHandler(async (req, res) => {
           city: DAGUPAN_CITY
         }
       },
+      locationIntegrity,
       images,
       aiAnalysis,
       sla: {
@@ -1346,7 +1350,12 @@ exports.getNearbyIncidents = asyncHandler(async (req, res) => {
     }
   )).limit(20);
 
-  res.status(200).json({ success: true, data: incidents, count: incidents.length });
+  // Operational map results must not serialize the full document, which now
+  // contains restricted false-report review records.
+  const data = await Promise.all(incidents.map((incident) => serializeIncidentForOfficial(incident, {
+    includeHistory: false, includeLocationIntegrity: false
+  })));
+  res.status(200).json({ success: true, data, count: data.length });
 });
 
 // @desc    Delete incident

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -45,6 +47,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   GoogleMapController? _mapController;
   SelectedLocation? _selectedLocation;
   LatLng _cameraTarget = _dagupan;
+  LocationPolicy? _policy;
+  GpsFix? _gpsFix;
+  String _pinSource = 'map_pin';
   bool _isLocating = false;
   bool _isGeocoding = false;
   bool _hasLocationPermission = false;
@@ -55,12 +60,24 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final initialLocation = widget.initialLocation;
     if (initialLocation != null) {
       _selectedLocation = initialLocation;
+      _pinSource = initialLocation.pinSource;
+      _gpsFix = initialLocation.gpsFix;
       _cameraTarget = LatLng(
         initialLocation.latitude,
         initialLocation.longitude,
       );
     }
     _moveToCurrentLocation(userInitiated: false);
+    unawaited(_loadLocationPolicy());
+  }
+
+  Future<void> _loadLocationPolicy() async {
+    try {
+      final policy = await reportService.getLocationPolicy();
+      if (mounted) setState(() => _policy = policy);
+    } catch (_) {
+      // Final review retries policy retrieval before submission.
+    }
   }
 
   @override
@@ -79,14 +96,23 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       if (!mounted) return;
       setState(() {
         _hasLocationPermission = true;
+        _gpsFix = GpsFix(
+          longitude: position.longitude,
+          latitude: position.latitude,
+          accuracyMeters: position.accuracy,
+          capturedAt: position.timestamp,
+        );
       });
       final target = LatLng(position.latitude, position.longitude);
-      await _selectPoint(target);
-      await _animateCameraTo(target, zoom: 17);
+      if (userInitiated || _selectedLocation == null) {
+        await _selectPoint(target, source: 'gps');
+        await _animateCameraTo(target, zoom: 17);
+      }
     } on LocationServiceException catch (error) {
       if (!mounted) return;
       setState(() {
         _hasLocationPermission = false;
+        _gpsFix = null;
       });
       if (userInitiated) {
         _showLocationFeedback(
@@ -148,9 +174,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     }
   }
 
-  Future<void> _selectPoint(LatLng point) async {
+  Future<void> _selectPoint(LatLng point, {String source = 'map_pin'}) async {
     if (!mounted) return;
     setState(() {
+      _pinSource = source;
       _cameraTarget = point;
       _isGeocoding = true;
       _selectedLocation = SelectedLocation(
@@ -246,8 +273,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               child: FloatingActionButton.small(
                 heroTag: 'map-picker-current-location',
                 tooltip: 'Center on my location',
-                onPressed: () =>
-                    _moveToCurrentLocation(userInitiated: true),
+                onPressed: () => _moveToCurrentLocation(userInitiated: true),
                 child: const Icon(Icons.my_location_rounded),
               ),
             ),
@@ -286,6 +312,22 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                               style: theme.textTheme.bodySmall,
                             ),
                           ],
+                          if (selected != null && _policy != null)
+                            Text(switch (_policy!.compare(
+                              selected.longitude,
+                              selected.latitude,
+                              _gpsFix,
+                              DateTime.now(),
+                            )) {
+                              'discrepancy' =>
+                                'Location differs from current GPS. Delayed reporting is allowed; explain at final review.',
+                              'consistent' =>
+                                'No significant discrepancy detected.',
+                              'inconclusive' =>
+                                'GPS comparison inconclusive. You can select the damage location manually.',
+                              _ =>
+                                'Comparison unavailable. You can select the damage location manually.',
+                            }),
                           const SizedBox(height: AppSpacing.md),
                           LunasButton(
                             label: _isGeocoding
@@ -295,7 +337,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             isLoading: _isGeocoding,
                             onPressed: selected == null || _isGeocoding
                                 ? null
-                                : () => Navigator.pop(context, selected),
+                                : () => Navigator.pop(
+                                    context,
+                                    SelectedLocation(
+                                      latitude: selected.latitude,
+                                      longitude: selected.longitude,
+                                      address: selected.address,
+                                      pinSource: _pinSource,
+                                      gpsFix: _gpsFix,
+                                      barangayCandidates:
+                                          selected.barangayCandidates,
+                                      reverseGeocodingSucceeded:
+                                          selected.reverseGeocodingSucceeded,
+                                    ),
+                                  ),
                           ),
                         ],
                       ),

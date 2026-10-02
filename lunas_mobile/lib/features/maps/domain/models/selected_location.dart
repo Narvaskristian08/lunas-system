@@ -1,12 +1,18 @@
+import 'location_integrity.dart';
+
 class SelectedLocation {
   const SelectedLocation({
     required this.latitude,
     required this.longitude,
     required this.address,
+    this.pinSource = 'manual',
+    this.gpsFix,
     this.barangayCandidates = const [],
     this.reverseGeocodingSucceeded = false,
   });
 
+  final String pinSource;
+  final GpsFix? gpsFix;
   final double latitude;
   final double longitude;
   final String address;

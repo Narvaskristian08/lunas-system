@@ -102,6 +102,15 @@ export interface ValidationIncident {
     advisoryOnly: true;
     processedAt?: string;
   };
+  locationIntegrity?: {
+    pinSource?: string;
+    comparison?: string;
+    unavailableReason?: string;
+    distanceMeters?: number;
+    accuracyMeters?: number;
+    explanation?: { reason?: string; text?: string };
+    confirmedAt?: string;
+  };
   duplicateCandidateCount: number;
   duplicateCandidates: DuplicateCandidate[];
   history: ValidationHistoryEntry[];
@@ -303,6 +312,18 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       : undefined,
     createdAt: asString(source.createdAt),
     updatedAt: asString(source.updatedAt),
+    locationIntegrity: source.locationIntegrity ? {
+      pinSource: asString(asRecord(source.locationIntegrity).pinSource),
+      comparison: asString(asRecord(source.locationIntegrity).comparison),
+      unavailableReason: asString(asRecord(source.locationIntegrity).unavailableReason),
+      distanceMeters: asNumber(asRecord(source.locationIntegrity).distanceMeters),
+      accuracyMeters: asNumber(asRecord(source.locationIntegrity).accuracyMeters),
+      explanation: {
+        reason: asString(asRecord(asRecord(source.locationIntegrity).explanation).reason),
+        text: asString(asRecord(asRecord(source.locationIntegrity).explanation).text),
+      },
+      confirmedAt: asString(asRecord(source.locationIntegrity).confirmedAt),
+    } : undefined,
     location: normalizeLocation(source.location),
     images: asArray(source.images).map(normalizeEvidence),
     evidenceThumbnail: asString(source.evidenceThumbnail) ?? asString(source.thumbnailUrl) ?? null,

@@ -76,3 +76,9 @@ private storage, signed URLs, access controls, and required acknowledgements rem
 scope. Metadata stripping does not anonymize visible image content. Historical privacy
 fields are retained for compatibility; new uploads record `not_available`,
 `applied=false`, and `isPrivacyMasked=false`.
+
+## Revision 8 official location review
+
+The existing validation detail view now shows the citizen-confirmed incident pin, source, neutral GPS comparison result, distance/accuracy summary where usable, explanation, and confirmation time. Geographic jurisdiction is explicitly unverified; a recognized barangay name or address lookup does not prove pin containment. GPS remains advisory and cannot establish photo capture location. Existing validation, rejection, duplicate, clarification, routing, and closure responsibilities remain unchanged.
+
+Scoped Barangay Officials and City Engineers can separately document deliberate-fabrication findings on rejected reports and correct erroneous findings. Each action requires a reason, evidence reference, explicit review confirmation, and a version check. Only active documented findings count, within the caller's existing scope. History survives corrections. Rejection, duplication, unverifiability, and GPS mismatch alone are not abuse findings; no automatic punishment or hidden account score is added. Regular APIs do not disclose review records. Browser tests use isolated local API fixtures, not a live service. See [Revision 8 report](../REVISION_8_LOCATION_INTEGRITY_REPORT.md).

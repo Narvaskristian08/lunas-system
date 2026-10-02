@@ -1,4 +1,4 @@
-const JSON_FIELDS = ['location', 'images', 'aiAnalysis'];
+const JSON_FIELDS = ['location', 'images', 'aiAnalysis', 'locationIntegrity'];
 
 /**
  * Multer leaves multipart text fields as strings. Parse only the structured

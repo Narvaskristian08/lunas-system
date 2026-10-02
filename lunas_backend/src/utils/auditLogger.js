@@ -3,6 +3,10 @@ const logger = require('./logger');
 
 const REDACTED = '[REDACTED]';
 const SENSITIVE_KEYS = new Set([
+  'gps',
+  'currentposition',
+  'currentcoordinates',
+  'locationintegrity',
   'password',
   'passwordhash',
   'activationtoken',

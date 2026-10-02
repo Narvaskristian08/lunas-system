@@ -1,17 +1,7 @@
 const Incident = require('../models/Incident');
 const logger = require('../utils/logger');
 
-const toRadians = (degrees) => degrees * (Math.PI / 180);
-
-const distanceInMeters = ([longitudeA, latitudeA], [longitudeB, latitudeB]) => {
-  const earthRadius = 6371000;
-  const deltaLatitude = toRadians(latitudeB - latitudeA);
-  const deltaLongitude = toRadians(longitudeB - longitudeA);
-  const a = Math.sin(deltaLatitude / 2) ** 2
-    + Math.cos(toRadians(latitudeA)) * Math.cos(toRadians(latitudeB))
-    * Math.sin(deltaLongitude / 2) ** 2;
-  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
+const { distanceInMeters } = require('../utils/geodesic');
 
 const duplicateWindowHours = () => parseInt(process.env.DUPLICATE_WINDOW_HOURS, 10) || 72;
 const duplicateRadiusMeters = () => parseInt(process.env.DUPLICATE_RADIUS_METERS, 10) || 100;

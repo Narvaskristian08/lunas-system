@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart';
 
 import 'package:http_parser/http_parser.dart';
 import 'package:lunas_mobile/core/network/api_client.dart';
@@ -9,6 +10,11 @@ class ReportService {
   const ReportService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
+
+  Future<LocationPolicy> getLocationPolicy() async {
+    final payload = await _apiClient.get('/incidents/location-policy');
+    return LocationPolicy.fromJson(_dataMap(payload));
+  }
 
   Future<List<String>> getBarangays() async {
     final payload = await _apiClient.get('/incidents/barangays');
@@ -62,10 +68,26 @@ class ReportService {
     if (!draft.location.isValid) {
       throw ArgumentError('A valid report location is required.');
     }
+    if (!draft.locationConfirmed) {
+      throw ArgumentError(
+        'Confirm the actual damage location before submitting.',
+      );
+    }
     final bytes = await draft.evidence.readAsBytes();
     final payload = await _apiClient.multipart(
       '/incidents',
       fields: {
+        'locationIntegrity': jsonEncode({
+          'confirmed': draft.locationConfirmed,
+          'pinSource': draft.location.pinSource,
+          if (draft.location.gpsFix != null)
+            'gps': draft.location.gpsFix!.toJson(),
+          if (draft.locationExplanationReason != null)
+            'explanation': {
+              'reason': draft.locationExplanationReason,
+              'text': draft.locationExplanationText ?? '',
+            },
+        }),
         'category': draft.category.code,
         'description': draft.description,
         // The server retains explicit acknowledgement: automatic visual

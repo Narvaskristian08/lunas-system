@@ -126,6 +126,10 @@ exports.updateProfileValidation = [
 
 // Incident validation rules
 exports.createIncidentValidation = [
+  body('locationIntegrity').custom((value, { req }) => {
+    require('../services/locationIntegrityService').buildLocationIntegrity(value, Array.isArray(req.body.location?.coordinates) ? req.body.location.coordinates.map(Number) : undefined);
+    return true;
+  }),
   body('category').trim().isIn(INCIDENT_CATEGORY_CODES)
     .withMessage('Valid category is required'),
   body('subcategory').optional().isIn(['pothole', 'crack', 'collapse', 'flooding', 'blockage', 'leak', 'outage', 'damage', 'missing', 'other'])

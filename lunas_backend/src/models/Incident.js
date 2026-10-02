@@ -44,6 +44,30 @@ const incidentSchema = new mongoose.Schema({
       landmark: String
     }
   },
+  locationIntegrity: {
+    pinSource: { type: String, enum: ['gps', 'map_pin', 'manual'] },
+    comparison: { type: String, enum: ['consistent', 'discrepancy', 'unavailable', 'inconclusive'] },
+    unavailableReason: String,
+    distanceMeters: { type: Number, min: 0 },
+    accuracyMeters: { type: Number, min: 0 },
+    thresholdMeters: { type: Number, min: 0 },
+    significantDiscrepancy: Boolean,
+    explanation: { reason: String, text: { type: String, maxlength: 500 } },
+    confirmedAt: Date,
+    jurisdictionStatus: { type: String, enum: ['unverified_geographically'] }
+  },
+  // Separate from lifecycle decisions; no historical backfill or account score.
+  falseReportReview: {
+    version: Number,
+    finding: { type: String, enum: ['confirmed_fabrication', 'corrected'] },
+    history: [{
+      finding: { type: String, enum: ['confirmed_fabrication', 'corrected'] },
+      reason: { type: String, maxlength: 2000 },
+      evidenceReference: { type: String, maxlength: 500 },
+      reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      reviewedAt: Date
+    }]
+  },
   images: [{
     // New uploads use a private storage key. `url` remains optional only for
     // pre-existing records that were stored in a public bucket.
@@ -249,6 +273,7 @@ incidentSchema.index({ status: 1 });
 incidentSchema.index({ priority: 1 });
 incidentSchema.index({ 'location.address.barangay': 1 });
 incidentSchema.index({ reporter: 1 });
+incidentSchema.index({ reporter: 1, 'falseReportReview.finding': 1 });
 incidentSchema.index({ reporter: 1, createdAt: -1 });
 incidentSchema.index({ category: 1, createdAt: -1 });
 incidentSchema.index({ createdAt: -1 });

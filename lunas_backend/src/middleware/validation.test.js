@@ -39,6 +39,7 @@ describe('request validation', () => {
 
   test('incident reports require valid coordinates and at least one evidence image', async () => {
     const errors = await runRules(createIncidentValidation, {
+      locationIntegrity: { confirmed: true, pinSource: 'manual' },
       category: 'road',
       description: 'A large pothole is causing a hazard for motorists.',
       location: {
@@ -56,6 +57,7 @@ describe('request validation', () => {
 
   test('a well-formed JSON report with evidence metadata validates', async () => {
     const { req, errors } = await runRulesWithRequest(createIncidentValidation, {
+      locationIntegrity: { confirmed: true, pinSource: 'manual' },
       category: 'road',
       subcategory: 'pothole',
       description: 'A large pothole is causing a hazard for motorists.',
@@ -77,6 +79,7 @@ describe('request validation', () => {
 
   test('rejects invalid and misspelled incident barangays', async () => {
     const errors = await runRules(createIncidentValidation, {
+      locationIntegrity: { confirmed: true, pinSource: 'manual' },
       category: 'road',
       description: 'A large pothole is causing a hazard for motorists.',
       location: {
@@ -115,6 +118,7 @@ describe('request validation', () => {
 
   test('requires citizen acknowledgement when evidence cannot be server-redacted', async () => {
     const errors = await runRules(createIncidentValidation, {
+      locationIntegrity: { confirmed: true, pinSource: 'manual' },
       category: 'road',
       description: 'A large pothole is causing a hazard for motorists.',
       location: {

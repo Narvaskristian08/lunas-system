@@ -100,7 +100,8 @@ describe('citizen incident reporting', () => {
 
     const req = {
       body: {
-        category: 'road',
+        locationIntegrity: { confirmed: true, pinSource: 'manual' },
+      category: 'road',
         subcategory: 'pothole',
         description: 'A large pothole is causing a hazard for motorists.',
         location: {
@@ -216,7 +217,8 @@ describe('citizen incident reporting', () => {
 
     const req = {
       body: {
-        category: 'road',
+        locationIntegrity: { confirmed: true, pinSource: 'manual' },
+      category: 'road',
         description: 'A large pothole is causing a hazard for motorists.',
         location: {
           type: 'Point',
@@ -254,6 +256,7 @@ describe('citizen incident reporting', () => {
     const incident = {
       _id: '507f191e810c19729de860ea',
       reportNumber: 'LUNAS-202608-000004',
+      locationIntegrity: { confirmed: true, pinSource: 'manual' },
       category: 'road',
       description: 'A large pothole is causing a hazard for motorists.',
       status: 'submitted',
@@ -423,4 +426,21 @@ test('incident SLA API projects an overdue deadline during City verification eve
   expect(next).not.toHaveBeenCalled();
   expect(res.json.mock.calls[0][0].data).toMatchObject({ state: 'overdue', isOverdue: true });
   jest.useRealTimers();
+});
+
+
+test('citizen, official and operational map projections never disclose raw GPS or abuse review records', async () => {
+  const incident = { _id: 'private', images: [], locationIntegrity: {
+    pinSource: 'manual', comparison: 'unavailable', gps: { coordinates: [120.4, 16.1] }
+  }, falseReportReview: { finding: 'confirmed_fabrication', history: [{ reason: 'sensitive review' }] } };
+  const citizen = await serializeIncidentForCitizen(incident);
+  const official = await serializeIncidentForOfficial(incident);
+  const operational = await serializeIncidentForOfficial(incident, { includeLocationIntegrity: false });
+  expect(citizen).not.toHaveProperty('locationIntegrity');
+  for (const projection of [citizen, official, operational]) {
+    expect(projection).not.toHaveProperty('falseReportReview');
+    expect(JSON.stringify(projection)).not.toContain('120.4');
+  }
+  expect(official.locationIntegrity.comparison).toBe('unavailable');
+  expect(operational.locationIntegrity).toBeUndefined();
 });

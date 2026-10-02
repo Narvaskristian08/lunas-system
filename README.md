@@ -111,3 +111,9 @@ private storage, signed URLs, access controls, and required acknowledgements rem
 scope. Metadata stripping does not anonymize visible image content. Historical privacy
 fields are retained for compatibility; new uploads record `not_available`,
 `applied=false`, and `isPrivacyMasked=false`.
+
+## Revision 8: report location integrity
+
+Incident pins are citizen-confirmed. Delayed reports, earlier photos, GPS selection, and manual map pins remain supported. GPS comparison is advisory and cannot establish photo capture location. Unavailable, stale, or inaccurate GPS does not make a report suspicious. Significant discrepancies require an explanation, not automatic rejection. Canonical barangay selection remains mandatory; geographic jurisdiction is unverified until suitable authoritative boundaries are integrated. Human verification remains required.
+
+Documented false-report findings and corrections are separate from rejection and duplicate decisions. Authorized reviewers see only findings within their existing incident scope. No automatic punishment or account score is applied. See [Revision 8 implementation and verification report](REVISION_8_LOCATION_INTEGRITY_REPORT.md) for the policy, API contract, audit findings, changed files, and verification limits.

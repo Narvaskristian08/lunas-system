@@ -32,3 +32,12 @@ describe('audit logger safety', () => {
       .toEqual({ reason: 'account_archived', attempts: 3 });
   });
 });
+
+
+test('raw current GPS and integrity payloads are redacted from general audit middleware', () => {
+  const { sanitizeAuditValue } = require('./auditLogger');
+  const result = sanitizeAuditValue({ body: { locationIntegrity: { gps: { coordinates: [120.4, 16.1] } },
+    currentPosition: [120.4, 16.1], nested: { gps: { latitude: 16.1 } } } });
+  expect(JSON.stringify(result)).not.toContain('120.4');
+  expect(result.body.locationIntegrity).toBe('[REDACTED]');
+});
