@@ -102,15 +102,14 @@ See [account provisioning](./ACCOUNT_PROVISIONING.md) for controlled authorized
 personnel creation, activation delivery, and deployment notes.
 
 
-## Current image privacy scope (Revision 7)
+## Current image privacy scope (Revision 9)
 
-Automatic face blurring, license-plate masking, visual redaction, privacy-detection
-models, and image anonymization are excluded from the current LUNAS scope. Evidence
-validation, safe decoding/re-encoding, EXIF/GPS metadata stripping, SHA-256 checksums,
-private storage, signed URLs, access controls, and required acknowledgements remain in
-scope. Metadata stripping does not anonymize visible image content. Historical privacy
-fields are retained for compatibility; new uploads record `not_available`,
-`applied=false`, and `isPrivacyMasked=false`.
+New incident and repair evidence is normalized, privacy-detected, and visually
+redacted before private storage. Face and license-plate regions are blurred by the
+backend using normalized boxes returned by the AI service. The backend fails closed
+when privacy processing is unavailable, so a new unredacted image is not persisted.
+EXIF/GPS metadata stripping remains separate from visual redaction. Historical privacy
+fields are retained for compatibility; legacy images may still report `not_available`.
 
 ## Revision 8: report location integrity
 

@@ -98,22 +98,22 @@ class _EvidencePickerScreenState extends State<EvidencePickerScreen> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
+                  color: Theme.of(context).colorScheme.secondaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.privacy_tip_outlined,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
+                      Icons.verified_user_outlined,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Automatic face blurring, license-plate masking, and visual redaction are outside the current LUNAS scope. Metadata removal does not anonymize images. Avoid images containing people, plates, or private information.',
+                        'Images are checked for faces and license plates on the server and blurred before storage. If privacy processing is unavailable, the report will not be submitted.',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                         ),
                       ),
                     ),

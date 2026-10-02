@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify
 from PIL import Image
 from werkzeug.utils import secure_filename
 from ..services.detection_service import detection_service
+from ..services.privacy_service import privacy_service
 from ..models.model_manager import model_manager
 from ..utils.config import config
 from ..utils.logger import logger
@@ -179,13 +180,32 @@ def detect_cracks():
 
 @api.route('/detect/privacy', methods=['POST'])
 def detect_privacy():
-    """Compatibility tombstone: automatic visual privacy processing is out of scope."""
-    return jsonify({
-        'success': False,
-        'status': 'not_available',
-        'applied': False,
-        'error': 'Automatic image privacy masking and detection are excluded from the current LUNAS scope.'
-    }), 410
+    """Detect faces and license plates for backend-owned redaction."""
+    start_time = time.time()
+    try:
+        file = request.files.get('image')
+        is_valid, error, image = validate_image(file)
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'status': 'failed',
+                'model_available': False,
+                'error': error,
+            }), 400
+
+        result = privacy_service.detect(image)
+        result['processing_time'] = round(time.time() - start_time, 3)
+        logger.info('Privacy detection completed in %ss', result['processing_time'])
+        return jsonify(result), 200 if result.get('status') == 'completed' else 503
+    except Exception as e:
+        logger.error(f'Privacy detection failed: {e}')
+        return jsonify({
+            'success': False,
+            'status': 'failed',
+            'model_available': False,
+            'error': 'Privacy detection failed',
+            'requires_manual_review': True,
+        }), 500
 
 
 def _run_category_detection(category: str):

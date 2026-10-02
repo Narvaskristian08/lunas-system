@@ -121,7 +121,10 @@ const safeEvidenceForCitizen = async (image) => {
     privacyProcessing: source.privacyProcessing ? {
       status: source.privacyProcessing.status,
       applied: Boolean(source.privacyProcessing.applied),
-      acknowledgedByReporter: Boolean(source.privacyProcessing.acknowledgedByReporter)
+      acknowledgedByReporter: Boolean(source.privacyProcessing.acknowledgedByReporter),
+      detectedRegions: Number.isFinite(Number(source.privacyProcessing.detectedRegions))
+        ? Math.max(0, Math.round(Number(source.privacyProcessing.detectedRegions)))
+        : 0
     } : undefined
   };
 };

@@ -24,7 +24,7 @@ def handlers():
         'jsonify': lambda value: value,
         'request': SimpleNamespace(files={'image': object()}, form={'category': 'road'}),
         'validate_image': Mock(return_value=(True, None, 'decoded-image')),
-        'detection_service': Mock(), 'logger': Mock(),
+        'detection_service': Mock(), 'privacy_service': Mock(), 'logger': Mock(),
         'time': SimpleNamespace(time=lambda: 0),
         'CANONICAL_CATEGORIES': {'road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'}
     }
@@ -33,15 +33,21 @@ def handlers():
 
 
 class PrivacyScopeTests(unittest.TestCase):
-    def test_disabled_privacy_endpoint_never_reads_images_or_invokes_a_detector(self):
+    def test_privacy_endpoint_validates_and_returns_detector_regions(self):
         scope = handlers()
+        scope['privacy_service'].detect.return_value = {
+            'success': True,
+            'status': 'completed',
+            'model_available': True,
+            'detections': [{'label': 'face'}],
+            'detected_regions': 1,
+        }
         payload, status = scope['detect_privacy']()
-        self.assertEqual(status, 410)
-        self.assertEqual(payload['status'], 'not_available')
-        self.assertIs(payload['applied'], False)
-        self.assertIs(payload['success'], False)
-        scope['validate_image'].assert_not_called()
-        self.assertEqual(scope['detection_service'].mock_calls, [])
+        self.assertEqual(status, 200)
+        self.assertEqual(payload['status'], 'completed')
+        self.assertEqual(payload['detected_regions'], 1)
+        scope['validate_image'].assert_called_once()
+        scope['privacy_service'].detect.assert_called_once_with('decoded-image')
 
     def test_all_hazard_categories_still_validate_images_and_use_category_inference(self):
         for category in ('road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'):
@@ -72,9 +78,10 @@ class PrivacyScopeTests(unittest.TestCase):
         self.assertEqual(payload['error'], 'Invalid image')
         scope['detection_service'].comprehensive_detection.assert_not_called()
 
-    def test_only_the_unused_privacy_model_was_removed(self):
+    def test_privacy_detector_configuration_is_present(self):
         config = yaml.safe_load((BASE / 'config.yaml').read_text(encoding='utf-8'))
-        self.assertNotIn('privacy_detection', config['models'])
+        self.assertEqual(config['privacy']['face_cascade'], 'haarcascade_frontalface_default.xml')
+        self.assertEqual(config['privacy']['plate_cascade'], 'haarcascade_russian_plate_number.xml')
         expected = {'road': 'road_damage', 'drainage': 'surface_drainage',
                     'electrical': 'electrical_damage', 'water': 'water_leak',
                     'gas': 'gas_infrastructure_damage', 'streetlight': 'streetlight_damage',

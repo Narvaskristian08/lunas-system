@@ -60,7 +60,14 @@ const evidenceSchema = new mongoose.Schema({
   uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   uploadedAt: { type: Date, default: Date.now },
   progressUpdate: { type: mongoose.Schema.Types.ObjectId },
-  caption: { type: String, trim: true, maxlength: 500 }
+  caption: { type: String, trim: true, maxlength: 500 },
+  isPrivacyMasked: { type: Boolean, default: false },
+  privacyProcessing: {
+    status: { type: String, default: 'not_available' },
+    applied: { type: Boolean, default: false },
+    detectedRegions: { type: Number, default: 0 },
+    processedAt: Date
+  }
 }, { _id: true });
 
 const progressSchema = new mongoose.Schema({

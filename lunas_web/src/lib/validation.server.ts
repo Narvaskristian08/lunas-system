@@ -32,7 +32,12 @@ export interface ValidationEvidence {
   height?: number;
   aiFindings: ValidationAiFinding[];
   quality?: { status?: string; issues?: string[] };
-  privacyProcessing?: { status?: string; applied?: boolean; acknowledgedByReporter?: boolean };
+  privacyProcessing?: {
+    status?: string;
+    applied?: boolean;
+    acknowledgedByReporter?: boolean;
+    detectedRegions?: number;
+  };
 }
 
 export interface ValidationLocation {
@@ -238,6 +243,7 @@ function normalizeEvidence(value: unknown): ValidationEvidence {
       status: asString(privacy.status),
       applied: privacy.applied === true,
       acknowledgedByReporter: privacy.acknowledgedByReporter === true,
+      detectedRegions: asNumber(privacy.detectedRegions),
     } : undefined,
   };
 }

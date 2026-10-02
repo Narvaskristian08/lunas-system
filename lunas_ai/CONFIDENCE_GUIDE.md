@@ -10,7 +10,7 @@ incident priority, validate a report, select a provider, approve a repair, or
 resolve/close an incident. A missing or failed model means manual review; do
 not infer that the image contains no damage.
 
-Automatic privacy detection and visual masking are excluded from current
-scope. The legacy `/detect/privacy` route returns HTTP 410 without inference.
-Backend metadata stripping does not anonymize visible image content. See the
-[AI service setup and route catalog](./README.md).
+Privacy detection uses bundled OpenCV cascades and returns face/license-plate
+regions for the backend to redact. It is a privacy control rather than a public-
+safety decision; if the detector is unavailable, the backend fails closed and
+does not persist the new upload. See the [AI service setup and route catalog](./README.md).

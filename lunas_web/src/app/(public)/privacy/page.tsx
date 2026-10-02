@@ -53,7 +53,7 @@ const sections: LegalSection[] = [
     id: "image-privacy",
     title: "Image privacy and redaction",
     paragraphs: [
-      "Automatic face blurring, license-plate masking, and visual redaction are excluded from the current LUNAS scope. Metadata removal does not anonymize image content. Reporters should avoid submitting images that include people, vehicle identifiers, or unrelated private details.",
+      "New evidence images are checked by the backend privacy detector before storage. Detected faces and license plates are blurred, and the system stores the redacted image rather than the original. If privacy processing is unavailable, the upload is blocked. Metadata removal is separate from visual redaction, and historical images may have older privacy-processing statuses.",
       "Incident and repair evidence is available to authorized users through the role-scoped workflow. Confirm retention periods and approved handling procedures with the system owner before production use.",
     ],
   },

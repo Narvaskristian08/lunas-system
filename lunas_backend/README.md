@@ -71,15 +71,14 @@ automated tests and lint do not replace a runtime demonstration of the full
 Citizen → government → provider → repair → government → Citizen path.
 
 
-## Current image privacy scope (Revision 7)
+## Current image privacy scope (Revision 9)
 
-Automatic face blurring, license-plate masking, visual redaction, privacy-detection
-models, and image anonymization are excluded from the current LUNAS scope. Evidence
-validation, safe decoding/re-encoding, EXIF/GPS metadata stripping, SHA-256 checksums,
-private storage, signed URLs, access controls, and required acknowledgements remain in
-scope. Metadata stripping does not anonymize visible image content. Historical privacy
-fields are retained for compatibility; new uploads record `not_available`,
-`applied=false`, and `isPrivacyMasked=false`.
+New incident and repair evidence is normalized, privacy-detected, and visually
+redacted before private storage. Face and license-plate regions are blurred by the
+backend using normalized boxes returned by the AI service. The backend fails closed
+when privacy processing is unavailable, so a new unredacted image is not persisted.
+EXIF/GPS metadata stripping remains separate from visual redaction. Historical privacy
+fields are retained for compatibility; legacy images may still report `not_available`.
 
 ## Location integrity and documented review (Revision 8)
 
@@ -89,4 +88,4 @@ New incident creation requires `locationIntegrity: { confirmed: true, pinSource:
 
 `GET/POST /incidents/:id/false-report-review` is restricted to scoped Barangay Officials and City Engineers. POST requires `finding` (`confirmed_fabrication` or `corrected`), a 20-2000 character `reason`, an `evidenceReference` of 1-500 characters, and nonnegative integer `expectedVersion`. A new fabrication finding requires a separately rejected incident. A correction requires an active finding. Atomic version checks append actor, timestamp, reason, and reference to incident review history, preserving prior entries. Repeat counts use only active explicit findings in caller scope; there is no historical backfill or automatic account action. Regular incident serializers and operational map results omit these restricted records. Review history is the durable audit record, separate from ordinary incident status history.
 
-Evidence processing, EXIF removal, private storage, duplicate category/location/time hints, lifecycle ownership, and all six roles remain unchanged. Automatic visual privacy masking remains outside scope. See the [full Revision 8 report](../REVISION_8_LOCATION_INTEGRITY_REPORT.md).
+Evidence processing, EXIF removal, private storage, duplicate category/location/time hints, lifecycle ownership, and all six roles remain unchanged. Privacy processing is controlled by `PRIVACY_REDACTION_ENABLED` and defaults to fail-closed enabled. See the [full Revision 8 report](../REVISION_8_LOCATION_INTEGRITY_REPORT.md).

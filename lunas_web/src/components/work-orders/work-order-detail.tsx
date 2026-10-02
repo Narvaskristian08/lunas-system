@@ -320,7 +320,7 @@ function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; o
         <label className="block text-sm font-semibold text-slate-800">Evidence images
           <input name="evidence" type="file" multiple accept="image/jpeg,image/jpg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onChange={(event) => setSelectedCount(event.currentTarget.files?.length ?? 0)} className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800 hover:file:bg-brand-100" required />
         </label>
-        <p className="text-xs leading-5 text-slate-600">{selectedCount ? `${selectedCount} image${selectedCount === 1 ? "" : "s"} selected.` : "Up to five images, 10 MB each. Image validation, metadata removal, and private storage happen on the backend. Images are not automatically blurred or masked."}</p>
+        <p className="text-xs leading-5 text-slate-600">{selectedCount ? `${selectedCount} image${selectedCount === 1 ? "" : "s"} selected.` : "Up to five images, 10 MB each. Image validation, privacy redaction, metadata removal, and private storage happen on the backend."}</p>
         <label className="block text-sm font-semibold text-slate-800">Caption <span className="font-normal text-slate-500">(optional)</span>
           <input name="caption" maxLength={500} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="What this field evidence shows" />
         </label>
@@ -414,8 +414,8 @@ export function WorkOrderDetail({
             <div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{titleCase(workOrder.incident?.category, "Uncategorized")}</Badge>{workOrder.incident?.priority ? <Badge tone={priorityTone(workOrder.incident.priority)}>{titleCase(workOrder.incident.priority)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{workOrder.incident?.description ?? "No citizen description is available."}</p></div>
           </Card>
 
-          <EvidenceGallery title="Citizen evidence" description="Short-lived signed evidence URLs are supplied by the protected API. Metadata removal does not blur or mask image content." evidence={workOrder.incident?.images ?? []} />
-          <EvidenceGallery title="Repair field evidence" description="Traceable maintenance evidence uploaded during repair progress." evidence={workOrder.evidence} />
+          <EvidenceGallery title="Citizen evidence" description="Short-lived signed evidence URLs are supplied by the protected API. New evidence is privacy-redacted before storage." evidence={workOrder.incident?.images ?? []} />
+          <EvidenceGallery title="Repair field evidence" description="Traceable maintenance evidence uploaded during repair progress is privacy-redacted before storage." evidence={workOrder.evidence} />
           <WorkOrderReviews workOrder={workOrder} />
           <WorkOrderTimeline workOrder={workOrder} />
         </div>

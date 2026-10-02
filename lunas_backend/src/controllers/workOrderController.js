@@ -98,7 +98,15 @@ const safeEvidence = async (entry) => {
     height: source.height,
     uploadedAt: source.uploadedAt,
     caption: source.caption,
-    progressUpdateId: getId(source.progressUpdate)
+    progressUpdateId: getId(source.progressUpdate),
+    isPrivacyMasked: Boolean(source.isPrivacyMasked),
+    privacyProcessing: source.privacyProcessing ? {
+      status: source.privacyProcessing.status,
+      applied: Boolean(source.privacyProcessing.applied),
+      detectedRegions: Number.isFinite(Number(source.privacyProcessing.detectedRegions))
+        ? Math.max(0, Math.round(Number(source.privacyProcessing.detectedRegions)))
+        : 0
+    } : undefined
   };
 };
 

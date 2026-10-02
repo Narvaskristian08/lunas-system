@@ -46,6 +46,12 @@ export interface WorkOrderEvidence {
   uploadedAt?: string;
   caption?: string;
   progressUpdateId?: string;
+  isPrivacyMasked?: boolean;
+  privacyProcessing?: {
+    status?: string;
+    applied?: boolean;
+    detectedRegions?: number;
+  };
 }
 
 export interface WorkOrderLocation {
@@ -298,6 +304,12 @@ function normalizeEvidence(value: unknown): WorkOrderEvidence {
     uploadedAt: asString(source.uploadedAt) ?? asString(source.createdAt),
     caption: asString(source.caption),
     progressUpdateId: identifier(source.progressUpdateId ?? source.progressUpdate) || undefined,
+    isPrivacyMasked: asBoolean(source.isPrivacyMasked),
+    privacyProcessing: Object.keys(asRecord(source.privacyProcessing)).length ? {
+      status: asString(asRecord(source.privacyProcessing).status),
+      applied: asBoolean(asRecord(source.privacyProcessing).applied),
+      detectedRegions: asNumber(asRecord(source.privacyProcessing).detectedRegions),
+    } : undefined,
   };
 }
 

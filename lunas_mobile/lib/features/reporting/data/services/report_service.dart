@@ -90,8 +90,8 @@ class ReportService {
         }),
         'category': draft.category.code,
         'description': draft.description,
-        // The server retains explicit acknowledgement: automatic visual
-        // privacy masking is outside the current scope.
+        // The server retains the reporter's acknowledgement alongside the
+        // backend-owned privacy-redaction result.
         'privacyAcknowledged': draft.privacyAcknowledged.toString(),
         'location': jsonEncode({
           'type': 'Point',

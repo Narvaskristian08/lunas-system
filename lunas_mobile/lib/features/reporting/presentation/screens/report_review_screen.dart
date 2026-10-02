@@ -314,7 +314,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   'I reviewed this image for private information.',
                 ),
                 subtitle: const Text(
-                  'I understand LUNAS does not automatically blur faces, mask license plates, or anonymize uploaded images.',
+                  'I understand LUNAS automatically checks for faces and license plates and redacts them before storage.',
                 ),
               ),
             ],

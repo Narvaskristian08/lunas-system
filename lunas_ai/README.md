@@ -31,14 +31,16 @@ configuration.
 | POST | `/api/v1/detect/comprehensive` | Multipart `image` plus canonical `category`; uses the service-owned category/model mapping. |
 | POST | `/api/v1/detect/drainage`, `/api/v1/detect/electrical` | Fixed-category QA routes. |
 | POST | `/api/v1/detect/road-damage`, `/api/v1/detect/cracks` | Standalone road/crack detection routes. |
-| POST | `/api/v1/detect/privacy` | Excluded from current scope; compatibility endpoint returns HTTP 410 with `not_available` and `applied=false`, without loading a detector. |
+| POST | `/api/v1/detect/privacy` | Detects face and license-plate regions using the bundled OpenCV privacy cascades; the Node backend applies the returned redactions before storage. |
 | POST | `/api/v1/detect/all-hazards` | Disabled; returns HTTP 410 and directs callers to category-specific inference. |
 | GET | `/api/v1/ping` | Simple liveness check. |
 
 Inference output and confidence scores are model suggestions, can be wrong, and
-are not calibrated public-safety decisions. Human review is required. Automatic
-image privacy detection and visual masking are excluded from current scope. The legacy privacy route is disabled and its unused model configuration
-is removed. Metadata removal in the backend does not anonymize image content.
+are not calibrated public-safety decisions. Human review is required. Privacy
+detection returns normalized face and license-plate boxes; the backend owns the
+blur operation and persists only the redacted WebP. If either privacy cascade is
+unavailable, the backend fails closed instead of storing an unredacted upload.
+Metadata removal remains separate from visual redaction.
 LUNAS does not claim image-based duplicate detection.
 
 The Express integration uses `AI_SERVICE_URL`, `AI_SERVICE_TIMEOUT`, and

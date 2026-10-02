@@ -51,7 +51,7 @@ test("password reset requires a real token and public legal states render", asyn
   await expect(page.getByRole("heading", { name: "Reset link is invalid" })).toBeVisible();
 
   await page.goto("/privacy");
-  await expect(page.getByText(/visual redaction are excluded from the current LUNAS scope/)).toBeVisible();
+  await expect(page.getByText(/New evidence images are checked by the backend privacy detector/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
   await page.goto("/terms");
   await expect(page.getByRole("heading", { name: "Terms and Conditions" })).toBeVisible();

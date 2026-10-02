@@ -146,3 +146,51 @@ describe('category-routed AI service', () => {
     }));
   });
 });
+
+describe('privacy detection', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test('sends evidence to the privacy detector and normalizes regions', async () => {
+    axios.post.mockResolvedValue({
+      data: {
+        success: true,
+        status: 'completed',
+        model_available: true,
+        model: 'opencv-haar-privacy-v1',
+        detected_regions: 2,
+        detections: [
+          { label: 'face', bbox: { x1: 0.1, y1: 0.2, x2: 0.3, y2: 0.4 } },
+          { label: 'license_plate', bbox: { x1: 0.5, y1: 0.6, x2: 0.8, y2: 0.7 } }
+        ]
+      }
+    });
+
+    const result = await aiService.detectPrivacy(Buffer.from('webp'));
+    const form = axios.post.mock.calls[0][1];
+
+    expect(axios.post.mock.calls[0][0]).toContain('/api/v1/detect/privacy');
+    expect(form.values.find(([name]) => name === 'image')[1]).toEqual(expect.objectContaining({
+      filename: 'evidence.webp',
+      contentType: 'image/webp'
+    }));
+    expect(result).toEqual(expect.objectContaining({
+      success: true,
+      status: 'completed',
+      modelAvailable: true,
+      model: 'opencv-haar-privacy-v1',
+      detectedRegions: 2
+    }));
+  });
+
+  test('keeps privacy unavailable when the detector is unavailable', async () => {
+    axios.post.mockResolvedValue({
+      data: { success: false, status: 'unavailable', model_available: false, detections: [] }
+    });
+
+    await expect(aiService.detectPrivacy(Buffer.from('webp'))).resolves.toEqual(expect.objectContaining({
+      success: false,
+      status: 'unavailable',
+      modelAvailable: false
+    }));
+  });
+});

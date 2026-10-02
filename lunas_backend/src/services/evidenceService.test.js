@@ -2,7 +2,16 @@ jest.mock('./storageService', () => ({
   uploadToStorage: jest.fn(),
   deleteFromStorage: jest.fn()
 }));
-jest.mock('./aiService', () => ({ analyzeIncidentImage: jest.fn() }));
+jest.mock('./aiService', () => ({
+  analyzeIncidentImage: jest.fn(),
+  detectPrivacy: jest.fn().mockResolvedValue({
+    success: true,
+    status: 'completed',
+    modelAvailable: true,
+    detections: [],
+    detectedRegions: 0
+  })
+}));
 
 const sharp = require('sharp');
 const crypto = require('crypto');
@@ -17,6 +26,13 @@ describe('secure incident evidence processing', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    aiService.detectPrivacy.mockResolvedValue({
+      success: true,
+      status: 'completed',
+      modelAvailable: true,
+      detections: [],
+      detectedRegions: 0
+    });
     process.env.AI_EVIDENCE_ANALYSIS_ENABLED = 'false';
     process.env.MIN_IMAGE_WIDTH = '320';
     process.env.MIN_IMAGE_HEIGHT = '240';
@@ -31,7 +47,7 @@ describe('secure incident evidence processing', () => {
     else process.env.MIN_IMAGE_HEIGHT = originalMinHeight;
   });
 
-  test('normalizes a valid image, strips it to WebP metadata, and records truthful privacy state', async () => {
+  test('normalizes a valid image, redacts it before storage, and records privacy state', async () => {
     const sourceImage = await sharp({
       create: { width: 400, height: 300, channels: 3, background: '#9c1d36' }
     }).png().toBuffer();
@@ -63,8 +79,9 @@ describe('secure incident evidence processing', () => {
       height: 300,
       quality: { status: 'passed', issues: [] },
       privacyProcessing: expect.objectContaining({
-        status: 'not_available',
-        applied: false,
+        status: 'applied',
+        applied: true,
+        detectedRegions: 0,
         acknowledgedByReporter: true
       })
     }));
@@ -78,6 +95,55 @@ describe('secure incident evidence processing', () => {
       detections: { roadDamage: 0, cracks: 0 }
     }));
     expect(aiService.analyzeIncidentImage).not.toHaveBeenCalled();
+  });
+
+  test('applies detector regions before storing evidence', async () => {
+    const sourceImage = await sharp({
+      create: { width: 400, height: 300, channels: 3, background: '#9c1d36' }
+    }).png().toBuffer();
+    aiService.detectPrivacy.mockResolvedValue({
+      success: true,
+      status: 'completed',
+      modelAvailable: true,
+      detections: [{ label: 'face', bbox: { x1: 0.2, y1: 0.2, x2: 0.4, y2: 0.45 } }],
+      detectedRegions: 1
+    });
+    storageService.uploadToStorage.mockResolvedValue({
+      key: 'incidents/citizen/evidence.webp',
+      url: undefined
+    });
+
+    const result = await processAndUploadEvidence([{
+      buffer: sourceImage,
+      originalname: 'evidence.png',
+      mimetype: 'image/png'
+    }], { reporterId: 'citizen', category: 'road', privacyAcknowledged: true });
+
+    expect(aiService.detectPrivacy).toHaveBeenCalledWith(expect.any(Buffer));
+    expect(result.images[0]).toMatchObject({
+      isPrivacyMasked: true,
+      privacyProcessing: { status: 'applied', applied: true, detectedRegions: 1 }
+    });
+  });
+
+  test('fails closed when privacy detection is unavailable', async () => {
+    const sourceImage = await sharp({
+      create: { width: 400, height: 300, channels: 3, background: '#9c1d36' }
+    }).png().toBuffer();
+    aiService.detectPrivacy.mockResolvedValue({
+      success: false,
+      status: 'unavailable',
+      modelAvailable: false,
+      detections: []
+    });
+
+    await expect(processAndUploadEvidence([{
+      buffer: sourceImage,
+      originalname: 'evidence.png',
+      mimetype: 'image/png'
+    }], { reporterId: 'citizen', category: 'road' }))
+      .rejects.toThrow('privacy processing is temporarily unavailable');
+    expect(storageService.uploadToStorage).not.toHaveBeenCalled();
   });
 
   test('normalizes and persists a completed AI result while forcing manual review', async () => {
@@ -137,7 +203,7 @@ describe('secure incident evidence processing', () => {
     }]);
     expect(result.aiAnalysis.needsPrivacyMasking).toBe(false);
     expect(result.images[0]).toMatchObject({ isPrivacyMasked: false,
-      privacyProcessing: { status: 'not_available', applied: false } });
+      privacyProcessing: { status: 'applied', applied: true } });
   });
 
   test('strips real EXIF/GPS metadata while retaining valid evidence without a privacy detector', async () => {

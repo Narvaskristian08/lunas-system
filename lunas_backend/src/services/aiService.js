@@ -11,6 +11,75 @@ const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
 const AI_SERVICE_TIMEOUT = parseInt(process.env.AI_SERVICE_TIMEOUT || '30000');
 const AI_SERVICE_ENABLED = process.env.AI_SERVICE_ENABLED !== 'false';
 
+const normalizePrivacyDetection = (payload = {}) => {
+  const status = payload.status || payload.analysisStatus || payload.analysis_status;
+  const detections = Array.isArray(payload.detections)
+    ? payload.detections
+      .filter((detection) => detection && typeof detection === 'object')
+      .slice(0, 50)
+    : [];
+  const modelAvailable = payload.model_available !== false
+    && payload.modelAvailable !== false
+    && status === 'completed';
+
+  return {
+    success: payload.success === true && modelAvailable,
+    status: modelAvailable ? 'completed' : (status || 'unavailable'),
+    modelAvailable,
+    model: typeof payload.model === 'string' ? payload.model.slice(0, 80) : undefined,
+    detected: modelAvailable && payload.detected === true,
+    detectedRegions: modelAvailable
+      ? Math.max(0, Math.round(Number(payload.detected_regions ?? payload.detectedRegions ?? detections.length)))
+      : 0,
+    detections,
+    error: typeof payload.error === 'string' ? payload.error : undefined
+  };
+};
+
+/**
+ * Ask the privacy model for regions that must be redacted before storage.
+ * The backend deliberately applies the returned masks itself so the AI
+ * service never controls which bytes are persisted.
+ */
+exports.detectPrivacy = async (imageBuffer) => {
+  if (!AI_SERVICE_ENABLED) {
+    return {
+      success: false,
+      status: 'unavailable',
+      modelAvailable: false,
+      detections: [],
+      detectedRegions: 0,
+      error: 'AI service disabled'
+    };
+  }
+
+  try {
+    const form = new FormData();
+    form.append('image', imageBuffer, {
+      filename: 'evidence.webp',
+      contentType: 'image/webp'
+    });
+    const response = await axios.post(`${AI_SERVICE_URL}/api/v1/detect/privacy`, form, {
+      headers: form.getHeaders(),
+      timeout: AI_SERVICE_TIMEOUT,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      validateStatus: (status) => status >= 200 && status < 600
+    });
+    return normalizePrivacyDetection(response.data);
+  } catch (error) {
+    logger.error(`Privacy detection failed: ${error.message}`);
+    return {
+      success: false,
+      status: 'failed',
+      modelAvailable: false,
+      detections: [],
+      detectedRegions: 0,
+      error: error.message
+    };
+  }
+};
+
 /**
  * Check if AI service is available
  */

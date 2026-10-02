@@ -1,7 +1,12 @@
 const crypto = require('crypto');
 const aiService = require('./aiService');
 const storageService = require('./storageService');
-const { checkImageQuality, getImageMetadata, prepareEvidenceImage } = require('../utils/imageProcessor');
+const {
+  applyPrivacyRedactions,
+  checkImageQuality,
+  getImageMetadata,
+  prepareEvidenceImage
+} = require('../utils/imageProcessor');
 const logger = require('../utils/logger');
 
 const clientError = (message) => {
@@ -11,6 +16,31 @@ const clientError = (message) => {
 };
 
 const shouldRunAiAnalysis = () => process.env.AI_EVIDENCE_ANALYSIS_ENABLED === 'true';
+const shouldRunPrivacyRedaction = () => process.env.PRIVACY_REDACTION_ENABLED !== 'false';
+
+const privacyUnavailableError = () => {
+  const error = new Error(
+    'Evidence privacy processing is temporarily unavailable. Please try again later.'
+  );
+  error.statusCode = 503;
+  return error;
+};
+
+const redactEvidence = async (preparedBuffer) => {
+  if (!shouldRunPrivacyRedaction()) throw privacyUnavailableError();
+
+  const privacy = await aiService.detectPrivacy(preparedBuffer);
+  if (!privacy || privacy.status !== 'completed' || privacy.modelAvailable !== true) {
+    throw privacyUnavailableError();
+  }
+
+  const result = await applyPrivacyRedactions(preparedBuffer, privacy.detections);
+  return {
+    buffer: result.buffer,
+    detectedRegions: result.detectedRegions,
+    status: 'applied'
+  };
+};
 
 const toDetectionCount = (value) => {
   const numericValue = Number(value);
@@ -83,7 +113,7 @@ const normalizeAiAnalysis = (analysis) => {
       roadDamage: toDetectionCount(analysis?.detections?.roadDamage ?? analysis?.detections?.road_damage),
       cracks: toDetectionCount(analysis?.detections?.cracks)
     },
-    // Legacy compatibility field; visual masking is excluded from current scope.
+    // Legacy compatibility field for hazard-analysis consumers.
     needsPrivacyMasking: false,
     // This invariant is intentionally owned by the backend, regardless of AI output.
     requiresManualReview: true,
@@ -98,16 +128,18 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
     throw clientError(`Evidence image failed quality validation: ${quality.issues.join('; ')}`);
   }
 
-  // Sharp re-encodes to WebP, which strips EXIF/GPS metadata and avoids
-  // retaining the original, unprocessed upload in storage.
+  // Re-encode first so the detector sees the same orientation and dimensions
+  // that will be used by the stored evidence.
   const preparedBuffer = await prepareEvidenceImage(file.buffer);
-  const preparedMetadata = await getImageMetadata(preparedBuffer);
-  const checksum = crypto.createHash('sha256').update(preparedBuffer).digest('hex');
+  const privacy = await redactEvidence(preparedBuffer);
+  const storedBuffer = privacy.buffer;
+  const preparedMetadata = await getImageMetadata(storedBuffer);
+  const checksum = crypto.createHash('sha256').update(storedBuffer).digest('hex');
 
   let aiAnalysis;
   if (shouldRunAiAnalysis()) {
     try {
-      aiAnalysis = normalizeAiAnalysis(await aiService.analyzeIncidentImage(preparedBuffer, category));
+      aiAnalysis = normalizeAiAnalysis(await aiService.analyzeIncidentImage(storedBuffer, category));
     } catch (error) {
       // AI is advisory. A service failure must never prevent evidence storage.
       aiAnalysis = normalizeAiAnalysis({ error: error?.message || 'AI analysis failed' });
@@ -117,7 +149,7 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
   }
 
   const uploaded = await storageService.uploadToStorage(
-    preparedBuffer,
+    storedBuffer,
     'evidence.webp',
     'image/webp',
     `incidents/${reporterId}`
@@ -130,9 +162,9 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
       url: uploaded.url,
       key: uploaded.key,
       uploadedAt: new Date(),
-      isPrivacyMasked: false,
+      isPrivacyMasked: privacy.detectedRegions > 0,
       mimeType: 'image/webp',
-      size: preparedBuffer.length,
+      size: storedBuffer.length,
       checksum,
       width: preparedMetadata.width,
       height: preparedMetadata.height,
@@ -141,12 +173,11 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
         issues: []
       },
       aiFindings: aiAnalysis.findings,
-      // Visual privacy masking is excluded from current scope. Retain truthful
-      // legacy fields without interpreting metadata stripping as redaction.
       privacyProcessing: {
-        status: 'not_available',
-        applied: false,
+        status: privacy.status,
+        applied: true,
         acknowledgedByReporter: Boolean(privacyAcknowledged),
+        detectedRegions: privacy.detectedRegions,
         processedAt: new Date()
       }
     }
@@ -226,10 +257,12 @@ exports.processAndUploadRepairEvidence = async (files, { workOrderId, uploaderId
       }
 
       const preparedBuffer = await prepareEvidenceImage(file.buffer);
-      const metadata = await getImageMetadata(preparedBuffer);
-      const checksum = crypto.createHash('sha256').update(preparedBuffer).digest('hex');
+      const privacy = await redactEvidence(preparedBuffer);
+      const storedBuffer = privacy.buffer;
+      const metadata = await getImageMetadata(storedBuffer);
+      const checksum = crypto.createHash('sha256').update(storedBuffer).digest('hex');
       const uploaded = await storageService.uploadToStorage(
-        preparedBuffer,
+        storedBuffer,
         'repair-evidence.webp',
         'image/webp',
         `work-orders/${workOrderId}/repair/${uploaderId}`
@@ -239,12 +272,19 @@ exports.processAndUploadRepairEvidence = async (files, { workOrderId, uploaderId
         key: uploaded.key,
         url: uploaded.url,
         mimeType: 'image/webp',
-        size: preparedBuffer.length,
+        size: storedBuffer.length,
         checksum,
         width: metadata.width,
         height: metadata.height,
         uploadedBy: uploaderId,
-        uploadedAt: new Date()
+        uploadedAt: new Date(),
+        isPrivacyMasked: privacy.detectedRegions > 0,
+        privacyProcessing: {
+          status: privacy.status,
+          applied: true,
+          detectedRegions: privacy.detectedRegions,
+          processedAt: new Date()
+        }
       });
     }
     return evidence;

@@ -99,3 +99,64 @@ exports.prepareEvidenceImage = async (imageBuffer) => {
     throw new Error('Failed to process the uploaded image');
   }
 };
+
+const privacyLabel = (finding) => String(finding?.label || finding?.class || '').toLowerCase();
+
+const privacyBox = (finding) => {
+  const bbox = finding?.bbox;
+  if (!bbox || typeof bbox !== 'object') return null;
+  const values = ['x1', 'y1', 'x2', 'y2'].map((key) => Number(bbox[key]));
+  if (values.some((value) => !Number.isFinite(value))) return null;
+  const [x1, y1, x2, y2] = values;
+  if (x2 <= x1 || y2 <= y1) return null;
+  return { x1, y1, x2, y2 };
+};
+
+/**
+ * Blur privacy regions returned by the AI detector. Only normalized face and
+ * license-plate boxes are accepted; arbitrary model findings cannot alter the
+ * stored image.
+ */
+exports.applyPrivacyRedactions = async (imageBuffer, findings = []) => {
+  const metadata = await exports.getImageMetadata(imageBuffer);
+  const width = metadata.width;
+  const height = metadata.height;
+  const overlays = [];
+  const seen = new Set();
+
+  for (const finding of Array.isArray(findings) ? findings.slice(0, 50) : []) {
+    const label = privacyLabel(finding);
+    const isFace = label === 'face' || label === 'person_face' || label === 'facial_region';
+    const isPlate = label === 'license_plate' || label === 'license-plate' || label === 'plate';
+    if (!isFace && !isPlate) continue;
+    const box = privacyBox(finding);
+    if (!box) continue;
+
+    const paddingX = (box.x2 - box.x1) * (isFace ? 0.18 : 0.1);
+    const paddingY = (box.y2 - box.y1) * (isFace ? 0.18 : 0.15);
+    const left = Math.max(0, Math.floor((box.x1 - paddingX) * width));
+    const top = Math.max(0, Math.floor((box.y1 - paddingY) * height));
+    const right = Math.min(width, Math.ceil((box.x2 + paddingX) * width));
+    const bottom = Math.min(height, Math.ceil((box.y2 + paddingY) * height));
+    const regionWidth = right - left;
+    const regionHeight = bottom - top;
+    if (regionWidth < 2 || regionHeight < 2) continue;
+
+    const key = `${left}:${top}:${regionWidth}:${regionHeight}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const region = await sharp(imageBuffer)
+      .extract({ left, top, width: regionWidth, height: regionHeight })
+      .blur(isFace ? 18 : 24)
+      .toBuffer();
+    overlays.push({ input: region, left, top });
+  }
+
+  if (!overlays.length) return { buffer: imageBuffer, detectedRegions: 0 };
+
+  const redacted = await sharp(imageBuffer)
+    .composite(overlays)
+    .webp({ quality: parseInt(process.env.EVIDENCE_WEBP_QUALITY || '82', 10) || 82, effort: 4 })
+    .toBuffer();
+  return { buffer: redacted, detectedRegions: overlays.length };
+};

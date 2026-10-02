@@ -453,20 +453,21 @@ release candidate:
 >>>>>>> Stashed changes
 
 
-## Current image privacy scope (Revision 7)
+## Current image privacy scope (Revision 9)
 
-Automatic face blurring, license-plate masking, visual redaction, privacy-detection
-models, and image anonymization are excluded from the current LUNAS scope. Evidence
-validation, safe decoding/re-encoding, EXIF/GPS metadata stripping, SHA-256 checksums,
-private storage, signed URLs, access controls, and required acknowledgements remain in
-scope. Metadata stripping does not anonymize visible image content. Historical privacy
-fields are retained for compatibility; new uploads record `not_available`,
-`applied=false`, and `isPrivacyMasked=false`.
+Uploaded evidence is normalized and sent through the backend privacy detector before
+storage. Face and license-plate regions are blurred in the backend, and only the
+redacted WebP is stored. The backend fails closed when the privacy detector is
+unavailable, so an unredacted new upload is not persisted. EXIF/GPS metadata stripping,
+SHA-256 checksums, private storage, signed URLs, access controls, and required
+acknowledgements remain in scope. Historical privacy fields are retained for
+compatibility; legacy images may still report `not_available`. Location
+confirmation remains separate from image privacy processing.
 
 ## Revision 8 location confirmation
 
 The report map supports GPS and manual map pins. Reopening a previously selected pin preserves it instead of replacing it with the current position. The current fix and horizontal accuracy are used transiently for advisory comparison against the chosen damage location. Map changes and refreshed fixes recalculate comparison; final review rechecks freshness every five seconds and before submission. The server publishes configurable policy settings and recomputes the final result.
 
-Citizens always confirm that the pin represents the actual damage location. A significant discrepancy requires an explanation, including an earlier photo or reporting from home; Other requires 10-500 characters. GPS denial, missing fixes, stale fixes, and poor accuracy allow manual reporting without an accusation. Camera and photo-library uploads remain available. Geographic barangay containment is unverified; the canonical selector and human verification remain required. GPS does not establish photo capture location. Automatic image masking remains excluded.
+Citizens always confirm that the pin represents the actual damage location. A significant discrepancy requires an explanation, including an earlier photo or reporting from home; Other requires 10-500 characters. GPS denial, missing fixes, stale fixes, and poor accuracy allow manual reporting without an accusation. Camera and photo-library uploads remain available. Geographic barangay containment is unverified; the canonical selector and human verification remain required. GPS does not establish photo capture location. Evidence privacy redaction is handled by the backend before storage.
 
 Location tests use controlled fixes and injected services; they are not live GPS, map SDK, or device verification. See [Revision 8 verification](../REVISION_8_LOCATION_INTEGRITY_REPORT.md).
