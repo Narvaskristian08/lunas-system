@@ -1,49 +1,76 @@
+const mockSend = jest.fn();
+const mockGetSignedUrl = jest.fn();
+
+jest.mock('@aws-sdk/client-s3', () => ({
+  S3Client: jest.fn(() => ({ send: mockSend })),
+  PutObjectCommand: class PutObjectCommand { constructor(input) { this.input = input; } },
+  DeleteObjectCommand: class DeleteObjectCommand { constructor(input) { this.input = input; } },
+  GetObjectCommand: class GetObjectCommand { constructor(input) { this.input = input; } },
+  ListObjectsV2Command: class ListObjectsV2Command { constructor(input) { this.input = input; } }
+}));
+jest.mock('@aws-sdk/s3-request-presigner', () => ({ getSignedUrl: mockGetSignedUrl }));
 jest.mock('@supabase/supabase-js', () => ({ createClient: jest.fn() }));
-jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn() }));
-const { createClient } = require('@supabase/supabase-js');
+jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn() }));
+
 const storage = require('./storageService');
 const originalEnvironment = { ...process.env };
-let bucket;
+
 beforeEach(() => {
   jest.clearAllMocks();
-  process.env.SUPABASE_URL = 'https://storage.example.test';
-  process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
-  process.env.SUPABASE_STORAGE_PUBLIC = 'false';
+  process.env.AWS_REGION = 'ap-southeast-1';
+  process.env.S3_EVIDENCE_BUCKET = 'lunas-evidence-test';
+  process.env.S3_SERVER_SIDE_ENCRYPTION = 'AES256';
+  process.env.SUPABASE_MIGRATION_READ_ENABLED = 'false';
   process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS = '300';
-  // The service retains its initialized client; keep one bucket for all tests.
-  if (!bucket) {
-    bucket = { upload: jest.fn(), createSignedUrl: jest.fn(), getPublicUrl: jest.fn() };
-    createClient.mockReturnValue({ storage: { from: () => bucket } });
-  }
-  bucket.upload.mockResolvedValue({ error: null });
-  bucket.createSignedUrl.mockResolvedValue({ data: { signedUrl: 'https://storage.example.test/signed?token=test' } });
+  mockSend.mockResolvedValue({});
+  mockGetSignedUrl.mockResolvedValue('https://s3.example.test/signed?token=test');
 });
+
 afterAll(() => { process.env = originalEnvironment; });
 
-test('private evidence upload does not request or return a public URL', async () => {
-  const result = await storage.uploadToStorage(Buffer.from('test'), 'evidence.webp', 'image/webp', 'incidents/owner');
+test('private evidence upload writes to S3 without returning a persisted URL', async () => {
+  const result = await storage.uploadToStorage(
+    Buffer.from('test'),
+    'evidence.webp',
+    'image/webp',
+    'incidents/owner'
+  );
+
   expect(result.url).toBeUndefined();
   expect(result.key).toMatch(/^incidents\/owner\/.+\.webp$/);
-  expect(bucket.getPublicUrl).not.toHaveBeenCalled();
-  expect(bucket.upload).toHaveBeenCalledWith(result.key, expect.any(Buffer), { contentType: 'image/webp', upsert: false });
+  expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
+    input: expect.objectContaining({
+      Bucket: 'lunas-evidence-test',
+      Key: result.key,
+      Body: expect.any(Buffer),
+      ContentType: 'image/webp',
+      ServerSideEncryption: 'AES256'
+    })
+  }));
 });
 
-test('private evidence ignores a legacy public URL and generates a short-lived signed URL', async () => {
+test('private evidence generates a short-lived S3 signed URL', async () => {
   await expect(storage.getEvidenceUrl('incidents/owner/evidence.webp', 'https://legacy.example/public.jpg'))
-    .resolves.toBe('https://storage.example.test/signed?token=test');
-  expect(bucket.createSignedUrl).toHaveBeenCalledWith('incidents/owner/evidence.webp', 300);
-  expect(bucket.getPublicUrl).not.toHaveBeenCalled();
+    .resolves.toBe('https://s3.example.test/signed?token=test');
+
+  expect(mockGetSignedUrl).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      input: { Bucket: 'lunas-evidence-test', Key: 'incidents/owner/evidence.webp' }
+    }),
+    { expiresIn: 300 }
+  );
 });
 
 test('historical evidence without a storage key retains its original URL', async () => {
   await expect(storage.getEvidenceUrl(undefined, 'https://legacy.example/evidence.jpg'))
     .resolves.toBe('https://legacy.example/evidence.jpg');
-  expect(bucket.createSignedUrl).not.toHaveBeenCalled();
+  expect(mockGetSignedUrl).not.toHaveBeenCalled();
 });
 
-test('failed signing rejects instead of returning a public URL for private evidence', async () => {
-  bucket.createSignedUrl.mockResolvedValueOnce({ error: { message: 'unavailable' } });
+test('failed signing fails closed when legacy fallback is disabled', async () => {
+  mockGetSignedUrl.mockRejectedValueOnce(new Error('unavailable'));
+
   await expect(storage.getEvidenceUrl('private/evidence.webp', 'https://legacy.example/public.jpg'))
     .rejects.toThrow('Failed to generate signed URL');
-  expect(bucket.getPublicUrl).not.toHaveBeenCalled();
 });

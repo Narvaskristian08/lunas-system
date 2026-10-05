@@ -3,29 +3,30 @@
 This guide covers optional infrastructure integrations. LUNAS roles and
 workflow are defined in the [project scope](../LUNAS_PROJECT_SCOPE.md).
 
-## Supabase Storage
+## AWS S3 evidence storage
 
-The backend uploads evidence with its server-side Supabase service-role key.
-Create the `lunas-storage` bucket as **private**. Keep
-`SUPABASE_STORAGE_PUBLIC=false`; the API returns short-lived signed evidence
-URLs after applying report/work-order authorization. Do not add public read
-policies or expose the service-role key in web/mobile clients.
+The backend uploads privacy-processed evidence to a private S3 bucket using the
+EC2 instance role. Enable Block Public Access, versioning, and server-side
+encryption. The API returns short-lived signed evidence URLs after applying
+report/work-order authorization. Do not add public read policies or put AWS
+credentials in web/mobile clients.
 
 Backend settings (see `.env.example`):
 
 ```dotenv
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=server-only-secret
-SUPABASE_STORAGE_BUCKET=lunas-storage
-SUPABASE_STORAGE_PUBLIC=false
+STORAGE_PROVIDER=s3
+AWS_REGION=ap-southeast-1
+S3_EVIDENCE_BUCKET=lunas-evidence-production
+S3_SERVER_SIDE_ENCRYPTION=AES256
 EVIDENCE_SIGNED_URL_EXPIRE_SECONDS=3600
 ```
 
-`SUPABASE_ANON_KEY` is retained in the configuration template for integrations
-that need it; evidence upload and signed URL creation use the service-role key.
-Test upload, authorized signed retrieval, expiry, and access denial using
-separate Citizen and official accounts before release. Image optimization does
-not detect, blur, or redact faces/license plates.
+During migration only, set `SUPABASE_MIGRATION_READ_ENABLED=true` and provide
+the legacy Supabase URL/service-role key. Run
+`npm run migrate:storage -- --dry-run`, then `--apply`, and verify checksums
+before disabling the fallback and removing the credentials. Test upload,
+authorized signed retrieval, expiry, and access denial using separate Citizen
+and official accounts before release.
 
 ## OneSignal (optional push)
 

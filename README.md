@@ -33,8 +33,9 @@ secrets.
 
 See the [backend](./lunas_backend/README.md), [web](./lunas_web/README.md), and
 [mobile](./lunas_mobile/README.md) setup notes for component-specific config.
-Private evidence storage, registration/activation email, Maps, optional push,
-and AI service behavior depend on real deployment configuration.
+Private S3 evidence storage, registration/activation email, Maps, optional push,
+and AI service behavior depend on real deployment configuration. Supabase
+storage credentials are migration-only after the AWS cutover.
 
 ## Docker Compose
 

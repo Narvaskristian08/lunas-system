@@ -1,137 +1,156 @@
+const {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client
+} = require('@aws-sdk/client-s3');
+const { getSignedUrl: signS3Url } = require('@aws-sdk/s3-request-presigner');
 const { createClient } = require('@supabase/supabase-js');
 const sharp = require('sharp');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
 
-// Initialize Supabase client
+let s3 = null;
 let supabase = null;
 
-const isPublicBucket = () => process.env.SUPABASE_STORAGE_PUBLIC === 'true';
+const getBucketName = () => process.env.S3_EVIDENCE_BUCKET || process.env.S3_BUCKET || '';
+const getRegion = () => process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';
+const getSignedUrlExpiry = () => parseInt(process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS, 10) || 3600;
+const isLegacyReadEnabled = () => process.env.SUPABASE_MIGRATION_READ_ENABLED === 'true';
+
+const initializeS3 = () => {
+  if (!s3) {
+    const region = getRegion();
+    if (!region) throw new Error('AWS_REGION is not configured');
+
+    const endpoint = process.env.S3_ENDPOINT;
+    s3 = new S3Client({
+      region,
+      ...(endpoint ? { endpoint, forcePathStyle: true } : {})
+    });
+  }
+  return s3;
+};
 
 const initializeSupabase = () => {
   if (!supabase && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false
-          }
+    supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
         }
-      );
-      logger.info('Supabase Storage initialized successfully');
-    } catch (error) {
-      logger.error('Supabase Storage initialization error:', error);
-    }
+      }
+    );
   }
   return supabase;
 };
 
+const toS3Error = (operation, error) => {
+  logger.error(`S3 ${operation} error: ${error.message}`);
+  return new Error(`Failed to ${operation} file in S3`);
+};
+
+const bodyToBuffer = async (body) => {
+  if (!body) return Buffer.alloc(0);
+  if (typeof body.transformToByteArray === 'function') {
+    return Buffer.from(await body.transformToByteArray());
+  }
+
+  const chunks = [];
+  for await (const chunk of body) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks);
+};
+
+const createStorageKey = (fileName, folder) => {
+  const timestamp = Date.now();
+  const randomString = crypto.randomBytes(8).toString('hex');
+  const fileExtension = String(fileName || '').split('.').pop() || 'bin';
+  return `${folder}/${timestamp}-${randomString}.${fileExtension}`;
+};
+
+const uploadToS3 = async (fileBuffer, key, mimeType) => {
+  try {
+    await initializeS3().send(new PutObjectCommand({
+      Bucket: getBucketName(),
+      Key: key,
+      Body: fileBuffer,
+      ContentType: mimeType,
+      CacheControl: 'private, no-store',
+      ServerSideEncryption: process.env.S3_SERVER_SIDE_ENCRYPTION || 'AES256'
+    }));
+  } catch (error) {
+    throw toS3Error('upload', error);
+  }
+};
+
+const deleteFromS3 = async (filePath) => {
+  try {
+    await initializeS3().send(new DeleteObjectCommand({
+      Bucket: getBucketName(),
+      Key: filePath
+    }));
+  } catch (error) {
+    throw toS3Error('delete', error);
+  }
+};
+
+const getS3SignedUrl = async (filePath, expiresIn) => {
+  try {
+    return await signS3Url(
+      initializeS3(),
+      new GetObjectCommand({ Bucket: getBucketName(), Key: filePath }),
+      { expiresIn }
+    );
+  } catch (error) {
+    throw toS3Error('generate a signed URL for', error);
+  }
+};
+
+const getLegacySignedUrl = async (filePath, legacyUrl) => {
+  const client = initializeSupabase();
+  if (!client) {
+    if (legacyUrl) return legacyUrl;
+    throw new Error('Legacy Supabase migration storage is not configured');
+  }
+
+  if (process.env.SUPABASE_STORAGE_PUBLIC === 'true' && legacyUrl) return legacyUrl;
+
+  const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
+  const { data, error } = await client.storage
+    .from(bucketName)
+    .createSignedUrl(filePath, getSignedUrlExpiry());
+
+  if (error || !data?.signedUrl) {
+    throw new Error(error?.message || 'Legacy storage did not return a signed URL');
+  }
+  return data.signedUrl;
+};
+
 /**
- * Upload file to Supabase Storage
- * @param {Buffer} fileBuffer - File buffer
- * @param {String} fileName - File name
- * @param {String} mimeType - MIME type
- * @param {String} folder - Storage folder path
- * @returns {Promise<Object>} Upload result with URL and path
+ * Upload a privacy-processed file to the private S3 evidence bucket.
+ * The returned URL is intentionally empty because persisted URLs must not
+ * expire; callers generate an authorized URL through getEvidenceUrl instead.
  */
 exports.uploadToStorage = async (fileBuffer, fileName, mimeType, folder = 'uploads') => {
-  try {
-    const client = initializeSupabase();
-    
-    if (!client) {
-      throw new Error('Supabase Storage not initialized');
-    }
-
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
-    
-    // Generate unique file name
-    const timestamp = Date.now();
-    const randomString = crypto.randomBytes(8).toString('hex');
-    const fileExtension = fileName.split('.').pop();
-    const uniqueFileName = `${folder}/${timestamp}-${randomString}.${fileExtension}`;
-
-    // Upload file to Supabase Storage
-    const { error } = await client.storage
-      .from(bucketName)
-      .upload(uniqueFileName, fileBuffer, {
-        contentType: mimeType,
-        upsert: false
-      });
-
-    if (error) {
-      logger.error('Supabase upload error:', error);
-      throw new Error(`Failed to upload file: ${error.message}`);
-    }
-
-    // Evidence buckets are private by default. A public URL is returned only
-    // when a deployment has explicitly configured a public storage bucket.
-    let url;
-    if (isPublicBucket()) {
-      const { data: publicUrlData } = client.storage
-        .from(bucketName)
-        .getPublicUrl(uniqueFileName);
-      url = publicUrlData.publicUrl;
-    }
-
-    return {
-      url,
-      path: uniqueFileName,
-      key: uniqueFileName // For compatibility with other naming conventions
-    };
-  } catch (error) {
-    logger.error('Supabase Storage upload error:', error);
-    throw new Error('Failed to upload file to Supabase Storage');
-  }
+  const key = createStorageKey(fileName, folder);
+  await uploadToS3(fileBuffer, key, mimeType);
+  return { url: undefined, path: key, key };
 };
 
-/**
- * Delete file from Supabase Storage
- * @param {String} filePath - File path in storage
- * @returns {Promise<void>}
- */
 exports.deleteFromStorage = async (filePath) => {
-  try {
-    const client = initializeSupabase();
-    
-    if (!client) {
-      throw new Error('Supabase Storage not initialized');
-    }
-
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
-
-    const { error } = await client.storage
-      .from(bucketName)
-      .remove([filePath]);
-
-    if (error) {
-      logger.error('Supabase delete error:', error);
-      throw new Error(`Failed to delete file: ${error.message}`);
-    }
-    
-    logger.info(`Deleted file from Supabase Storage: ${filePath}`);
-  } catch (error) {
-    logger.error('Supabase Storage delete error:', error);
-    throw new Error('Failed to delete file from Supabase Storage');
-  }
+  if (!filePath) return;
+  await deleteFromS3(filePath);
+  logger.info(`Deleted file from S3: ${filePath}`);
 };
 
-/**
- * Optimize and resize image
- * @param {Buffer} imageBuffer - Original image buffer
- * @param {Number} maxWidth - Maximum width
- * @param {Number} quality - Image quality (1-100)
- * @returns {Promise<Buffer>} Optimized image buffer
- */
 exports.optimizeImage = async (imageBuffer, maxWidth = 1920, quality = 80) => {
   try {
     return await sharp(imageBuffer)
-      .resize(maxWidth, null, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
+      .resize(maxWidth, null, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality })
       .toBuffer();
   } catch (error) {
@@ -140,19 +159,10 @@ exports.optimizeImage = async (imageBuffer, maxWidth = 1920, quality = 80) => {
   }
 };
 
-/**
- * Generate thumbnail
- * @param {Buffer} imageBuffer - Original image buffer
- * @param {Number} size - Thumbnail size
- * @returns {Promise<Buffer>} Thumbnail buffer
- */
 exports.generateThumbnail = async (imageBuffer, size = 300) => {
   try {
     return await sharp(imageBuffer)
-      .resize(size, size, {
-        fit: 'cover',
-        position: 'center'
-      })
+      .resize(size, size, { fit: 'cover', position: 'center' })
       .jpeg({ quality: 70 })
       .toBuffer();
   } catch (error) {
@@ -161,144 +171,71 @@ exports.generateThumbnail = async (imageBuffer, size = 300) => {
   }
 };
 
-/**
- * Upload multiple files to Supabase Storage
- * @param {Array} files - Array of file objects with buffer, name, and mimeType
- * @param {String} folder - Storage folder path
- * @returns {Promise<Array>} Array of upload results
- */
 exports.uploadMultipleToStorage = async (files, folder = 'uploads') => {
   try {
-    const uploadPromises = files.map(file => 
+    return await Promise.all(files.map((file) => (
       exports.uploadToStorage(file.buffer, file.name, file.mimeType, folder)
-    );
-    
-    return await Promise.all(uploadPromises);
+    )));
   } catch (error) {
-    logger.error('Multiple Supabase Storage upload error:', error);
-    throw new Error('Failed to upload files to Supabase Storage');
+    logger.error(`Multiple S3 upload error: ${error.message}`);
+    throw new Error('Failed to upload files to S3');
   }
 };
 
-/**
- * Get signed URL for temporary access (for private files)
- * @param {String} filePath - File path in storage
- * @param {Number} expiresIn - Expiration time in seconds (default 1 hour)
- * @returns {Promise<String>} Signed URL
- */
-exports.getSignedUrl = async (filePath, expiresIn = 3600) => {
+exports.getSignedUrl = async (filePath, expiresIn = getSignedUrlExpiry()) => {
   try {
-    const client = initializeSupabase();
-    
-    if (!client) {
-      throw new Error('Supabase Storage not initialized');
-    }
-
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
-
-    const { data, error } = await client.storage
-      .from(bucketName)
-      .createSignedUrl(filePath, expiresIn);
-
-    if (error) {
-      logger.error('Signed URL generation error:', error);
-      throw new Error(`Failed to generate signed URL: ${error.message}`);
-    }
-
-    return data.signedUrl;
+    return await getS3SignedUrl(filePath, expiresIn);
   } catch (error) {
-    logger.error('Signed URL generation error:', error);
+    logger.error(`S3 signed URL error: ${error.message}`);
     throw new Error('Failed to generate signed URL');
   }
 };
 
 /**
- * Return a viewable URL without persisting expiring signed URLs in MongoDB.
- * Legacy rows with no storage key retain their historical URL.
+ * Generate a short-lived URL at read time. During migration, an opt-in
+ * Supabase fallback keeps historical objects readable while S3 is verified.
  */
 exports.getEvidenceUrl = async (filePath, legacyUrl) => {
   if (!filePath) return legacyUrl || null;
 
-  if (isPublicBucket()) {
-    if (legacyUrl) return legacyUrl;
-
-    const client = initializeSupabase();
-    if (!client) throw new Error('Supabase Storage not initialized');
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
-    return client.storage.from(bucketName).getPublicUrl(filePath).data.publicUrl;
+  try {
+    return await exports.getSignedUrl(filePath, getSignedUrlExpiry());
+  } catch (error) {
+    if (!isLegacyReadEnabled()) throw error;
+    if (typeof logger.warn === 'function') {
+      logger.warn(`Falling back to legacy evidence storage for ${filePath}`);
+    }
+    return getLegacySignedUrl(filePath, legacyUrl);
   }
-
-  return exports.getSignedUrl(
-    filePath,
-    parseInt(process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS, 10) || 3600
-  );
 };
 
-/**
- * List files in a folder
- * @param {String} folder - Folder path
- * @returns {Promise<Array>} List of files
- */
 exports.listFiles = async (folder = '') => {
   try {
-    const client = initializeSupabase();
-    
-    if (!client) {
-      throw new Error('Supabase Storage not initialized');
-    }
-
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
-
-    const { data, error } = await client.storage
-      .from(bucketName)
-      .list(folder);
-
-    if (error) {
-      logger.error('List files error:', error);
-      throw new Error(`Failed to list files: ${error.message}`);
-    }
-
-    return data;
+    const response = await initializeS3().send(new ListObjectsV2Command({
+      Bucket: getBucketName(),
+      Prefix: folder || undefined
+    }));
+    return (response.Contents || []).map((object) => ({
+      name: object.Key,
+      id: object.ETag,
+      size: object.Size,
+      updated_at: object.LastModified
+    }));
   } catch (error) {
-    logger.error('List files error:', error);
-    throw new Error('Failed to list files');
+    throw toS3Error('list', error);
   }
 };
 
-/**
- * Download file from storage
- * @param {String} filePath - File path in storage
- * @returns {Promise<Buffer>} File buffer
- */
 exports.downloadFile = async (filePath) => {
   try {
-    const client = initializeSupabase();
-    
-    if (!client) {
-      throw new Error('Supabase Storage not initialized');
-    }
-
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'lunas-storage';
-
-    const { data, error } = await client.storage
-      .from(bucketName)
-      .download(filePath);
-
-    if (error) {
-      logger.error('Download file error:', error);
-      throw new Error(`Failed to download file: ${error.message}`);
-    }
-
-    // Convert blob to buffer
-    const arrayBuffer = await data.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    const response = await initializeS3().send(new GetObjectCommand({
+      Bucket: getBucketName(),
+      Key: filePath
+    }));
+    return bodyToBuffer(response.Body);
   } catch (error) {
-    logger.error('Download file error:', error);
-    throw new Error('Failed to download file');
+    throw toS3Error('download', error);
   }
 };
-
-// Initialize Supabase on module load
-initializeSupabase();
 
 module.exports = exports;

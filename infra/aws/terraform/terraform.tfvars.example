@@ -1,0 +1,16 @@
+enable_aws_resources = false
+aws_region           = "ap-southeast-1"
+project_name         = "lunas"
+environment          = "production"
+
+# S3 bucket names are globally unique. Replace this before enabling resources.
+bucket_prefix = "replace-with-your-account-suffix-lunas-"
+
+# Pin reviewed AMIs before a production apply. The default selects the latest
+# Amazon Linux 2023 AMI, but it does not install MongoDB or the application.
+app_ami_id = ""
+db_ami_id  = ""
+
+# Prefer Session Manager. Leave this null unless a reviewed emergency process
+# requires an EC2 key pair.
+ssh_key_name = null

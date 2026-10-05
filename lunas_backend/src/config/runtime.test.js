@@ -7,6 +7,8 @@ const productionEnvironment = (overrides = {}) => ({
   JWT_REFRESH_SECRET: 'refresh-secret-with-at-least-32-characters',
   TURNSTILE_SECRET_KEY: 'configured-turnstile-secret',
   TURNSTILE_ALLOWED_HOSTNAMES: 'lunas.example.gov.ph',
+  AWS_REGION: 'ap-southeast-1',
+  S3_EVIDENCE_BUCKET: 'lunas-evidence-production',
   ...overrides
 });
 
@@ -32,6 +34,23 @@ describe('production runtime configuration', () => {
       JWT_SECRET: shared,
       JWT_REFRESH_SECRET: shared
     }))).toThrow('distinct');
+  });
+
+  test('requires private S3 storage configuration in production', () => {
+    expect(() => validateRuntimeConfig(productionEnvironment({ S3_EVIDENCE_BUCKET: '' })))
+      .toThrow('S3_EVIDENCE_BUCKET');
+    expect(() => validateRuntimeConfig(productionEnvironment({ AWS_REGION: '' })))
+      .toThrow('AWS_REGION');
+  });
+
+  test('requires legacy Supabase credentials only during migration fallback', () => {
+    expect(() => validateRuntimeConfig(productionEnvironment({
+      SUPABASE_MIGRATION_READ_ENABLED: 'true'
+    }))).toThrow('SUPABASE_URL');
+    expect(() => validateRuntimeConfig(productionEnvironment({
+      SUPABASE_MIGRATION_READ_ENABLED: 'true',
+      SUPABASE_URL: 'https://storage.example.test'
+    }))).toThrow('SUPABASE_SERVICE_ROLE_KEY');
   });
 
   test('does not impose production requirements on local tests and development', () => {

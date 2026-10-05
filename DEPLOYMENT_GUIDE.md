@@ -14,7 +14,7 @@ authority, account governance, and incident/work-order transitions.
   allowlist on the API.
 - Build the Flutter app with a reachable HTTPS API URL. Do not bundle backend,
   storage service-role, or email-delivery secrets into the client.
-- Keep private evidence storage private. The API issues authorized signed
+- Keep private S3 evidence storage private. The API issues authorized signed
   retrieval URLs; do not make the evidence bucket public.
 - Configure registration/activation email, Maps, optional push, and AI only if
   used. Check `lunas_backend/.env.example`, `lunas_web/.env.example`, and
@@ -69,11 +69,67 @@ Do not enable that profile on a public host. To stop the stack without deleting
 database volumes, run `docker compose down`. Do not add `-v` unless permanent
 database removal is intentional.
 
+## AWS EC2 + S3 deployment
+
+The AWS target is deliberately split into two EC2 roles for the capstone:
+
+- An application instance runs the Express API, the internal Python AI service,
+  and an HTTPS reverse proxy. Ports 5000 and 5001 remain private.
+- A separate database instance runs MongoDB on encrypted EBS with no public
+  MongoDB ingress. Allow TCP 27017 only from the application security group.
+- Evidence is stored in a private S3 bucket. The EC2 instance role receives
+  only the required bucket/prefix permissions; no long-lived AWS keys belong
+  in `.env` or client applications.
+- Use Systems Manager Session Manager for administration instead of opening
+  SSH to the internet. Send application and host logs to CloudWatch with a
+  retention period and budget appropriate for the capstone.
+
+The repository does not apply AWS resources automatically. The operator must
+create the account, configure the region and DNS, review the security groups,
+set the S3 bucket policy, and explicitly run the chosen infrastructure tooling.
+The first deployment should be a single application instance and a single
+database instance; high availability and a load balancer are later scaling
+steps.
+
+### S3 storage migration
+
+Set `STORAGE_PROVIDER=s3`, `AWS_REGION`, and `S3_EVIDENCE_BUCKET`. New evidence
+is privacy-processed and uploaded to S3 before the incident or work-order record
+is persisted. URLs are generated on demand with the configured
+`EVIDENCE_SIGNED_URL_EXPIRE_SECONDS` value.
+
+Historical objects can be copied without changing their MongoDB keys:
+
+```bash
+cd lunas_backend
+npm run migrate:storage -- --dry-run
+npm run migrate:storage -- --apply
+```
+
+The migration is dry-run by default. It requires the Supabase service-role
+credentials only for the migration process, preserves object keys, writes a
+SHA-256 object metadata value, and verifies that value after each copy. Keep
+`SUPABASE_MIGRATION_READ_ENABLED=true` only during the verification window;
+disable it and remove the credentials after the cutover is accepted.
+
+### MongoDB migration and rollback
+
+Take a full `mongodump` before migration, restore it to the private database
+instance, and verify collection counts, indexes, users, audit records, and the
+partial unique notification index. Do not expose MongoDB publicly. Keep the old
+deployment available until the AWS database and S3 objects pass the end-to-end
+workflow checks.
+
+If new writes have reached AWS, a rollback is not only a DNS change: pause
+writes and reconcile the AWS database/object delta before returning to the old
+deployment. Test this procedure before declaring cutover complete.
+
 ## Required and optional integrations
 
 - Required for core container startup: MongoDB, distinct JWT secrets, the web
   session secret, internal BFF API URL, and Turnstile configuration.
-- Required for real incident evidence: private Supabase storage credentials.
+- Required for real incident evidence: private S3 bucket access through the
+  EC2 instance role. Supabase credentials are migration-only.
 - Required for citizen registration and personnel activation: the configured
   delivery webhook/provider and its token.
 - Optional/degradable: AI inference, OneSignal push, password-reset delivery,

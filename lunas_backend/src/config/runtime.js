@@ -30,6 +30,18 @@ const validateRuntimeConfig = (environment = process.env) => {
 
   requireValue(environment, 'TURNSTILE_SECRET_KEY');
   requireValue(environment, 'TURNSTILE_ALLOWED_HOSTNAMES');
+
+  const storageProvider = String(environment.STORAGE_PROVIDER || 's3').trim().toLowerCase();
+  if (storageProvider !== 's3') {
+    throw new Error('STORAGE_PROVIDER must be s3 in production');
+  }
+  requireValue(environment, 'AWS_REGION');
+  requireValue(environment, 'S3_EVIDENCE_BUCKET');
+
+  if (environment.SUPABASE_MIGRATION_READ_ENABLED === 'true') {
+    requireValue(environment, 'SUPABASE_URL');
+    requireValue(environment, 'SUPABASE_SERVICE_ROLE_KEY');
+  }
 };
 
 module.exports = { validateRuntimeConfig };
