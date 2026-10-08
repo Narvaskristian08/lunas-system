@@ -4,6 +4,12 @@ variable "enable_aws_resources" {
   default     = false
 }
 
+variable "enable_ec2_resources" {
+  description = "Create the VPC, IAM roles, security groups, and EC2 instances. Keep false for S3-only setup or accounts that have not enabled EC2."
+  type        = bool
+  default     = false
+}
+
 variable "aws_region" {
   description = "AWS region for the capstone deployment."
   type        = string
@@ -33,12 +39,12 @@ variable "vpc_cidr" {
 
 variable "app_instance_type" {
   type    = string
-  default = "t3.small"
+  default = "t3.micro"
 }
 
 variable "db_instance_type" {
   type    = string
-  default = "t3.small"
+  default = "t3.micro"
 }
 
 variable "app_ami_id" {

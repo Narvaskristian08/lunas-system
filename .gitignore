@@ -10,3 +10,8 @@ runs/
 # OS Files
 .DS_Store
 .vscode/
+
+# Local Terraform provider cache and state. Store state remotely before a
+# shared or production deployment; never commit credentials or local state.
+/infra/aws/terraform/.terraform/
+/infra/aws/terraform/terraform.tfstate*

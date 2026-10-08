@@ -14,6 +14,12 @@ The target topology is:
 - IAM instance profiles for S3 and Systems Manager access;
 - no load balancer or NAT gateway in the initial cost-conscious scaffold.
 
+The default EC2 size is `t3.micro` with T3 CPU credits set to `standard`, and
+the database volume is 30 GiB. This is intended for a small development or
+demonstration deployment and does not guarantee zero cost: Free Tier eligibility
+depends on the account plan, account age, and total monthly usage. Stop or
+terminate EC2 instances when they are not needed.
+
 The database AMI must be prepared and reviewed separately. The scaffold does
 not install MongoDB into a private subnet without an approved bootstrap path.
 Use a pinned, patched AMI or a controlled Systems Manager deployment. Do not
@@ -33,6 +39,11 @@ terraform plan
 The default plan is empty because `enable_aws_resources` is `false`. Before a
 real apply, create the AWS account, configure a budget alarm, replace the S3
 prefix, review the AMIs and security groups, and set the enable flag explicitly.
+
+If the account has not enabled EC2 yet, provision only the private S3 buckets
+with `enable_aws_resources=true` and `enable_ec2_resources=false`. EC2/VPC/IAM
+resources remain disabled until the account is eligible and the AMI/bootstrap
+path has been reviewed.
 
 After provisioning, configure the backend with the `evidence_bucket` output,
 `AWS_REGION`, and the EC2 instance role. Do not copy AWS access keys into the

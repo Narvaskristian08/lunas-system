@@ -1,4 +1,5 @@
 enable_aws_resources = false
+enable_ec2_resources = false
 aws_region           = "ap-southeast-1"
 project_name         = "lunas"
 environment          = "production"
@@ -8,6 +9,8 @@ bucket_prefix = "replace-with-your-account-suffix-lunas-"
 
 # Pin reviewed AMIs before a production apply. The default selects the latest
 # Amazon Linux 2023 AMI, but it does not install MongoDB or the application.
+# Both instances default to t3.micro and CPU credits are capped at standard to
+# avoid the extra charges that T3 Unlimited can create under sustained load.
 app_ami_id = ""
 db_ami_id  = ""
 
