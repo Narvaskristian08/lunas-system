@@ -1,0 +1,70 @@
+services:
+  # RustFS exposes the same S3 API needed by the backend. It is kept under
+  # the historical `minio` service name so local URLs stay stable; the
+  # production path remains AWS S3.
+  minio:
+    image: rustfs/rustfs:latest
+    command: server /data --console-enable --console-address ":9001"
+    environment:
+      RUSTFS_ACCESS_KEY: ${MINIO_ROOT_USER:-lunas-local}
+      RUSTFS_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-lunas-local-storage-password}
+      RUSTFS_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    networks:
+      - lunas_network
+  minio-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        until aws --endpoint-url http://minio:9000 s3api list-buckets
+        >/dev/null 2>&1; do sleep 2; done;
+        aws --endpoint-url http://minio:9000 s3api head-bucket
+        --bucket "$${S3_EVIDENCE_BUCKET}" >/dev/null 2>&1 ||
+        aws --endpoint-url http://minio:9000 s3api create-bucket
+        --bucket "$${S3_EVIDENCE_BUCKET}"
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-lunas-local}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-lunas-local-storage-password}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      S3_EVIDENCE_BUCKET: ${S3_EVIDENCE_BUCKET:-lunas-local-evidence}
+    networks:
+      - lunas_network
+
+  backend:
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: development
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-lunas-local}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-lunas-local-storage-password}
+      S3_EVIDENCE_BUCKET: ${S3_EVIDENCE_BUCKET:-lunas-local-evidence}
+      S3_ENDPOINT: http://minio:9000
+      S3_SERVER_SIDE_ENCRYPTION: ""
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      AI_SERVICE_ENABLED: ${AI_SERVICE_ENABLED:-true}
+      AI_EVIDENCE_ANALYSIS_ENABLED: ${AI_EVIDENCE_ANALYSIS_ENABLED:-true}
+      PRIVACY_REDACTION_ENABLED: ${PRIVACY_REDACTION_ENABLED:-true}
+
+  web:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000/api/v1}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-1x00000000000000000000AA}
+
+  lunas-ai:
+    volumes:
+      - ai_logs:/app/logs
+      - ai_cache:/app/cache
+
+volumes:
+  minio_data:
+  ai_logs:
+  ai_cache:

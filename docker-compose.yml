@@ -181,9 +181,8 @@ services:
       # CORS - Allow backend access
       ALLOWED_ORIGINS: http://backend:5000
     volumes:
-      - ./lunas_ai/models:/app/models
-      - ./lunas_ai/logs:/app/logs
-      - ./lunas_ai/cache:/app/cache
+      - ai_logs:/app/logs
+      - ai_cache:/app/cache
     networks:
       - lunas_network
     healthcheck:
@@ -219,6 +218,10 @@ volumes:
   mongodb_config:
     driver: local
   backend_logs:
+    driver: local
+  ai_logs:
+    driver: local
+  ai_cache:
     driver: local
 
 networks:

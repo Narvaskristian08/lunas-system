@@ -17,14 +17,16 @@ env/
 .env
 .env.local
 
-# Models (download at runtime)
-models/*.pt
-models/*.pth
+# Model weights used by the configured inference routes are bundled in the
+# image. Do not bundle model caches, datasets, or training outputs.
 models/cache/
 
 # Datasets
 datasets/
 data/
+*.zip
+*.tar
+*.tar.gz
 
 # Training outputs
 runs/
@@ -33,6 +35,7 @@ weights/
 # Logs
 logs/
 *.log
+src/models/*.zip
 
 # Cache
 cache/
@@ -40,6 +43,7 @@ cache/
 
 # Testing
 .pytest_cache/
+**/__pycache__/
 .coverage
 
 # IDE

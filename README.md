@@ -44,13 +44,19 @@ same public API path. Use HTTPS and a stable domain before production release.
 
 ## Docker Compose
 
-Copy the root `.env.example` to `.env`, replace all placeholder credentials,
-then run `docker compose config --quiet`, `docker compose build`, and
-`docker compose up -d`. The web BFF reaches the API over the private Compose
-hostname `backend:5000`; browser-facing URLs remain separate. MongoDB and AI
-are not published to the host, while web/API ports bind to loopback by default.
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for required secrets, optional
-integrations, health checks, profiles, and production reverse-proxy guidance.
+For a complete local stack without AWS credentials, run
+`./scripts/local-up.sh -d`. It creates `.env.local`, starts MongoDB, a local
+S3-compatible object store,
+the backend, web dashboard, and AI service, and stores evidence in the local
+private `lunas-local-evidence` bucket. The web BFF reaches the API over the
+private Compose hostname `backend:5000`; device-facing URLs use the host LAN
+address. See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for LAN/mobile setup and
+[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for production guidance.
+
+For an AWS-connected deployment, copy the root `.env.example` to `.env`, use
+the production S3 settings, and run the base Compose file without the local
+object-store override. The production backend uses the EC2 instance role and
+keeps evidence in the private AWS bucket.
 
 ## Local end-to-end demonstration
 

@@ -1,0 +1,35 @@
+services:
+  lunas-ai:
+    build:
+      context: ./lunas_ai
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5001
+      DEBUG: "False"
+      DEVICE: cpu
+      ENABLE_HALF_PRECISION: "False"
+      CONFIDENCE_THRESHOLD: 0.25
+      IOU_THRESHOLD: 0.45
+      MAX_DETECTIONS: 50
+      MAX_IMAGE_SIZE: 1920
+      IMAGE_QUALITY: 85
+      LOG_LEVEL: INFO
+      ALLOWED_ORIGINS: http://backend:5000
+    ports:
+      - "5001:5001"
+    volumes:
+      - ai_logs:/app/logs
+      - ai_cache:/app/cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5001/api/v1/health', timeout=5).raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+volumes:
+  ai_logs:
+  ai_cache:

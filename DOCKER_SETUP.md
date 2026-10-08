@@ -8,6 +8,39 @@ configuration. The [root README](./README.md) is the canonical local setup and
 demo guide; product roles and transitions are defined in
 [LUNAS_PROJECT_SCOPE.md](./LUNAS_PROJECT_SCOPE.md).
 
+## Fully local stack
+
+The local stack includes an S3-compatible RustFS object store (exposed under
+the Compose service name `minio`), so AWS access keys are not required for
+local development. The helper creates a local `.env.local` with
+development-only secrets and starts MongoDB, object storage, the backend, web
+dashboard, and AI service:
+
+```bash
+./scripts/local-up.sh -d
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml ps
+```
+
+The API is available at `http://localhost:5000`, the web dashboard at
+`http://localhost:3000`, and the local object-store console at
+`http://localhost:9001`.
+Evidence is stored in the private `lunas-local-evidence` bucket. Do not use
+these local credentials or the local S3 endpoint in production.
+
+For a phone or another computer on the same LAN, set `BACKEND_BIND_ADDRESS`
+and `WEB_BIND_ADDRESS` to `0.0.0.0`, set `CORS_ORIGIN` to the web origin, and
+run the mobile client with the host computer's LAN address:
+
+```bash
+flutter run \
+  --dart-define=LUNAS_API_BASE_URL=http://<computer-LAN-IP>:5000/api/v1
+```
+
+The AI API stays private to the Compose network. Toggle it with
+`AI_SERVICE_ENABLED`, `AI_EVIDENCE_ANALYSIS_ENABLED`, and
+`PRIVACY_REDACTION_ENABLED` in `.env.local`; restart Compose after changing
+these values.
+
 ## Database development
 
 The Compose MongoDB service is intentionally private and is consumed by the
@@ -31,14 +64,19 @@ registration delivery, storage, push, and web settings before starting the
 full stack:
 
 ```bash
-docker compose up -d --build
-docker compose ps
-docker compose logs -f backend web
+docker compose --env-file .env.local \
+  -f docker-compose.yml -f docker-compose.local.yml \
+  up -d --build
+docker compose --env-file .env.local \
+  -f docker-compose.yml -f docker-compose.local.yml ps
+docker compose --env-file .env.local \
+  -f docker-compose.yml -f docker-compose.local.yml logs -f backend web lunas-ai
 ```
 
 The API health URL is `http://localhost:5000/health`; the web app is
-`http://localhost:3000`. AI and MongoDB are private Compose services and do not
-publish host ports. MongoDB data is held in the Compose volume.
+`http://localhost:3000`. AI, MongoDB, and the S3 API are private Compose
+services; only the local object-store console is published for inspection.
+MongoDB and object-store data are held in Compose volumes.
 `docker compose down` stops services; removing volumes deletes local
 database state.
 

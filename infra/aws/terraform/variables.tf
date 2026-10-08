@@ -10,6 +10,12 @@ variable "enable_ec2_resources" {
   default     = false
 }
 
+variable "enable_ai_resources" {
+  description = "Create the dedicated AI EC2 instance. Requires enable_ec2_resources so the existing application network and security group are present."
+  type        = bool
+  default     = false
+}
+
 variable "aws_region" {
   description = "AWS region for the capstone deployment."
   type        = string
@@ -47,6 +53,12 @@ variable "db_instance_type" {
   default = "t3.micro"
 }
 
+variable "ai_instance_type" {
+  description = "Temporary CPU instance for the containerized YOLO/privacy service. t3.small provides the minimum practical memory headroom."
+  type        = string
+  default     = "t3.small"
+}
+
 variable "app_ami_id" {
   description = "Optional pinned AMI. Leave empty to select the latest Amazon Linux 2023 x86_64 AMI."
   type        = string
@@ -55,6 +67,12 @@ variable "app_ami_id" {
 
 variable "db_ami_id" {
   description = "Optional pinned MongoDB-ready AMI. Leave empty to select Amazon Linux 2023 and bootstrap separately."
+  type        = string
+  default     = ""
+}
+
+variable "ai_ami_id" {
+  description = "Optional pinned Amazon Linux 2023 x86_64 AMI for the AI host. Leave empty to select the latest Amazon Linux 2023 AMI."
   type        = string
   default     = ""
 }

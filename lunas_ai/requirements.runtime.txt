@@ -1,0 +1,16 @@
+# Runtime-only dependencies for the CPU inference container.
+# Dataset inspection, training, test, and lint tools stay out of production.
+ultralytics>=8.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+tqdm>=4.66.0
+requests>=2.31.0
+prometheus-client>=0.19.0

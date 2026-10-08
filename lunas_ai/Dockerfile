@@ -6,18 +6,17 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install only the runtime libraries needed by headless OpenCV and CPU PyTorch.
+# Keeping GUI/OpenGL packages out of the image is important on the 2 GiB t3.small.
 RUN apt-get update && apt-get install -y \
-    libgl1 \
+    --no-install-recommends \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy runtime-only requirements. Training, FiftyOne, test, and lint packages
+# are intentionally not installed in the inference image.
+COPY requirements.runtime.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt

@@ -1,7 +1,8 @@
 locals {
-  enabled         = var.enable_aws_resources
-  compute_enabled = var.enable_aws_resources && var.enable_ec2_resources
-  name            = "${var.project_name}-${var.environment}"
+  enabled            = var.enable_aws_resources
+  compute_enabled    = var.enable_aws_resources && var.enable_ec2_resources
+  ai_compute_enabled = local.compute_enabled && var.enable_ai_resources
+  name               = "${var.project_name}-${var.environment}"
   tags = {
     Project     = var.project_name
     Environment = var.environment
@@ -15,7 +16,7 @@ data "aws_availability_zones" "available" {
 }
 
 data "aws_ami" "amazon_linux" {
-  count       = local.compute_enabled && (var.app_ami_id == "" || var.db_ami_id == "") ? 1 : 0
+  count       = local.compute_enabled && (var.app_ami_id == "" || var.db_ami_id == "" || var.ai_ami_id == "") ? 1 : 0
   most_recent = true
   owners      = ["amazon"]
 
@@ -166,6 +167,30 @@ resource "aws_security_group" "database" {
   }
 
   tags = merge(local.tags, { Name = "${local.name}-database-sg" })
+}
+
+resource "aws_security_group" "ai" {
+  count       = local.ai_compute_enabled ? 1 : 0
+  name        = "${local.name}-ai"
+  description = "Private AI inference service; reachable only from the application security group."
+  vpc_id      = aws_vpc.main[0].id
+
+  ingress {
+    description     = "AI inference from the application instance only"
+    protocol        = "tcp"
+    from_port       = 5001
+    to_port         = 5001
+    security_groups = [aws_security_group.app[0].id]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.tags, { Name = "${local.name}-ai-sg" })
 }
 
 resource "aws_s3_bucket" "evidence" {
@@ -456,6 +481,52 @@ resource "aws_iam_instance_profile" "database" {
   role  = aws_iam_role.database[0].name
 }
 
+resource "aws_iam_role" "ai" {
+  count = local.ai_compute_enabled ? 1 : 0
+  name  = "${local.name}-ai-role"
+
+  assume_role_policy = aws_iam_role.app[0].assume_role_policy
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "ai_ssm" {
+  count      = local.ai_compute_enabled ? 1 : 0
+  role       = aws_iam_role.ai[0].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy" "ai_artifacts" {
+  count = local.ai_compute_enabled ? 1 : 0
+  role  = aws_iam_role.ai[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "${aws_s3_bucket.artifacts[0].arn}/ai/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.artifacts[0].arn
+        Condition = {
+          StringLike = {
+            "s3:prefix" = ["ai/*"]
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "ai" {
+  count = local.ai_compute_enabled ? 1 : 0
+  name  = "${local.name}-ai-profile"
+  role  = aws_iam_role.ai[0].name
+}
+
 resource "aws_iam_role_policy" "database_backup" {
   count = local.compute_enabled ? 1 : 0
   role  = aws_iam_role.database[0].id
@@ -537,4 +608,38 @@ resource "aws_instance" "database" {
   user_data_replace_on_change = true
 
   tags = merge(local.tags, { Name = "${local.name}-database" })
+}
+
+resource "aws_instance" "ai" {
+  count                       = local.ai_compute_enabled ? 1 : 0
+  ami                         = var.ai_ami_id != "" ? var.ai_ami_id : data.aws_ami.amazon_linux[0].id
+  instance_type               = var.ai_instance_type
+  subnet_id                   = aws_subnet.app[0].id
+  vpc_security_group_ids      = [aws_security_group.ai[0].id]
+  iam_instance_profile        = aws_iam_instance_profile.ai[0].name
+  key_name                    = var.ssh_key_name
+  associate_public_ip_address = true
+  monitoring                  = false
+
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  root_block_device {
+    encrypted   = true
+    volume_type = "gp3"
+    volume_size = 30
+  }
+
+  user_data                   = file("${path.module}/user_data/ai-bootstrap.sh")
+  user_data_replace_on_change = true
+
+  tags = merge(local.tags, {
+    Name = "${local.name}-ai"
+    Role = "ai-inference"
+  })
 }

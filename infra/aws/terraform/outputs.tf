@@ -32,3 +32,13 @@ output "database_private_ip" {
   value       = try(aws_instance.database[0].private_ip, null)
   description = "Private MongoDB IP; never publish this address."
 }
+
+output "ai_private_ip" {
+  value       = try(aws_instance.ai[0].private_ip, null)
+  description = "Private AI inference IP for the application instance."
+}
+
+output "ai_instance_id" {
+  value       = try(aws_instance.ai[0].id, null)
+  description = "Dedicated AI EC2 instance ID. Stop this instance when AI is not required."
+}

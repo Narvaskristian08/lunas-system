@@ -15,6 +15,15 @@ The target topology is:
 - IAM instance profiles for S3 and Systems Manager access;
 - no load balancer or NAT gateway in the initial cost-conscious scaffold.
 
+When `enable_ai_resources=true`, Terraform adds a separately controlled
+Amazon Linux 2023 `t3.small` instance tagged `lunas-production-ai`. Its
+security group accepts TCP 5001 only from the application security group, and
+its instance profile is limited to Systems Manager plus read access to the
+private deployment-artifacts bucket. Use
+`infra/aws/scripts/deploy-ai.sh` to package the runtime-only AI container,
+validate its health endpoint, and stop the instance afterward. A `t3.small`
+can consume free-tier credits and is not guaranteed to be permanently free.
+
 The web and API run together on the application EC2 instance as Docker
 containers. Nginx exposes `/api/v1/*` to the backend and all other paths to the
 Next.js web container. The web container calls the backend over the private
@@ -99,10 +108,11 @@ curl -fsS http://<ec2-public-host>/api/v1/health/ready
 ```
 
 The API returns `401` for protected endpoints without a token; that is expected.
-Evidence upload also requires the privacy/AI integration to be enabled. The
-free-tier deployment keeps the AI service disabled and therefore fails closed
-for privacy-sensitive evidence processing until separate AI capacity and real
-Turnstile credentials are configured.
+Evidence upload also requires the privacy/AI integration to be enabled. The AI
+service can be enabled or disabled independently with `AI_SERVICE_ENABLED`,
+`AI_EVIDENCE_ANALYSIS_ENABLED`, and `PRIVACY_REDACTION_ENABLED`. Keep the AI
+instance stopped when it is not being validated or used; the backend should
+not be exposed directly to the internet.
 
 The mobile client already reads `LUNAS_API_BASE_URL` at build time, so no API
 URL is hardcoded into the app. Use the same Nginx host as the web client for a
