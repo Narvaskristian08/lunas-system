@@ -12,6 +12,7 @@ const logger = require('../utils/logger');
 const crypto = require('crypto');
 
 let s3 = null;
+let signingS3 = null;
 let supabase = null;
 
 const getBucketName = () => process.env.S3_EVIDENCE_BUCKET || process.env.S3_BUCKET || '';
@@ -74,13 +75,16 @@ const createStorageKey = (fileName, folder) => {
 
 const uploadToS3 = async (fileBuffer, key, mimeType) => {
   try {
+    const encryption = process.env.S3_ENDPOINT && process.env.S3_SERVER_SIDE_ENCRYPTION === ''
+      ? undefined
+      : process.env.S3_SERVER_SIDE_ENCRYPTION || 'AES256';
     await initializeS3().send(new PutObjectCommand({
       Bucket: getBucketName(),
       Key: key,
       Body: fileBuffer,
       ContentType: mimeType,
       CacheControl: 'private, no-store',
-      ServerSideEncryption: process.env.S3_SERVER_SIDE_ENCRYPTION || 'AES256'
+      ...(encryption ? { ServerSideEncryption: encryption } : {})
     }));
   } catch (error) {
     throw toS3Error('upload', error);
@@ -100,8 +104,15 @@ const deleteFromS3 = async (filePath) => {
 
 const getS3SignedUrl = async (filePath, expiresIn) => {
   try {
+    if (!signingS3) {
+      const endpoint = process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT;
+      signingS3 = new S3Client({
+        region: getRegion(),
+        ...(endpoint ? { endpoint, forcePathStyle: true } : {})
+      });
+    }
     return await signS3Url(
-      initializeS3(),
+      signingS3,
       new GetObjectCommand({ Bucket: getBucketName(), Key: filePath }),
       { expiresIn }
     );

@@ -117,7 +117,7 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
         children: [
           Text(
             workOrder.orderNumber,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.md),
           LunasCard(

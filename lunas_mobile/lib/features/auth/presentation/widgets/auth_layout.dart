@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -10,6 +11,7 @@ class AuthLayout extends StatelessWidget {
     this.showBackButton = false,
     this.scrollable = true,
     this.maxWidth = 440,
+    this.footer,
     super.key,
   });
 
@@ -18,6 +20,7 @@ class AuthLayout extends StatelessWidget {
   final bool showBackButton;
   final bool scrollable;
   final double maxWidth;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +33,10 @@ class AuthLayout extends StatelessWidget {
               : AppSpacing.xl;
           final content = ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: constraints.maxHeight - AppSpacing.xl * 2,
+              minHeight: (constraints.maxHeight - AppSpacing.xl * 2).clamp(
+                0.0,
+                double.infinity,
+              ),
               maxWidth: maxWidth,
             ),
             child: Column(
@@ -40,7 +46,13 @@ class AuthLayout extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: IconButton(
-                      onPressed: () => Navigator.maybePop(context),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/login');
+                        }
+                      },
                       tooltip: 'Back',
                       icon: const Icon(Icons.arrow_back_rounded),
                     ),
@@ -53,6 +65,11 @@ class AuthLayout extends StatelessWidget {
                 if (showBrand || showBackButton)
                   const SizedBox(height: AppSpacing.xxl),
                 if (scrollable) child else Expanded(child: child),
+                if (footer != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  if (scrollable) const Spacer(),
+                  footer!,
+                ],
               ],
             ),
           );
@@ -63,7 +80,12 @@ class AuthLayout extends StatelessWidget {
               horizontal,
               AppSpacing.xl + viewInsets.bottom,
             ),
-            child: Align(alignment: Alignment.topCenter, child: content),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: footer != null && scrollable
+                  ? IntrinsicHeight(child: content)
+                  : content,
+            ),
           );
           return scrollable ? SingleChildScrollView(child: padded) : padded;
         },
@@ -114,7 +136,7 @@ class LunasBrand extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: AppColorsLight.brandBase,
               fontSize: large ? 30 : 19,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: large ? 1.2 : 2.2,
             ),
           ),
@@ -131,20 +153,14 @@ class LunasBrand extends StatelessWidget {
     );
     final mark = SizedBox.square(
       dimension: large ? 72 : 42,
-      child: Image.asset(
-        'assets/icons/lunas_logo.png',
-        fit: BoxFit.contain,
-      ),
+      child: Image.asset('assets/icons/lunas_logo.png', fit: BoxFit.contain),
     );
     if (centered) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           mark,
-          if (showTitle) ...[
-            const SizedBox(height: AppSpacing.sm),
-            title,
-          ],
+          if (showTitle) ...[const SizedBox(height: AppSpacing.sm), title],
         ],
       );
     }
@@ -152,10 +168,7 @@ class LunasBrand extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         mark,
-        if (showTitle) ...[
-          const SizedBox(width: AppSpacing.sm),
-          title,
-        ],
+        if (showTitle) ...[const SizedBox(width: AppSpacing.sm), title],
       ],
     );
   }
@@ -226,7 +239,7 @@ class AuthHeading extends StatelessWidget {
           textAlign: centered ? TextAlign.center : TextAlign.start,
           style: theme.textTheme.headlineLarge?.copyWith(
             fontSize: 28,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             letterSpacing: -.6,
           ),
         ),

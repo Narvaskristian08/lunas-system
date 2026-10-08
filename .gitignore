@@ -6,10 +6,13 @@ runs/
 /.env
 /.env.*
 !/.env.example
+!/.env.local.example
 
 # OS Files
 .DS_Store
 .vscode/
+/docker-local-build.log
+/docker-local-core.log
 
 # Local Terraform provider cache and state. Store state remotely before a
 # shared or production deployment; never commit credentials or local state.

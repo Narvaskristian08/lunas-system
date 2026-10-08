@@ -181,7 +181,7 @@ class MarkerDetailsSheet extends StatelessWidget {
                   child: Text(
                     marker.title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),

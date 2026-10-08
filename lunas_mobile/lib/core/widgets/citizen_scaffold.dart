@@ -14,6 +14,7 @@ class CitizenScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.showReportFab = true,
     this.showBackButton = false,
+    this.fillAvailableHeight = false,
     super.key,
   });
 
@@ -24,6 +25,7 @@ class CitizenScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final bool showReportFab;
   final bool showBackButton;
+  final bool fillAvailableHeight;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -36,7 +38,7 @@ class CitizenScaffold extends StatelessWidget {
     body: SafeArea(
       top: false,
       child: LayoutBuilder(
-        builder: (context, _) => SingleChildScrollView(
+        builder: (context, constraints) => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl,
             AppSpacing.md,
@@ -46,8 +48,14 @@ class CitizenScaffold extends StatelessWidget {
           child: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 760),
-              child: body,
+              constraints: BoxConstraints(
+                maxWidth: 760,
+                minHeight: fillAvailableHeight
+                    ? (constraints.maxHeight - AppSpacing.md - AppSpacing.hero)
+                          .clamp(0.0, double.infinity)
+                    : 0,
+              ),
+              child: fillAvailableHeight ? IntrinsicHeight(child: body) : body,
             ),
           ),
         ),

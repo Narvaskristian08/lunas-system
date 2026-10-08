@@ -31,7 +31,7 @@ class AppSplashScreen extends StatelessWidget {
             'LUNAS',
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
               color: AppColorsLight.brandBase,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
             ),
           ),

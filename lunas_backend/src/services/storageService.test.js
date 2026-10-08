@@ -20,6 +20,7 @@ beforeEach(() => {
   process.env.AWS_REGION = 'ap-southeast-1';
   process.env.S3_EVIDENCE_BUCKET = 'lunas-evidence-test';
   process.env.S3_SERVER_SIDE_ENCRYPTION = 'AES256';
+  delete process.env.S3_ENDPOINT;
   process.env.SUPABASE_MIGRATION_READ_ENABLED = 'false';
   process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS = '300';
   mockSend.mockResolvedValue({});
@@ -47,6 +48,19 @@ test('private evidence upload writes to S3 without returning a persisted URL', a
       ServerSideEncryption: 'AES256'
     })
   }));
+});
+
+test('local endpoint honors explicitly empty encryption', async () => {
+  process.env.S3_ENDPOINT = 'http://minio:9000';
+  process.env.S3_SERVER_SIDE_ENCRYPTION = '';
+  await storage.uploadToStorage(Buffer.from('test'), 'evidence.webp', 'image/webp');
+  expect(mockSend.mock.calls[0][0].input).not.toHaveProperty('ServerSideEncryption');
+});
+
+test('AWS uploads retain default encryption even when the setting is empty', async () => {
+  process.env.S3_SERVER_SIDE_ENCRYPTION = '';
+  await storage.uploadToStorage(Buffer.from('test'), 'evidence.webp', 'image/webp');
+  expect(mockSend.mock.calls[0][0].input.ServerSideEncryption).toBe('AES256');
 });
 
 test('private evidence generates a short-lived S3 signed URL', async () => {

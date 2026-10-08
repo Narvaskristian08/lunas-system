@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -25,7 +26,8 @@ class WorkOrderDetailsScreen extends StatefulWidget {
   State<WorkOrderDetailsScreen> createState() => _WorkOrderDetailsScreenState();
 }
 
-class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
+class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<WorkOrderDetailsScreen> {
   bool _loading = true;
   bool _submitting = false;
   String? _error;
@@ -37,18 +39,39 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  @override
+  bool get canRefreshData => !_submitting;
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final workOrder = await repairService.getWorkOrder(widget.workOrderId);
-      if (mounted) setState(() => _workOrder = workOrder);
+      if (mounted) {
+        setState(() {
+          if (isQuietRefresh && !canRefreshData) return;
+          _workOrder = workOrder;
+          _error = null;
+        });
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -73,7 +96,8 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
         notes: request.notes,
         version: workOrder.version,
       ),
-      successMessage: 'Assignment declined. The responsible official can reassign it.',
+      successMessage:
+          'Assignment declined. The responsible official can reassign it.',
       returnToList: true,
     );
   }
@@ -84,11 +108,15 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
     bool returnToList = false,
   }) async {
     setState(() => _submitting = true);
+    await waitForDataRequest();
+    if (!mounted) return;
     try {
       final updated = await action();
       if (!mounted) return;
       setState(() => _workOrder = updated);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(successMessage)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
       if (returnToList) {
         context.go(RepairRoutes.workOrders);
         return;
@@ -101,14 +129,20 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('This work order changed on the server. The latest record is shown.'),
+            content: Text(
+              'This work order changed on the server. The latest record is shown.',
+            ),
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
 
@@ -125,7 +159,9 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('A reason is required so the official can safely reassign this work order.'),
+                const Text(
+                  'A reason is required so the official can safely reassign this work order.',
+                ),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: reasonController,
@@ -159,13 +195,17 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
                 final reason = reasonController.text.trim();
                 if (reason.length < 2) {
                   setDialogState(
-                    () => validationError = 'Enter at least 2 characters for the reason.',
+                    () => validationError =
+                        'Enter at least 2 characters for the reason.',
                   );
                   return;
                 }
                 Navigator.pop(
                   dialogContext,
-                  _DeclineRequest(reason: reason, notes: notesController.text.trim()),
+                  _DeclineRequest(
+                    reason: reason,
+                    notes: notesController.text.trim(),
+                  ),
                 );
               },
               child: const Text('Decline assignment'),
@@ -238,7 +278,8 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen> {
       child: _WorkOrderBody(
         workOrder: workOrder,
         onOpenLocation: () => context.push(RepairRoutes.location(workOrder.id)),
-        onUploadEvidence: () => context.push(RepairRoutes.evidence(workOrder.id)),
+        onUploadEvidence: () =>
+            context.push(RepairRoutes.evidence(workOrder.id)),
       ),
     );
   }
@@ -335,7 +376,9 @@ class _ActionContainer extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        border: Border(
+          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
       ),
       child: child,
     ),
@@ -374,11 +417,14 @@ class _WorkOrderBody extends StatelessWidget {
                 Text(
                   workOrder.orderNumber,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(workOrder.incidentReference, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  workOrder.incidentReference,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -402,7 +448,10 @@ class _WorkOrderBody extends StatelessWidget {
             children: [
               RepairInfoRow(label: 'Category', value: workOrder.category),
               const SizedBox(height: AppSpacing.sm),
-              RepairInfoRow(label: 'Incident reference', value: workOrder.incidentReference),
+              RepairInfoRow(
+                label: 'Incident reference',
+                value: workOrder.incidentReference,
+              ),
               if (workOrder.description.isNotEmpty) ...[
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -415,25 +464,39 @@ class _WorkOrderBody extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                   child: Divider(),
                 ),
-                Text('Official instructions', style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  'Official instructions',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(workOrder.instructions!),
               ],
-              for (final event in workOrder.history.where((event) =>
-                  event.type == 'provider_correction_requested' || event.type == 'city_returned')) ...[
+              for (final event in workOrder.history.where(
+                (event) =>
+                    event.type == 'provider_correction_requested' ||
+                    event.type == 'city_returned',
+              )) ...[
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                   child: Divider(),
                 ),
                 Text(
-                  event.type == 'city_returned' ? 'City Engineering correction' : 'Utility Provider correction',
+                  event.type == 'city_returned'
+                      ? 'City Engineering correction'
+                      : 'Utility Provider correction',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(event.notes ?? 'No additional correction instructions were provided.'),
+                Text(
+                  event.notes ??
+                      'No additional correction instructions were provided.',
+                ),
                 if (event.createdAt != null) ...[
                   const SizedBox(height: AppSpacing.xs),
-                  Text(formatReportDateTime(event.createdAt), style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    formatReportDateTime(event.createdAt),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ],
             ],
@@ -466,7 +529,10 @@ class _WorkOrderBody extends StatelessWidget {
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
-      _Section(title: 'Assignment', child: _AssignmentCard(workOrder: workOrder)),
+      _Section(
+        title: 'Assignment',
+        child: _AssignmentCard(workOrder: workOrder),
+      ),
       const SizedBox(height: AppSpacing.xl),
       _Section(
         title: 'Citizen evidence',
@@ -482,7 +548,10 @@ class _WorkOrderBody extends StatelessWidget {
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
-      _Section(title: 'Repair progress timeline', child: _ProgressTimeline(items: workOrder.progressUpdates)),
+      _Section(
+        title: 'Repair progress timeline',
+        child: _ProgressTimeline(items: workOrder.progressUpdates),
+      ),
     ],
   );
 }
@@ -499,7 +568,12 @@ class _ProgressCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text('Repair progress', style: Theme.of(context).textTheme.titleLarge)),
+            Expanded(
+              child: Text(
+                'Repair progress',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
             RepairStatusChip(
               label: workOrder.status.label,
               color: switch (workOrder.status) {
@@ -516,7 +590,9 @@ class _ProgressCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         Text(
           '${workOrder.progressPercent}%',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(
+            context,
+          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: AppSpacing.xs),
         LinearProgressIndicator(value: workOrder.progressPercent / 100),
@@ -531,7 +607,9 @@ class _ProgressCard extends StatelessWidget {
         ],
         if (workOrder.isReadyForCompletion) ...[
           const SizedBox(height: AppSpacing.sm),
-          const Text('Your completion is awaiting Utility Provider review. This repair is not yet verified or resolved.'),
+          const Text(
+            'Your completion is awaiting Utility Provider review. This repair is not yet verified or resolved.',
+          ),
         ],
       ],
     ),
@@ -569,7 +647,12 @@ class _SlaCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: color),
+                ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(deadline),
                 if (sla.timeRemaining != null) ...[
@@ -617,7 +700,10 @@ class _AssignmentCard extends StatelessWidget {
         children: [
           RepairInfoRow(
             label: 'Assignment status',
-            value: assignment?.status ?? workOrder.assignmentState ?? workOrder.status.label,
+            value:
+                assignment?.status ??
+                workOrder.assignmentState ??
+                workOrder.status.label,
           ),
           if (person != null) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -651,7 +737,9 @@ class _CitizenEvidence extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (images.isEmpty) {
-      return const LunasCard(child: Text('No citizen evidence was returned for this work order.'));
+      return const LunasCard(
+        child: Text('No citizen evidence was returned for this work order.'),
+      );
     }
     return Column(
       children: [
@@ -742,7 +830,10 @@ class _ProgressTimeline extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item.stage.label, style: Theme.of(context).textTheme.titleSmall),
+                      Text(
+                        item.stage.label,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                       Text(
                         formatReportDateTime(item.updatedAt),
                         style: Theme.of(context).textTheme.bodySmall,

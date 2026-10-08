@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -16,10 +17,15 @@ class RepairWorkOrderLocationScreen extends StatefulWidget {
   final String workOrderId;
 
   @override
-  State<RepairWorkOrderLocationScreen> createState() => _RepairWorkOrderLocationScreenState();
+  State<RepairWorkOrderLocationScreen> createState() =>
+      _RepairWorkOrderLocationScreenState();
 }
 
-class _RepairWorkOrderLocationScreenState extends State<RepairWorkOrderLocationScreen> {
+class _RepairWorkOrderLocationScreenState
+    extends State<RepairWorkOrderLocationScreen>
+    with
+        WidgetsBindingObserver,
+        QuietDataRefresh<RepairWorkOrderLocationScreen> {
   bool _loading = true;
   String? _error;
   RepairWorkOrder? _workOrder;
@@ -30,18 +36,36 @@ class _RepairWorkOrderLocationScreenState extends State<RepairWorkOrderLocationS
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final workOrder = await repairService.getWorkOrder(widget.workOrderId);
-      if (mounted) setState(() => _workOrder = workOrder);
+      if (mounted) {
+        setState(() {
+          if (isQuietRefresh && !canRefreshData) return;
+          _workOrder = workOrder;
+          _error = null;
+        });
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -60,7 +84,10 @@ class _RepairWorkOrderLocationScreenState extends State<RepairWorkOrderLocationS
     }
     if (_error != null || _workOrder == null) {
       return Scaffold(
-        appBar: const RepairAppBar(title: 'Work location', showBackButton: true),
+        appBar: const RepairAppBar(
+          title: 'Work location',
+          showBackButton: true,
+        ),
         body: SafeArea(
           child: LunasStateView(
             state: LunasViewState.error,
@@ -94,7 +121,10 @@ class _RepairWorkOrderLocationScreenState extends State<RepairWorkOrderLocationS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Reported location', style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Reported location',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(location.displayAddress),
                       if (hasCoordinates) ...[
@@ -112,10 +142,15 @@ class _RepairWorkOrderLocationScreenState extends State<RepairWorkOrderLocationS
           ),
           const SizedBox(height: AppSpacing.lg),
           if (hasCoordinates)
-            _IncidentMap(latitude: location.latitude!, longitude: location.longitude!)
+            _IncidentMap(
+              latitude: location.latitude!,
+              longitude: location.longitude!,
+            )
           else
             const LunasCard(
-              child: Text('The server did not provide coordinates for this incident location.'),
+              child: Text(
+                'The server did not provide coordinates for this incident location.',
+              ),
             ),
           const SizedBox(height: AppSpacing.lg),
           const LunasCard(

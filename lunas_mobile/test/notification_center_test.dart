@@ -145,6 +145,27 @@ void main() {
     expect(retry.requestedPages, [1, 1]);
   });
 
+  testWidgets('all four empty filters keep the same centered message', (
+    tester,
+  ) async {
+    final repository = _FakeNotifications(pages: const {});
+    await tester.pumpWidget(_app(NotificationsScreen(repository: repository)));
+    await tester.pumpAndSettle();
+    final originalPosition = tester.getCenter(
+      find.text('No notifications yet'),
+    );
+    for (final label in ['All', 'Updates', 'Activity', 'Alerts']) {
+      await tester.tap(find.widgetWithText(OutlinedButton, label));
+      await tester.pumpAndSettle();
+      expect(find.text('No notifications yet'), findsOneWidget);
+      expect(
+        tester.getCenter(find.text('No notifications yet')),
+        originalPosition,
+      );
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('loads another page and marks every notification read', (
     tester,
   ) async {
@@ -179,7 +200,7 @@ void main() {
     expect(find.text('Correction coordinated'), findsOneWidget);
     expect(repository.requestedPages, [1, 2]);
 
-    await tester.tap(find.text('Mark all read'));
+    await tester.tap(find.text('Mark All As Read'));
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
     expect(find.text('0 unread updates'), findsOneWidget);

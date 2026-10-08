@@ -34,7 +34,7 @@ class ReportStatusTimeline extends StatelessWidget {
       children: [
         for (var index = 0; index < events.length; index++)
           _TimelineEvent(
-            event: events[index],
+            event: events[events.length - 1 - index],
             showLine: index != events.length - 1,
           ),
       ],

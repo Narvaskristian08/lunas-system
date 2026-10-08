@@ -72,30 +72,54 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: background,
       fontFamily: 'Inter',
       textTheme: TextTheme(
+        displayLarge: AppTextStyles.displayLarge.copyWith(
+          fontSize: 48,
+          color: text,
+        ),
         displayMedium: AppTextStyles.displayLarge.copyWith(
           fontSize: 40,
           color: text,
         ),
+        displaySmall: AppTextStyles.displayLarge.copyWith(
+          fontSize: 36,
+          color: text,
+        ),
         headlineLarge: AppTextStyles.displayLarge.copyWith(color: text),
+        headlineMedium: AppTextStyles.displayLarge.copyWith(
+          fontSize: 28,
+          color: text,
+        ),
+        headlineSmall: AppTextStyles.headlineMedium.copyWith(
+          fontSize: 24,
+          color: text,
+        ),
         titleLarge: AppTextStyles.headlineMedium.copyWith(color: text),
         titleMedium: AppTextStyles.bodyLarge.copyWith(
           color: text,
           fontWeight: FontWeight.w600,
+          height: 1.4,
         ),
-        bodyMedium: AppTextStyles.bodySmall.copyWith(
-          color: secondaryText,
+        titleSmall: AppTextStyles.bodySmall.copyWith(
           fontSize: 14,
+          color: text,
+          fontWeight: FontWeight.w600,
+        ),
+        bodyLarge: AppTextStyles.bodyLarge.copyWith(color: text),
+        bodyMedium: AppTextStyles.bodySmall.copyWith(
+          fontSize: 14,
+          height: 1.5,
+          color: secondaryText,
         ),
         bodySmall: AppTextStyles.bodySmall.copyWith(color: secondaryText),
-        labelLarge: AppTextStyles.labelButton.copyWith(
+        labelLarge: AppTextStyles.labelButton.copyWith(color: text),
+        labelMedium: AppTextStyles.labelButton.copyWith(
+          fontSize: 12,
           color: text,
-          fontWeight: FontWeight.w700,
         ),
-        labelSmall: AppTextStyles.bodySmall.copyWith(
-          color: secondaryText,
+        labelSmall: AppTextStyles.labelButton.copyWith(
           fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
+          color: secondaryText,
+          letterSpacing: .2,
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -151,6 +175,12 @@ abstract final class AppTheme {
         focusedBorder: _border(primary, width: 1.5),
         errorBorder: _border(error),
         focusedErrorBorder: _border(error, width: 1.5),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(textStyle: AppTextStyles.labelButton),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(textStyle: AppTextStyles.labelButton),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

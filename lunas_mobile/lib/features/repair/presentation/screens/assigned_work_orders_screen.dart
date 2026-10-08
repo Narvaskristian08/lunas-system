@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -14,10 +15,12 @@ class AssignedWorkOrdersScreen extends StatefulWidget {
   const AssignedWorkOrdersScreen({super.key});
 
   @override
-  State<AssignedWorkOrdersScreen> createState() => _AssignedWorkOrdersScreenState();
+  State<AssignedWorkOrdersScreen> createState() =>
+      _AssignedWorkOrdersScreenState();
 }
 
-class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen> {
+class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<AssignedWorkOrdersScreen> {
   static const _pageSize = 20;
   bool _loading = true;
   String? _error;
@@ -30,22 +33,40 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen> {
     _load();
   }
 
-  Future<void> _load({int page = 1}) async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  Future<void> refreshVisibleData() =>
+      _load(quiet: true, page: _page?.page ?? 1);
+
+  Future<void> _load({int page = 1, bool quiet = false}) =>
+      loadScreenData(() => _loadData(page: page), quiet: quiet);
+
+  Future<void> _loadData({int page = 1}) async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final result = await repairService.getMyWorkOrders(
         page: page,
         limit: _pageSize,
         status: _status,
       );
-      if (mounted) setState(() => _page = result);
+      if (mounted) {
+        setState(() {
+          _page = result;
+          _error = null;
+        });
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -119,7 +140,9 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen> {
           const SizedBox(height: AppSpacing.md),
           _Pagination(
             page: page,
-            onPrevious: page.hasPreviousPage ? () => _load(page: page.page - 1) : null,
+            onPrevious: page.hasPreviousPage
+                ? () => _load(page: page.page - 1)
+                : null,
             onNext: page.hasNextPage ? () => _load(page: page.page + 1) : null,
           ),
         ],

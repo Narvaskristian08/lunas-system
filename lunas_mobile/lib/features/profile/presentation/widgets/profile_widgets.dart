@@ -29,7 +29,7 @@ class ProfileAvatar extends StatelessWidget {
               initials ?? 'AD',
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 color: AppColorsLight.brandBase,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
     );
@@ -67,7 +67,7 @@ class ProfileHero extends StatelessWidget {
                 Text(
                   name,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
@@ -121,7 +121,7 @@ class ProfileSection extends StatelessWidget {
               title,
               style: Theme.of(
                 context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ],
         ),

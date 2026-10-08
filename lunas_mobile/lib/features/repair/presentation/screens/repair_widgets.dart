@@ -53,7 +53,7 @@ class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.titleLarge?.copyWith(
               color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
           if (subtitle != null)
@@ -216,7 +216,7 @@ class RepairSectionTitle extends StatelessWidget {
           child: Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -261,7 +261,7 @@ class RepairStatusChip extends StatelessWidget {
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: .35,
             ),
           ),
@@ -312,7 +312,7 @@ class RepairMetricCard extends StatelessWidget {
               style: theme.textTheme.displayMedium?.copyWith(
                 color: color,
                 fontSize: 32,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: AppSpacing.xxs),
@@ -388,7 +388,7 @@ class RepairWorkOrderCard extends StatelessWidget {
                     Text(
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -526,7 +526,7 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
                     Text(
                       workOrder.category,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -674,7 +674,7 @@ class RepairPrimaryButton extends StatelessWidget {
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           textStyle: Theme.of(
             context,
-          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
         ),
       ),
@@ -711,7 +711,7 @@ class RepairSecondaryButton extends StatelessWidget {
           side: BorderSide(color: Colors.transparent),
           textStyle: Theme.of(
             context,
-          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
         ),
       ),

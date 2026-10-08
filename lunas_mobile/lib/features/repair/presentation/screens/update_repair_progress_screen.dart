@@ -280,7 +280,7 @@ class _UpdateRepairProgressScreenState extends State<UpdateRepairProgressScreen>
           children: [
             Text(
               workOrder.orderNumber,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(workOrder.location.displayAddress),
@@ -367,7 +367,7 @@ class _CurrentProgressCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Text(
           '${workOrder.progressPercent}%',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: AppSpacing.xs),
         LinearProgressIndicator(value: workOrder.progressPercent / 100),

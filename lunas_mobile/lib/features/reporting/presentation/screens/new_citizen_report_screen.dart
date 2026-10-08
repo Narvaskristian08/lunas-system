@@ -11,7 +11,6 @@ import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_dra
 import 'package:lunas_mobile/features/reporting/domain/models/barangay_suggestion.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
-import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 typedef BarangayLoader = Future<List<String>> Function();
 
@@ -178,37 +177,18 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const ReportProgressIndicator(current: 1, total: 3),
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                'Step 1 of 3: Details',
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-              const SizedBox(height: AppSpacing.sm),
               _StepLabel(number: '1', label: 'Evidence'),
               const SizedBox(height: AppSpacing.sm),
               LunasCard(
                 onTap: _chooseEvidence,
                 padding: _evidence == null
-                    ? const EdgeInsets.all(AppSpacing.lg)
+                    ? const EdgeInsets.all(AppSpacing.md)
                     : EdgeInsets.zero,
                 child: _evidence == null
-                    ? const Row(
-                        children: [
-                          Icon(Icons.add_a_photo_outlined),
-                          SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Add photo evidence'),
-                                SizedBox(height: AppSpacing.xxs),
-                                Text('Required · camera or photo library'),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right_rounded),
-                        ],
+                    ? const _ReportSelectionContent(
+                        icon: Icons.add_a_photo_outlined,
+                        title: 'Add photo evidence',
+                        subtitle: 'Required · camera or photo library',
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -223,7 +203,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                               children: [
                                 const Icon(Icons.image_outlined),
                                 const SizedBox(width: AppSpacing.sm),
-                                Expanded(child: Text(_evidence!.filename)),
+                                const Expanded(child: Text('Change image')),
                                 const Icon(Icons.edit_outlined),
                               ],
                             ),
@@ -234,30 +214,13 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
               const SizedBox(height: AppSpacing.xxl),
               _StepLabel(number: '2', label: 'Issue details'),
               const SizedBox(height: AppSpacing.sm),
-              LunasCard(
+              _ReportSelectionTile(
                 onTap: _chooseCategory,
-                child: Row(
-                  children: [
-                    const Icon(Icons.category_outlined),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_category?.label ?? 'Select category'),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            _category == null
-                                ? 'Required · choose the best matching concern'
-                                : _category!.description,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
-                ),
+                icon: Icons.category_outlined,
+                title: _category?.label ?? 'Select category',
+                subtitle: _category == null
+                    ? 'Required · choose the best matching concern'
+                    : _category!.description,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
@@ -271,6 +234,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                   hintText:
                       'Describe what is damaged, where it is, and any immediate danger.',
                   alignLabelWithHint: true,
+                  contentPadding: EdgeInsets.all(AppSpacing.md),
                 ),
                 validator: (value) => (value?.trim().length ?? 0) < 10
                     ? 'Add at least 10 characters of useful detail.'
@@ -279,37 +243,13 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
               const SizedBox(height: AppSpacing.xxl),
               _StepLabel(number: '3', label: 'Location'),
               const SizedBox(height: AppSpacing.sm),
-              LunasCard(
+              _ReportSelectionTile(
                 onTap: _chooseLocation,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.location_on_outlined),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _location?.address ?? 'Choose and confirm location',
-                          ),
-                          if (_location != null) ...[
-                            const SizedBox(height: AppSpacing.xxs),
-                            Text(
-                              _location!.coordinates,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ] else
-                            Text(
-                              'Required · use GPS or tap the map',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
-                ),
+                icon: Icons.location_on_outlined,
+                title: _location?.address ?? 'Choose and confirm location',
+                subtitle:
+                    _location?.coordinates ??
+                    'Required · use GPS or tap the map',
               ),
               const SizedBox(height: AppSpacing.md),
               _barangaySelector(context),
@@ -369,30 +309,13 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LunasCard(
+        _ReportSelectionTile(
           onTap: _chooseBarangay,
-          child: Row(
-            children: [
-              const Icon(Icons.account_balance_outlined),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_barangay ?? 'Select barangay'),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      _barangay == null
-                          ? 'Required · search the recognized Dagupan list'
-                          : 'Confirmed for this report location',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.search_rounded),
-            ],
-          ),
+          icon: Icons.account_balance_outlined,
+          title: _barangay ?? 'Select barangay',
+          subtitle: _barangay == null
+              ? 'Required · search the recognized Dagupan list'
+              : 'Confirmed for this report location',
         ),
         if (_barangay == null && suggestion != null) ...[
           const SizedBox(height: AppSpacing.xs),
@@ -511,4 +434,87 @@ class _StepLabel extends StatelessWidget {
       Text(label, style: Theme.of(context).textTheme.titleLarge),
     ],
   );
+}
+
+class _ReportSelectionTile extends StatelessWidget {
+  const _ReportSelectionTile({
+    required this.onTap,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+  final VoidCallback onTap;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => LunasCard(
+    onTap: onTap,
+    padding: const EdgeInsets.all(AppSpacing.md),
+    child: _ReportSelectionContent(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+    ),
+  );
+}
+
+class _ReportSelectionContent extends StatelessWidget {
+  const _ReportSelectionContent({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 60),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 24, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 22,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ],
+      ),
+    );
+  }
 }

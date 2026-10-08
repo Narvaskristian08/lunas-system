@@ -48,8 +48,9 @@ class AppTextStyles {
   static const TextStyle labelButton = TextStyle(
     fontFamily: 'Inter',
     fontSize: 14.0,
-    fontWeight: FontWeight.w500, // Inter-Medium
-    letterSpacing: 0.5,
+    fontWeight: FontWeight.w600, // Inter-SemiBold
+    letterSpacing: 0.2,
+    height: 1.3,
   );
 
   // Service Level Agreement (SLA) Countdown Timers
@@ -65,6 +66,7 @@ class AppTextStyles {
     fontFamily: 'RobotoMono',
     fontSize: 12.0,
     fontWeight: FontWeight.w400, // RobotoMono-Regular
+    height: 1.4,
   );
 
   /// Automated System Audit Logs

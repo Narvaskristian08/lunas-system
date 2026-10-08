@@ -46,9 +46,11 @@ class AuthController extends ChangeNotifier {
         return;
       }
       _user = await _authService.getCurrentUser();
-      _status = _user!.hasSupportedMobileWorkspace
-          ? AuthStatus.authenticated
-          : AuthStatus.roleUnavailable;
+      if (!_user!.hasSupportedMobileWorkspace) {
+        await _rejectUnsupportedAccount();
+      } else {
+        _status = AuthStatus.authenticated;
+      }
     } on ApiException catch (error) {
       if (error.isUnauthorized) {
         await _authService.clearSession();
@@ -163,11 +165,13 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     try {
       final session = await action();
+      if (!session.user.hasSupportedMobileWorkspace) {
+        await _rejectUnsupportedAccount();
+        return false;
+      }
       await _authService.persist(session);
       _user = session.user;
-      _status = _user!.hasSupportedMobileWorkspace
-          ? AuthStatus.authenticated
-          : AuthStatus.roleUnavailable;
+      _status = AuthStatus.authenticated;
       return true;
     } on ApiException catch (error) {
       _message = error.message;
@@ -182,6 +186,15 @@ class AuthController extends ChangeNotifier {
       _isSubmitting = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _rejectUnsupportedAccount() async {
+    await _authService.clearSession();
+    _user = null;
+    _pendingRegistration = null;
+    _status = AuthStatus.unauthenticated;
+    _message =
+        'Mobile sign-in is available only for citizen and repair personnel accounts. Please use the LUNAS web portal for your account.';
   }
 
   Future<bool> updateProfile({

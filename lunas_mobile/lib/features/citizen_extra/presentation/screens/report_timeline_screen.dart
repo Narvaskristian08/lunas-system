@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
@@ -17,51 +18,136 @@ class ReportTimelineScreen extends StatefulWidget {
   State<ReportTimelineScreen> createState() => _ReportTimelineScreenState();
 }
 
-class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
+class _ReportTimelineScreenState extends State<ReportTimelineScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<ReportTimelineScreen> {
   bool _loading = true;
   String? _error;
   IncidentReport? _report;
   List<ReportStatusEvent> _events = const [];
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _load();
+  }
 
-  Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final report = await reportService.getReport(widget.reportId);
       List<ReportStatusEvent> events;
-      try { events = await reportService.getHistory(widget.reportId); }
-      on ApiException { events = report.statusHistory; }
-      if (mounted) setState(() { _report = report; _events = events; });
+      try {
+        events = await reportService.getHistory(widget.reportId);
+      } on ApiException {
+        events = report.statusHistory;
+      }
+      if (mounted) {
+        setState(() {
+          _error = null;
+          _report = report;
+          _events = events;
+        });
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
-    } finally { if (mounted) setState(() => _loading = false); }
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: LunasStateView(
-      state: LunasViewState.loading, title: 'Loading timeline', message: 'Getting the latest report activity.'));
-    if (_error != null || _report == null) return Scaffold(
-      appBar: const LunasAppBar(title: 'Report Timeline', showBackButton: true),
-      body: LunasStateView(state: LunasViewState.error, title: 'Could not load timeline', message: _error ?? 'Report unavailable.', actionLabel: 'Try again', onAction: _load));
+    if (_loading) {
+      return const Scaffold(
+        body: LunasStateView(
+          state: LunasViewState.loading,
+          title: 'Loading timeline',
+          message: 'Getting the latest report activity.',
+        ),
+      );
+    }
+    if (_error != null || _report == null) {
+      return Scaffold(
+        appBar: const LunasAppBar(
+          title: 'Report Timeline',
+          showBackButton: true,
+        ),
+        body: LunasStateView(
+          state: LunasViewState.error,
+          title: 'Could not load timeline',
+          message: _error ?? 'Report unavailable.',
+          actionLabel: 'Try again',
+          onAction: _load,
+        ),
+      );
+    }
     final report = _report!;
     return Scaffold(
-      appBar: LunasAppBar(title: 'Report Timeline', subtitle: report.reportNumber, showBackButton: true),
-      body: SafeArea(top: false, child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.hero),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          LunasCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(report.categoryLabel, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: AppSpacing.xs), Text(report.currentStatusLabel),
-            const SizedBox(height: AppSpacing.xs), Text(report.location.displayAddress, style: Theme.of(context).textTheme.bodySmall),
-          ])),
-          const SizedBox(height: AppSpacing.xl), Text('Report activity', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          LunasCard(child: _events.isEmpty ? const Text('No status history has been returned yet.') : ReportStatusTimeline(events: _events)),
-        ]),
-      )),
+      appBar: LunasAppBar(
+        title: 'Report Timeline',
+        subtitle: report.reportNumber,
+        showBackButton: true,
+      ),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.md,
+            AppSpacing.xl,
+            AppSpacing.hero,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LunasCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      report.categoryLabel,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(report.currentStatusLabel),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      report.location.displayAddress,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'Report activity',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              LunasCard(
+                child: _events.isEmpty
+                    ? const Text('No status history has been returned yet.')
+                    : ReportStatusTimeline(events: _events),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

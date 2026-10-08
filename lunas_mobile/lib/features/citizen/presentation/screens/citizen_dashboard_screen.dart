@@ -1,3 +1,5 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -20,7 +22,8 @@ class CitizenDashboardScreen extends StatefulWidget {
   State<CitizenDashboardScreen> createState() => _CitizenDashboardScreenState();
 }
 
-class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
+class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<CitizenDashboardScreen> {
   bool _loading = true;
   String? _error;
   List<IncidentReport> _reports = const [];
@@ -31,19 +34,34 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
     _loadReports();
   }
 
-  Future<void> _loadReports() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  Future<void> refreshVisibleData() => _loadReports(silent: true);
+
+  Future<void> _loadReports({bool silent = false}) =>
+      loadScreenData(_loadReportsData, quiet: silent);
+
+  Future<void> _loadReportsData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final reports = await reportService.getMyReports(limit: 5);
       if (!mounted) return;
-      setState(() => _reports = reports);
+      setState(() {
+        _reports = reports;
+        _error = null;
+      });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -68,7 +86,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen> {
             'Good morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
             style: Theme.of(
               context,
-            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
+            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.xs),
           const Text('Keep an eye on the infrastructure issues you reported.'),
@@ -185,7 +203,7 @@ class _ReportCallout extends StatelessWidget {
                 'Report Hazard',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -254,7 +272,7 @@ class _ActiveReportSummary extends StatelessWidget {
               '$active',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -338,7 +356,12 @@ class _ReportListCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        Text(report.reportNumber, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          report.reportNumber,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontFamily: 'RobotoMono'),
+        ),
         const SizedBox(height: AppSpacing.xxs),
         Text(
           report.location.displayAddress,

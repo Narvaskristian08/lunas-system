@@ -332,8 +332,12 @@ function normalizePerson(value: unknown): WorkOrderPerson | null {
 
 function normalizeAssignment(value: unknown): WorkOrderAssignment | null {
   const source = asRecord(value);
+  if (!Object.keys(source).length) return null;
   const assignee = normalizePerson(source.assignee ?? source.assignedTo);
-  const id = identifier(source) || `${assignee?.id ?? "assignment"}-${asString(source.assignedAt) ?? ""}`;
+  const assignedAt = asString(source.assignedAt);
+  const id = identifier(source) || (assignee || assignedAt
+    ? `${assignee?.id ?? "assignment"}-${assignedAt ?? ""}`
+    : "");
   if (!id) return null;
   return {
     id,

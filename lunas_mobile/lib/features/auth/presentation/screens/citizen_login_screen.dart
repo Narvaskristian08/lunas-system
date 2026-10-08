@@ -45,6 +45,11 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
     final auth = AuthScope.of(context);
     return AuthLayout(
       showBrand: false,
+      footer: Text(
+        '© 2024 LUNAS Urban Infrastructure Management',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
       child: Column(
         children: [
           const LunasBrand(
@@ -59,12 +64,12 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               color: const Color(0xFF111C2D),
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Sign in to manage your city assets and utility infrastructure.',
+            'Sign in with your citizen or repair personnel account.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: const Color(0xFF424752),
@@ -127,7 +132,6 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                   ],
                   LunasButton(
                     label: 'Log In',
-                    icon: Icons.login_rounded,
                     isLoading: auth.isSubmitting,
                     onPressed: auth.isSubmitting ? null : _submit,
                   ),
@@ -151,19 +155,10 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.hero),
-          Text(
-            '© 2026 LUNAS Utility Management System. Proprietary and Confidential.',
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: const Color(0xFF7B8494)),
-          ),
         ],
       ),
     );
   }
-
 }
 
 class AuthMessage extends StatelessWidget {

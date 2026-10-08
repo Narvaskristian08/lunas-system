@@ -21,9 +21,18 @@ dashboard, and AI service:
 docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml ps
 ```
 
+On Windows PowerShell, run `./scripts/local-up.ps1`. It generates distinct
+local secrets and also finds a per-user Docker Desktop installation when its
+CLI is missing from PATH.
+
 The API is available at `http://localhost:5000`, the web dashboard at
 `http://localhost:3000`, and the local object-store console at
 `http://localhost:9001`.
+Signed evidence URLs use `http://localhost:9000`; the storage bucket remains
+private. Android emulator users should run `adb reverse tcp:9000 tcp:9000`
+after starting the emulator so these URLs reach the host. For LAN devices,
+configure a reachable `S3_PUBLIC_ENDPOINT` and an appropriate storage port
+binding. Uploads still use the private `http://minio:9000` endpoint.
 Evidence is stored in the private `lunas-local-evidence` bucket. Do not use
 these local credentials or the local S3 endpoint in production.
 

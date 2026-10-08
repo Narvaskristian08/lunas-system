@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -19,7 +20,8 @@ class RepairDashboardScreen extends StatefulWidget {
   State<RepairDashboardScreen> createState() => _RepairDashboardScreenState();
 }
 
-class _RepairDashboardScreenState extends State<RepairDashboardScreen> {
+class _RepairDashboardScreenState extends State<RepairDashboardScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<RepairDashboardScreen> {
   bool _loading = true;
   String? _error;
   RepairDashboardSummary? _summary;
@@ -31,23 +33,36 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final summary = await repairService.getDashboardSummary();
       final workOrders = await repairService.getMyWorkOrders(limit: 3);
       if (!mounted) return;
       setState(() {
+        _error = null;
         _summary = summary;
         _workOrders = workOrders.items;
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -106,7 +121,7 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen> {
           'Hello${firstName == null || firstName.isEmpty ? '' : ', $firstName'}',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontSize: 28,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -258,7 +273,7 @@ class _SlaNotice extends StatelessWidget {
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: color,
-                fontWeight: isOverdue ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ),

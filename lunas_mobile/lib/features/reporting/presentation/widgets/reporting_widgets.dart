@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 
 class ReportSectionTitle extends StatelessWidget {
@@ -19,7 +18,7 @@ class ReportSectionTitle extends StatelessWidget {
             title,
             style: Theme.of(
               context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         trailing ?? const SizedBox.shrink(),
@@ -134,45 +133,65 @@ class ReportCategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LunasCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      color: selected ? color.withValues(alpha: .08) : Colors.white,
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+    final theme = Theme.of(context).textTheme;
+    final titleStyle = theme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      height: 1.4,
+    );
+    final descriptionStyle = theme.bodySmall?.copyWith(height: 1.4);
+    final scaler = MediaQuery.textScalerOf(context);
+    final contentHeight =
+        scaler.scale(titleStyle?.fontSize ?? 16) * 1.4 +
+        scaler.scale(descriptionStyle?.fontSize ?? 12) * 1.4 * 2;
+    return Semantics(
+      selected: selected,
+      child: LunasCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        color: selected ? color.withValues(alpha: .08) : Colors.white,
+        child: SizedBox(
+          height: contentHeight,
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                if (description != null)
-                  Text(
-                    description!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-              ],
-            ),
+                child: Icon(icon, color: color, size: 26),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
+                    ),
+                    SizedBox(
+                      height:
+                          scaler.scale(descriptionStyle?.fontSize ?? 12) *
+                          1.4 *
+                          2,
+                      child: Text(
+                        description ?? '',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: descriptionStyle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Icon(
-            selected ? Icons.check_circle_rounded : Icons.chevron_right_rounded,
-            color: selected ? AppColorsLight.success : null,
-          ),
-        ],
+        ),
       ),
     );
   }

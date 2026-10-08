@@ -20,6 +20,16 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final titleStyle = textTheme.titleMedium?.copyWith(
+      height: 1.4,
+      fontWeight: isRead ? FontWeight.w600 : FontWeight.w700,
+    );
+    final messageStyle = textTheme.bodySmall?.copyWith(height: 1.4);
+    final scaler = MediaQuery.textScalerOf(context);
+    final titleHeight = scaler.scale(titleStyle?.fontSize ?? 16) * 1.4 * 2;
+    final messageHeight = scaler.scale(messageStyle?.fontSize ?? 12) * 1.4 * 2;
+    final linkHeight = scaler.scale(textTheme.labelSmall?.fontSize ?? 11) * 1.4;
     return LunasCard(
       onTap: onTap,
       color: isRead ? Colors.white : const Color(0xFFF1F7FD),
@@ -45,14 +55,14 @@ class NotificationCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        item.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: isRead
-                                  ? FontWeight.w600
-                                  : FontWeight.w800,
-                            ),
+                      child: SizedBox(
+                        height: titleHeight,
+                        child: Text(
+                          item.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: titleStyle,
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
@@ -80,29 +90,38 @@ class NotificationCard extends StatelessWidget {
                     },
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: item.color,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: .4,
                     ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  item.message,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if (item.workOrderId != null || item.incidentId != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    item.workOrderId != null
-                        ? 'Linked work order'
-                        : item.reportNumber ?? 'Linked report',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColorsLight.brandBase,
-                    ),
+                SizedBox(
+                  height: messageHeight,
+                  child: Text(
+                    item.message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: messageStyle,
                   ),
-                ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                SizedBox(
+                  height: linkHeight,
+                  child: item.workOrderId != null || item.incidentId != null
+                      ? Text(
+                          item.workOrderId != null
+                              ? 'Linked work order'
+                              : item.reportNumber ?? 'Linked report',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall?.copyWith(
+                            height: 1.4,
+                            color: AppColorsLight.brandBase,
+                          ),
+                        )
+                      : null,
+                ),
               ],
             ),
           ),

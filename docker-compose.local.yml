@@ -12,6 +12,7 @@ services:
     volumes:
       - minio_data:/data
     ports:
+      - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
       - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
     networks:
       - lunas_network
@@ -47,6 +48,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-lunas-local-storage-password}
       S3_EVIDENCE_BUCKET: ${S3_EVIDENCE_BUCKET:-lunas-local-evidence}
       S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:9000}
       S3_SERVER_SIDE_ENCRYPTION: ""
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       AI_SERVICE_ENABLED: ${AI_SERVICE_ENABLED:-true}

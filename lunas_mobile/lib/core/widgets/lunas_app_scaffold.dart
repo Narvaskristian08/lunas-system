@@ -12,6 +12,7 @@ class LunasAppScaffold extends StatelessWidget {
     this.actions,
     this.floatingActionButton,
     this.showBackButton = false,
+    this.fillAvailableHeight = false,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class LunasAppScaffold extends StatelessWidget {
   final List<Widget>? actions;
   final Widget? floatingActionButton;
   final bool showBackButton;
+  final bool fillAvailableHeight;
 
   static const _routes = [
     '/home',
@@ -57,8 +59,18 @@ class LunasAppScaffold extends StatelessWidget {
               child: Align(
                 alignment: Alignment.topCenter,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 820),
-                  child: child,
+                  constraints: BoxConstraints(
+                    maxWidth: 820,
+                    minHeight: fillAvailableHeight
+                        ? (constraints.maxHeight -
+                                  AppSpacing.md -
+                                  AppSpacing.hero)
+                              .clamp(0.0, double.infinity)
+                        : 0,
+                  ),
+                  child: fillAvailableHeight
+                      ? IntrinsicHeight(child: child)
+                      : child,
                 ),
               ),
             );

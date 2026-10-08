@@ -269,7 +269,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           if (!_isLocating)
             Positioned(
               right: AppSpacing.lg,
-              top: AppSpacing.lg,
+              top: widget.showLocationConfirmation ? AppSpacing.lg : null,
+              bottom: widget.showLocationConfirmation ? null : AppSpacing.md,
               child: FloatingActionButton.small(
                 heroTag: 'map-picker-current-location',
                 tooltip: 'Center on my location',
@@ -295,7 +296,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             'Selected location',
                             style: theme.textTheme.labelLarge?.copyWith(
                               color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: .5,
                             ),
                           ),

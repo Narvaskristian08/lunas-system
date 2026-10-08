@@ -202,7 +202,7 @@ class _EmptyDraftState extends StatelessWidget {
             Text(
               'No Draft Reports',
               style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),

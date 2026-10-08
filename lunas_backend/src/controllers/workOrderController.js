@@ -479,26 +479,13 @@ exports.getAssignments = asyncHandler(async (req, res) => {
 exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
   if (!workOrder || !canManageWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
-  const filter = {
-    role: REPAIR_PERSONNEL_ROLE,
-    isActive: true,
-    availability: 'available'
-  };
-  if (workOrder.jurisdiction && workOrder.jurisdiction.barangay) {
-    filter.$or = [
-      { barangay: workOrder.jurisdiction.barangay },
-      { barangay: { $exists: false } },
-      { barangay: null }
-    ];
-  }
-  // Organization comparison is normalized in isEligibleRepairPersonnel. Do
-  // not make this preliminary query case-sensitive and accidentally hide an
-  // otherwise compatible worker; only the post-check filtered set is sent.
-  const personnel = await User.find(filter)
-    .select('firstName lastName role repairOrganization repairTeam availability barangay expertise');
+  const organization = normalizeText(workOrder.responsibleOrganization);
+  const personnel = await User.find({ role: REPAIR_PERSONNEL_ROLE })
+    .select('firstName lastName role isActive repairOrganization repairTeam availability barangay expertise');
   return res.status(200).json({
     success: true,
-    data: personnel.filter((person) => isEligibleRepairPersonnel(person, workOrder)).map((person) => ({
+    data: personnel.filter((person) => organization
+      && normalizeText(person.repairOrganization) === organization).map((person) => ({
       id: getId(person),
       firstName: person.firstName,
       lastName: person.lastName,

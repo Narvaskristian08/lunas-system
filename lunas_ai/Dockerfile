@@ -19,7 +19,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.runtime.txt ./requirements.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Ultralytics also installs GUI OpenCV, which overwrites the shared cv2 module.
+# Restore only the headless implementation for this server image.
+RUN pip uninstall -y opencv-python opencv-python-headless \
+    && pip install --no-cache-dir --no-deps 'opencv-python-headless>=4.8,<5' \
+    && python -c "import cv2; from ultralytics import YOLO; assert hasattr(cv2, 'CascadeClassifier'); assert hasattr(cv2.data, 'haarcascades')"
 
 # Copy application code
 COPY . .

@@ -1,3 +1,5 @@
+import 'package:lunas_mobile/core/widgets/lunas_filter_button.dart';
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -15,7 +17,8 @@ class MyReportsScreen extends StatefulWidget {
   State<MyReportsScreen> createState() => _MyReportsScreenState();
 }
 
-class _MyReportsScreenState extends State<MyReportsScreen> {
+class _MyReportsScreenState extends State<MyReportsScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<MyReportsScreen> {
   bool _loading = true;
   String? _error;
   String _filter = 'all';
@@ -28,18 +31,35 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final reports = await reportService.getMyReports(limit: 50);
-      if (mounted) setState(() => _reports = reports);
+      if (mounted) {
+        setState(() {
+          _reports = reports;
+          _error = null;
+        });
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -47,23 +67,30 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   Widget build(BuildContext context) {
     final filtered = _reports.where((report) {
       final matchesFilter = switch (_filter) {
-        'active' => !{'closed', 'rejected', 'duplicate'}.contains(report.status),
+        'active' => !{
+          'closed',
+          'rejected',
+          'duplicate',
+        }.contains(report.status),
         'resolved' => {'resolved', 'closed'}.contains(report.status),
         'in_progress' => report.status == 'in_progress',
         _ => true,
       };
-      final haystack = '${report.reportNumber} ${report.categoryLabel} '
-          '${report.description} ${report.location.displayAddress}'.toLowerCase();
+      final haystack =
+          '${report.reportNumber} ${report.categoryLabel} '
+                  '${report.description} ${report.location.displayAddress}'
+              .toLowerCase();
       return matchesFilter && haystack.contains(_query.trim().toLowerCase());
     }).toList();
     final filterOptions = <(String, String)>[
       ('all', 'All'),
       ('active', 'Active'),
-      ('resolved', 'Resolved'),
       ('in_progress', 'In Progress'),
+      ('resolved', 'Resolved'),
     ];
     return CitizenScaffold(
       title: 'My reports',
+      fillAvailableHeight: !_loading && _error == null && filtered.isEmpty,
       subtitle: 'Only reports submitted by your account',
       actions: [
         IconButton(
@@ -73,9 +100,9 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
         ),
         const SizedBox(width: AppSpacing.sm),
       ],
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           if (!_loading && _error == null) ...[
             TextField(
               onChanged: (value) => setState(() => _query = value),
@@ -87,21 +114,20 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
             const SizedBox(height: AppSpacing.md),
           ],
           if (!_loading && _error == null && _reports.isNotEmpty)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final option in filterOptions)
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.xs),
-                      child: ChoiceChip(
-                        label: Text(option.$2),
-                        selected: _filter == option.$1,
-                        onSelected: (_) => setState(() => _filter = option.$1),
-                      ),
+            Row(
+              children: [
+                for (var index = 0; index < filterOptions.length; index++) ...[
+                  if (index > 0) const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: LunasFilterButton(
+                      label: filterOptions[index].$2,
+                      selected: _filter == filterOptions[index].$1,
+                      onTap: () =>
+                          setState(() => _filter = filterOptions[index].$1),
                     ),
+                  ),
                 ],
-              ),
+              ],
             ),
           const SizedBox(height: AppSpacing.md),
           if (_loading)
@@ -119,18 +145,23 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
               onAction: _load,
             )
           else if (filtered.isEmpty)
-            LunasStateView(
-              state: LunasViewState.empty,
-              title: _reports.isEmpty
-                  ? 'No reports yet'
-                  : 'No matching reports',
-              message: _reports.isEmpty
-                  ? 'Start a report when you see an infrastructure concern.'
-                  : 'Choose another status to see other reports.',
-              actionLabel: _reports.isEmpty ? 'Create report' : null,
-              onAction: _reports.isEmpty
-                  ? () => context.push('/reports/new')
-                  : null,
+            Expanded(
+              child: Align(
+                alignment: const Alignment(0, -.18),
+                child: LunasStateView(
+                  state: LunasViewState.empty,
+                  title: _reports.isEmpty
+                      ? 'No reports yet'
+                      : 'No matching reports',
+                  message: _reports.isEmpty
+                      ? 'Start a report when you see an infrastructure concern.'
+                      : 'Choose another status to see other reports.',
+                  actionLabel: _reports.isEmpty ? 'Create report' : null,
+                  onAction: _reports.isEmpty
+                      ? () => context.push('/reports/new')
+                      : null,
+                ),
+              ),
             )
           else
             ...filtered.map(

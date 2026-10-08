@@ -1,3 +1,5 @@
+import 'package:lunas_mobile/core/widgets/lunas_filter_button.dart';
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -23,7 +25,8 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends State<NotificationsScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<NotificationsScreen> {
   static const _pageSize = 20;
 
   late final NotificationRepository _repository;
@@ -32,6 +35,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   NotificationKind? _filter;
   bool _loading = true;
   bool _loadingMore = false;
+  bool _mutating = false;
   String? _error;
   String? _loadMoreError;
   int _page = 0;
@@ -45,29 +49,48 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _loadMoreError = null;
-    });
+  @override
+  bool get canRefreshData => !_loadingMore && !_mutating;
+
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _loadMoreError = null;
+      });
+    }
     try {
-      final page = await _repository.getNotifications(limit: _pageSize);
+      final loadedPages = isQuietRefresh ? (_page < 1 ? 1 : _page) : 1;
+      final pages = <NotificationPage>[];
+      for (var index = 1; index <= loadedPages; index++) {
+        pages.add(
+          await _repository.getNotifications(page: index, limit: _pageSize),
+        );
+        if (index >= pages.first.pages) break;
+      }
+      final page = pages.first;
+      final items = pages.expand((entry) => entry.items).toList();
       if (!mounted) return;
       setState(() {
-        _items = page.items;
+        _items = items;
+        _error = null;
         _readItems
           ..clear()
-          ..addAll(
-            page.items.where((item) => item.isRead).map((item) => item.id),
-          );
-        _page = page.page;
+          ..addAll(items.where((item) => item.isRead).map((item) => item.id));
+        _page = pages.last.page;
         _pages = page.pages;
         _unreadCount = page.unreadCount;
         _loading = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || isQuietRefresh) return;
       setState(() {
         _loading = false;
         _error = error.toString();
@@ -75,7 +98,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _loadMore() async {
+  Future<void> _loadMore() => loadScreenData(_loadMoreData);
+
+  Future<void> _loadMoreData() async {
     if (_loadingMore || _page >= _pages) return;
     setState(() {
       _loadingMore = true;
@@ -111,7 +136,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _markAllRead() async {
-    if (_unreadCount == 0) return;
+    if (_unreadCount == 0 || _mutating) return;
+    _mutating = true;
+    await waitForDataRequest();
     try {
       await _repository.markAllAsRead();
       if (mounted) {
@@ -128,10 +155,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         );
       }
+    } finally {
+      _mutating = false;
     }
   }
 
   Future<void> _open(NotificationData item) async {
+    if (_mutating) return;
+    _mutating = true;
+    await waitForDataRequest();
+    if (!mounted) {
+      _mutating = false;
+      return;
+    }
     final wasUnread = !_readItems.contains(item.id);
     if (wasUnread) {
       setState(() {
@@ -146,6 +182,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         // The notification remains useful when read-state sync is unavailable.
       }
     }
+    _mutating = false;
     if (!mounted) return;
     context.push(
       widget.repairWorkspace
@@ -157,10 +194,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final body = _body(context);
+    final fillEmpty =
+        !widget.repairWorkspace &&
+        !_loading &&
+        _error == null &&
+        !_items.any((item) => _filter == null || item.kind == _filter);
+    final body = _body(context, fillEmpty: fillEmpty);
     final markAllAction = TextButton(
       onPressed: _loading || _unreadCount == 0 ? null : _markAllRead,
-      child: const Text('Mark all read'),
+      child: const Text('Mark All As Read'),
     );
     if (widget.repairWorkspace) {
       return RepairPage(
@@ -179,6 +221,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     return LunasAppScaffold(
       title: 'Notifications',
+      fillAvailableHeight: fillEmpty,
       subtitle: '$_unreadCount unread updates',
       selectedIndex: null,
       showBackButton: true,
@@ -190,7 +233,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _body(BuildContext context) {
+  Widget _body(BuildContext context, {bool fillEmpty = false}) {
     if (_loading) {
       return const LunasStateView(
         state: LunasViewState.loading,
@@ -214,33 +257,41 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _FilterChip(
+        Row(
+          children: [
+            Expanded(
+              child: LunasFilterButton(
                 label: 'All',
                 selected: _filter == null,
                 onTap: () => setState(() => _filter = null),
               ),
-              _FilterChip(
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: LunasFilterButton(
                 label: 'Updates',
                 selected: _filter == NotificationKind.update,
                 onTap: () => setState(() => _filter = NotificationKind.update),
               ),
-              _FilterChip(
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: LunasFilterButton(
                 label: 'Activity',
                 selected: _filter == NotificationKind.activity,
                 onTap: () =>
                     setState(() => _filter = NotificationKind.activity),
               ),
-              _FilterChip(
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: LunasFilterButton(
                 label: 'Alerts',
                 selected: _filter == NotificationKind.alert,
                 onTap: () => setState(() => _filter = NotificationKind.alert),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.xl),
         Text(
@@ -251,15 +302,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               : 'Recent Updates',
           style: Theme.of(
             context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: AppSpacing.md),
         if (visible.isEmpty)
-          const LunasStateView(
-            state: LunasViewState.empty,
-            title: 'No notifications yet',
-            message: 'Updates, activities, and alerts will appear here.',
-          )
+          if (fillEmpty)
+            const Expanded(
+              child: Align(
+                alignment: Alignment(0, -.18),
+                child: LunasStateView(
+                  state: LunasViewState.empty,
+                  title: 'No notifications yet',
+                  message: 'Updates, activities, and alerts will appear here.',
+                ),
+              ),
+            )
+          else
+            const LunasStateView(
+              state: LunasViewState.empty,
+              title: 'No notifications yet',
+              message: 'Updates, activities, and alerts will appear here.',
+            )
         else
           for (final item in visible) ...[
             NotificationCard(
@@ -292,30 +355,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           TextButton(onPressed: _loadMore, child: const Text('Try again')),
         ],
       ],
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.xs),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-      ),
     );
   }
 }

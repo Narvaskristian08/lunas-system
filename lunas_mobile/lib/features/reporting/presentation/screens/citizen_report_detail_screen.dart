@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
@@ -20,7 +21,8 @@ class CitizenReportDetailScreen extends StatefulWidget {
       _CitizenReportDetailScreenState();
 }
 
-class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
+class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
+    with WidgetsBindingObserver, QuietDataRefresh<CitizenReportDetailScreen> {
   bool _loading = true;
   String? _error;
   IncidentReport? _report;
@@ -33,12 +35,20 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _historyNotice = null;
-    });
+  @override
+  Future<void> refreshVisibleData() => _load(quiet: true);
+
+  Future<void> _load({bool quiet = false}) =>
+      loadScreenData(_loadData, quiet: quiet);
+
+  Future<void> _loadData() async {
+    if (!isQuietRefresh) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _historyNotice = null;
+      });
+    }
     try {
       final report = await reportService.getReportById(widget.reportId);
       List<ReportStatusEvent>? history;
@@ -54,14 +64,19 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
       }
       if (mounted) {
         setState(() {
+          _error = null;
           _report = report;
           _history = history;
         });
       }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && !isQuietRefresh) {
+        setState(() => _error = error.message);
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -263,7 +278,8 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen> {
                   LunasCard(child: ReportStatusTimeline(events: history)),
                   const SizedBox(height: AppSpacing.md),
                   OutlinedButton.icon(
-                    onPressed: () => context.push('/reports/${report.id}/timeline'),
+                    onPressed: () =>
+                        context.push('/reports/${report.id}/timeline'),
                     icon: const Icon(Icons.timeline_rounded),
                     label: const Text('View full timeline'),
                   ),
