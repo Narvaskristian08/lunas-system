@@ -70,7 +70,13 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
     final user = AuthScope.of(context).user;
     return CitizenScaffold(
       title: 'LUNAS',
-      subtitle: 'Citizen reporting',
+      titleWidget: Image.asset(
+        'assets/icons/lunas_logo.png',
+        height: 30,
+        width: 30,
+        fit: BoxFit.contain,
+        semanticLabel: 'LUNAS',
+      ),
       actions: [
         IconButton(
           onPressed: _loading ? null : _loadReports,
@@ -83,13 +89,13 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Good morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
+            'Good Morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
             style: Theme.of(
               context,
             ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.xs),
-          const Text('Keep an eye on the infrastructure issues you reported.'),
+          const Text('Report local issues and track their progress.'),
           const SizedBox(height: AppSpacing.xl),
           _ActiveReportSummary(reports: _reports),
           const SizedBox(height: AppSpacing.md),
@@ -101,7 +107,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 child: _DashboardAction(
                   icon: Icons.map_outlined,
                   title: 'View Map',
-                  subtitle: 'Nearby issues',
+                  subtitle: 'Explore the Map',
                   onTap: () => context.push('/reports/location'),
                 ),
               ),
@@ -110,12 +116,8 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 child: _DashboardAction(
                   icon: Icons.insights_outlined,
                   title: 'City Insights',
-                  subtitle: 'Coming soon',
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('City insights are not available yet.'),
-                    ),
-                  ),
+                  subtitle: 'Coming Soon',
+                  onTap: null,
                 ),
               ),
             ],
@@ -142,13 +144,13 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
               children: [
                 Expanded(
                   child: Text(
-                    'Recent reports',
+                    'Recent Reports',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
                 TextButton(
                   onPressed: () => context.go('/reports'),
-                  child: const Text('View all'),
+                  child: const Text('View All'),
                 ),
               ],
             ),
@@ -158,7 +160,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 title: 'No reports yet',
                 message:
                     'When you submit a report, its status and history will appear here.',
-                actionLabel: 'Create report',
+                actionLabel: 'New Report',
                 onAction: () => context.push('/reports/new'),
                 compact: true,
               )
@@ -200,7 +202,7 @@ class _ReportCallout extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Report Hazard',
+                'Report an Issue',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -208,7 +210,7 @@ class _ReportCallout extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Submit a new civic issue',
+                'Report a local infrastructure concern.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: .9),
                 ),
@@ -220,8 +222,11 @@ class _ReportCallout extends StatelessWidget {
         IconButton.filledTonal(
           tooltip: 'Start a report',
           onPressed: onCreate,
-          icon: const Icon(Icons.add_rounded),
+          icon: const Icon(Icons.add_rounded, size: 24),
           style: IconButton.styleFrom(
+            fixedSize: const Size.square(48),
+            padding: EdgeInsets.zero,
+            shape: const CircleBorder(),
             backgroundColor: Colors.white.withValues(alpha: .18),
             foregroundColor: Colors.white,
           ),
@@ -238,45 +243,63 @@ class _ActiveReportSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = reports
-        .where((report) => !{'closed', 'rejected'}.contains(report.status))
+        .where(
+          (report) => !{
+            'resolved',
+            'closed',
+            'rejected',
+            'duplicate',
+          }.contains(report.status),
+        )
         .length;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE1EAFF),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => context.go('/reports'),
         borderRadius: AppRadius.card,
-        border: Border.all(color: const Color(0xFFD1DDF7)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Your Reports',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '$active active incident${active == 1 ? '' : 's'} requiring attention',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            ),
+        child: Ink(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE1EAFF),
+            borderRadius: AppRadius.card,
+            border: Border.all(color: const Color(0xFFD1DDF7)),
           ),
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColorsLight.info,
-            child: Text(
-              '$active',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Active Reports',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      active == 0
+                          ? 'No reports awaiting review or repair.'
+                          : 'Reports still being reviewed or repaired.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
               ),
-            ),
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColorsLight.info,
+                child: Text(
+                  '$active',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontSize: 24,
+                    height: 1,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -293,11 +316,11 @@ class _DashboardAction extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Material(
-    color: const Color(0xFFE1EAFF),
+    color: onTap == null ? const Color(0xFFEDEFF2) : const Color(0xFFE1EAFF),
     borderRadius: AppRadius.card,
     child: InkWell(
       onTap: onTap,
@@ -307,9 +330,20 @@ class _DashboardAction extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppColorsLight.brandBase, size: 28),
+            Icon(
+              icon,
+              color: onTap == null
+                  ? const Color(0xFF8A919C)
+                  : AppColorsLight.brandBase,
+              size: 28,
+            ),
             const SizedBox(height: AppSpacing.md),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: onTap == null ? const Color(0xFF747C88) : null,
+              ),
+            ),
             Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),

@@ -20,7 +20,7 @@ export function PasswordStrength({ password, compact = false }: { password: stri
   return (
     <div className="mt-3" aria-live="polite">
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="font-semibold text-slate-700">Password strength</span>
+        <span className="font-semibold text-slate-700">Password Strength</span>
         <span className="font-semibold text-slate-600">{labels[score]}</span>
       </div>
       <div className="mt-2 grid grid-cols-4 gap-1.5" aria-hidden="true">

@@ -43,13 +43,13 @@ export function FilterSelect({
 export function DateRangeFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <label className="relative">
-      <span className="sr-only">Date range</span>
+      <span className="sr-only">Date Range</span>
       <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" aria-hidden="true" />
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="min-h-10 appearance-auto rounded-lg border border-slate-300 bg-white pl-9 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" aria-label="Date range">
-        <option value="all">Any date</option>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="min-h-10 appearance-auto rounded-lg border border-slate-300 bg-white pl-9 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" aria-label="Date Range">
+        <option value="all">Any Date</option>
         <option value="today">Today</option>
-        <option value="week">Last 7 days</option>
-        <option value="month">Last 30 days</option>
+        <option value="week">Last 7 Days</option>
+        <option value="month">Last 30 Days</option>
       </select>
     </label>
   );
@@ -58,12 +58,12 @@ export function DateRangeFilter({ value, onChange }: { value: string; onChange: 
 export function SortControl({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <label className="relative">
-      <span className="sr-only">Sort notifications</span>
+      <span className="sr-only">Sort Notifications</span>
       <ListFilter className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" aria-hidden="true" />
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="min-h-10 appearance-auto rounded-lg border border-slate-300 bg-white pl-9 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" aria-label="Sort order">
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-        <option value="priority">Highest priority</option>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="min-h-10 appearance-auto rounded-lg border border-slate-300 bg-white pl-9 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" aria-label="Sort Order">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="priority">Highest Priority</option>
       </select>
     </label>
   );

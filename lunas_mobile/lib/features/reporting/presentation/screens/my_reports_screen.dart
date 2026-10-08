@@ -89,9 +89,10 @@ class _MyReportsScreenState extends State<MyReportsScreen>
       ('resolved', 'Resolved'),
     ];
     return CitizenScaffold(
-      title: 'My reports',
+      title: 'My Reports',
+      showReportFab: true,
       fillAvailableHeight: !_loading && _error == null && filtered.isEmpty,
-      subtitle: 'Only reports submitted by your account',
+      subtitle: 'Track the progress of your reports.',
       actions: [
         IconButton(
           onPressed: _loading ? null : _load,

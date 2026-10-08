@@ -10,7 +10,6 @@ import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_status_timeline.dart';
-import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class CitizenReportDetailScreen extends StatefulWidget {
   const CitizenReportDetailScreen({required this.reportId, super.key});
@@ -96,7 +95,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
     if (_error != null || _report == null) {
       return Scaffold(
         appBar: const LunasAppBar(
-          title: 'Report details',
+          title: 'Report Details',
           showBackButton: true,
         ),
         body: SafeArea(
@@ -114,9 +113,9 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
     final report = _report!;
     final history = _history ?? report.statusHistory;
     return Scaffold(
-      appBar: const LunasAppBar(
-        title: 'Report details',
-        subtitle: 'Your submitted infrastructure report',
+      appBar: LunasAppBar(
+        title: 'Report Details',
+        subtitle: report.reportNumber,
         showBackButton: true,
       ),
       body: SafeArea(
@@ -135,40 +134,9 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  LunasCard(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReportStatusChip(label: report.statusChipLabel),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          report.categoryLabel,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        SelectableText(
-                          report.reportNumber,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(report.location.displayAddress),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          'Submitted ${formatReportDateTime(report.createdAt)}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  if (report.repair != null) ...[
-                    _CitizenRepairProgressCard(repair: report.repair!),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
                   if (_decisionReason(report) != null) ...[
                     Text(
-                      'Official update',
+                      'Official Update',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -191,10 +159,6 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     ),
                     const SizedBox(height: AppSpacing.xl),
                   ],
-                  if (report.aiAnalysis != null) ...[
-                    AiAssistanceCard(analysis: report.aiAnalysis),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
                   if (report.images.isNotEmpty) ...[
                     Text(
                       'Evidence',
@@ -209,7 +173,6 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                         findings: evidence.aiFindings,
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      _EvidenceProcessingStatus(evidence: evidence),
                     ],
                     const SizedBox(height: AppSpacing.xl),
                   ] else ...[
@@ -219,52 +182,42 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     const LunasCard(
-                      child: Text(
-                        'No evidence metadata was returned for this report.',
-                      ),
+                      child: Text('No photos are available for this report.'),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                   ],
                   Text(
-                    'Description',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  LunasCard(child: Text(report.description)),
-                  const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    'Location',
+                    'Report Information',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   LunasCard(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(Icons.location_on_outlined),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(report.location.displayAddress),
-                              if (report.location.latitude != null &&
-                                  report.location.longitude != null) ...[
-                                const SizedBox(height: AppSpacing.xxs),
-                                Text(
-                                  '${report.location.latitude!.toStringAsFixed(6)}, ${report.location.longitude!.toStringAsFixed(6)}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ],
-                          ),
+                        _ReportInformationField(
+                          icon: categoryIcon(report.category),
+                          label: 'Category',
+                          value: report.categoryLabel,
+                        ),
+                        const Divider(height: AppSpacing.xxl, indent: 36),
+                        _ReportInformationField(
+                          icon: Icons.notes_rounded,
+                          label: 'Description',
+                          value: report.description,
+                        ),
+                        const Divider(height: AppSpacing.xxl, indent: 36),
+                        _ReportInformationField(
+                          icon: Icons.location_on_outlined,
+                          label: 'Location',
+                          value: report.location.displayAddress,
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   Text(
-                    'Status history',
+                    'Status History',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -275,13 +228,38 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
-                  LunasCard(child: ReportStatusTimeline(events: history)),
-                  const SizedBox(height: AppSpacing.md),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        context.push('/reports/${report.id}/timeline'),
-                    icon: const Icon(Icons.timeline_rounded),
-                    label: const Text('View full timeline'),
+                  LunasCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ReportStatusTimeline(
+                          compact: true,
+                          events: history.length > 3
+                              ? history.sublist(history.length - 3)
+                              : history,
+                        ),
+                        const Divider(height: AppSpacing.md),
+                        TextButton.icon(
+                          onPressed: () =>
+                              context.push('/reports/${report.id}/timeline'),
+                          icon: const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                          ),
+                          iconAlignment: IconAlignment.end,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          label: const Text('View Full Timeline'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -299,71 +277,6 @@ String? _decisionReason(IncidentReport report) => switch (report.status) {
   'clarification_required' => report.clarificationReason,
   _ => null,
 };
-
-class _CitizenRepairProgressCard extends StatelessWidget {
-  const _CitizenRepairProgressCard({required this.repair});
-
-  final IncidentRepairSummary repair;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isReady = repair.readyForCompletion || repair.status == 'completed';
-    return LunasCard(
-      color: isReady
-          ? theme.colorScheme.tertiaryContainer
-          : theme.colorScheme.primaryContainer.withValues(alpha: .55),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isReady
-                    ? Icons.pending_actions_outlined
-                    : Icons.construction_outlined,
-                color: isReady
-                    ? theme.colorScheme.onTertiaryContainer
-                    : theme.colorScheme.primary,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Maintenance progress',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(repair.citizenStatusLabel, style: theme.textTheme.bodyLarge),
-          const SizedBox(height: AppSpacing.sm),
-          LinearProgressIndicator(value: repair.progressPercent / 100),
-          if (repair.reference != null || repair.updatedAt != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              [
-                if (repair.reference != null) 'Work order ${repair.reference}',
-                if (repair.updatedAt != null)
-                  'Updated ${formatReportDateTime(repair.updatedAt)}',
-              ].join(' · '),
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
-          if (isReady) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Repair Personnel submitted completion. The Utility Provider must review it before City Engineering performs final verification.',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
 
 class _CitizenDecisionReason extends StatelessWidget {
   const _CitizenDecisionReason({required this.status, required this.reason});
@@ -393,8 +306,8 @@ class _CitizenDecisionReason extends StatelessWidget {
               children: [
                 Text(
                   isRejected
-                      ? 'Report not validated'
-                      : 'Report marked as a duplicate',
+                      ? 'Report Not Validated'
+                      : 'Report Marked as a Duplicate',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -408,31 +321,54 @@ class _CitizenDecisionReason extends StatelessWidget {
   }
 }
 
-class _EvidenceProcessingStatus extends StatelessWidget {
-  const _EvidenceProcessingStatus({required this.evidence});
-  final ReportEvidence evidence;
+class _ReportInformationField extends StatelessWidget {
+  const _ReportInformationField({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    final quality = evidence.qualityStatus;
-    final privacyStatus = evidence.privacyProcessingStatus;
-    final privacyText = privacyStatus == null
-        ? 'Privacy-processing status was not returned for this evidence.'
-        : privacyStatus == 'applied' || privacyStatus == 'completed'
-        ? 'Faces and license plates were checked and redacted before storage.'
-        : privacyStatus == 'not_available'
-        ? 'Privacy redaction was not available for this older evidence record.'
-        : 'Automated redaction status is not available for this evidence.';
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (quality != null)
-            Text('Evidence quality check: ${humanStatus(quality)}.'),
-          Text(privacyText),
-        ],
-      ),
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: Center(
+                child: Icon(icon, size: 22, color: theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Padding(
+          padding: const EdgeInsets.only(left: 24 + AppSpacing.sm),
+          child: Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

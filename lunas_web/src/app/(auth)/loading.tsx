@@ -11,8 +11,8 @@ export default function AuthenticationLoading() {
         </div>
       </section>
       <section className="flex items-center justify-center px-5 py-12">
-        <div className="w-full max-w-[480px]" role="status" aria-label="Loading secure authentication page">
-          <span className="sr-only">Loading secure authentication page…</span>
+        <div className="w-full max-w-[480px]" role="status" aria-label="Loading Secure Authentication Page">
+          <span className="sr-only">Loading Secure Authentication Page…</span>
           <div className="mb-7 space-y-3">
             <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
             <div className="h-9 w-72 max-w-full animate-pulse rounded bg-slate-200" />

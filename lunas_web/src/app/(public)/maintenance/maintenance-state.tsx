@@ -47,11 +47,11 @@ export function MaintenanceState({
   const copy = modeCopy[mode];
   const scope = mode === "service" && service ? service : copy.scope;
   const primaryAction = mode === "full"
-    ? { label: "Refresh status", onClick: () => window.location.reload() }
-    : { label: "Return to dashboard", href: "/dashboard" };
+    ? { label: "Refresh Status", onClick: () => window.location.reload() }
+    : { label: "Return to Dashboard", href: "/dashboard" };
   const secondaryAction = mode === "full"
-    ? (loginAvailable ? { label: "Continue to sign in", href: "/login" } : undefined)
-    : { label: "Refresh status", onClick: () => window.location.reload() };
+    ? (loginAvailable ? { label: "Continue to Sign in", href: "/login" } : undefined)
+    : { label: "Refresh Status", onClick: () => window.location.reload() };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f8fb]">
@@ -72,7 +72,7 @@ export function MaintenanceState({
           description={message || copy.description}
           primaryAction={primaryAction}
           secondaryAction={secondaryAction}
-          tertiaryAction={{ label: "Contact support", href: loginAvailable ? "/login?next=%2Fhelp" : "/maintenance#support" }}
+          tertiaryAction={{ label: "Contact Support", href: loginAvailable ? "/login?next=%2Fhelp" : "/maintenance#support" }}
           detail={
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>

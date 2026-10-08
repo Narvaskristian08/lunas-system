@@ -5,6 +5,7 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
   const LunasAppBar({
     required this.title,
     this.subtitle,
+    this.titleWidget,
     this.actions,
     this.showBackButton = false,
     super.key,
@@ -12,6 +13,7 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   final String title;
   final String? subtitle;
+  final Widget? titleWidget;
   final List<Widget>? actions;
   final bool showBackButton;
 
@@ -26,23 +28,25 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: showBackButton,
       centerTitle: false,
       titleSpacing: AppSpacing.xl,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -.3,
-            ),
+      title:
+          titleWidget ??
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.3,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: AppSpacing.xxs),
+                Text(subtitle!, style: theme.textTheme.bodySmall),
+              ],
+            ],
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: AppSpacing.xxs),
-            Text(subtitle!, style: theme.textTheme.bodySmall),
-          ],
-        ],
-      ),
       actions: actions,
     );
   }

@@ -60,7 +60,7 @@ void main() {
     });
 
     expect(report.id, 'incident-1');
-    expect(report.categoryLabel, 'Roads and sidewalks');
+    expect(report.categoryLabel, 'Roads and Sidewalks');
     expect(report.location.displayAddress, 'Rizal Avenue, Barangay 5');
     expect(report.images.single.url, isEmpty);
     expect(report.images.single.qualityStatus, 'passed');
@@ -95,12 +95,12 @@ void main() {
 
     expect(
       report.currentStatusLabel,
-      'Repair completed · awaiting Utility Provider review',
+      'Repair Completed · Awaiting Utility Provider Review',
     );
     expect(report.statusChipLabel, 'Provider review');
     expect(
       report.statusHistory.single.citizenLabel,
-      contains('awaiting Utility Provider review'),
+      contains('Awaiting Utility Provider Review'),
     );
   });
 

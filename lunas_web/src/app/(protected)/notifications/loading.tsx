@@ -2,8 +2,8 @@ import { SkeletonLine } from "@/components/states/loading";
 
 export default function NotificationsLoading() {
   return (
-    <div role="status" aria-live="polite" aria-label="Loading notifications" className="space-y-6">
-      <span className="sr-only">Loading notifications</span>
+    <div role="status" aria-live="polite" aria-label="Loading Notifications" className="space-y-6">
+      <span className="sr-only">Loading Notifications</span>
       <div className="space-y-3" aria-hidden="true">
         <SkeletonLine className="h-3 w-28" />
         <SkeletonLine className="h-8 w-64" />

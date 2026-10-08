@@ -120,17 +120,17 @@ function EditProfileWorkspace() {
   return (
     <>
       <PageHeader
-        title="Edit profile"
+        title="Edit Profile"
         eyebrow="Account settings"
         description="Update your name and contact number. Administrative account details are protected."
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "My profile", href: "/profile" },
+          { label: "My Profile", href: "/profile" },
           { label: "Edit" },
         ]}
         actions={
           <Link href="/profile" className={buttonStyles({ variant: "secondary" })}>
-            <ArrowLeft className="size-4" aria-hidden="true" /> Back to profile
+            <ArrowLeft className="size-4" aria-hidden="true" /> Back to Profile
           </Link>
         }
       />
@@ -138,10 +138,10 @@ function EditProfileWorkspace() {
       <form onSubmit={submit} noValidate>
         <div className="space-y-5">
             <Card>
-              <CardHeader title="Personal information" description="Fields marked with an asterisk are required." />
+              <CardHeader title="Personal Information" description="Fields marked with an asterisk are required." />
               <div className="grid gap-5 p-5 sm:grid-cols-2">
                 <FormField
-                  label="First name"
+                  label="First Name"
                   required
                   value={firstName}
                   onChange={(event) => setFirstName(event.target.value)}
@@ -150,7 +150,7 @@ function EditProfileWorkspace() {
                   maxLength={60}
                 />
                 <FormField
-                  label="Last name"
+                  label="Last Name"
                   required
                   value={lastName}
                   onChange={(event) => setLastName(event.target.value)}
@@ -159,7 +159,7 @@ function EditProfileWorkspace() {
                   maxLength={60}
                 />
                 <FormField
-                  label="Contact number"
+                  label="Contact Number"
                   optional
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
@@ -174,24 +174,24 @@ function EditProfileWorkspace() {
 
             <Card>
               <CardHeader
-                title="Administrative account details"
+                title="Administrative Account Details"
                 description="These values are read-only and cannot be self-assigned."
-                action={<ShieldCheck className="size-5 text-brand-700" aria-label="Protected fields" />}
+                action={<ShieldCheck className="size-5 text-brand-700" aria-label="Protected Fields" />}
               />
               <div className="grid gap-5 p-5 sm:grid-cols-2">
-                <FormField label="Verified email" value={viewer.email} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} helperText="Contact an administrator to change your verified email." />
-                <FormField label="Personnel ID" value={viewer.personnelId ?? "Not assigned"} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
+                <FormField label="Verified Email" value={viewer.email} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} helperText="Contact an administrator to change your verified email." />
+                <FormField label="Personnel ID" value={viewer.personnelId ?? "Not Assigned"} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
                 <FormField label="Role" value={viewer.role} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
                 <FormField label="Organization" value={viewer.organization} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
-                <FormField label="Account status" value={viewer.status} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
-                <FormField label="Verification status" value={viewer.verified ? "Verified" : "Pending verification"} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
+                <FormField label="Account Status" value={viewer.status} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
+                <FormField label="Verification Status" value={viewer.verified ? "Verified" : "Pending verification"} readOnly leading={<LockKeyhole className="size-4" aria-hidden="true" />} />
               </div>
             </Card>
 
             {formError ? (
               <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
                 <CircleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-                <div><p className="font-semibold">Profile was not saved</p><p className="mt-1">{formError}</p></div>
+                <div><p className="font-semibold">Profile Was Not Saved</p><p className="mt-1">{formError}</p></div>
               </div>
             ) : null}
 
@@ -201,8 +201,8 @@ function EditProfileWorkspace() {
               </p>
               <div className="flex flex-col-reverse gap-2 sm:flex-row">
                 <Button type="button" variant="secondary" onClick={cancel} disabled={submitting}>Cancel</Button>
-                <Button type="submit" disabled={!dirty || !valid} loading={submitting} loadingLabel="Saving changes…">
-                  <Save className="size-4" aria-hidden="true" /> Save changes
+                <Button type="submit" disabled={!dirty || !valid} loading={submitting} loadingLabel="Saving Changes…">
+                  <Save className="size-4" aria-hidden="true" /> Save Changes
                 </Button>
               </div>
             </div>
@@ -213,8 +213,8 @@ function EditProfileWorkspace() {
         open={confirmOpen}
         title="Discard unsaved changes?"
         description="Your profile edits will be lost if you leave this page."
-        confirmLabel="Discard changes"
-        cancelLabel="Keep editing"
+        confirmLabel="Discard Changes"
+        cancelLabel="Keep Editing"
         destructive
         icon="none"
         onClose={() => { setConfirmOpen(false); setPendingHref("/profile"); }}

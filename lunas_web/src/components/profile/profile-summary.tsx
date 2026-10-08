@@ -40,7 +40,7 @@ function DetailRow({ icon: Icon, label, children }: { icon: typeof Mail; label: 
         <Icon className="size-4" aria-hidden="true" />
       </span>
       <div className="min-w-0">
-        <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
+        <dt className="text-xs font-semibold tracking-normal text-slate-500">{label}</dt>
         <dd className="mt-0.5 break-words text-sm font-medium leading-5 text-slate-800">{children}</dd>
       </div>
     </div>
@@ -71,10 +71,10 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href="/profile/change-password" className={buttonStyles({ variant: "secondary" })}>
-                <KeyRound className="size-4" aria-hidden="true" /> Change password
+                <KeyRound className="size-4" aria-hidden="true" /> Change Password
               </Link>
               <Link href="/profile/edit" className={buttonStyles({ variant: "primary" })}>
-                <UserRoundCog className="size-4" aria-hidden="true" /> Edit profile
+                <UserRoundCog className="size-4" aria-hidden="true" /> Edit Profile
               </Link>
             </div>
           </div>
@@ -83,16 +83,16 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <Card>
-          <CardHeader title="Profile information" description="Your verified contact and organizational details." />
+          <CardHeader title="Profile Information" description="Your verified contact and organizational details." />
           <dl className="grid px-5 sm:grid-cols-2 sm:gap-x-6">
             <DetailRow icon={Building2} label="Organization">{viewer.organization}</DetailRow>
-            <DetailRow icon={ShieldCheck} label="Department or unit">{viewer.unit ?? "Not assigned"}</DetailRow>
-            <DetailRow icon={Mail} label="Verified email">
+            <DetailRow icon={ShieldCheck} label="Department or Unit">{viewer.unit ?? "Not Assigned"}</DetailRow>
+            <DetailRow icon={Mail} label="Verified Email">
               <span className="break-all">{viewer.email}</span>
             </DetailRow>
-            <DetailRow icon={Phone} label="Contact number">{viewer.phone ?? "Not provided"}</DetailRow>
-            <DetailRow icon={Clock3} label="Last login">{viewer.lastLogin ? formatDateTime(viewer.lastLogin) : "Not available"}</DetailRow>
-            <DetailRow icon={CalendarDays} label="Date joined">{formatDateTime(viewer.joinedAt)}</DetailRow>
+            <DetailRow icon={Phone} label="Contact Number">{viewer.phone ?? "Not provided"}</DetailRow>
+            <DetailRow icon={Clock3} label="Last Login">{viewer.lastLogin ? formatDateTime(viewer.lastLogin) : "Not available"}</DetailRow>
+            <DetailRow icon={CalendarDays} label="Date Joined">{formatDateTime(viewer.joinedAt)}</DetailRow>
           </dl>
         </Card>
 
@@ -103,7 +103,7 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
                 <BadgeCheck className="size-5" aria-hidden="true" />
               </span>
               <div>
-                <h2 className="font-semibold text-slate-950">Account security</h2>
+                <h2 className="font-semibold text-slate-950">Account Security</h2>
                 <p className="mt-1 text-sm leading-5 text-slate-600">
                   {viewer.verified ? "Your email and assigned organization are verified." : "Your account is awaiting verification."}
                 </p>
@@ -114,12 +114,12 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
               Role, organization, account status, and administrative permissions can only be changed by an authorized administrator.
             </div>
             <Link href="/help" className="mt-3 inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
-              Get account support
+              Get Account Support
             </Link>
           </Card>
 
           <Card>
-            <CardHeader title="Assigned permissions" description={`${viewer.permissions.length} capabilities from your current role.`} />
+            <CardHeader title="Assigned Permissions" description={`${viewer.permissions.length} capabilities from your current role.`} />
             <ul className="grid gap-2 p-5 text-sm text-slate-700 sm:grid-cols-2 xl:grid-cols-1">
               {viewer.permissions.map((permission) => (
                 <li key={permission} className="flex items-center gap-2">

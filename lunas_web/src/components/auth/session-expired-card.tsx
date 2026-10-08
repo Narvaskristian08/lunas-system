@@ -33,13 +33,13 @@ export function SessionExpiredCard({ returnTo, reason }: { returnTo: string; rea
       <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-100 text-amber-800">
         <Clock3 className="size-7" aria-hidden="true" />
       </span>
-      <h2 className="mt-4 text-xl font-semibold text-slate-950">Your session has ended</h2>
+      <h2 className="mt-4 text-xl font-semibold text-slate-950">Your Session Has Ended</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">{explanation}</p>
 
       <div className="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
         <FileWarning className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden="true" />
         <div>
-          <p className="text-sm font-semibold text-slate-800">About unsaved work</p>
+          <p className="text-sm font-semibold text-slate-800">About Unsaved Work</p>
           <p className="mt-0.5 text-xs leading-5 text-slate-600">Changes that were not submitted may have been lost. After signing in, verify the affected record before entering the information again.</p>
         </div>
       </div>
@@ -62,7 +62,7 @@ export function SessionExpiredCard({ returnTo, reason }: { returnTo: string; rea
             className={buttonStyles({ size: "lg", className: "w-full" })}
           >
             <LogIn className="size-4.5" aria-hidden="true" />
-            Sign in again
+            Sign in Again
           </Link>
         ) : (
           <span className={buttonStyles({ size: "lg", className: "w-full cursor-wait opacity-55" })} aria-hidden="true">
@@ -76,7 +76,7 @@ export function SessionExpiredCard({ returnTo, reason }: { returnTo: string; rea
       </div>
 
       <Link className="mt-4 inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-brand-700 hover:underline" href="/login">
-        Return to login without continuing
+        Return to Login Without Continuing
       </Link>
       <SecurityNotice>Your account remains protected. LUNAS never stores your password in this browser.</SecurityNotice>
     </AuthCard>

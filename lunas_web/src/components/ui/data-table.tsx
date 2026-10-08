@@ -22,7 +22,7 @@ export function DataTable({
       <table className="w-full min-w-[760px] border-collapse text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-normal text-slate-500">
             {columns.map((column) => <th key={column.key} scope="col" className={cn("px-5 py-3", column.className)}>{column.label}</th>)}
           </tr>
         </thead>

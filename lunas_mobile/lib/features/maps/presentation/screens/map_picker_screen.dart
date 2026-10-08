@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart';
 
 import 'package:flutter/material.dart';
@@ -47,7 +46,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   GoogleMapController? _mapController;
   SelectedLocation? _selectedLocation;
   LatLng _cameraTarget = _dagupan;
-  LocationPolicy? _policy;
   GpsFix? _gpsFix;
   String _pinSource = 'map_pin';
   bool _isLocating = false;
@@ -67,17 +65,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         initialLocation.longitude,
       );
     }
-    _moveToCurrentLocation(userInitiated: false);
-    unawaited(_loadLocationPolicy());
-  }
-
-  Future<void> _loadLocationPolicy() async {
-    try {
-      final policy = await reportService.getLocationPolicy();
-      if (mounted) setState(() => _policy = policy);
-    } catch (_) {
-      // Final review retries policy retrieval before submission.
-    }
+    _moveToCurrentLocation(
+      userInitiated: widget.showLocationConfirmation && initialLocation == null,
+    );
   }
 
   @override
@@ -223,13 +213,23 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final theme = Theme.of(context);
     final selected = _selectedLocation;
     return Scaffold(
-      appBar: widget.showLocationConfirmation
-          ? const LunasAppBar(
-              title: 'Choose Location',
-              subtitle: 'Tap the map to place the report pin',
-              showBackButton: true,
-            )
-          : null,
+      appBar: LunasAppBar(
+        title: 'Maps',
+        subtitle: widget.showLocationConfirmation
+            ? 'Confirm the location of your report.'
+            : 'Explore locations around you.',
+        showBackButton: widget.showLocationConfirmation,
+        actions: [
+          IconButton(
+            tooltip: 'Refresh Map',
+            onPressed: _isLocating
+                ? null
+                : () => _moveToCurrentLocation(userInitiated: true),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+      ),
       body: Stack(
         children: [
           GoogleMap(
@@ -255,7 +255,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           if (_isLocating)
             ColoredBox(
               color: theme.colorScheme.surface.withValues(alpha: .78),
-              child: const Center(
+              child: const Align(
+                alignment: Alignment(0, -.18),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -268,14 +269,14 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ),
           if (!_isLocating)
             Positioned(
-              right: AppSpacing.lg,
+              right: AppSpacing.md,
               top: widget.showLocationConfirmation ? AppSpacing.lg : null,
               bottom: widget.showLocationConfirmation ? null : AppSpacing.md,
-              child: FloatingActionButton.small(
+              child: FloatingActionButton(
                 heroTag: 'map-picker-current-location',
                 tooltip: 'Center on my location',
                 onPressed: () => _moveToCurrentLocation(userInitiated: true),
-                child: const Icon(Icons.my_location_rounded),
+                child: const Icon(Icons.my_location_rounded, size: 24),
               ),
             ),
           if (!_isLocating && widget.showLocationConfirmation)
@@ -289,11 +290,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     LunasCard(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Selected location',
+                            'Selected Location',
                             style: theme.textTheme.labelLarge?.copyWith(
                               color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w700,
@@ -306,35 +308,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                 'Tap anywhere on the map to place a pin.',
                             style: theme.textTheme.titleMedium,
                           ),
-                          if (selected != null) ...[
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              selected.coordinates,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                          if (selected != null && _policy != null)
-                            Text(switch (_policy!.compare(
-                              selected.longitude,
-                              selected.latitude,
-                              _gpsFix,
-                              DateTime.now(),
-                            )) {
-                              'discrepancy' =>
-                                'Location differs from current GPS. Delayed reporting is allowed; explain at final review.',
-                              'consistent' =>
-                                'No significant discrepancy detected.',
-                              'inconclusive' =>
-                                'GPS comparison inconclusive. You can select the damage location manually.',
-                              _ =>
-                                'Comparison unavailable. You can select the damage location manually.',
-                            }),
-                          const SizedBox(height: AppSpacing.md),
+                          const SizedBox(height: AppSpacing.lg),
                           LunasButton(
                             label: _isGeocoding
                                 ? 'Finding Address…'
                                 : 'Use This Location',
-                            icon: Icons.check_rounded,
                             isLoading: _isGeocoding,
                             onPressed: selected == null || _isGeocoding
                                 ? null

@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { safeReturnPath } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: "Sign In",
   description: "Secure sign-in for the LUNAS urban infrastructure command center.",
 };
 

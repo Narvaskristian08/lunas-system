@@ -147,10 +147,10 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
   if (role === "barangay_official") {
     return {
       metrics: [
-        metric("Awaiting Barangay review", asNumber(summary.pending), "warning", "reports"),
+        metric("Awaiting Barangay Review", asNumber(summary.pending), "warning", "reports"),
         metric("Forwarded to City Engineering", asNumber(summary.validated), "information", "verified"),
         metric("Rejected", asNumber(summary.rejected), "critical", "incident"),
-        metric("Possible duplicates reviewed", asNumber(summary.duplicate), "neutral", "reports"),
+        metric("Possible Duplicates Reviewed", asNumber(summary.duplicate), "neutral", "reports"),
       ],
       records: incidents.map(recordFromIncident),
       emptyTitle: "No reports awaiting Barangay review",
@@ -163,12 +163,12 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
   ]);
   return {
     metrics: [
-      metric("Awaiting City Engineering review", asNumber(summary.pending), "warning", "reports"),
-      metric("Awaiting final verification", finalQueue.pagination.total, "information", "verified"),
-      metric("Active repairs", workOrderSummary.active, "information", "workOrder"),
-      metric("Approaching deadlines", workOrderSummary.approaching, "warning", "sla"),
-      metric("Overdue repairs", workOrderSummary.overdue, "critical", "sla"),
-      metric("Repair awaiting provider review", workOrderSummary.readyForCompletion, "neutral", "workOrder"),
+      metric("Awaiting City Engineering Review", asNumber(summary.pending), "warning", "reports"),
+      metric("Awaiting Final Verification", finalQueue.pagination.total, "information", "verified"),
+      metric("Active Repairs", workOrderSummary.active, "information", "workOrder"),
+      metric("Approaching Deadlines", workOrderSummary.approaching, "warning", "sla"),
+      metric("Overdue Repairs", workOrderSummary.overdue, "critical", "sla"),
+      metric("Repair Awaiting Provider Review", workOrderSummary.readyForCompletion, "neutral", "workOrder"),
     ],
     records: [...finalQueue.workOrders.map(recordFromWorkOrder), ...incidents.map(recordFromIncident)],
     emptyTitle: "No City Engineering reviews are waiting",
@@ -183,15 +183,15 @@ async function providerOperationsDashboard(): Promise<RealDashboardData> {
   ]);
   return {
     metrics: [
-      metric("Unassigned work", summary.unassigned, "warning", "workOrder"),
-      metric("Pending acceptance", summary.pendingAcceptance, "information", "workOrder"),
-      metric("Active repairs", summary.active, "information", "workOrder"),
-      metric("Approaching deadlines", summary.approaching, "warning", "sla"),
-      metric("Overdue work", summary.overdue, "critical", "sla"),
-      metric("Completed · awaiting review", summary.readyForCompletion, "warning", "workOrder"),
-      metric("Awaiting City verification", summary.awaitingFinalVerification, "information", "verified"),
-      metric("City returns to coordinate", summary.cityCorrections, "warning", "incident"),
-      metric("Corrective repairs", summary.correctiveRepairs, "information", "workOrder"),
+      metric("Unassigned Work", summary.unassigned, "warning", "workOrder"),
+      metric("Pending Acceptance", summary.pendingAcceptance, "information", "workOrder"),
+      metric("Active Repairs", summary.active, "information", "workOrder"),
+      metric("Approaching Deadlines", summary.approaching, "warning", "sla"),
+      metric("Overdue Work", summary.overdue, "critical", "sla"),
+      metric("Completed · Awaiting Review", summary.readyForCompletion, "warning", "workOrder"),
+      metric("Awaiting City Verification", summary.awaitingFinalVerification, "information", "verified"),
+      metric("City Returns to Coordinate", summary.cityCorrections, "warning", "incident"),
+      metric("Corrective Repairs", summary.correctiveRepairs, "information", "workOrder"),
     ],
     records: workOrderQueue.workOrders.map(recordFromWorkOrder),
     emptyTitle: "No provider work orders",

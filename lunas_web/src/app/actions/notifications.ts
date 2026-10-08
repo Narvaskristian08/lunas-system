@@ -38,7 +38,7 @@ function toNotification(source: BackendNotification, role: string): LunasNotific
   const workOrderId = source.data?.workOrderId;
   const incidentId = source.data?.incidentId;
   const relatedRecord = workOrderId
-    ? { type: "work-order" as const, id: workOrderId, label: "Work order", href: `/work-orders/${encodeURIComponent(workOrderId)}`, available: true }
+    ? { type: "work-order" as const, id: workOrderId, label: "Work Order", href: `/work-orders/${encodeURIComponent(workOrderId)}`, available: true }
     : incidentId
       ? {
           type: "incident" as const,

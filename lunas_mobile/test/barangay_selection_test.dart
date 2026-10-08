@@ -69,7 +69,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final selector = find.text('Select barangay');
+    final selector = find.text('Select Barangay');
     await tester.ensureVisible(selector);
     await tester.tap(selector);
     await tester.pumpAndSettle();
@@ -80,7 +80,7 @@ void main() {
 
     await tester.tap(find.text('Pantal'));
     await tester.pumpAndSettle();
-    expect(find.text('Confirmed for this report location'), findsOneWidget);
+    expect(find.text('Confirmed for This Report Location'), findsOneWidget);
   });
 
   testWidgets('shows API loading and error states with retry', (tester) async {
@@ -104,7 +104,7 @@ void main() {
     await tester.ensureVisible(retry);
     await tester.tap(retry);
     await tester.pumpAndSettle();
-    expect(find.text('Select barangay'), findsOneWidget);
+    expect(find.text('Select Barangay'), findsOneWidget);
     expect(attempts, 2);
   });
 }

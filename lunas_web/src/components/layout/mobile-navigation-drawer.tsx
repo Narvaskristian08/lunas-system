@@ -56,14 +56,14 @@ export function MobileNavigationDrawer({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <aside ref={drawerRef} className="h-full w-[min(88vw,320px)] shadow-2xl" aria-label="Mobile navigation">
+      <aside ref={drawerRef} className="h-full w-[min(88vw,320px)] shadow-2xl" aria-label="Mobile Navigation">
         <Sidebar collapsed={false} mobile onClose={onClose} onNavigate={onClose} />
       </aside>
       <button
         type="button"
         onClick={onClose}
         className="absolute right-3 top-3 flex size-11 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"
-        aria-label="Close navigation"
+        aria-label="Close Navigation"
       >
         <X className="size-5" aria-hidden="true" />
       </button>

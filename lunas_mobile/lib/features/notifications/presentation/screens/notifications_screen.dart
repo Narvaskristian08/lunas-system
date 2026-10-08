@@ -1,14 +1,13 @@
+import 'package:lunas_mobile/features/notifications/presentation/screens/notification_details_screen.dart';
 import 'package:lunas_mobile/core/widgets/lunas_filter_button.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/notifications/data/services/notification_service.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -184,11 +183,20 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     }
     _mutating = false;
     if (!mounted) return;
-    context.push(
-      widget.repairWorkspace
-          ? RepairRoutes.notificationDetails
-          : '/notifications/details',
-      extra: item,
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * .85,
+      ),
+      builder: (_) => NotificationDetailsScreen(
+        item: item,
+        repairWorkspace: widget.repairWorkspace,
+        asSheet: true,
+      ),
     );
   }
 
@@ -200,17 +208,18 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         _error == null &&
         !_items.any((item) => _filter == null || item.kind == _filter);
     final body = _body(context, fillEmpty: fillEmpty);
-    final markAllAction = TextButton(
-      onPressed: _loading || _unreadCount == 0 ? null : _markAllRead,
-      child: const Text('Mark All As Read'),
+    final refreshAction = IconButton(
+      tooltip: 'Refresh Notifications',
+      onPressed: _loading ? null : _load,
+      icon: const Icon(Icons.refresh_rounded),
     );
     if (widget.repairWorkspace) {
       return RepairPage(
         appBar: RepairAppBar(
           title: 'Repair notifications',
-          subtitle: '$_unreadCount unread updates',
+          subtitle: '$_unreadCount Unread Updates',
           actions: [
-            markAllAction,
+            refreshAction,
             const SizedBox(width: AppSpacing.sm),
           ],
         ),
@@ -222,11 +231,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     return LunasAppScaffold(
       title: 'Notifications',
       fillAvailableHeight: fillEmpty,
-      subtitle: '$_unreadCount unread updates',
+      subtitle: _unreadCount == 0
+          ? 'Stay updated on your reports.'
+          : '$_unreadCount Unread Update${_unreadCount == 1 ? '' : 's'}',
       selectedIndex: null,
       showBackButton: true,
       actions: [
-        markAllAction,
+        refreshAction,
         const SizedBox(width: AppSpacing.sm),
       ],
       child: body,
@@ -294,15 +305,32 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           ],
         ),
         const SizedBox(height: AppSpacing.xl),
-        Text(
-          _filter == NotificationKind.activity
-              ? 'Activity Feed'
-              : _filter == NotificationKind.alert
-              ? 'Alerts'
-              : 'Recent Updates',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _filter == NotificationKind.activity
+                    ? 'Activity Feed'
+                    : _filter == NotificationKind.alert
+                    ? 'Alerts'
+                    : 'Recent Updates',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            TextButton(
+              onPressed: _unreadCount == 0 ? null : _markAllRead,
+              style: TextButton.styleFrom(
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              ),
+              child: const Text('Mark All As Read'),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.md),
         if (visible.isEmpty)

@@ -62,14 +62,14 @@ export function ConfirmationDialog({
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-description" className="w-full max-w-md rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-2xl">
         <div className="flex items-start justify-between gap-4">
           {icon === "logout" ? <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-700"><LogOut className="size-5" aria-hidden="true" /></span> : null}
-          <button type="button" onClick={onClose} disabled={loading} className="ml-auto flex size-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100" aria-label="Close dialog"><X className="size-5" aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} disabled={loading} className="ml-auto flex size-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100" aria-label="Close Dialog"><X className="size-5" aria-hidden="true" /></button>
         </div>
         <h2 id="confirmation-title" className="mt-4 text-xl font-bold text-slate-950">{title}</h2>
         <p id="confirmation-description" className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
         {children ? <div className="mt-4">{children}</div> : null}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button ref={cancelRef} type="button" variant="secondary" onClick={onClose} disabled={loading} className="sm:min-w-28">{cancelLabel}</Button>
-          <Button type="button" variant={destructive ? "danger" : "primary"} onClick={onConfirm} loading={loading} loadingLabel="Please wait…" className="sm:min-w-36">{confirmLabel}</Button>
+          <Button type="button" variant={destructive ? "danger" : "primary"} onClick={onConfirm} loading={loading} loadingLabel="Please Wait…" className="sm:min-w-36">{confirmLabel}</Button>
         </div>
       </div>
     </div>

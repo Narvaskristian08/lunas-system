@@ -58,7 +58,7 @@ class ProfileHero extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
-          ProfileAvatar(radius: 38, initials: initials, imageUrl: imageUrl),
+          ProfileAvatar(radius: 32, initials: initials, imageUrl: imageUrl),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -66,7 +66,7 @@ class ProfileHero extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: theme.textTheme.headlineSmall?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -134,8 +134,7 @@ class ProfileSection extends StatelessWidget {
   );
 }
 
-/// A field-shaped value display with the same visual treatment as the app's
-/// outlined inputs, but with no focus, cursor, keyboard, or hover behavior.
+/// Read-only account information with a label and value.
 class ProfileReadOnlyField extends StatelessWidget {
   const ProfileReadOnlyField({
     required this.label,
@@ -148,15 +147,23 @@ class ProfileReadOnlyField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputDecorator(
-      isEmpty: value.isEmpty,
-      decoration: InputDecoration(labelText: label),
-      child: Text(
-        value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          value.trim().isEmpty ? 'Not provided' : value,
+          style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+        ),
+      ],
     );
   }
 }

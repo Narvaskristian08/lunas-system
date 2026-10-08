@@ -35,7 +35,10 @@ class LocalEvidencePreview extends StatelessWidget {
       if (snapshot.hasError) return _PreviewFallback(height: height);
       return SizedBox(
         height: height,
-        child: const Center(child: CircularProgressIndicator()),
+        child: const Align(
+          alignment: Alignment(0, -.18),
+          child: CircularProgressIndicator(),
+        ),
       );
     },
   );
@@ -74,7 +77,10 @@ class RemoteEvidencePreview extends StatelessWidget {
                 errorBuilder: (_, _, _) => const _PreviewFallback(),
                 loadingBuilder: (context, child, progress) => progress == null
                     ? child
-                    : const Center(child: CircularProgressIndicator()),
+                    : const Align(
+                        alignment: Alignment(0, -.18),
+                        child: CircularProgressIndicator(),
+                      ),
               ),
               for (final finding in findings)
                 Positioned(

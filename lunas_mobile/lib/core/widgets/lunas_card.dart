@@ -9,6 +9,7 @@ class LunasCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(AppSpacing.lg),
     this.onTap,
     this.color,
+    this.borderColor,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class LunasCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
   final Color? color;
+  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,9 @@ class LunasCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? colors.surface,
         borderRadius: AppRadius.card,
-        border: Border.all(color: colors.outlineVariant.withValues(alpha: .7)),
+        border: Border.all(
+          color: borderColor ?? colors.outlineVariant.withValues(alpha: .7),
+        ),
         boxShadow: AppShadows.card,
       ),
       child: child,

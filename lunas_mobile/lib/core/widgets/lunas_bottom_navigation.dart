@@ -51,7 +51,7 @@ class LunasBottomNavigation extends StatelessWidget {
             NavigationDestination(
               icon: Icon(Icons.map_outlined),
               selectedIcon: Icon(Icons.map_rounded),
-              label: 'Map',
+              label: 'Maps',
             ),
             NavigationDestination(
               icon: Icon(Icons.add_circle_outline_rounded),

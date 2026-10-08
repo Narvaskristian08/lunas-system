@@ -26,114 +26,91 @@ class NotificationCard extends StatelessWidget {
       fontWeight: isRead ? FontWeight.w600 : FontWeight.w700,
     );
     final messageStyle = textTheme.bodySmall?.copyWith(height: 1.4);
-    final scaler = MediaQuery.textScalerOf(context);
-    final titleHeight = scaler.scale(titleStyle?.fontSize ?? 16) * 1.4 * 2;
-    final messageHeight = scaler.scale(messageStyle?.fontSize ?? 12) * 1.4 * 2;
-    final linkHeight = scaler.scale(textTheme.labelSmall?.fontSize ?? 11) * 1.4;
+    final hasResource = item.workOrderId != null || item.incidentId != null;
     return LunasCard(
       onTap: onTap,
       color: isRead ? Colors.white : const Color(0xFFF1F7FD),
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: item.color.withValues(alpha: .1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(item.icon, color: item.color, size: 23),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: titleHeight,
-                        child: Text(
-                          item.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: titleStyle,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      item.time,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: item.color.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                child: Icon(item.icon, color: item.color, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  switch (item.kind) {
+                    NotificationKind.update => 'Update',
+                    NotificationKind.activity => 'Activity',
+                    NotificationKind.alert => 'Alert',
+                  },
+                  style: textTheme.labelMedium?.copyWith(
+                    color: item.color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Text(item.time, style: textTheme.bodySmall),
+              if (!isRead) ...[
+                const SizedBox(width: AppSpacing.xs),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                    vertical: 2,
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColorsLight.brandBase,
                   ),
-                  decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: .10),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    switch (item.kind) {
-                      NotificationKind.update => 'UPDATE',
-                      NotificationKind.activity => 'ACTIVITY',
-                      NotificationKind.alert => 'ALERT',
-                    },
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: item.color,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: .4,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                SizedBox(
-                  height: messageHeight,
-                  child: Text(
-                    item.message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: messageStyle,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                SizedBox(
-                  height: linkHeight,
-                  child: item.workOrderId != null || item.incidentId != null
-                      ? Text(
-                          item.workOrderId != null
-                              ? 'Linked work order'
-                              : item.reportNumber ?? 'Linked report',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall?.copyWith(
-                            height: 1.4,
-                            color: AppColorsLight.brandBase,
-                          ),
-                        )
-                      : null,
                 ),
               ],
-            ),
+            ],
           ),
-          if (!isRead) ...[
-            const SizedBox(width: AppSpacing.sm),
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColorsLight.brandBase,
-              ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            item.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: titleStyle,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            item.message,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: messageStyle,
+          ),
+          if (hasResource) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.reportNumber ??
+                        (item.workOrderId != null
+                            ? 'Linked Work Order'
+                            : 'Linked Report'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColorsLight.brandBase,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: AppColorsLight.brandBase,
+                ),
+              ],
             ),
           ],
         ],

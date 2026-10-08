@@ -14,16 +14,16 @@ export function UnauthorizedState({ role, context }: { role: UserRole; context: 
       role={role}
       detail={
         <div>
-          <p className="font-semibold text-slate-800">Requested context</p>
+          <p className="font-semibold text-slate-800">Requested Context</p>
           <p className="mt-1">{context}</p>
           <p className="mt-2 text-xs leading-5 text-slate-500">If this access is required for your official duties, contact an authorized LUNAS administrator or send a support request.</p>
         </div>
       }
       primaryAction={mobileOnlyRole
-        ? { label: "Contact support", href: "mailto:lunas-support@dagupan.gov.ph" }
-        : { label: "Return to dashboard", href: "/dashboard" }}
-      secondaryAction={{ label: "Go back", onClick: () => window.history.back() }}
-      tertiaryAction={!mobileOnlyRole ? { label: "Contact support", href: "/help#contact-support" } : undefined}
+        ? { label: "Contact Support", href: "mailto:lunas-support@dagupan.gov.ph" }
+        : { label: "Return to Dashboard", href: "/dashboard" }}
+      secondaryAction={{ label: "Go Back", onClick: () => window.history.back() }}
+      tertiaryAction={!mobileOnlyRole ? { label: "Contact Support", href: "/help#contact-support" } : undefined}
     />
   );
 }

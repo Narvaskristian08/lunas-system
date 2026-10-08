@@ -73,8 +73,8 @@ export function ResetPasswordForm({
   if (tokenState === "checking") {
     return (
       <AuthCard>
-        <div role="status" aria-label="Checking password reset link" className="animate-pulse space-y-5">
-          <span className="sr-only">Checking password reset link…</span>
+        <div role="status" aria-label="Checking Password Reset Link" className="animate-pulse space-y-5">
+          <span className="sr-only">Checking Password Reset Link…</span>
           <div className="h-12 rounded-xl bg-slate-200" />
           <div className="h-12 rounded-xl bg-slate-200" />
           <div className="h-28 rounded-xl bg-slate-100" />
@@ -99,7 +99,7 @@ export function ResetPasswordForm({
             : "This link cannot be verified. It may have already been used or copied incorrectly."}
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Link href="/forgot-password" className={buttonStyles({ variant: "primary" })}>Request a new link</Link>
+          <Link href="/forgot-password" className={buttonStyles({ variant: "primary" })}>Request a New Link</Link>
           <BackToLogin />
         </div>
       </AuthCard>
@@ -112,13 +112,13 @@ export function ResetPasswordForm({
         <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
           <CheckCircle2 className="size-7" aria-hidden="true" />
         </span>
-        <h2 className="mt-4 text-xl font-semibold text-slate-950">Password reset complete</h2>
+        <h2 className="mt-4 text-xl font-semibold text-slate-950">Password Reset Complete</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
           Your new password is ready. Sign in again to securely access the LUNAS command center.
         </p>
         <Link href="/login" className={buttonStyles({ size: "lg", className: "mt-6 w-full" })}>
           <KeyRound className="size-4.5" aria-hidden="true" />
-          Return to sign in
+          Return to Sign in
         </Link>
       </AuthCard>
     );
@@ -142,7 +142,7 @@ export function ResetPasswordForm({
           <PasswordField
             id="new-password"
             name="newPassword"
-            label="New password"
+            label="New Password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password"
@@ -155,7 +155,7 @@ export function ResetPasswordForm({
         <PasswordField
           id="confirm-password"
           name="confirmPassword"
-          label="Confirm new password"
+          label="Confirm New Password"
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
           autoComplete="new-password"
@@ -164,8 +164,8 @@ export function ResetPasswordForm({
           error={confirmationError}
         />
 
-        <Button className="w-full" size="lg" type="submit" loading={pending} loadingLabel="Resetting password…" disabled={!meetsRequirements || !matches || (checked && !online)}>
-          Reset password
+        <Button className="w-full" size="lg" type="submit" loading={pending} loadingLabel="Resetting Password…" disabled={!meetsRequirements || !matches || (checked && !online)}>
+          Reset Password
         </Button>
         <BackToLogin />
       </form>

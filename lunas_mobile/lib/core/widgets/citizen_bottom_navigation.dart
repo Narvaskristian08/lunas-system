@@ -18,13 +18,13 @@ class CitizenBottomNavigation extends StatelessWidget {
       route: '/reports',
     ),
     _CitizenDestination(
-      label: 'Map',
+      label: 'Maps',
       icon: Icons.map_outlined,
       selectedIcon: Icons.map_rounded,
       route: '/reports/location',
     ),
     _CitizenDestination(
-      label: 'Alerts',
+      label: 'Notifications',
       icon: Icons.notifications_none_rounded,
       selectedIcon: Icons.notifications_rounded,
       route: '/notifications',

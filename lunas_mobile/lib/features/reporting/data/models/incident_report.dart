@@ -40,7 +40,7 @@ class IncidentReport {
   /// Citizen-safe operational wording. Personnel, reassignment notes, SLA
   /// internals, and field evidence are deliberately absent from this model.
   String get currentStatusLabel => status == 'resolved' || status == 'closed'
-      ? 'Resolved · verified by City Engineering'
+      ? 'Resolved · Verified by City Engineering'
       : repair?.citizenStatusLabel ?? _statusLabel(status);
   String get statusChipLabel => status == 'resolved' || status == 'closed'
       ? 'Resolved'
@@ -120,7 +120,7 @@ class IncidentRepairSummary {
 
   String get citizenStatusLabel {
     if (readyForCompletion || status == 'completed') {
-      return 'Repair completed · awaiting Utility Provider review';
+      return 'Repair Completed · Awaiting Utility Provider Review';
     }
     if (status == 'provider_accepted') {
       return 'Provider accepted · awaiting City Engineering verification';
@@ -403,20 +403,20 @@ class ReportStatusEvent {
     if (status == 'completed' ||
         status == 'repair_completed' ||
         status == 'provider_review')
-      return 'Repair completed · awaiting Utility Provider review';
+      return 'Repair Completed · Awaiting Utility Provider Review';
     if (status == 'provider_accepted')
-      return 'Utility Provider accepted · awaiting City Engineering verification';
+      return 'Utility Provider Accepted · Awaiting City Engineering Verification';
     if (status == 'city_verification')
-      return 'Awaiting City Engineering final verification';
+      return 'Awaiting City Engineering Final Verification';
     if (status == 'rework_required' || status == 'city_correction_required')
-      return 'Corrective work required';
+      return 'Corrective Work Required';
     if (status == 'verified') return 'Verified by City Engineering';
     if (status == 'resolved' || status == 'closed') return 'Resolved';
-    if (progressPercent == 100) return 'Repair progress reached 100%';
+    if (progressPercent == 100) return 'Repair Progress Reached 100%';
     if (status == 'barangay_validated') return 'Validated by Barangay Official';
     if (status == 'city_confirmed') return 'Confirmed by City Engineering';
     if (status == 'provider_assigned') return 'Assigned to Utility Provider';
-    if (status == 'repair_assigned') return 'Repair Personnel assigned';
+    if (status == 'repair_assigned') return 'Repair Personnel Assigned';
     if (progressPercent != null && progressPercent! > 0) {
       return 'Repair Progress: $progressPercent%';
     }

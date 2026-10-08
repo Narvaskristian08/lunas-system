@@ -77,7 +77,7 @@ export function AvatarUploader({
         </div>
 
         <div className="mt-4 min-w-0 sm:ml-5 sm:mt-1 lg:ml-0 lg:mt-4">
-          <p className="font-semibold text-slate-950">Profile image</p>
+          <p className="font-semibold text-slate-950">Profile Image</p>
           <p id="avatar-help" className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
             JPG, PNG, or WebP. Maximum file size: 2 MB.
           </p>
@@ -96,7 +96,7 @@ export function AvatarUploader({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="sr-only"
-            aria-label="Choose a profile image"
+            aria-label="Choose a Profile Image"
             aria-describedby={`avatar-help${error ? " avatar-error" : ""}`}
             aria-invalid={Boolean(error)}
             disabled={uploading}
@@ -120,7 +120,7 @@ export function AvatarUploader({
           <div
             className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"
             role="progressbar"
-            aria-label="Profile image upload progress"
+            aria-label="Profile Image Upload Progress"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}

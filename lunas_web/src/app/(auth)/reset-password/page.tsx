@@ -3,7 +3,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 
 export const metadata: Metadata = {
-  title: "Reset password",
+  title: "Reset Password",
   description: "Choose a new secure password for your LUNAS account.",
 };
 

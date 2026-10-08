@@ -31,8 +31,8 @@ const priority: Record<Severity, number> = {
 
 function NotificationListSkeleton() {
   return (
-    <div role="status" aria-live="polite" aria-label="Loading notifications">
-      <span className="sr-only">Loading notifications</span>
+    <div role="status" aria-live="polite" aria-label="Loading Notifications">
+      <span className="sr-only">Loading Notifications</span>
       {Array.from({ length: 5 }).map((_, index) => (
         <div key={index} className="flex gap-4 border-b border-slate-200 px-5 py-5 last:border-0" aria-hidden="true">
           <span className="skeleton size-4 rounded" />
@@ -175,7 +175,7 @@ function NotificationsWorkspace() {
             loadingLabel="Updating…"
           >
             <CheckCheck className="size-4" aria-hidden="true" />
-            Mark all as read
+            Mark All as Read
           </Button>
         }
       />
@@ -188,7 +188,7 @@ function NotificationsWorkspace() {
               onChange={(event) => { setQuery(event.target.value); setPage(1); }}
               onClear={() => { setQuery(""); setPage(1); }}
               placeholder="Search title, message, or record ID"
-              aria-label="Search notifications"
+              aria-label="Search Notifications"
               className="flex-1"
             />
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
@@ -202,13 +202,13 @@ function NotificationsWorkspace() {
 
         <FilterBar>
           <FilterSelect
-            label="Notification category"
+            label="Notification Category"
             value={category}
             onChange={(event) => { setCategory(event.target.value as "all" | NotificationCategory); setPage(1); }}
             options={[
-              { value: "all", label: "All categories" },
+              { value: "all", label: "All Categories" },
               { value: "Reports", label: "Reports" },
-              { value: "Work orders", label: "Work orders" },
+              { value: "Work orders", label: "Work Orders" },
               { value: "SLA", label: "SLA" },
               { value: "Repairs", label: "Repairs" },
               { value: "Security", label: "Security" },
@@ -216,13 +216,13 @@ function NotificationsWorkspace() {
             ]}
           />
           <FilterSelect
-            label="Read status"
+            label="Read Status"
             value={readState}
             onChange={(event) => { setReadState(event.target.value); setPage(1); }}
             options={[
-              { value: "all", label: "Read & unread" },
-              { value: "unread", label: "Unread only" },
-              { value: "read", label: "Read only" },
+              { value: "all", label: "Read & Unread" },
+              { value: "unread", label: "Unread Only" },
+              { value: "read", label: "Read Only" },
             ]}
           />
           <DateRangeFilter value={dateRange} onChange={(value) => { setDateRange(value); setPage(1); }} />
@@ -247,7 +247,7 @@ function NotificationsWorkspace() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
-                    Clear selection
+                    Clear Selection
                   </Button>
                   <Button
                     type="button"
@@ -257,7 +257,7 @@ function NotificationsWorkspace() {
                     loading={saving}
                     loadingLabel="Updating…"
                   >
-                    <CheckCheck className="size-4" aria-hidden="true" /> Mark selected as read
+                    <CheckCheck className="size-4" aria-hidden="true" /> Mark Selected as Read
                   </Button>
                 </div>
               </div>
@@ -283,7 +283,7 @@ function NotificationsWorkspace() {
                   </label>
                   <span className="text-xs text-slate-500">{filtered.length} result{filtered.length === 1 ? "" : "s"}</span>
                 </div>
-                <div aria-label="Notification list">
+                <div aria-label="Notification List">
                   {visible.map((notification) => (
                     <NotificationItem
                       key={notification.id}
@@ -307,7 +307,7 @@ function NotificationsWorkspace() {
                 icon={hasFilters ? "search" : "notifications"}
                 title={hasFilters ? "No notifications match your filters" : "No notifications yet"}
                 description={hasFilters ? "Try a broader search, another category, or reset the selected filters." : "Operational alerts, account notices, and work updates will appear here."}
-                action={hasFilters ? { label: "Reset filters", onClick: resetFilters } : undefined}
+                action={hasFilters ? { label: "Reset Filters", onClick: resetFilters } : undefined}
               />
             )}
           </>

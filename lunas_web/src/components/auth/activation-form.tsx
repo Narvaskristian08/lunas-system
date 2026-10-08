@@ -21,7 +21,7 @@ export function ActivationForm() {
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
-  return <AuthCard>{complete ? <div className="space-y-4"><h2 className="text-lg font-semibold">Account activated</h2><p role="status" className="text-sm text-slate-600">Your password is ready. Sign in to access your assigned workspace.</p><BackToLogin /></div>
+  return <AuthCard>{complete ? <div className="space-y-4"><h2 className="text-lg font-semibold">Account Activated</h2><p role="status" className="text-sm text-slate-600">Your password is ready. Sign in to access your assigned workspace.</p><BackToLogin /></div>
     : <form className="space-y-5" onSubmit={event => {
       event.preventDefault();
       if (pending) return;
@@ -36,10 +36,10 @@ export function ActivationForm() {
         } catch { setMessage("Activation is temporarily unavailable. Please try again."); }
       });
     }}>
-      <div><PasswordField id="activation-password" name="password" label="Create password" autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} required disabled={pending} /><PasswordStrength password={password} /></div>
-      <PasswordField id="activation-confirm" name="confirmation" label="Confirm password" autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} required disabled={pending} />
+      <div><PasswordField id="activation-password" name="password" label="Create Password" autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} required disabled={pending} /><PasswordStrength password={password} /></div>
+      <PasswordField id="activation-confirm" name="confirmation" label="Confirm Password" autoComplete="new-password" value={confirmation} onChange={event => setConfirmation(event.target.value)} required disabled={pending} />
       <p className="text-sm text-slate-600">Choose a unique password that meets every requirement above. The link expires and can be used once.</p>
       {message && <p role="alert" className="text-sm text-red-700">{message}</p>}
-      <Button type="submit" className="w-full" loading={pending} loadingLabel="Activating account…">Activate account</Button><BackToLogin />
+      <Button type="submit" className="w-full" loading={pending} loadingLabel="Activating Account…">Activate Account</Button><BackToLogin />
     </form>}</AuthCard>;
 }

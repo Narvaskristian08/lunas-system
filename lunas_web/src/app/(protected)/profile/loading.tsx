@@ -2,8 +2,8 @@ import { SkeletonCard, SkeletonLine } from "@/components/states/loading";
 
 export default function ProfileLoading() {
   return (
-    <div role="status" aria-live="polite" aria-label="Loading profile" className="space-y-6">
-      <span className="sr-only">Loading profile</span>
+    <div role="status" aria-live="polite" aria-label="Loading Profile" className="space-y-6">
+      <span className="sr-only">Loading Profile</span>
       <div className="space-y-3" aria-hidden="true">
         <SkeletonLine className="h-3 w-24" />
         <SkeletonLine className="h-8 w-56" />

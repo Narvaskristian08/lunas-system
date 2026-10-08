@@ -31,7 +31,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
         </div>
 
         <div className="px-5 py-6 sm:px-6 sm:py-7">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">
+          <p className="text-xs font-bold tracking-normal text-brand-700">
             {notification.category}
           </p>
           <h2 className="mt-2 text-balance text-xl font-bold leading-8 text-slate-950 sm:text-2xl">
@@ -43,7 +43,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
 
           <dl className="mt-7 grid gap-4 border-t border-slate-200 pt-5 sm:grid-cols-2">
             <div>
-              <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <dt className="flex items-center gap-2 text-xs font-semibold tracking-normal text-slate-500">
                 <CalendarClock className="size-4" aria-hidden="true" /> Received
               </dt>
               <dd className="mt-1.5 text-sm font-medium text-slate-800">
@@ -51,7 +51,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
               </dd>
             </div>
             <div>
-              <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <dt className="flex items-center gap-2 text-xs font-semibold tracking-normal text-slate-500">
                 <Radio className="size-4" aria-hidden="true" /> Source
               </dt>
               <dd className="mt-1.5 text-sm font-medium text-slate-800">{notification.source}</dd>
@@ -67,7 +67,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
               <Link2 className="size-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h2 className="font-semibold text-slate-950">Related record</h2>
+              <h2 className="font-semibold text-slate-950">Related Record</h2>
               {related ? (
                 <p className="mono mt-1 break-all text-sm font-semibold text-slate-700">{related.id}</p>
               ) : (
@@ -81,7 +81,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
               <div className="flex gap-2.5">
                 <LockKeyhole className="mt-0.5 size-4.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <p className="font-semibold">Related content is restricted</p>
+                  <p className="font-semibold">Related Content Is Restricted</p>
                   <p className="mt-1 leading-5 text-amber-900">
                     This record is unavailable to your current account. No protected record details are shown here.
                   </p>
@@ -100,7 +100,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
           <div className="flex gap-3">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-700" aria-hidden="true" />
             <div>
-              <h2 className="font-semibold text-slate-950">Notification status</h2>
+              <h2 className="font-semibold text-slate-950">Notification Status</h2>
               <p className="mt-1 text-sm leading-5 text-slate-600">
                 {notification.read
                   ? "This notification has been marked as read."

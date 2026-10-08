@@ -141,7 +141,7 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
         const SizedBox(height: AppSpacing.xxl),
         RepairSectionTitle(
           title: 'Assigned work orders',
-          actionLabel: 'View all',
+          actionLabel: 'View All',
           onAction: () => context.go(RepairRoutes.workOrders),
         ),
         const SizedBox(height: AppSpacing.sm),

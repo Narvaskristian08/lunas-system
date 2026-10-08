@@ -20,8 +20,15 @@ IconData categoryIcon(String category) => switch (category) {
 };
 
 class ReportStatusTimeline extends StatelessWidget {
-  const ReportStatusTimeline({required this.events, super.key});
+  const ReportStatusTimeline({
+    required this.events,
+    this.highlightLatest = false,
+    this.compact = false,
+    super.key,
+  });
   final List<ReportStatusEvent> events;
+  final bool highlightLatest;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +43,8 @@ class ReportStatusTimeline extends StatelessWidget {
           _TimelineEvent(
             event: events[events.length - 1 - index],
             showLine: index != events.length - 1,
+            isLatest: highlightLatest && index == 0,
+            compact: compact,
           ),
       ],
     );
@@ -43,9 +52,16 @@ class ReportStatusTimeline extends StatelessWidget {
 }
 
 class _TimelineEvent extends StatelessWidget {
-  const _TimelineEvent({required this.event, required this.showLine});
+  const _TimelineEvent({
+    required this.event,
+    required this.showLine,
+    this.isLatest = false,
+    this.compact = false,
+  });
   final ReportStatusEvent event;
   final bool showLine;
+  final bool isLatest;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +74,13 @@ class _TimelineEvent extends StatelessWidget {
             width: 28,
             child: Column(
               children: [
-                Icon(Icons.check_circle_rounded, size: 20, color: color),
+                Icon(
+                  isLatest
+                      ? Icons.radio_button_checked
+                      : Icons.check_circle_rounded,
+                  size: 20,
+                  color: color,
+                ),
                 if (showLine)
                   Expanded(
                     child: Container(
@@ -72,22 +94,41 @@ class _TimelineEvent extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              padding: EdgeInsets.only(
+                bottom: showLine
+                    ? (compact ? AppSpacing.md : AppSpacing.xxl)
+                    : 0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (isLatest) ...[
+                    Text(
+                      'Latest Update',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: color),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                  ],
                   Text(
                     event.citizenLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleSmall?.copyWith(fontSize: 15, height: 1.5),
                   ),
                   const SizedBox(height: AppSpacing.xxs),
                   Text(
                     formatReportDateTime(event.changedAt),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  if (event.notes != null && event.notes!.trim().isNotEmpty) ...[
+                  if (event.notes != null &&
+                      event.notes!.trim().isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xxs),
-                    Text(event.notes!, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      event.notes!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ],
               ),

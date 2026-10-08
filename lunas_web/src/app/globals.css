@@ -25,6 +25,10 @@
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-slate-500: var(--muted);
+  --color-slate-600: var(--muted);
+  --color-slate-900: var(--foreground);
+  --color-slate-950: var(--foreground);
   --color-border: var(--border);
   --color-brand-50: #f2f8fd;
   --color-brand-100: #e1eef9;
@@ -37,8 +41,8 @@
   --color-brand-800: #064579;
   --color-brand-900: #0a3b64;
   --color-brand-950: #062641;
-  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
-  --font-mono: "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 * {
@@ -77,9 +81,11 @@ textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 button {

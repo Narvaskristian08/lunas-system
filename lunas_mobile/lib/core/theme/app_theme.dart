@@ -70,6 +70,14 @@ abstract final class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primaryContainer,
+        foregroundColor: scheme.onPrimaryContainer,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        sizeConstraints: const BoxConstraints.tightFor(width: 56, height: 56),
+        extendedSizeConstraints: const BoxConstraints.tightFor(height: 56),
+      ),
       fontFamily: 'Inter',
       textTheme: TextTheme(
         displayLarge: AppTextStyles.displayLarge.copyWith(

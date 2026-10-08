@@ -116,32 +116,10 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               LunasCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      report.categoryLabel,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(report.currentStatusLabel),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      report.location.displayAddress,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                'Report activity',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              LunasCard(
                 child: _events.isEmpty
-                    ? const Text('No status history has been returned yet.')
+                    ? const Text(
+                        'No updates yet. Report activity will appear here.',
+                      )
                     : ReportStatusTimeline(events: _events),
               ),
             ],

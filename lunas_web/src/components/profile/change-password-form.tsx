@@ -71,29 +71,29 @@ function ChangePasswordWorkspace() {
     return (
       <>
         <PageHeader
-          title="Change password"
+          title="Change Password"
           eyebrow="Account security"
           breadcrumbs={[
             { label: "Dashboard", href: "/dashboard" },
-            { label: "My profile", href: "/profile" },
-            { label: "Change password" },
+            { label: "My Profile", href: "/profile" },
+            { label: "Change Password" },
           ]}
         />
         <Card className="mx-auto max-w-2xl p-6 text-center sm:p-8">
           <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
             <CheckCircle2 className="size-8" aria-hidden="true" />
           </span>
-          <h2 className="mt-5 text-2xl font-bold text-slate-950">Password changed successfully</h2>
+          <h2 className="mt-5 text-2xl font-bold text-slate-950">Password Changed Successfully</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
             Your new password is active. {sessionsRevoked
               ? "Existing LUNAS sessions were revoked under the current security policy. Sign in again using your new password."
               : "Your current signed-in session remains active under the current security policy."}
           </p>
           <div className="mt-6 flex flex-col-reverse justify-center gap-3 sm:flex-row">
-            <Link href="/profile" className={buttonStyles({ variant: "secondary", size: "lg" })}>Return to profile</Link>
+            <Link href="/profile" className={buttonStyles({ variant: "secondary", size: "lg" })}>Return to Profile</Link>
             {sessionsRevoked ? (
               <Link href="/login" className={buttonStyles({ variant: "primary", size: "lg" })}>
-                <LogIn className="size-4" aria-hidden="true" /> Sign in again
+                <LogIn className="size-4" aria-hidden="true" /> Sign in Again
               </Link>
             ) : null}
           </div>
@@ -105,27 +105,27 @@ function ChangePasswordWorkspace() {
   return (
     <>
       <PageHeader
-        title="Change password"
+        title="Change Password"
         eyebrow="Account security"
         description="Use a unique password that you do not use for another government or personal account."
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "My profile", href: "/profile" },
-          { label: "Change password" },
+          { label: "My Profile", href: "/profile" },
+          { label: "Change Password" },
         ]}
         actions={
           <Link href="/profile" className={buttonStyles({ variant: "secondary" })}>
-            <ArrowLeft className="size-4" aria-hidden="true" /> Back to profile
+            <ArrowLeft className="size-4" aria-hidden="true" /> Back to Profile
           </Link>
         }
       />
 
       <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
-          <CardHeader title="Set a new password" description="All three fields are required." />
+          <CardHeader title="Set a New Password" description="All three fields are required." />
           <form onSubmit={submit} noValidate className="space-y-5 p-5 sm:p-6">
             <PasswordField
-              label="Current password"
+              label="Current Password"
               required
               value={currentPassword}
               onChange={(event) => { setCurrentPassword(event.target.value); setServerError(undefined); }}
@@ -136,7 +136,7 @@ function ChangePasswordWorkspace() {
 
             <div className="border-t border-slate-200 pt-5">
               <PasswordField
-                label="New password"
+                label="New Password"
                 required
                 value={newPassword}
                 onChange={(event) => { setNewPassword(event.target.value); setServerError(undefined); }}
@@ -148,7 +148,7 @@ function ChangePasswordWorkspace() {
             </div>
 
             <PasswordField
-              label="Confirm new password"
+              label="Confirm New Password"
               required
               value={confirmPassword}
               onChange={(event) => { setConfirmPassword(event.target.value); setServerError(undefined); }}
@@ -160,14 +160,14 @@ function ChangePasswordWorkspace() {
             {serverError ? (
               <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
                 <CircleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-                <div><p className="font-semibold">Password was not changed</p><p className="mt-1">{serverError}</p></div>
+                <div><p className="font-semibold">Password Was Not Changed</p><p className="mt-1">{serverError}</p></div>
               </div>
             ) : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
               <Link href="/profile" className={buttonStyles({ variant: "secondary" })}>Cancel</Link>
-              <Button type="submit" disabled={!valid} loading={submitting} loadingLabel="Changing password…">
-                <KeyRound className="size-4" aria-hidden="true" /> Change password
+              <Button type="submit" disabled={!valid} loading={submitting} loadingLabel="Changing Password…">
+                <KeyRound className="size-4" aria-hidden="true" /> Change Password
               </Button>
             </div>
           </form>
@@ -179,14 +179,14 @@ function ChangePasswordWorkspace() {
               <ShieldCheck className="size-5" aria-hidden="true" />
             </span>
             <div>
-              <h2 className="font-semibold text-slate-950">Security reminder</h2>
+              <h2 className="font-semibold text-slate-950">Security Reminder</h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
                 LUNAS staff will never ask for your password. Passwords are sent only to the account service and are never stored in browser persistence.
               </p>
             </div>
           </div>
           <Link href="/help" className="mt-4 inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
-            Report an account security concern
+            Report an Account Security Concern
           </Link>
         </Card>
       </div>

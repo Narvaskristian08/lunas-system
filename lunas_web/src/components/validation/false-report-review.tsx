@@ -33,7 +33,7 @@ export function FalseReportReview({ incidentId, status }: { incidentId: string; 
       if (result.ok) { setReason(""); setEvidence(""); }
     });
   };
-  return <Card><CardHeader title="Documented false-report review" description="Rejections, duplicates, unverifiable locations, and GPS mismatch do not establish deliberate fabrication. Findings require evidence and human review; no automatic punishment applies." />
+  return <Card><CardHeader title="Documented False-report Review" description="Rejections, duplicates, unverifiable locations, and GPS mismatch do not establish deliberate fabrication. Findings require evidence and human review; no automatic punishment applies." />
     <div className="space-y-3 p-5 text-sm">
       {message ? <p role="status">{message}</p> : null}
       {!data ? <p>Loading review...</p> : <>

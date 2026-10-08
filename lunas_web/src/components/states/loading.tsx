@@ -50,8 +50,8 @@ export function SkeletonTable({ rows = 5 }: { rows?: number }) {
 
 export function DashboardSkeleton() {
   return (
-    <div role="status" aria-live="polite" aria-label="Loading dashboard" className="space-y-6">
-      <span className="sr-only">Loading dashboard</span>
+    <div role="status" aria-live="polite" aria-label="Loading Dashboard" className="space-y-6">
+      <span className="sr-only">Loading Dashboard</span>
       <div className="space-y-3" aria-hidden="true"><SkeletonLine className="h-7 w-72" /><SkeletonLine className="w-[420px] max-w-full" /></div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)}</div>
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]"><SkeletonTable rows={4} /><div className="surface-card rounded-2xl p-5"><SkeletonLine className="h-5 w-40" />{Array.from({ length: 5 }).map((_, index) => <SkeletonLine key={index} className="mt-5 h-10 w-full" />)}</div></div>
@@ -68,7 +68,7 @@ export function FullPageLoading({ label = "Preparing LUNAS…" }: { label?: stri
 }
 
 export function AuthenticationLoading() {
-  return <FullPageLoading label="Checking your secure session…" />;
+  return <FullPageLoading label="Checking Your Secure Session…" />;
 }
 
 export function RouteLoading({ label = "Loading page…" }: { label?: string }) {
@@ -88,7 +88,7 @@ export function InlineFieldLoading({ label = "Checking…" }: { label?: string }
 }
 
 export function MapSkeleton() {
-  return <div className="skeleton flex min-h-64 items-center justify-center rounded-xl" role="status"><span className="relative z-10 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-slate-600">Loading map layers…</span></div>;
+  return <div className="skeleton flex min-h-64 items-center justify-center rounded-xl" role="status"><span className="relative z-10 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-slate-600">Loading Map Layers…</span></div>;
 }
 
 export function ImageSkeleton({ label = "Loading image" }: { label?: string }) {

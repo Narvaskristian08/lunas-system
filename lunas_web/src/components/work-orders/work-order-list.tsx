@@ -40,14 +40,14 @@ function hasFilters(filters: WorkOrderFilters) {
 function summaryCards(summary: WorkOrderSummary) {
   return [
     { label: "Unassigned", value: summary.unassigned, tone: "warning" as const },
-    { label: "Pending acceptance", value: summary.pendingAcceptance, tone: "information" as const },
-    { label: "Active repairs", value: summary.active, tone: "information" as const },
-    { label: "Approaching deadline", value: summary.approaching, tone: "warning" as const },
+    { label: "Pending Acceptance", value: summary.pendingAcceptance, tone: "information" as const },
+    { label: "Active Repairs", value: summary.active, tone: "information" as const },
+    { label: "Approaching Deadline", value: summary.approaching, tone: "warning" as const },
     { label: "Overdue", value: summary.overdue, tone: "critical" as const },
-    { label: "Completed · provider review", value: summary.readyForCompletion, tone: "warning" as const },
-    { label: "Awaiting City verification", value: summary.awaitingFinalVerification, tone: "information" as const },
-    { label: "City returns to coordinate", value: summary.cityCorrections, tone: "warning" as const },
-    { label: "Corrective repairs", value: summary.correctiveRepairs, tone: "information" as const },
+    { label: "Completed · Provider Review", value: summary.readyForCompletion, tone: "warning" as const },
+    { label: "Awaiting City Verification", value: summary.awaitingFinalVerification, tone: "information" as const },
+    { label: "City Returns to Coordinate", value: summary.cityCorrections, tone: "warning" as const },
+    { label: "Corrective Repairs", value: summary.correctiveRepairs, tone: "information" as const },
   ];
 }
 
@@ -68,7 +68,7 @@ export function WorkOrderList({
   const pathname = usePathname();
   const [search, setSearch] = useState(filters.search ?? "");
   const isSla = mode === "sla";
-  const title = isSla ? "SLA monitor" : "Work orders";
+  const title = isSla ? "SLA Monitor" : "Work Orders";
   const description = isSla
     ? "Backend-calculated deadlines and repair status for work orders in your authorized scope."
     : viewer.backendRole === "repair_personnel"
@@ -116,14 +116,14 @@ export function WorkOrderList({
   };
 
   const columns = [
-    { key: "workOrder", label: "Work order" },
+    { key: "workOrder", label: "Work Order" },
     { key: "incident", label: "Incident" },
     { key: "location", label: "Location" },
     { key: "priority", label: "Priority" },
     { key: "organization", label: "Organization" },
-    { key: "assignee", label: "Assigned personnel" },
+    { key: "assignee", label: "Assigned Personnel" },
     { key: "assignment", label: "Assignment" },
-    { key: "repair", label: "Repair status" },
+    { key: "repair", label: "Repair Status" },
     { key: "progress", label: "Progress" },
     { key: "sla", label: "SLA" },
     { key: "updated", label: "Updated" },
@@ -133,32 +133,32 @@ export function WorkOrderList({
     <div className="mx-auto max-w-[1680px]">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">{isSla ? "Maintenance operations · Deadline control" : "Maintenance operations · Command center"}</p>
+          <p className="text-xs font-bold tracking-normal text-brand-700">{isSla ? "Maintenance operations · Deadline control" : "Maintenance operations · Command center"}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">{title}</h1>
           <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
         </div>
-        {!isSla && viewer.permissions.includes("reports.view") ? <Link href="/validation-routing" className={buttonStyles({ variant: "secondary" })}><ClipboardList className="size-4" aria-hidden="true" /> Open validation queue</Link> : null}
+        {!isSla && viewer.permissions.includes("reports.view") ? <Link href="/validation-routing" className={buttonStyles({ variant: "secondary" })}><ClipboardList className="size-4" aria-hidden="true" /> Open Validation Queue</Link> : null}
       </div>
 
       {summary ? <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{summaryCards(summary).map((item) => <Card key={item.label} className="border-l-4 border-l-slate-300 p-4"><p className="text-xs font-semibold text-slate-600">{item.label}</p><p className="mt-1 text-2xl font-bold text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value)}</p><StatusBadge className="mt-2" tone={item.tone}>{item.value === 1 ? "1 work order" : `${item.value} work orders`}</StatusBadge></Card>)}</div> : null}
 
       <Card className="overflow-hidden">
         <CardHeader
-          title={isSla ? "Deadline watch" : "Operational work orders"}
+          title={isSla ? "Deadline Watch" : "Operational Work Orders"}
           description={isSla ? "Filter the live work-order register for at-risk and overdue repairs." : "Filters are sent to the backend; the browser never loads the entire register to filter it locally."}
           action={<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ArrowUpDown className="size-3.5" aria-hidden="true" /> Server-side sort</span>}
         />
         <form onSubmit={(event) => { event.preventDefault(); navigate({ search: search.trim() || undefined }); }} className="border-b border-slate-200 bg-white p-4">
-          <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder="Search work-order reference" aria-label="Search work orders" className="max-w-xl" />
+          <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder="Search work-order reference" aria-label="Search Work Orders" className="max-w-xl" />
         </form>
         <FilterBar>
-          <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
-          <FilterSelect label="Repair status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={[{ value: "", label: "All work states" }, { value: "pending", label: "Pending assignment" }, { value: "accepted", label: "Accepted" }, { value: "in_progress", label: "In progress" }, { value: "completed", label: "Completed · provider review" }, { value: "rework_required", label: "Corrective work" }, { value: "provider_accepted", label: "Awaiting City Engineering" }, { value: "city_correction_required", label: "City return · provider coordination" }, { value: "verified", label: "Verified and closed" }]} />
-          <FilterSelect label="Assignment state" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All assignments" }, { value: "unassigned", label: "Unassigned" }, { value: "pending", label: "Pending acceptance" }, { value: "accepted", label: "Accepted" }, { value: "declined", label: "Declined" }]} />
-          <FilterSelect label="Repair progress" value={optionValue(filters.progress)} onChange={(event) => navigate({ progress: event.target.value || undefined })} options={[{ value: "", label: "All progress" }, { value: "0", label: "0%" }, { value: "25", label: "25%" }, { value: "50", label: "50%" }, { value: "75", label: "75%" }, { value: "100", label: "100% · completion submitted" }]} />
-          <FilterSelect label="SLA state" value={optionValue(filters.slaState)} onChange={(event) => navigate({ slaState: event.target.value || undefined })} options={[{ value: "", label: "All SLA states" }, { value: "approaching", label: "Approaching deadline" }, { value: "overdue", label: "Overdue" }]} />
-          <FilterSelect label="Sort work orders" value={optionValue(filters.sortBy)} onChange={(event) => navigate({ sortBy: event.target.value || "newest" })} options={[{ value: "newest", label: "Recently updated" }, { value: "oldest", label: "Oldest first" }, { value: "deadline", label: "Deadline first" }, { value: "-deadline", label: "Latest deadline" }, { value: "-priority", label: "Priority" }, { value: "-progress", label: "Progress" }]} />
-          {hasFilters(filters) ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear filters</button> : null}
+          <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All Priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
+          <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={[{ value: "", label: "All Work States" }, { value: "pending", label: "Pending Assignment" }, { value: "accepted", label: "Accepted" }, { value: "in_progress", label: "In Progress" }, { value: "completed", label: "Completed · Provider Review" }, { value: "rework_required", label: "Corrective Work" }, { value: "provider_accepted", label: "Awaiting City Engineering" }, { value: "city_correction_required", label: "City Return · Provider Coordination" }, { value: "verified", label: "Verified and Closed" }]} />
+          <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Unassigned" }, { value: "pending", label: "Pending Acceptance" }, { value: "accepted", label: "Accepted" }, { value: "declined", label: "Declined" }]} />
+          <FilterSelect label="Repair Progress" value={optionValue(filters.progress)} onChange={(event) => navigate({ progress: event.target.value || undefined })} options={[{ value: "", label: "All Progress" }, { value: "0", label: "0%" }, { value: "25", label: "25%" }, { value: "50", label: "50%" }, { value: "75", label: "75%" }, { value: "100", label: "100% · Completion Submitted" }]} />
+          <FilterSelect label="SLA State" value={optionValue(filters.slaState)} onChange={(event) => navigate({ slaState: event.target.value || undefined })} options={[{ value: "", label: "All SLA States" }, { value: "approaching", label: "Approaching Deadline" }, { value: "overdue", label: "Overdue" }]} />
+          <FilterSelect label="Sort Work Orders" value={optionValue(filters.sortBy)} onChange={(event) => navigate({ sortBy: event.target.value || "newest" })} options={[{ value: "newest", label: "Recently Updated" }, { value: "oldest", label: "Oldest First" }, { value: "deadline", label: "Deadline First" }, { value: "-deadline", label: "Latest Deadline" }, { value: "-priority", label: "Priority" }, { value: "-progress", label: "Progress" }]} />
+          {hasFilters(filters) ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear Filters</button> : null}
         </FilterBar>
 
         {queue.workOrders.length ? <>
@@ -183,7 +183,7 @@ export function WorkOrderList({
             }))}
           />
           <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page: String(page) })} />
-        </> : <EmptyState icon={hasFilters(filters) ? "search" : "records"} title={hasFilters(filters) ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasFilters(filters) ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasFilters(filters) ? { label: "Clear filters", onClick: clearFilters } : undefined} />}
+        </> : <EmptyState icon={hasFilters(filters) ? "search" : "records"} title={hasFilters(filters) ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasFilters(filters) ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasFilters(filters) ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
       </Card>
     </div>
   );

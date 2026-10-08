@@ -10,10 +10,10 @@ function ProfileWorkspace() {
   return (
     <>
       <PageHeader
-        title="My profile"
+        title="My Profile"
         eyebrow="Account"
         description="Review your account details, assigned access, and security status."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "My profile" }]}
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "My Profile" }]}
       />
       <ProfileSummary viewer={viewer} />
     </>

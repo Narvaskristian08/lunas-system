@@ -28,11 +28,13 @@ class NotificationDetailsScreen extends StatelessWidget {
   const NotificationDetailsScreen({
     this.item,
     this.repairWorkspace = false,
+    this.asSheet = false,
     super.key,
   });
 
   final NotificationData? item;
   final bool repairWorkspace;
+  final bool asSheet;
 
   @override
   Widget build(BuildContext context) {
@@ -52,82 +54,95 @@ class NotificationDetailsScreen extends StatelessWidget {
       resolvedItem,
       repairWorkspace: repairWorkspace,
     );
-    return Scaffold(
-      appBar: repairWorkspace
-          ? const RepairAppBar(
-              title: 'Notification details',
-              showBackButton: true,
-            )
-          : const LunasAppBar(
-              title: 'Notification Details',
-              showBackButton: true,
-            ),
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
+    final content = SafeArea(
+      top: false,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
             AppSpacing.xl,
-            AppSpacing.md,
+            asSheet ? AppSpacing.xs : AppSpacing.xl,
             AppSpacing.xl,
-            AppSpacing.hero,
+            asSheet ? AppSpacing.xl : AppSpacing.hero,
           ),
           child: Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
+              constraints: BoxConstraints(
+                maxWidth: 560,
+                minHeight: asSheet
+                    ? 0
+                    : (constraints.maxHeight - AppSpacing.xl - AppSpacing.hero)
+                          .clamp(0.0, double.infinity),
+              ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: resolvedItem.color.withValues(alpha: .1),
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                      ),
-                      child: Icon(
-                        resolvedItem.icon,
-                        color: resolvedItem.color,
-                        size: 35,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    resolvedItem.title,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 27,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    resolvedItem.time,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
-                  LunasCard(
-                    child: Text(
-                      resolvedItem.message,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(height: 1.6),
-                    ),
-                  ),
-                  if (_hasContext(resolvedItem)) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    LunasCard(
-                      child: Column(
-                        children: [
+                  _detailPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: resolvedItem.color.withValues(alpha: .1),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.sm,
+                                ),
+                              ),
+                              child: Icon(
+                                resolvedItem.icon,
+                                color: resolvedItem.color,
+                                size: 23,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                switch (resolvedItem.kind) {
+                                  NotificationKind.update => 'Update',
+                                  NotificationKind.activity => 'Activity',
+                                  NotificationKind.alert => 'Alert',
+                                },
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(color: resolvedItem.color),
+                              ),
+                            ),
+                            Text(
+                              resolvedItem.time,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          resolvedItem.title,
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                fontSize: 22,
+                                height: 1.3,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          resolvedItem.message,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(height: 1.6),
+                        ),
+                        if (_hasContext(resolvedItem)) ...[
+                          const Divider(height: AppSpacing.xxl),
                           if (repairWorkspace &&
                               resolvedItem.workOrderId != null)
                             const _DetailRow(
                               icon: Icons.engineering_outlined,
-                              label: 'Work order',
-                              value: 'Linked assigned work',
+                              label: 'Work Order',
+                              value: 'Linked Assigned Work',
                             ),
                           if (!repairWorkspace &&
                               resolvedItem.incidentId != null)
@@ -135,11 +150,11 @@ class NotificationDetailsScreen extends StatelessWidget {
                               icon: Icons.description_outlined,
                               label: 'Report ID',
                               value:
-                                  resolvedItem.reportNumber ?? 'Linked report',
+                                  resolvedItem.reportNumber ?? 'Linked Report',
                             ),
                           if (_hasResource(resolvedItem) &&
                               resolvedItem.location != null)
-                            const Divider(height: AppSpacing.xl),
+                            const SizedBox(height: AppSpacing.md),
                           if (resolvedItem.location != null)
                             _DetailRow(
                               icon: Icons.location_on_outlined,
@@ -147,9 +162,9 @@ class NotificationDetailsScreen extends StatelessWidget {
                               value: resolvedItem.location!,
                             ),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                   if (destination != null) ...[
                     const SizedBox(height: AppSpacing.xl),
                     LunasButton(
@@ -157,7 +172,11 @@ class NotificationDetailsScreen extends StatelessWidget {
                           ? 'View Assigned Work'
                           : 'View Report',
                       icon: Icons.arrow_forward_rounded,
-                      onPressed: () => context.push(destination),
+                      onPressed: () {
+                        final router = GoRouter.of(context);
+                        if (asSheet) Navigator.of(context).pop();
+                        router.push(destination);
+                      },
                     ),
                   ] else if (repairWorkspace) ...[
                     const SizedBox(height: AppSpacing.xl),
@@ -174,10 +193,26 @@ class NotificationDetailsScreen extends StatelessWidget {
         ),
       ),
     );
+    if (asSheet) return content;
+    return Scaffold(
+      appBar: repairWorkspace
+          ? const RepairAppBar(
+              title: 'Notification details',
+              showBackButton: true,
+            )
+          : const LunasAppBar(
+              title: 'Notification Details',
+              showBackButton: true,
+            ),
+      body: content,
+    );
   }
 
   bool _hasResource(NotificationData value) =>
       repairWorkspace ? value.workOrderId != null : value.incidentId != null;
+
+  Widget _detailPanel({required Widget child}) =>
+      asSheet ? child : LunasCard(child: child);
 
   bool _hasContext(NotificationData value) =>
       _hasResource(value) || value.location != null;

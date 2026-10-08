@@ -58,7 +58,7 @@ export function SystemState({
         <span className="flex size-20 items-center justify-center rounded-3xl border border-slate-200 bg-white text-brand-700 shadow-sm"><Icon className="size-9" aria-hidden="true" /></span>
         <span className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full border-4 border-slate-50 bg-white"><CircleAlert className="size-4 text-amber-700" aria-hidden="true" /></span>
       </div>
-      {eyebrow ? <p className="mt-6 text-xs font-bold uppercase tracking-[0.16em] text-brand-700">{eyebrow}</p> : null}
+      {eyebrow ? <p className="mt-6 text-xs font-bold tracking-normal text-brand-700">{eyebrow}</p> : null}
       <h1 className="mt-2 max-w-xl text-balance text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{title}</h1>
       <p className="mt-3 max-w-xl text-balance text-sm leading-6 text-slate-600 sm:text-base">{description}</p>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -73,7 +73,7 @@ export function SystemState({
 }
 
 export function OfflineState({ onRetry, fullPage = false }: { onRetry?: () => void; fullPage?: boolean }) {
-  return <SystemState kind="offline" eyebrow="Connection status" title="You’re offline" description="Reconnect to the internet, then retry. Any information you entered on this page is still here." primaryAction={{ label: "Try again", onClick: onRetry ?? (() => window.location.reload()) }} fullPage={fullPage} detail={<p>Showing the last available interface. Live incident and SLA data may be out of date.</p>} />;
+  return <SystemState kind="offline" eyebrow="Connection status" title="You’re offline" description="Reconnect to the internet, then retry. Any information you entered on this page is still here." primaryAction={{ label: "Try Again", onClick: onRetry ?? (() => window.location.reload()) }} fullPage={fullPage} detail={<p>Showing the last available interface. Live incident and SLA data may be out of date.</p>} />;
 }
 
 export function ErrorState({ onRetry, referenceId, variant = "general", fullPage = false }: { onRetry?: () => void; referenceId?: string; variant?: "general" | "unavailable" | "timeout" | "data"; fullPage?: boolean }) {
@@ -83,9 +83,9 @@ export function ErrorState({ onRetry, referenceId, variant = "general", fullPage
     timeout: ["The request took too long", "The service did not respond in time. Your changes have not been submitted."],
     data: ["We couldn’t load this information", "The rest of LUNAS is still available. Retry this section when you’re ready."],
   }[variant];
-  return <SystemState kind="server" eyebrow="System response" title={copy[0]} description={copy[1]} referenceId={referenceId} primaryAction={{ label: "Retry", onClick: onRetry ?? (() => window.location.reload()) }} secondaryAction={{ label: "Return to dashboard", href: "/dashboard" }} fullPage={fullPage} />;
+  return <SystemState kind="server" eyebrow="System response" title={copy[0]} description={copy[1]} referenceId={referenceId} primaryAction={{ label: "Retry", onClick: onRetry ?? (() => window.location.reload()) }} secondaryAction={{ label: "Return to Dashboard", href: "/dashboard" }} fullPage={fullPage} />;
 }
 
 export function AccessDeniedState({ role, fullPage = false }: { role: UserRole; fullPage?: boolean }) {
-  return <SystemState kind="access" eyebrow="Permission required" title="Access denied" description="Your current role does not include permission to view this area. No restricted information has been shown." role={role} primaryAction={{ label: "Return to dashboard", href: "/dashboard" }} secondaryAction={{ label: "Go back", onClick: () => window.history.back() }} tertiaryAction={{ label: "Contact an administrator", href: "/help" }} fullPage={fullPage} />;
+  return <SystemState kind="access" eyebrow="Permission required" title="Access denied" description="Your current role does not include permission to view this area. No restricted information has been shown." role={role} primaryAction={{ label: "Return to Dashboard", href: "/dashboard" }} secondaryAction={{ label: "Go Back", onClick: () => window.history.back() }} tertiaryAction={{ label: "Contact an Administrator", href: "/help" }} fullPage={fullPage} />;
 }

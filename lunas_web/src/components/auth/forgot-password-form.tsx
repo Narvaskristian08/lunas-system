@@ -65,7 +65,7 @@ export function ForgotPasswordForm() {
           <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
             <MailCheck className="size-7" aria-hidden="true" />
           </span>
-          <h2 className="mt-4 text-xl font-semibold text-slate-950">Check your inbox</h2>
+          <h2 className="mt-4 text-xl font-semibold text-slate-950">Check Your Inbox</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
             If an authorized LUNAS account matches <span className="break-all font-semibold text-slate-800">{email.trim()}</span>, LUNAS has accepted the recovery request.
           </p>
@@ -100,7 +100,7 @@ export function ForgotPasswordForm() {
 
           <FormField
             id="recovery-email"
-            label="Authorized email address"
+            label="Authorized Email Address"
             required
             error={error}
             helperText="We will send instructions only if this address is registered."
@@ -117,8 +117,8 @@ export function ForgotPasswordForm() {
             disabled={pending}
           />
 
-          <Button className="w-full" size="lg" type="submit" loading={pending} loadingLabel="Sending instructions…" disabled={!email.trim() || (checked && !online)}>
-            Send reset instructions
+          <Button className="w-full" size="lg" type="submit" loading={pending} loadingLabel="Sending Instructions…" disabled={!email.trim() || (checked && !online)}>
+            Send Reset Instructions
           </Button>
           <BackToLogin />
         </form>

@@ -55,7 +55,7 @@ export function LegalPage({
       <header className="print-hidden sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <LunasBrand href="/login" />
-          <nav className="hidden items-center gap-1 sm:flex" aria-label="Legal pages">
+          <nav className="hidden items-center gap-1 sm:flex" aria-label="Legal Pages">
             <Link href="/privacy" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-brand-700">Privacy</Link>
             <Link href="/terms" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-brand-700">Terms</Link>
             <Link href="/login" className={buttonStyles({ variant: "secondary", size: "sm", className: "ml-2" })}>Sign in</Link>
@@ -70,16 +70,16 @@ export function LegalPage({
             onClick={() => router.back()}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-700 hover:bg-white hover:text-brand-700"
           >
-            <ArrowLeft className="size-4" aria-hidden="true" /> Back to previous page
+            <ArrowLeft className="size-4" aria-hidden="true" /> Back to Previous Page
           </button>
           <Button type="button" variant="secondary" size="sm" onClick={() => window.print()}>
-            <Printer className="size-4" aria-hidden="true" /> Print this draft
+            <Printer className="size-4" aria-hidden="true" /> Print This Draft
           </Button>
         </div>
 
         <header className="border-b border-slate-200 pb-7 print:border-slate-400">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-amber-900">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold tracking-normal text-amber-900">
               <Scale className="size-3.5" aria-hidden="true" /> Draft — legal review required
             </span>
             <span className="mono text-xs font-semibold text-slate-500">{documentLabel}</span>
@@ -92,7 +92,7 @@ export function LegalPage({
         <div className="mt-6 flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950" role="note">
           <Scale className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
           <div>
-            <p className="font-semibold">This is a content structure, not an approved policy</p>
+            <p className="font-semibold">This Is a Content Structure, Not an Approved Policy</p>
             <p className="mt-1 text-sm leading-6 text-amber-900">
               Every section below is placeholder guidance for the designated legal, privacy, and information-security reviewers. It must be replaced or approved before production publication and must not be treated as legal advice.
             </p>
@@ -100,11 +100,11 @@ export function LegalPage({
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[260px_minmax(0,760px)] lg:justify-between xl:grid-cols-[280px_minmax(0,820px)_160px]">
-          <aside className="print-hidden lg:col-start-1" aria-label="Table of contents">
+          <aside className="print-hidden lg:col-start-1" aria-label="Table of Contents">
             <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
                 <BookOpen className="size-4 text-brand-700" aria-hidden="true" />
-                <h2 className="font-semibold text-slate-950">On this page</h2>
+                <h2 className="font-semibold text-slate-950">On This Page</h2>
               </div>
               <ol className="mt-3 space-y-0.5">
                 {sections.map((section, index) => {
@@ -137,7 +137,7 @@ export function LegalPage({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 id={section.id} className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">{section.title}</h2>
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 print:border-slate-400 print:bg-transparent">
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold tracking-normal text-amber-900 print:border-slate-400 print:bg-transparent">
                         Review <Check className="size-3" aria-hidden="true" />
                       </span>
                     </div>
@@ -163,9 +163,9 @@ export function LegalPage({
             ))}
           </article>
 
-          <aside className="print-hidden hidden xl:col-start-3 xl:block" aria-label="Document status">
+          <aside className="print-hidden hidden xl:col-start-3 xl:block" aria-label="Document Status">
             <div className="sticky top-24 border-l border-slate-200 pl-4 text-xs leading-5 text-slate-500">
-              <p className="font-bold uppercase tracking-[0.12em] text-slate-700">Document status</p>
+              <p className="font-bold tracking-normal text-slate-700">Document Status</p>
               <p className="mt-2">Internal content draft</p>
               <p className="mt-1">Not yet approved for production</p>
               <p className="mt-3">Use the print action for reviewer markup.</p>
@@ -180,7 +180,7 @@ export function LegalPage({
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <Link href="/privacy" className="font-semibold hover:text-brand-700">Privacy Policy</Link>
             <Link href="/terms" className="font-semibold hover:text-brand-700">Terms and Conditions</Link>
-            <Link href="/login" className="font-semibold hover:text-brand-700">Return to sign in</Link>
+            <Link href="/login" className="font-semibold hover:text-brand-700">Return to Sign in</Link>
           </div>
         </div>
       </footer>

@@ -16,12 +16,15 @@ class CategoryOption {
         : value is Map
         ? Map<String, dynamic>.from(value)
         : <String, dynamic>{};
-    final code = (json['code'] ?? json['value'] ?? json['id'] ?? json['name'] ?? '')
-        .toString();
+    final code =
+        (json['code'] ?? json['value'] ?? json['id'] ?? json['name'] ?? '')
+            .toString();
     final fallback = categoryFromCode(code);
     return CategoryOption(
       code: code.isEmpty ? fallback.code : code,
-      label: (json['label'] ?? json['name'] ?? fallback.label).toString(),
+      label: _categoryTitle(
+        (json['label'] ?? json['name'] ?? fallback.label).toString(),
+      ),
       description: (json['description'] ?? fallback.description).toString(),
     );
   }
@@ -30,7 +33,7 @@ class CategoryOption {
 const supportedReportCategories = <CategoryOption>[
   CategoryOption(
     code: 'road',
-    label: 'Roads and sidewalks',
+    label: 'Roads and Sidewalks',
     description: 'Potholes, damaged roads, and unsafe walkways.',
   ),
   CategoryOption(
@@ -60,7 +63,7 @@ const supportedReportCategories = <CategoryOption>[
   ),
   CategoryOption(
     code: 'other',
-    label: 'Other infrastructure concern',
+    label: 'Other Infrastructure Concern',
     description: 'An infrastructure issue not listed above.',
   ),
 ];
@@ -79,4 +82,16 @@ CategoryOption categoryFromCode(String code) {
       description: 'Infrastructure concern',
     ),
   );
+}
+
+String _categoryTitle(String label) {
+  const smallWords = {'and', 'or', 'of', 'the', 'for', 'in', 'to'};
+  var first = true;
+  return label.replaceAllMapped(RegExp(r'[A-Za-z]+'), (match) {
+    final word = match.group(0)!;
+    final keepLowercase = !first && smallWords.contains(word.toLowerCase());
+    first = false;
+    if (keepLowercase) return word.toLowerCase();
+    return '${word[0].toUpperCase()}${word.substring(1)}';
+  });
 }

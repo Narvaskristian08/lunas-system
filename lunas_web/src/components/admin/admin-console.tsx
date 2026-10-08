@@ -48,17 +48,17 @@ export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccou
   }
 
   return <div className="mx-auto max-w-[1680px] space-y-6">
-    <PageHeader eyebrow="LUNAS · Account administration" title="Authorized accounts"
+    <PageHeader eyebrow="LUNAS · Account administration" title="Authorized Accounts"
       description="Provision personnel after their responsible organization has verified and approved access outside LUNAS."
       actions={<Button onClick={() => { setSelected("new"); setEditing(true); setMessage(""); }}><Plus className="size-4" />Create Authorized Account</Button>} />
     {message && <p role="status" className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm">{message}</p>}
     <Card className="overflow-hidden">
-      <CardHeader title="Personnel accounts" description="Role, jurisdiction, and account status are enforced by the server." />
+      <CardHeader title="Personnel Accounts" description="Role, jurisdiction, and account status are enforced by the server." />
       <form action="/admin/users" className="flex gap-3 border-y bg-slate-50 p-4">
-        <label className="flex-1 text-sm">Search accounts<input name="search" defaultValue={search} maxLength={100} placeholder="Name, email, or organization" className={inputClass} /></label>
+        <label className="flex-1 text-sm">Search accounts<input name="search" defaultValue={search} maxLength={100} placeholder="Name, Email, or Organization" className={inputClass} /></label>
         <Button type="submit" variant="secondary" className="self-end">Search</Button>
       </form>
-      <DataTable caption="Authorized personnel" columns={[{ key: "name", label: "Name" }, { key: "role", label: "Role" }, { key: "scope", label: "Organization / jurisdiction" }, { key: "status", label: "Status" }, { key: "actions", label: "Actions" }]}
+      <DataTable caption="Authorized personnel" columns={[{ key: "name", label: "Name" }, { key: "role", label: "Role" }, { key: "scope", label: "Organization / Jurisdiction" }, { key: "status", label: "Status" }, { key: "actions", label: "Actions" }]}
         rows={data.accounts.map(account => ({ id: account.id, cells: {
           name: <><strong>{account.firstName} {account.lastName}</strong><p className="text-xs text-slate-500">{account.email}</p></>,
           role: accountRoleLabels[account.role],
@@ -78,7 +78,7 @@ export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccou
     {selected && <Card className="p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{selected === "new" ? "Create Authorized Account" : `${selected.firstName} ${selected.lastName}`}</h2>
-        <div className="flex gap-2">{selected !== "new" && !editing && canManage(selected) && <Button variant="secondary" onClick={() => setEditing(true)}>Edit approved details</Button>}<Button variant="ghost" onClick={() => setSelected(null)}>Close</Button></div>
+        <div className="flex gap-2">{selected !== "new" && !editing && canManage(selected) && <Button variant="secondary" onClick={() => setEditing(true)}>Edit Approved Details</Button>}<Button variant="ghost" onClick={() => setSelected(null)}>Close</Button></div>
       </div>
       <AccountForm key={`${selected === "new" ? "new" : `${selected.id}-${selected.version}`}-${editing}`} account={selected === "new" ? undefined : selected} data={data} readOnly={!editing}
         onSaved={text => { setMessage(text); setSelected(null); router.refresh(); }} />
@@ -135,10 +135,10 @@ function AccountForm({ account, data, readOnly, onSaved }: { account?: Authorize
       {["barangay_official", "repair_personnel"].includes(role) && <label className="text-sm font-medium">Assigned barangay{role === "barangay_official" ? " *" : " (optional)"}<select name="barangay" className={inputClass} defaultValue={account?.barangay || ""} required={role === "barangay_official"}><option value="">{role === "repair_personnel" ? "Citywide within assigned organization" : "Select barangay"}</option>{data.barangays.map(value => <option key={value}>{value}</option>)}</select></label>}
       {role === "utility_provider" && field("utilityCompany", "Assigned utility company", account?.utilityCompany)}
       {role === "repair_personnel" && <>{field("repairOrganization", "Assigned repair organization", account?.repairOrganization)}{field("repairTeam", "Repair team (optional)", account?.repairTeam, false, 120)}</>}
-      {field("approvalAuthority", "Approved by / approving authority", account?.approval?.authority)}
+      {field("approvalAuthority", "Approved By / Approving Authority", account?.approval?.authority)}
       <label className="text-sm font-medium md:col-span-2">Approval reference / remarks *<textarea className={inputClass} name="approvalReference" required maxLength={500} defaultValue={account?.approval?.reference || ""} placeholder="Reference or remarks confirming the offline authorization" /></label>
     </fieldset>
-    {!readOnly && <div className="mt-6"><p className="mb-3 text-sm text-slate-600">By saving, you confirm that the role and jurisdiction match the organization&apos;s offline approval.</p><Button type="submit" loading={pending} loadingLabel="Saving account…">{account ? "Save approved details" : "Create account and send activation"}</Button></div>}
+    {!readOnly && <div className="mt-6"><p className="mb-3 text-sm text-slate-600">By saving, you confirm that the role and jurisdiction match the organization&apos;s offline approval.</p><Button type="submit" loading={pending} loadingLabel="Saving Account…">{account ? "Save Approved Details" : "Create Account and Send Activation"}</Button></div>}
     {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
   </form>;
 }

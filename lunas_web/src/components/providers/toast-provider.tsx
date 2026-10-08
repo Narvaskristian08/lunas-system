@@ -71,7 +71,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => setToasts((items) => items.filter((item) => item.id !== toast.id))}
                 className="-m-2 flex size-10 shrink-0 items-center justify-center rounded-lg hover:bg-black/5"
-                aria-label="Dismiss notification"
+                aria-label="Dismiss Notification"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>

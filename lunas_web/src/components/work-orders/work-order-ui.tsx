@@ -68,7 +68,7 @@ export function ProgressBar({ value, className, label = true }: { value: number;
       <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-700">
         {label ? <span>{clamped}%</span> : <span className="sr-only">{clamped}% repair progress</span>}
       </div>
-      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label="Repair progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={clamped}>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label="Repair Progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={clamped}>
         <div className={cn("h-full rounded-full transition-[width]", clamped === 100 ? "bg-emerald-600" : "bg-brand-600")} style={{ width: `${clamped}%` }} />
       </div>
     </div>

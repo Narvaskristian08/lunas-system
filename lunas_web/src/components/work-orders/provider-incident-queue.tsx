@@ -67,18 +67,18 @@ export function ProviderIncidentQueue({
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">Maintenance operations · Provider intake</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">Routed incidents</h1>
+          <p className="text-xs font-bold tracking-normal text-brand-700">Maintenance Operations · Provider Intake</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">Routed Incidents</h1>
           <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
             Incidents routed by City Engineering to your organization appear here. Create the initial work order, then assign eligible repair personnel.
           </p>
         </div>
-        <Link href="/work-orders" className={buttonStyles({ variant: "secondary" })}>Open work orders</Link>
+        <Link href="/work-orders" className={buttonStyles({ variant: "secondary" })}>Open Work Orders</Link>
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader
-          title="Organization intake queue"
+          title="Organization Intake Queue"
           description={`${queue.pagination.total} routed ${queue.pagination.total === 1 ? "incident" : "incidents"} in your authorized organization scope.`}
           action={<StatusBadge tone="information">Provider assigned</StatusBadge>}
         />
@@ -94,7 +94,7 @@ export function ProviderIncidentQueue({
             onChange={(event) => setSearch(event.target.value)}
             onClear={() => { setSearch(""); navigate({ search: undefined }); }}
             placeholder="Search report number or description"
-            aria-label="Search routed incidents"
+            aria-label="Search Routed Incidents"
             className="max-w-xl"
           />
         </form>
@@ -104,7 +104,7 @@ export function ProviderIncidentQueue({
             value={filters.priority ?? ""}
             onChange={(event) => navigate({ priority: event.target.value || undefined })}
             options={[
-              { value: "", label: "All priorities" },
+              { value: "", label: "All Priorities" },
               { value: "critical", label: "Critical" },
               { value: "high", label: "High" },
               { value: "medium", label: "Medium" },
@@ -116,23 +116,23 @@ export function ProviderIncidentQueue({
             value={filters.category ?? ""}
             onChange={(event) => navigate({ category: event.target.value || undefined })}
             options={[
-              { value: "", label: "All categories" },
+              { value: "", label: "All Categories" },
               ...categories.map((category) => ({ value: category, label: titleCase(category) })),
             ]}
           />
           <FilterSelect
-            label="Sort incidents"
+            label="Sort Incidents"
             value={filters.sortBy ?? "newest"}
             onChange={(event) => navigate({ sortBy: event.target.value || "newest" })}
             options={[
-              { value: "newest", label: "Newest reports" },
-              { value: "oldest", label: "Oldest reports" },
+              { value: "newest", label: "Newest Reports" },
+              { value: "oldest", label: "Oldest Reports" },
               { value: "priority", label: "Priority" },
             ]}
           />
           {hasFilters(filters) ? (
             <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">
-              Clear filters
+              Clear Filters
             </button>
           ) : null}
         </FilterBar>
@@ -164,7 +164,7 @@ export function ProviderIncidentQueue({
                     </Link>
                   ) : (
                     <Link href={`/work-orders/intake/${encodeURIComponent(incident.id)}`} className={buttonStyles({ className: "whitespace-nowrap" })}>
-                      <ClipboardPlus className="size-4" aria-hidden="true" /> Review and create
+                      <ClipboardPlus className="size-4" aria-hidden="true" /> Review and Create
                     </Link>
                   )}
                 </article>
@@ -185,7 +185,7 @@ export function ProviderIncidentQueue({
             description={hasFilters(filters)
               ? "Try removing a filter or search term. Organization scope remains enforced by the backend."
               : "Incidents will appear after City Engineering prioritizes and routes them to your Utility Provider organization."}
-            action={hasFilters(filters) ? { label: "Clear filters", onClick: clearFilters } : undefined}
+            action={hasFilters(filters) ? { label: "Clear Filters", onClick: clearFilters } : undefined}
           />
         )}
       </Card>

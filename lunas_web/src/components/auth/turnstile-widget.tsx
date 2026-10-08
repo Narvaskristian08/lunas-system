@@ -79,7 +79,7 @@ export function TurnstileWidget({
         strategy="afterInteractive"
         onReady={renderWidget}
       />
-      <div ref={containerRef} className="min-h-16" aria-label="CAPTCHA verification" />
+      <div ref={containerRef} className="min-h-16" aria-label="CAPTCHA Verification" />
       <input type="hidden" name="captchaToken" value={token} />
     </div>
   );

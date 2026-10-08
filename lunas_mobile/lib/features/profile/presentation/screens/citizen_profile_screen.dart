@@ -16,10 +16,8 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text(
-          'You will be signed out on this device.',
-        ),
+        title: const Text('Sign Out?'),
+        content: const Text('You will be signed out on this device.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -27,7 +25,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Sign out'),
+            child: const Text('Sign Out'),
           ),
         ],
       ),
@@ -43,7 +41,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         ? user.firstName[0].toUpperCase()
         : '?';
     return CitizenScaffold(
-      title: 'Profile',
+      title: 'My Profile',
       subtitle: 'Your LUNAS citizen account',
       showReportFab: false,
       body: Column(
@@ -52,42 +50,42 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
           ProfileHero(
             name: user?.fullName ?? 'Citizen',
             email: user?.email ?? '',
-            role: 'Citizen account',
+            role: 'Citizen Account',
             initials: avatarInitial,
             imageUrl: user?.profileImage,
           ),
           const SizedBox(height: AppSpacing.md),
           ProfileSection(
-            title: 'Account details',
+            title: 'Account Details',
             child: Column(
               children: [
                 ProfileReadOnlyField(
-                  label: 'First name',
+                  label: 'First Name',
                   value: user?.firstName ?? '',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProfileReadOnlyField(
-                  label: 'Last name',
+                  label: 'Last Name',
                   value: user?.lastName ?? '',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProfileReadOnlyField(
-                  label: 'Mobile number',
+                  label: 'Mobile Number',
                   value: user?.phone ?? '',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProfileReadOnlyField(
-                  label: 'Address (optional)',
+                  label: 'Address',
                   value: user?.address?['street']?.toString() ?? '',
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                OutlinedButton.icon(
-                  onPressed: auth.isSubmitting ? null : _confirmLogout,
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Sign out'),
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          OutlinedButton.icon(
+            onPressed: auth.isSubmitting ? null : _confirmLogout,
+            icon: const Icon(Icons.logout_rounded, size: 20),
+            label: const Text('Sign Out'),
           ),
         ],
       ),

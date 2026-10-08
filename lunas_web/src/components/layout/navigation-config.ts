@@ -10,7 +10,7 @@ import {
   UserRound,
   Route,
 } from "lucide-react";
-import type { Permission } from "@/types";
+import type { BackendUserRole, Permission } from "@/types";
 
 export interface NavItem {
   label: string;
@@ -18,38 +18,40 @@ export interface NavItem {
   icon: LucideIcon;
   permission?: Permission;
   exact?: boolean;
+  hiddenForRoles?: BackendUserRole[];
+  visibleForRoles?: BackendUserRole[];
 }
 
 export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", href: "/dashboard", icon: CircleGauge, permission: "dashboard.view", exact: true }],
-  },
-  {
-    label: "Official review",
-    items: [{ label: "Pending validation", href: "/validation-routing", icon: ClipboardCheck, permission: "reports.view" }],
-  },
-  {
-    label: "Maintenance operations",
     items: [
-      { label: "Routed incidents", href: "/work-orders/intake", icon: Route, permission: "work_orders.manage" },
-      { label: "Work orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view" },
-      { label: "SLA monitor", href: "/sla", icon: Timer, permission: "sla.view" },
+      { label: "Dashboard", href: "/dashboard", icon: CircleGauge, permission: "dashboard.view", exact: true },
+      { label: "Notifications", href: "/notifications", icon: Bell, permission: "notifications.view", hiddenForRoles: ["admin"] },
+    ],
+  },
+  {
+    label: "Maintenance Operations",
+    items: [
+      { label: "Pending Validation", href: "/validation-routing", icon: ClipboardCheck, permission: "reports.view" },
+      { label: "Routed Incidents", href: "/work-orders/intake", icon: Route, permission: "work_orders.manage" },
+      { label: "Work Orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view" },
+      { label: "SLA Monitor", href: "/sla", icon: Timer, permission: "sla.view", hiddenForRoles: ["city_engineer", "utility_provider"] },
     ],
   },
   {
     label: "Updates",
-    items: [{ label: "Notifications", href: "/notifications", icon: Bell, permission: "notifications.view" }],
+    items: [{ label: "Notifications", href: "/notifications", icon: Bell, permission: "notifications.view", visibleForRoles: ["admin"] }],
   },
   {
     label: "Administration",
-    items: [{ label: "Authorized accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" }, { label: "Audit trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
+    items: [{ label: "Authorized Accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" }, { label: "Audit Trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
   },
   {
     label: "Account",
     items: [
-      { label: "My profile", href: "/profile", icon: UserRound, permission: "profile.manage" },
-      { label: "Help & support", href: "/help", icon: HelpCircle, permission: "support.create" },
+      { label: "My Profile", href: "/profile", icon: UserRound, permission: "profile.manage" },
+      { label: "Help & Support", href: "/help", icon: HelpCircle, permission: "support.create" },
     ],
   },
 ];

@@ -13,11 +13,11 @@ import { Button } from "@/components/ui/button";
 import { useConnectivity } from "@/components/providers/connectivity-provider";
 
 const outcomeActions = {
-  UNVERIFIED: { href: "/verify-account", label: "Verify account" },
-  SUSPENDED: { href: "mailto:lunas-support@dagupan.gov.ph", label: "Contact support" },
-  DEACTIVATED: { href: "mailto:lunas-support@dagupan.gov.ph", label: "Contact support" },
-  RATE_LIMITED: { href: "/forgot-password", label: "Reset password" },
-  MAINTENANCE: { href: "/maintenance", label: "View system status" },
+  UNVERIFIED: { href: "/verify-account", label: "Verify Account" },
+  SUSPENDED: { href: "mailto:lunas-support@dagupan.gov.ph", label: "Contact Support" },
+  DEACTIVATED: { href: "mailto:lunas-support@dagupan.gov.ph", label: "Contact Support" },
+  RATE_LIMITED: { href: "/forgot-password", label: "Reset Password" },
+  MAINTENANCE: { href: "/maintenance", label: "View System Status" },
 } as const;
 
 const initialLoginState: LoginActionState = { status: "idle", attempt: 0 };
@@ -97,7 +97,7 @@ export function LoginForm({
         <FormField
           ref={emailRef}
           id="email"
-          label="Authorized email address"
+          label="Authorized Email Address"
           required
           error={state.fieldErrors?.email}
           helperText="Use the email assigned to your LUNAS account."
@@ -145,7 +145,7 @@ export function LoginForm({
 
         <Button type="submit" size="lg" className="w-full" loading={pending} loadingLabel="Signing in…" disabled={(checked && !online) || (!captchaDisabled && !captchaVerified)}>
           <LockKeyhole className="size-4.5" aria-hidden="true" />
-          Sign in to command center
+          Sign in to Command Center
         </Button>
       </form>
 

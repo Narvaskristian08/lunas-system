@@ -24,7 +24,7 @@ export function SearchInput({
         {...props}
       />
       {value && onClear ? (
-        <button type="button" onClick={onClear} className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Clear search">
+        <button type="button" onClick={onClear} className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Clear Search">
           <X className="size-4" aria-hidden="true" />
         </button>
       ) : null}

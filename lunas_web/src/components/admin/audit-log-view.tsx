@@ -50,7 +50,7 @@ export function AuditLogView({
     <div className="mx-auto max-w-[1680px]">
       <PageHeader
         eyebrow="LUNAS · Security accountability"
-        title="Audit & security"
+        title="Audit & Security"
         description="Read-only records for authentication, account provisioning, access changes, and operational decisions."
       />
 
@@ -61,20 +61,20 @@ export function AuditLogView({
           </label>
           <label className="text-sm font-semibold text-slate-700">Result
             <select name="status" defaultValue={filters.status ?? ""} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 px-3 font-normal">
-              <option value="">All results</option><option value="success">Success</option><option value="failure">Failure</option><option value="warning">Warning</option>
+              <option value="">All Results</option><option value="success">Success</option><option value="failure">Failure</option><option value="warning">Warning</option>
             </select>
           </label>
           <label className="text-sm font-semibold text-slate-700">Source
             <select name="source" defaultValue={filters.source ?? ""} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 px-3 font-normal">
-              <option value="">All sources</option><option value="web">Web</option><option value="mobile">Mobile</option><option value="api">API</option><option value="system">System</option>
+              <option value="">All Sources</option><option value="web">Web</option><option value="mobile">Mobile</option><option value="api">API</option><option value="system">System</option>
             </select>
           </label>
-          <button type="submit" className="min-h-11 self-end rounded-xl bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-800">Apply filters</button>
+          <button type="submit" className="min-h-11 self-end rounded-xl bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-800">Apply Filters</button>
         </form>
       </Card>
 
       <Card className="overflow-hidden">
-        <CardHeader title="Security audit trail" description={`${page.pagination.total} recorded event${page.pagination.total === 1 ? "" : "s"}. Secrets and one-time codes are redacted before storage.`} />
+        <CardHeader title="Security Audit Trail" description={`${page.pagination.total} recorded event${page.pagination.total === 1 ? "" : "s"}. Secrets and one-time codes are redacted before storage.`} />
         {error ? <EmptyState icon="data" title="Audit trail unavailable" description={error} /> : page.records.length ? (
           <DataTable
             caption="Audit and security records"
@@ -93,7 +93,7 @@ export function AuditLogView({
           />
         ) : <EmptyState icon="search" title="No matching audit events" description="No server-generated records match the selected filters." />}
         {!error && page.pagination.pages > 1 ? (
-          <nav className="flex items-center justify-between border-t border-slate-200 px-5 py-4 text-sm" aria-label="Audit log pages">
+          <nav className="flex items-center justify-between border-t border-slate-200 px-5 py-4 text-sm" aria-label="Audit Log Pages">
             {pageNumber > 1 ? <Link className="font-semibold text-brand-700" href={pageHref(pageNumber - 1)}>Previous</Link> : <span />}
             <span className="text-slate-600">Page {pageNumber} of {page.pagination.pages}</span>
             {pageNumber < page.pagination.pages ? <Link className="font-semibold text-brand-700" href={pageHref(pageNumber + 1)}>Next</Link> : <span />}

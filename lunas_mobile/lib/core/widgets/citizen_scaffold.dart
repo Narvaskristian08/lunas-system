@@ -10,9 +10,10 @@ class CitizenScaffold extends StatelessWidget {
     required this.title,
     required this.body,
     this.subtitle,
+    this.titleWidget,
     this.actions,
     this.floatingActionButton,
-    this.showReportFab = true,
+    this.showReportFab = false,
     this.showBackButton = false,
     this.fillAvailableHeight = false,
     super.key,
@@ -20,6 +21,7 @@ class CitizenScaffold extends StatelessWidget {
 
   final String title;
   final String? subtitle;
+  final Widget? titleWidget;
   final Widget body;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
@@ -31,6 +33,7 @@ class CitizenScaffold extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: LunasAppBar(
       title: title,
+      titleWidget: titleWidget,
       subtitle: subtitle,
       actions: actions,
       showBackButton: showBackButton,
@@ -67,7 +70,7 @@ class CitizenScaffold extends StatelessWidget {
             ? FloatingActionButton.extended(
                 onPressed: () => context.push('/reports/new'),
                 icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('New report'),
+                label: const Text('New Report'),
               )
             : null),
   );

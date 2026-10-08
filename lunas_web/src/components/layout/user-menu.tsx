@@ -64,12 +64,12 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
               <MenuLink href="/help" icon={HelpCircle} onClick={() => setOpen(false)}>Help & support</MenuLink>
             </div>
             <div className="p-2">
-              <button type="button" onClick={() => { setOpen(false); setLogoutOpen(true); }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50" role="menuitem"><LogOut className="size-4.5" aria-hidden="true" /> Sign out</button>
+              <button type="button" onClick={() => { setOpen(false); setLogoutOpen(true); }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50" role="menuitem"><LogOut className="size-4.5" aria-hidden="true" /> Sign Out</button>
             </div>
           </div>
         ) : null}
       </div>
-      <ConfirmationDialog open={logoutOpen} title="Sign out of LUNAS?" description="Your secure command-center session will end. Any unsaved changes on this page will be lost." confirmLabel="Confirm sign out" destructive loading={loggingOut} onClose={() => setLogoutOpen(false)} onConfirm={logout} />
+      <ConfirmationDialog open={logoutOpen} title="Sign out of LUNAS?" description="Your secure command-center session will end. Any unsaved changes on this page will be lost." confirmLabel="Confirm Sign Out" destructive loading={loggingOut} onClose={() => setLogoutOpen(false)} onConfirm={logout} />
     </>
   );
 }

@@ -21,28 +21,28 @@ function statusTone(status: string): Severity {
 function dashboardCopy(viewer: UserProfile) {
   if (viewer.backendRole === "utility_provider") {
     return {
-      eyebrow: `${viewer.organization} · Provider operations`,
-      title: "Provider work orders",
+      eyebrow: `${viewer.organization} · Provider Operations`,
+      title: "Provider Work Orders",
       description: "Live maintenance activity routed to your responsible organization.",
-      recordsTitle: "Recent work orders",
+      recordsTitle: "Recent Work Orders",
       recordsDescription: "Only records in the provider scope returned by the backend are shown.",
     };
   }
   if (viewer.backendRole === "barangay_official") {
     return {
-      eyebrow: `${viewer.organization} · Barangay review`,
-      title: "Barangay review dashboard",
+      eyebrow: `${viewer.organization} · Barangay Review`,
+      title: "Barangay Review Dashboard",
       description: "Review citizen reports assigned to your Barangay and forward validated incidents to City Engineering.",
-      recordsTitle: "Reports awaiting Barangay review",
+      recordsTitle: "Reports Awaiting Barangay Review",
       recordsDescription: "Only reports in your assigned Barangay are shown here.",
     };
   }
   if (viewer.backendRole === "city_engineer") {
     return {
-      eyebrow: "City Engineering · Citywide operations",
-      title: "Engineering dashboard",
+      eyebrow: "City Engineering · Citywide Operations",
+      title: "Engineering Dashboard",
       description: "Review Barangay-validated reports, monitor provider repairs, and verify accepted completion before closure.",
-      recordsTitle: "Reports and repairs awaiting City Engineering",
+      recordsTitle: "Reports and Repairs Awaiting City Engineering",
       recordsDescription: "Provider-approved repairs and Barangay-validated reports are linked to their review pages.",
     };
   }
@@ -75,7 +75,7 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
               { key: "report", label: "Report" },
               { key: "location", label: "Location" },
               { key: "priority", label: "Priority" },
-              { key: "status", label: "Current status" },
+              { key: "status", label: "Current Status" },
             ]}
             rows={data.records.map((record) => ({
               id: record.id,

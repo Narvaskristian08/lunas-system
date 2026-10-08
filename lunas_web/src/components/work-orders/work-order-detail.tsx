@@ -124,7 +124,7 @@ function AssignmentPanel({
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current assignee</p>
+              <p className="text-xs font-bold tracking-normal text-slate-500">Current Assignee</p>
               <p className="mt-1 font-semibold text-slate-950">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p>
               {workOrder.assignee?.team ? <p className="mt-1 text-sm text-slate-600">{workOrder.assignee.team}</p> : null}
             </div>
@@ -138,7 +138,7 @@ function AssignmentPanel({
         {canChangeAssignment ? <form onSubmit={submit} className="space-y-3">
           <label className="block text-sm font-semibold text-slate-800">{isReassignment ? "Reassign to" : "Assign repair personnel"}
             <select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)} required className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
-              <option value="">Select organization personnel</option>
+              <option value="">Select Organization Personnel</option>
               {eligiblePersonnel.map((person) => <option key={person.id} value={person.id}>{personName(person)}{person.team ? ` · ${person.team}` : ""}{person.availability ? ` · ${titleCase(person.availability)}` : ""}</option>)}
             </select>
           </label>
@@ -151,9 +151,9 @@ function AssignmentPanel({
       <ConfirmationDialog
         open={confirmReassignment}
         icon="none"
-        title="Confirm repair handoff"
+        title="Confirm Repair Handoff"
         description={`Reassign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected repair personnel"}? Existing progress, evidence, history, and the SLA deadline will be preserved, and field updates will pause until acceptance.`}
-        confirmLabel="Confirm reassignment"
+        confirmLabel="Confirm Reassignment"
         loading={pending}
         onClose={() => !pending && setConfirmReassignment(false)}
         onConfirm={runAssignment}
@@ -185,9 +185,9 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Field repair actions" description="Actions apply only to the currently assigned repair personnel and are revalidated by the API." />
+      <CardHeader title="Field Repair Actions" description="Actions apply only to the currently assigned repair personnel and are revalidated by the API." />
       <div className="space-y-4 p-5">
-        {canAccept ? <div className="grid gap-2 sm:grid-cols-2"><Button type="button" loading={pending} onClick={() => run(() => acceptWorkOrderAction(workOrder.id))}><UserRoundCheck className="size-4" />Accept assignment</Button><Button type="button" variant="secondary" onClick={() => document.getElementById("decline-assignment")?.focus()} disabled={pending}><XCircle className="size-4" />Decline assignment</Button></div> : null}
+        {canAccept ? <div className="grid gap-2 sm:grid-cols-2"><Button type="button" loading={pending} onClick={() => run(() => acceptWorkOrderAction(workOrder.id))}><UserRoundCheck className="size-4" />Accept Assignment</Button><Button type="button" variant="secondary" onClick={() => document.getElementById("decline-assignment")?.focus()} disabled={pending}><XCircle className="size-4" />Decline Assignment</Button></div> : null}
 
         {canAccept ? <form onSubmit={(event) => { event.preventDefault(); if (!declineReason.trim()) return; run(() => declineWorkOrderAction({ workOrderId: workOrder.id, reason: declineReason, notes: declineNotes })); }} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <label className="block text-sm font-semibold text-slate-800">Decline reason
@@ -196,10 +196,10 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
           <label className="block text-sm font-semibold text-slate-800">Additional notes <span className="font-normal text-slate-500">(optional)</span>
             <textarea value={declineNotes} onChange={(event) => setDeclineNotes(event.target.value)} maxLength={2000} className="mt-1 min-h-16 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" />
           </label>
-          <Button type="submit" variant="danger" className="w-full" loading={pending} loadingLabel="Declining…">Submit decline</Button>
+          <Button type="submit" variant="danger" className="w-full" loading={pending} loadingLabel="Declining…">Submit Decline</Button>
         </form> : null}
 
-        {canStart ? <Button type="button" className="w-full" loading={pending} loadingLabel="Starting…" onClick={() => setConfirmStart(true)}><Play className="size-4" />Start repair work</Button> : null}
+        {canStart ? <Button type="button" className="w-full" loading={pending} loadingLabel="Starting…" onClick={() => setConfirmStart(true)}><Play className="size-4" />Start Repair Work</Button> : null}
 
         {canProgress ? <form onSubmit={(event) => { event.preventDefault(); if (progressPercent === 100) { const formData = new FormData(event.currentTarget); run(() => completeRepairWorkAction(formData)); } else { run(() => updateRepairProgressAction({ workOrderId: workOrder.id, progressPercent, notes: progressNotes })); } }} className="space-y-3 rounded-xl border border-slate-200 p-4">
           <input type="hidden" name="workOrderId" value={workOrder.id} />
@@ -214,14 +214,14 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
             <textarea name="notes" value={progressNotes} onChange={(event) => setProgressNotes(event.target.value)} required={progressPercent === 100} minLength={progressPercent === 100 ? 2 : undefined} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Describe field conditions or work completed" />
           </label>
           {progressPercent === 100 ? <label className="block text-sm font-semibold text-slate-800">Final post-maintenance evidence <span className="text-red-700">(required)</span><input name="finalEvidence" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800" /><span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG, or WebP; up to 10 MB. Submitted atomically with completion.</span></label> : null}
-          <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving progress…"><Wrench className="size-4" />{progressPercent === 100 ? "Complete repair and submit evidence" : "Save progress update"}</Button>
+          <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving Progress…"><Wrench className="size-4" />{progressPercent === 100 ? "Complete repair and submit evidence" : "Save progress update"}</Button>
         </form> : null}
 
-        {workOrder.status === "completed" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Repair completed · awaiting Utility Provider review</p><p className="mt-1">Your completion and final evidence are submitted. The incident remains open until the provider and City Engineering finish their reviews.</p></div> : null}
-        {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective work requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and submit final evidence again at 100%.</p></div> : null}
+        {workOrder.status === "completed" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Repair Completed · Awaiting Utility Provider Review</p><p className="mt-1">Your completion and final evidence are submitted. The incident remains open until the provider and City Engineering finish their reviews.</p></div> : null}
+        {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective Work Requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and submit final evidence again at 100%.</p></div> : null}
         {!canAccept && !canStart && !canProgress && workOrder.status !== "completed" ? <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">This work order is waiting for its next controlled assignment or repair transition.</p> : null}
       </div>
-      <ConfirmationDialog open={confirmStart} icon="none" title="Start repair work" description="This records the start time and changes the work order to in progress. It does not complete or verify the repair." confirmLabel="Start work" loading={pending} onClose={() => !pending && setConfirmStart(false)} onConfirm={() => { setConfirmStart(false); run(() => startWorkOrderAction(workOrder.id)); }} />
+      <ConfirmationDialog open={confirmStart} icon="none" title="Start Repair Work" description="This records the start time and changes the work order to in progress. It does not complete or verify the repair." confirmLabel="Start Work" loading={pending} onClose={() => !pending && setConfirmStart(false)} onConfirm={() => { setConfirmStart(false); run(() => startWorkOrderAction(workOrder.id)); }} />
     </Card>
   );
 }
@@ -253,7 +253,7 @@ function CompletionReviewPanel({
   return (
     <Card className="overflow-hidden">
       <CardHeader
-        title={canProviderReview ? "Utility Provider completion review" : canCoordinateCorrection ? "Coordinate corrective work" : "City Engineering final verification"}
+        title={canProviderReview ? "Utility Provider Completion Review" : canCoordinateCorrection ? "Coordinate Corrective Work" : "City Engineering Final Verification"}
         description={canProviderReview
           ? "Review the repair notes and final evidence before accepting the work or returning it for correction."
           : canCoordinateCorrection
@@ -269,20 +269,20 @@ function CompletionReviewPanel({
             <textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} maxLength={4000} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" />
           </label>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Button type="button" loading={pending} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason, instructions }))}><ClipboardCheck className="size-4" />Accept and forward to City Engineering</Button>
-            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions }))}><Wrench className="size-4" />Request corrective work</Button>
+            <Button type="button" loading={pending} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason, instructions }))}><ClipboardCheck className="size-4" />Accept and Forward to City Engineering</Button>
+            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions }))}><Wrench className="size-4" />Request Corrective Work</Button>
           </div>
         </> : null}
         {canCoordinateCorrection ? <>
           <label className="block text-sm font-semibold text-slate-800">Corrective instructions<textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} required minLength={2} maxLength={4000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain the City Engineering return and the work needed" /></label>
-          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => run(() => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }))}><Wrench className="size-4" />Send correction to Repair Personnel</Button>
+          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => run(() => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }))}><Wrench className="size-4" />Send Correction to Repair Personnel</Button>
         </> : null}
         {canFinalReview ? <>
           <label className="block text-sm font-semibold text-slate-800">Final review note or return reason {<span className="font-normal text-slate-500">(required when returning)</span>}
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" />
           </label>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Button type="button" loading={pending} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "approved", reason }))}><ClipboardCheck className="size-4" />Verify and resolve incident</Button>
+            <Button type="button" loading={pending} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "approved", reason }))}><ClipboardCheck className="size-4" />Verify and Resolve Incident</Button>
             <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "return", reason }))}><Wrench className="size-4" />Return to Utility Provider</Button>
           </div>
         </> : null}
@@ -293,7 +293,7 @@ function CompletionReviewPanel({
 
 function WorkOrderReviews({ workOrder }: { workOrder: WorkOrder }) {
   if (!workOrder.reviews.length) return null;
-  return <Card className="overflow-hidden"><CardHeader title="Completion review history" description="Provider and City Engineering decisions recorded by the backend." /><ol className="divide-y divide-slate-200">{workOrder.reviews.map((review) => <li key={review.id} className="space-y-1 px-5 py-4"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{titleCase(review.stage)} · {titleCase(review.decision)}</p>{review.createdAt ? <span className="text-xs text-slate-500">{formatDateTime(review.createdAt)}</span> : null}</div>{review.reason ? <p className="text-sm leading-6 text-slate-700">{review.reason}</p> : null}{review.instructions && review.instructions !== review.reason ? <p className="text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p> : null}</li>)}</ol></Card>;
+  return <Card className="overflow-hidden"><CardHeader title="Completion Review History" description="Provider and City Engineering decisions recorded by the backend." /><ol className="divide-y divide-slate-200">{workOrder.reviews.map((review) => <li key={review.id} className="space-y-1 px-5 py-4"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{titleCase(review.stage)} · {titleCase(review.decision)}</p>{review.createdAt ? <span className="text-xs text-slate-500">{formatDateTime(review.createdAt)}</span> : null}</div>{review.reason ? <p className="text-sm leading-6 text-slate-700">{review.reason}</p> : null}{review.instructions && review.instructions !== review.reason ? <p className="text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p> : null}</li>)}</ol></Card>;
 }
 
 function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; onResult: (result: WorkOrderActionResult) => void }) {
@@ -304,7 +304,7 @@ function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; o
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Add field evidence" description="JPEG, PNG, or WebP images; upload confirmation comes from the server." />
+      <CardHeader title="Add Field Evidence" description="JPEG, PNG, or WebP images; upload confirmation comes from the server." />
       <form onSubmit={(event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -322,9 +322,9 @@ function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; o
         </label>
         <p className="text-xs leading-5 text-slate-600">{selectedCount ? `${selectedCount} image${selectedCount === 1 ? "" : "s"} selected.` : "Up to five images, 10 MB each. Image validation, privacy redaction, metadata removal, and private storage happen on the backend."}</p>
         <label className="block text-sm font-semibold text-slate-800">Caption <span className="font-normal text-slate-500">(optional)</span>
-          <input name="caption" maxLength={500} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="What this field evidence shows" />
+          <input name="caption" maxLength={500} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="What This Field Evidence Shows" />
         </label>
-        <Button type="submit" variant="secondary" className="w-full" loading={pending} loadingLabel="Uploading…"><Upload className="size-4" />Upload evidence</Button>
+        <Button type="submit" variant="secondary" className="w-full" loading={pending} loadingLabel="Uploading…"><Upload className="size-4" />Upload Evidence</Button>
       </form>
     </Card>
   );
@@ -346,8 +346,8 @@ function WorkOrderTimeline({ workOrder }: { workOrder: WorkOrder }) {
   const events = useMemo(() => [...workOrder.history].sort((left, right) => (right.createdAt ?? "").localeCompare(left.createdAt ?? "")), [workOrder.history]);
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Operational timeline" description="Append-oriented work-order events returned by the backend." />
-      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Repair reached 100%" : titleCase(entry.type ?? entry.status, "Work-order update")}</p>{entry.progressPercent !== undefined ? <Badge tone={entry.progressPercent === 100 ? "success" : "information"}>{entry.progressPercent}%</Badge> : null}</div>{entry.stage ? <p className="mt-1 text-xs font-semibold text-slate-500">{titleCase(entry.stage)}</p> : null}{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
+      <CardHeader title="Operational Timeline" description="Append-oriented work-order events returned by the backend." />
+      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Repair Reached 100%" : titleCase(entry.type ?? entry.status, "Work Order Update")}</p>{entry.progressPercent !== undefined ? <Badge tone={entry.progressPercent === 100 ? "success" : "information"}>{entry.progressPercent}%</Badge> : null}</div>{entry.stage ? <p className="mt-1 text-xs font-semibold text-slate-500">{titleCase(entry.stage)}</p> : null}{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
     </Card>
   );
 }
@@ -380,9 +380,9 @@ export function WorkOrderDetail({
 
   return (
     <div className="mx-auto max-w-[1480px]">
-      <Breadcrumbs items={[{ label: "Work orders", href: "/work-orders" }, { label: workOrder.reference }]} />
+      <Breadcrumbs items={[{ label: "Work Orders", href: "/work-orders" }, { label: workOrder.reference }]} />
       <PageHeader
-        eyebrow={`${workOrder.responsibleOrganization ?? "Maintenance"} · ${workOrder.jurisdiction?.barangay ?? "Authorized scope"}`}
+        eyebrow={`${workOrder.responsibleOrganization ?? "Maintenance"} · ${workOrder.jurisdiction?.barangay ?? "Authorized Scope"}`}
         title={workOrder.reference}
         description={workOrder.incident?.category ? `${titleCase(workOrder.incident.category)} repair work order` : "Maintenance work order"}
         actions={<><StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrder.status === "completed" ? "Completed · provider review" : titleCase(workOrder.status)}</StatusBadge><StatusBadge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)}</StatusBadge></>}
@@ -390,43 +390,43 @@ export function WorkOrderDetail({
       <ActionNotice message={notice?.message} kind={notice?.kind} />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Repair progress</p><ProgressBar value={workOrder.progressPercent} className="mt-3" /><p className="mt-2 text-sm font-semibold text-slate-900">{titleCase(workOrder.progressStage)}</p></Card>
-        <Card className="p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Assignment</p><p className="mt-2 font-semibold text-slate-950">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p><StatusBadge className="mt-2" tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge></Card>
-        <Card className="p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">SLA deadline</p>{workOrder.sla.deadline ? <><p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(workOrder.sla.deadline)}</p><p className="mt-1 text-xs text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Deadline supplied by backend"}</p></> : <p className="mt-2 text-sm text-slate-600">No deadline returned</p>}</Card>
-        <Card className="p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">SLA state</p><div className="mt-2"><SlaBadges sla={workOrder.sla} /></div><p className="mt-2 text-xs text-slate-600">State is calculated by the backend.</p></Card>
+        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Repair Progress</p><ProgressBar value={workOrder.progressPercent} className="mt-3" /><p className="mt-2 text-sm font-semibold text-slate-900">{titleCase(workOrder.progressStage)}</p></Card>
+        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Assignment</p><p className="mt-2 font-semibold text-slate-950">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p><StatusBadge className="mt-2" tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge></Card>
+        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA Deadline</p>{workOrder.sla.deadline ? <><p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(workOrder.sla.deadline)}</p><p className="mt-1 text-xs text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Deadline supplied by backend"}</p></> : <p className="mt-2 text-sm text-slate-600">No deadline returned</p>}</Card>
+        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA State</p><div className="mt-2"><SlaBadges sla={workOrder.sla} /></div><p className="mt-2 text-xs text-slate-600">State is calculated by the backend.</p></Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-6">
           <Card className="overflow-hidden">
-            <CardHeader title="Incident and work-order information" description="The citizen report remains separate from the maintenance task." />
+            <CardHeader title="Incident and Work-order Information" description="The citizen report remains separate from the maintenance task." />
             <dl className="grid divide-y divide-slate-200 text-sm sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-              <div className="p-5"><dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Incident reference</dt><dd className="mt-1.5 font-semibold text-slate-950">{workOrder.incident?.reportNumber ?? "Unavailable"}</dd></div>
-              <div className="p-5"><dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Responsible organization</dt><dd className="mt-1.5 font-semibold text-slate-950">{workOrder.responsibleOrganization ?? "Not routed"}</dd></div>
-              <div className="p-5"><dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Location</dt><dd className="mt-1.5 leading-6 text-slate-800">{formatLocation(incidentLocation)}</dd>{mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline"><MapPin className="size-3.5" />Open directions <ExternalLink className="size-3.5" /></a> : null}</div>
-              <div className="p-5"><dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Created</dt><dd className="mt-1.5 text-slate-800">{workOrder.createdAt ? formatDateTime(workOrder.createdAt) : "Unavailable"}</dd>{workOrder.startedAt ? <p className="mt-3 text-xs text-slate-600">Started {formatDateTime(workOrder.startedAt)}</p> : null}</div>
-              <div className="p-5 sm:col-span-2"><dt className="text-xs font-bold uppercase tracking-wide text-slate-500">Work instructions</dt><dd className="mt-1.5 whitespace-pre-wrap leading-6 text-slate-800">{workOrder.instructions ?? "No additional work instructions were provided."}</dd></div>
+              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Incident Reference</dt><dd className="mt-1.5 font-semibold text-slate-950">{workOrder.incident?.reportNumber ?? "Unavailable"}</dd></div>
+              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Responsible Organization</dt><dd className="mt-1.5 font-semibold text-slate-950">{workOrder.responsibleOrganization ?? "Not routed"}</dd></div>
+              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Location</dt><dd className="mt-1.5 leading-6 text-slate-800">{formatLocation(incidentLocation)}</dd>{mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline"><MapPin className="size-3.5" />Open directions <ExternalLink className="size-3.5" /></a> : null}</div>
+              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Created</dt><dd className="mt-1.5 text-slate-800">{workOrder.createdAt ? formatDateTime(workOrder.createdAt) : "Unavailable"}</dd>{workOrder.startedAt ? <p className="mt-3 text-xs text-slate-600">Started {formatDateTime(workOrder.startedAt)}</p> : null}</div>
+              <div className="p-5 sm:col-span-2"><dt className="text-xs font-bold tracking-normal text-slate-500">Work Instructions</dt><dd className="mt-1.5 whitespace-pre-wrap leading-6 text-slate-800">{workOrder.instructions ?? "No additional work instructions were provided."}</dd></div>
             </dl>
           </Card>
 
           <Card className="overflow-hidden">
-            <CardHeader title="Citizen report" description="Only repair-relevant report information is shown." />
+            <CardHeader title="Citizen Report" description="Only repair-relevant report information is shown." />
             <div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{titleCase(workOrder.incident?.category, "Uncategorized")}</Badge>{workOrder.incident?.priority ? <Badge tone={priorityTone(workOrder.incident.priority)}>{titleCase(workOrder.incident.priority)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{workOrder.incident?.description ?? "No citizen description is available."}</p></div>
           </Card>
 
-          <EvidenceGallery title="Citizen evidence" description="Short-lived signed evidence URLs are supplied by the protected API. New evidence is privacy-redacted before storage." evidence={workOrder.incident?.images ?? []} />
-          <EvidenceGallery title="Repair field evidence" description="Traceable maintenance evidence uploaded during repair progress is privacy-redacted before storage." evidence={workOrder.evidence} />
+          <EvidenceGallery title="Citizen Evidence" description="Short-lived signed evidence URLs are supplied by the protected API. New evidence is privacy-redacted before storage." evidence={workOrder.incident?.images ?? []} />
+          <EvidenceGallery title="Repair Field Evidence" description="Traceable maintenance evidence uploaded during repair progress is privacy-redacted before storage." evidence={workOrder.evidence} />
           <WorkOrderReviews workOrder={workOrder} />
           <WorkOrderTimeline workOrder={workOrder} />
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <Card className="overflow-hidden"><CardHeader title="SLA monitoring" description="The API is the source of truth for deadline state." /><div className="space-y-4 p-5"><SlaBadges sla={workOrder.sla} includeDeadline />{workOrder.sla.targetResolutionTime ? <p className="text-sm text-slate-700">Target: {workOrder.sla.targetResolutionTime} hours</p> : null}{workOrder.sla.isApproaching ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><Clock3 className="mr-1 inline size-4" /> Deadline is approaching. Keep the responsible organization and assigned team informed.</p> : null}{workOrder.sla.isOverdue ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950"><AlertTriangle className="mr-1 inline size-4" /> This work order is overdue. It remains open and is not automatically closed or rejected.</p> : null}</div></Card>
+          <Card className="overflow-hidden"><CardHeader title="SLA Monitoring" description="The API is the source of truth for deadline state." /><div className="space-y-4 p-5"><SlaBadges sla={workOrder.sla} includeDeadline />{workOrder.sla.targetResolutionTime ? <p className="text-sm text-slate-700">Target: {workOrder.sla.targetResolutionTime} hours</p> : null}{workOrder.sla.isApproaching ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><Clock3 className="mr-1 inline size-4" /> Deadline is approaching. Keep the responsible organization and assigned team informed.</p> : null}{workOrder.sla.isOverdue ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950"><AlertTriangle className="mr-1 inline size-4" /> This work order is overdue. It remains open and is not automatically closed or rejected.</p> : null}</div></Card>
           {official ? <AssignmentPanel workOrder={workOrder} eligiblePersonnel={eligiblePersonnel} onResult={result} /> : null}
           {repairAssignee ? <><RepairActions workOrder={workOrder} onResult={result} /><RepairEvidenceUpload workOrder={workOrder} onResult={result} /></> : null}
           <CompletionReviewPanel workOrder={workOrder} viewer={viewer} onResult={result} />
-          <Card className="overflow-hidden"><CardHeader title="Assignment history" description="Previous assignments remain available for audit and reassignment context." />{workOrder.assignments.length ? <ol className="divide-y divide-slate-200">{workOrder.assignments.map((assignment) => <li key={assignment.id} className="p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-900">{formatPerson(assignment.assignee?.firstName, assignment.assignee?.lastName)}</p><StatusBadge tone={assignmentTone(assignment.status)}>{titleCase(assignment.status)}</StatusBadge></div>{assignment.assignedAt ? <p className="mt-1 text-xs text-slate-600">Assigned {formatDateTime(assignment.assignedAt)}</p> : null}{assignment.endedAt ? <p className="mt-1 text-xs text-slate-600">Ended {formatDateTime(assignment.endedAt)}</p> : null}{assignment.declineReason ? <p className="mt-2 text-sm leading-6 text-red-800">Decline reason: {assignment.declineReason}</p> : null}{assignment.endedReason ? <p className="mt-2 text-sm leading-6 text-slate-600">Reassignment: {assignment.endedReason}</p> : null}</li>)}</ol> : <p className="p-5 text-sm text-slate-600">No assignment history is available yet.</p>}</Card>
-          <Link href="/work-orders" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"><Route className="size-4" />Return to work orders<ChevronRight className="size-4" /></Link>
+          <Card className="overflow-hidden"><CardHeader title="Assignment History" description="Previous assignments remain available for audit and reassignment context." />{workOrder.assignments.length ? <ol className="divide-y divide-slate-200">{workOrder.assignments.map((assignment) => <li key={assignment.id} className="p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-900">{formatPerson(assignment.assignee?.firstName, assignment.assignee?.lastName)}</p><StatusBadge tone={assignmentTone(assignment.status)}>{titleCase(assignment.status)}</StatusBadge></div>{assignment.assignedAt ? <p className="mt-1 text-xs text-slate-600">Assigned {formatDateTime(assignment.assignedAt)}</p> : null}{assignment.endedAt ? <p className="mt-1 text-xs text-slate-600">Ended {formatDateTime(assignment.endedAt)}</p> : null}{assignment.declineReason ? <p className="mt-2 text-sm leading-6 text-red-800">Decline Reason: {assignment.declineReason}</p> : null}{assignment.endedReason ? <p className="mt-2 text-sm leading-6 text-slate-600">Reassignment: {assignment.endedReason}</p> : null}</li>)}</ol> : <p className="p-5 text-sm text-slate-600">No assignment history is available yet.</p>}</Card>
+          <Link href="/work-orders" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"><Route className="size-4" />Return to Work Orders<ChevronRight className="size-4" /></Link>
         </aside>
       </div>
     </div>

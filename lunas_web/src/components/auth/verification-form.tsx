@@ -124,7 +124,7 @@ export function VerificationForm({
         <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
           {already ? "No further verification is needed. You can sign in with your assigned credentials." : "Your identity check is complete. Your LUNAS account is ready for secure sign-in."}
         </p>
-        <Link href="/login" className={buttonStyles({ size: "lg", className: "mt-6 w-full" })}>Continue to sign in</Link>
+        <Link href="/login" className={buttonStyles({ size: "lg", className: "mt-6 w-full" })}>Continue to Sign in</Link>
       </AuthCard>
     );
   }
@@ -135,10 +135,10 @@ export function VerificationForm({
         <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-100 text-amber-800">
           <Clock3 className="size-7" aria-hidden="true" />
         </span>
-        <h2 className="mt-4 text-xl font-semibold text-slate-950">Verification link expired</h2>
+        <h2 className="mt-4 text-xl font-semibold text-slate-950">Verification Link Expired</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">Request a new verification code to continue. Your assigned account has not been changed.</p>
         {resendStatus ? <ResendAlert status={resendStatus} /> : null}
-        <Button type="button" size="lg" className="mt-6 w-full" onClick={() => void resend()} loading={resending} loadingLabel="Sending a new code…" disabled={cooldown > 0}>
+        <Button type="button" size="lg" className="mt-6 w-full" onClick={() => void resend()} loading={resending} loadingLabel="Sending a New Code…" disabled={cooldown > 0}>
           <RefreshCw className="size-4" aria-hidden="true" />
           {cooldown > 0 ? `Try again in ${cooldown}s` : "Send a new code"}
         </Button>
@@ -153,7 +153,7 @@ export function VerificationForm({
       <div className="mb-5 flex items-start gap-3 rounded-xl bg-brand-50 p-4 text-brand-900">
         <Mail className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <div>
-          <p className="text-sm font-semibold">Enter your six-digit code</p>
+          <p className="text-sm font-semibold">Enter Your Six-digit Code</p>
           <p className="mt-0.5 text-xs leading-5 text-brand-800/80">
             We sent a time-limited verification code{email ? <> to <span className="break-all font-semibold">{email}</span></> : " to your assigned email address"}.
           </p>
@@ -196,8 +196,8 @@ export function VerificationForm({
           </div>
         </fieldset>
 
-        <Button className="mt-5 w-full" size="lg" type="submit" loading={status === "verifying"} loadingLabel="Verifying code…" disabled={incomplete || (checked && !online)}>
-          Verify account
+        <Button className="mt-5 w-full" size="lg" type="submit" loading={status === "verifying"} loadingLabel="Verifying Code…" disabled={incomplete || (checked && !online)}>
+          Verify Account
         </Button>
       </form>
 

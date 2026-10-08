@@ -37,13 +37,13 @@ export function LunasBrand({
     <Link
       href={href}
       className={cn("inline-flex min-w-0 items-center gap-3 rounded-lg", className)}
-      aria-label="LUNAS command center"
+      aria-label="LUNAS Command Center"
     >
       <LunasMark />
       {!compact ? (
         <span className="min-w-0">
           <span className={cn("block text-lg font-bold tracking-[0.18em]", inverse ? "text-white" : "text-[#111c2d]")}>LUNAS</span>
-          <span className={cn("block truncate text-[10px] font-medium uppercase tracking-[0.08em]", inverse ? "text-blue-100" : "text-slate-500")}>Urban infrastructure command center</span>
+          <span className={cn("block truncate text-[10px] font-medium uppercase tracking-[0.08em]", inverse ? "text-blue-100" : "text-slate-500")}>Urban Infrastructure Command Center</span>
         </span>
       ) : null}
     </Link>

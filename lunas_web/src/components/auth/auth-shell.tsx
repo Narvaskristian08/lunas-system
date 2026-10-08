@@ -4,9 +4,9 @@ import { Activity, CheckCircle2, MapPinned, ShieldCheck } from "lucide-react";
 import { LunasBrand } from "@/components/ui/brand";
 
 const capabilities = [
-  { icon: MapPinned, label: "Citywide incident visibility" },
-  { icon: Activity, label: "Automated SLA monitoring" },
-  { icon: ShieldCheck, label: "Permission-controlled access" },
+  { icon: MapPinned, label: "Citywide Incident Visibility" },
+  { icon: Activity, label: "Automated SLA Monitoring" },
+  { icon: ShieldCheck, label: "Permission-controlled Access" },
 ];
 
 export function AuthShell({
@@ -39,7 +39,7 @@ export function AuthShell({
         <LunasBrand inverse href="/login" className="w-fit" />
 
         <div className="my-auto max-w-xl py-14">
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-200">Dagupan City operations</p>
+          <p className="mb-4 text-xs font-bold tracking-normal text-sky-200">Dagupan City Operations</p>
           <h2 className="max-w-lg text-balance text-4xl font-semibold leading-tight tracking-[-0.03em] xl:text-[2.75rem]">
             One trusted view of the city&apos;s infrastructure response.
           </h2>
@@ -47,7 +47,7 @@ export function AuthShell({
             Coordinate reports, assignments, repairs, and verification across agencies while keeping every action accountable.
           </p>
 
-          <ul className="mt-9 grid gap-3" aria-label="Command center capabilities">
+          <ul className="mt-9 grid gap-3" aria-label="Command Center Capabilities">
             {capabilities.map(({ icon: Icon, label }) => (
               <li key={label} className="flex items-center gap-3 text-sm font-medium text-blue-50">
                 <span className="flex size-9 items-center justify-center rounded-lg border border-white/15 bg-white/10">
@@ -76,7 +76,7 @@ export function AuthShell({
         <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8 sm:py-12 xl:px-14">
           <div className={wide ? "w-full max-w-2xl" : "w-full max-w-[480px]"}>
             <div className="mb-7">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">{eyebrow}</p>
+              <p className="text-xs font-bold tracking-normal text-brand-700">{eyebrow}</p>
               <h1 className="mt-2 text-balance text-3xl font-semibold tracking-[-0.025em] text-slate-950 sm:text-[2rem]">
                 {title}
               </h1>
@@ -88,7 +88,7 @@ export function AuthShell({
         </div>
 
         <footer className="px-5 pb-6 text-center text-xs text-slate-500 sm:px-8">
-          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Legal and support">
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Legal and Support">
             <Link className="rounded hover:text-brand-700 hover:underline" href="/privacy">Privacy Policy</Link>
             <Link className="rounded hover:text-brand-700 hover:underline" href="/terms">Terms and Conditions</Link>
             <a className="rounded hover:text-brand-700 hover:underline" href="mailto:lunas-support@dagupan.gov.ph">Support</a>

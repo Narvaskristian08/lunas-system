@@ -12,15 +12,15 @@ export default async function HelpPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         eyebrow="Account support"
-        title="Help and support"
+        title="Help and Support"
         description="For account-access or reporting concerns, contact the LUNAS support team through an authorized channel."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Help and support" }]}
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Help and Support" }]}
       />
       <Card className="p-6 sm:p-7">
         <div className="flex gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><Mail className="size-5" aria-hidden="true" /></span>
           <div>
-            <h2 className="font-semibold text-slate-950">Contact LUNAS support</h2>
+            <h2 className="font-semibold text-slate-950">Contact LUNAS Support</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">Use the support contact issued by your organization. Include your account email and a short description of the issue; do not include your password or a verification code.</p>
             <p className="mt-3 break-all text-sm font-semibold text-brand-800">Signed-in account: {viewer.email}</p>
           </div>

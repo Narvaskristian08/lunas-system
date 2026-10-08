@@ -194,7 +194,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2 unread updates'), findsOneWidget);
+    expect(find.text('2 Unread Updates'), findsOneWidget);
     await tester.tap(find.text('Load more'));
     await tester.pumpAndSettle();
     expect(find.text('Correction coordinated'), findsOneWidget);
@@ -203,7 +203,7 @@ void main() {
     await tester.tap(find.text('Mark All As Read'));
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
-    expect(find.text('0 unread updates'), findsOneWidget);
+    expect(find.text('0 Unread Updates'), findsOneWidget);
   });
 
   testWidgets(
@@ -238,8 +238,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repository.markedRead, ['notification-1']);
-      expect(find.text('Repair notification details route'), findsOneWidget);
-      expect(router.state.uri.path, '/repair/notifications/details');
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('View Assigned Work'), findsOneWidget);
+      expect(router.state.uri.path, '/repair/notifications');
+      Navigator.of(tester.element(find.byType(BottomSheet))).pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('Assigned work'), findsOneWidget);
     },
   );
 

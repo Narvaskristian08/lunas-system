@@ -43,7 +43,7 @@ class AppSplashScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
           ),
-          const Spacer(flex: 3),
+          const SizedBox(height: AppSpacing.xl),
           if (failed) ...[
             Text(auth.message ?? 'Please try again.', textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.md),
@@ -64,7 +64,7 @@ class AppSplashScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             const Text('Loading your account…'),
           ],
-          const Spacer(flex: 2),
+          const Spacer(flex: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

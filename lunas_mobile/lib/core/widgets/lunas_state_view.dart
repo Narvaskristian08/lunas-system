@@ -42,7 +42,7 @@ class LunasStateView extends StatelessWidget {
         AppColorsLight.critical,
       ),
     };
-    return Semantics(
+    final content = Semantics(
       liveRegion: true,
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -80,6 +80,17 @@ class LunasStateView extends StatelessWidget {
           ],
         ),
       ),
+    );
+    if (state != LunasViewState.loading) return content;
+    if (compact) {
+      return Transform.translate(offset: const Offset(0, -12), child: content);
+    }
+    return SizedBox(
+      height: (MediaQuery.sizeOf(context).height - 200).clamp(
+        240.0,
+        double.infinity,
+      ),
+      child: Align(alignment: const Alignment(0, -.18), child: content),
     );
   }
 }

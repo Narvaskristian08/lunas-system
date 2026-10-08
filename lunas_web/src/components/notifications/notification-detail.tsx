@@ -18,8 +18,8 @@ type DetailState = "loading" | "ready" | "missing" | "offline" | "error";
 
 function DetailSkeleton() {
   return (
-    <div className="space-y-5" role="status" aria-live="polite" aria-label="Loading notification details">
-      <span className="sr-only">Loading notification details</span>
+    <div className="space-y-5" role="status" aria-live="polite" aria-label="Loading Notification Details">
+      <span className="sr-only">Loading Notification Details</span>
       <div className="space-y-3" aria-hidden="true">
         <SkeletonLine className="h-3 w-32" />
         <SkeletonLine className="h-8 w-[min(620px,90%)]" />
@@ -94,7 +94,7 @@ function NotificationDetailWorkspace({ id }: { id: string }) {
           size="page"
           title="Notification not found"
           description="This notification may have expired, been removed under retention rules, or the link may be incorrect."
-          action={{ label: "Return to notifications", href: "/notifications" }}
+          action={{ label: "Return to Notifications", href: "/notifications" }}
         />
       </div>
     );
@@ -104,7 +104,7 @@ function NotificationDetailWorkspace({ id }: { id: string }) {
   return (
     <>
       <PageHeader
-        title="Notification details"
+        title="Notification Details"
         description={`Notification ${notification.id}`}
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
@@ -113,7 +113,7 @@ function NotificationDetailWorkspace({ id }: { id: string }) {
         ]}
         actions={
           <Link href="/notifications" className={buttonStyles({ variant: "secondary" })}>
-            <ArrowLeft className="size-4" aria-hidden="true" /> Back to notifications
+            <ArrowLeft className="size-4" aria-hidden="true" /> Back to Notifications
           </Link>
         }
       />

@@ -54,7 +54,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
         <label htmlFor={id} className="text-sm font-semibold text-slate-800">
           {label}
           {required ? <span className="ml-1 text-red-700" aria-hidden="true">*</span> : null}
-          {required ? <span className="sr-only"> (required)</span> : null}
+          {required ? <span className="sr-only"> (Required)</span> : null}
         </label>
         {optional ? <span className="text-xs text-slate-500">Optional</span> : null}
       </div>
