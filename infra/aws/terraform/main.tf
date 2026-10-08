@@ -325,7 +325,7 @@ resource "aws_iam_role" "app" {
 resource "aws_iam_role_policy_attachment" "app_ssm" {
   count      = local.compute_enabled ? 1 : 0
   role       = aws_iam_role.app[0].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceCore"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_role_policy" "app_storage" {
@@ -371,7 +371,7 @@ resource "aws_iam_role" "database" {
 resource "aws_iam_role_policy_attachment" "database_ssm" {
   count      = local.compute_enabled ? 1 : 0
   role       = aws_iam_role.database[0].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceCore"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_instance_profile" "database" {
