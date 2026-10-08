@@ -64,3 +64,9 @@ variable "ssh_key_name" {
   type        = string
   default     = null
 }
+
+variable "bootstrap_ssh_enabled" {
+  description = "Temporarily allow SSH from the application security group while bootstrapping the private database. Disable after MongoDB setup."
+  type        = bool
+  default     = false
+}

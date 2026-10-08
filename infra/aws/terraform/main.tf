@@ -146,6 +146,18 @@ resource "aws_security_group" "database" {
     security_groups = [aws_security_group.app[0].id]
   }
 
+  dynamic "ingress" {
+    for_each = var.bootstrap_ssh_enabled ? [1] : []
+
+    content {
+      description     = "Temporary bootstrap SSH from application instance"
+      protocol        = "tcp"
+      from_port       = 22
+      to_port         = 22
+      security_groups = [aws_security_group.app[0].id]
+    }
+  }
+
   egress {
     protocol    = "-1"
     from_port   = 0
@@ -306,6 +318,56 @@ resource "aws_s3_bucket_versioning" "models" {
   }
 }
 
+resource "aws_s3_bucket" "artifacts" {
+  count         = local.enabled ? 1 : 0
+  bucket        = "${var.bucket_prefix}${var.environment}-artifacts"
+  force_destroy = false
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = merge(local.tags, { Name = "${local.name}-artifacts" })
+}
+
+resource "aws_s3_bucket_public_access_block" "artifacts" {
+  count                   = local.enabled ? 1 : 0
+  bucket                  = aws_s3_bucket.artifacts[0].id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_ownership_controls" "artifacts" {
+  count  = local.enabled ? 1 : 0
+  bucket = aws_s3_bucket.artifacts[0].id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts" {
+  count  = local.enabled ? 1 : 0
+  bucket = aws_s3_bucket.artifacts[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "artifacts" {
+  count  = local.enabled ? 1 : 0
+  bucket = aws_s3_bucket.artifacts[0].id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_iam_role" "app" {
   count = local.compute_enabled ? 1 : 0
   name  = "${local.name}-app-role"
@@ -349,6 +411,20 @@ resource "aws_iam_role_policy" "app_storage" {
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
         Resource = "${aws_s3_bucket.models[0].arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "${aws_s3_bucket.artifacts[0].arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/lunas/${var.environment}/*"
       }
     ]
   })
@@ -426,6 +502,9 @@ resource "aws_instance" "app" {
     volume_size = 30
   }
 
+  user_data                   = file("${path.module}/user_data/app-bootstrap.sh")
+  user_data_replace_on_change = true
+
   tags = merge(local.tags, { Name = "${local.name}-app" })
 }
 
@@ -453,6 +532,9 @@ resource "aws_instance" "database" {
     volume_type = "gp3"
     volume_size = 30
   }
+
+  user_data                   = file("${path.module}/user_data/database-bootstrap.sh")
+  user_data_replace_on_change = true
 
   tags = merge(local.tags, { Name = "${local.name}-database" })
 }

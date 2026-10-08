@@ -144,6 +144,16 @@ for an Android emulator reaching a backend on the development machine. Use a
 reachable LAN or HTTPS URL for a physical device. For release-like testing,
 prefer HTTPS; no clear-text traffic exception is committed to the Android app.
 
+For the AWS migration environment, use the EC2 Nginx endpoint while testing:
+
+```bash
+flutter run \
+  --dart-define=LUNAS_API_BASE_URL=http://<ec2-public-host>/api/v1
+```
+
+This HTTP URL is temporary. A production device build requires a stable HTTPS
+domain and matching backend CORS configuration.
+
 Never commit environment-specific endpoints or credentials.
 
 ### Android Google Maps key
@@ -188,7 +198,7 @@ configured storage provider. Before acceptance testing, verify that:
 
 - the backend is running and the device can reach it;
 - MongoDB is available;
-- Supabase Storage credentials/bucket policy are configured for evidence;
+- the backend's EC2 role can access the private AWS S3 evidence bucket;
 - CORS and public/signed evidence URL behavior is correct for the backendâ€™s
   intended clients; and
 - official users have the correct role plus barangay/organization attributes.

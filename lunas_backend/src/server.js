@@ -15,6 +15,17 @@ const { validateRuntimeConfig } = require('./config/runtime');
 
 const app = express();
 
+// The production container is behind Nginx. Trust only the explicitly
+// configured proxy hop so rate limiting and request IP logging use the client
+// address without trusting arbitrary forwarded headers in other environments.
+const configuredTrustProxy = process.env.TRUST_PROXY;
+if (configuredTrustProxy) {
+  app.set(
+    'trust proxy',
+    configuredTrustProxy === 'true' ? true : Number(configuredTrustProxy),
+  );
+}
+
 // Security middleware
 app.use(helmet());
 const allowedOrigins = (process.env.CORS_ORIGIN || '')

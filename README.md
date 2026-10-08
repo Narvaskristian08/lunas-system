@@ -37,6 +37,11 @@ Private S3 evidence storage, registration/activation email, Maps, optional push,
 and AI service behavior depend on real deployment configuration. Supabase
 storage credentials are migration-only after the AWS cutover.
 
+The AWS deployment runbook is in [infra/aws/README.md](./infra/aws/README.md).
+The deployed web BFF reaches the API privately over Docker networking, while
+the Flutter client uses `--dart-define=LUNAS_API_BASE_URL=...` to target the
+same public API path. Use HTTPS and a stable domain before production release.
+
 ## Docker Compose
 
 Copy the root `.env.example` to `.env`, replace all placeholder credentials,

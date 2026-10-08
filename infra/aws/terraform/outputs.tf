@@ -13,6 +13,11 @@ output "models_bucket" {
   description = "Private AI model bucket name."
 }
 
+output "artifacts_bucket" {
+  value       = try(aws_s3_bucket.artifacts[0].bucket, null)
+  description = "Private deployment artifact bucket name."
+}
+
 output "app_private_ip" {
   value       = try(aws_instance.app[0].private_ip, null)
   description = "Private application IP for internal routing and diagnostics."
