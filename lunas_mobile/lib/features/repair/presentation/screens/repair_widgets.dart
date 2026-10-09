@@ -4,6 +4,8 @@ import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
 
@@ -24,45 +26,15 @@ class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
 
   @override
-  Size get preferredSize => Size.fromHeight(subtitle == null ? 68 : 78);
+  Size get preferredSize => Size.fromHeight(subtitle == null ? 72 : 84);
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AppBar(
-      toolbarHeight: preferredSize.height,
-      automaticallyImplyLeading: false,
-      leadingWidth: 64,
-      leading: IconButton(
-        tooltip: showBackButton ? 'Back' : 'Repair dashboard',
-        onPressed: showBackButton
-            ? () => Navigator.of(context).maybePop()
-            : () => context.go(RepairRoutes.dashboard),
-        icon: Icon(
-          showBackButton ? Icons.arrow_back_rounded : Icons.menu_rounded,
-        ),
-      ),
-      titleSpacing: 0,
-      title: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (subtitle != null)
-            Text(subtitle!, style: theme.textTheme.bodySmall),
-        ],
-      ),
-      actions: actions,
-    );
-  }
+  Widget build(BuildContext context) => LunasAppBar(
+    title: title,
+    subtitle: subtitle,
+    showBackButton: showBackButton,
+    actions: actions,
+  );
 }
 
 class RepairPage extends StatelessWidget {
@@ -73,11 +45,12 @@ class RepairPage extends StatelessWidget {
     this.notificationUnreadCount = 0,
     this.bottomActionBar,
     this.floatingActionButton,
+    this.fillAvailableHeight = false,
     this.padding = const EdgeInsets.fromLTRB(
       AppSpacing.xl,
       AppSpacing.md,
       AppSpacing.xl,
-      AppSpacing.hero,
+      AppSpacing.xxl,
     ),
     super.key,
   });
@@ -88,6 +61,7 @@ class RepairPage extends StatelessWidget {
   final int notificationUnreadCount;
   final Widget? bottomActionBar;
   final Widget? floatingActionButton;
+  final bool fillAvailableHeight;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -112,8 +86,16 @@ class RepairPage extends StatelessWidget {
               child: Align(
                 alignment: Alignment.topCenter,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 820),
-                  child: child,
+                  constraints: BoxConstraints(
+                    maxWidth: 820,
+                    minHeight: (fillAvailableHeight || child is LunasStateView)
+                        ? (constraints.maxHeight - resolvedPadding.vertical)
+                              .clamp(0.0, double.infinity)
+                        : 0,
+                  ),
+                  child: (fillAvailableHeight || child is LunasStateView)
+                      ? IntrinsicHeight(child: child)
+                      : child,
                 ),
               ),
             );
@@ -144,7 +126,7 @@ class RepairBottomNavigation extends StatelessWidget {
   final int notificationUnreadCount;
 
   Widget _notificationIcon(IconData icon) {
-    final child = Icon(icon);
+    final child = Icon(icon, size: 22);
     if (notificationUnreadCount <= 0) return child;
     return Badge(
       label: Text(
@@ -157,8 +139,9 @@ class RepairBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NavigationBar(
+      indicatorColor: Theme.of(context).colorScheme.primary,
       selectedIndex: selectedIndex,
-      height: 72,
+      height: 64,
       onDestinationSelected: (index) {
         if (index == selectedIndex) return;
         final route = switch (index) {
@@ -171,23 +154,23 @@ class RepairBottomNavigation extends StatelessWidget {
       },
       destinations: [
         const NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
+          icon: Icon(Icons.home_outlined, size: 22),
+          selectedIcon: Icon(Icons.home_rounded, size: 22),
           label: 'Home',
         ),
         const NavigationDestination(
-          icon: Icon(Icons.assignment_outlined),
-          selectedIcon: Icon(Icons.assignment_rounded),
-          label: 'Tasks',
+          icon: Icon(Icons.assignment_outlined, size: 22),
+          selectedIcon: Icon(Icons.assignment_rounded, size: 22),
+          label: 'Work Orders',
         ),
         NavigationDestination(
           icon: _notificationIcon(Icons.notifications_outlined),
           selectedIcon: _notificationIcon(Icons.notifications_rounded),
-          label: 'Updates',
+          label: 'Notifications',
         ),
         const NavigationDestination(
-          icon: Icon(Icons.person_outline_rounded),
-          selectedIcon: Icon(Icons.person_rounded),
+          icon: Icon(Icons.person_outline_rounded, size: 22),
+          selectedIcon: Icon(Icons.person_rounded, size: 22),
           label: 'Profile',
         ),
       ],
@@ -277,7 +260,6 @@ class RepairMetricCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
-    required this.description,
     super.key,
   });
 
@@ -285,7 +267,6 @@ class RepairMetricCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
-  final String description;
 
   @override
   Widget build(BuildContext context) {
@@ -302,7 +283,15 @@ class RepairMetricCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
                 Icon(icon, color: color, size: 20),
               ],
             ),
@@ -313,10 +302,9 @@ class RepairMetricCard extends StatelessWidget {
                 color: color,
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
+                height: 1.2,
               ),
             ),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(description, style: theme.textTheme.bodySmall),
           ],
         ),
       ),
@@ -495,84 +483,87 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: AppRadius.card,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 4, color: priorityColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            workOrder.orderNumber,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontFamily: 'RobotoMono'),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 4, color: priorityColor),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              workOrder.orderNumber,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(fontFamily: 'RobotoMono'),
+                            ),
                           ),
-                        ),
-                        RepairStatusChip(
-                          label: workOrder.priority ?? 'Priority unavailable',
-                          color: priorityColor,
-                          icon: Icons.priority_high_rounded,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      workOrder.category,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                          RepairStatusChip(
+                            label: workOrder.priority ?? 'Priority unavailable',
+                            color: priorityColor,
+                            icon: Icons.priority_high_rounded,
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _CompactDetail(
-                      icon: Icons.location_on_outlined,
-                      label: workOrder.location.displayAddress,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    _CompactDetail(
-                      icon: Icons.timer_outlined,
-                      label: _slaLabel(),
-                      color: slaColor,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    LinearProgressIndicator(
-                      value: workOrder.progressPercent / 100,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '${workOrder.progressPercent}% · ${workOrder.progressStage.label}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                      child: Divider(),
-                    ),
-                    Row(
-                      children: [
-                        RepairStatusChip(
-                          label: workOrder.isPendingAcceptance
-                              ? 'Awaiting acceptance'
-                              : workOrder.status.label,
-                          color: statusColor,
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: onTap,
-                          child: const Text('View details'),
-                        ),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        workOrder.category,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _CompactDetail(
+                        icon: Icons.location_on_outlined,
+                        label: workOrder.location.displayAddress,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      _CompactDetail(
+                        icon: Icons.timer_outlined,
+                        label: _slaLabel(),
+                        color: slaColor,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      LinearProgressIndicator(
+                        value: workOrder.progressPercent / 100,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '${workOrder.progressPercent}% · ${workOrder.progressStage.label}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                        child: Divider(),
+                      ),
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          RepairStatusChip(
+                            label: workOrder.isPendingAcceptance
+                                ? 'Awaiting acceptance'
+                                : workOrder.status.label,
+                            color: statusColor,
+                          ),
+                          TextButton(
+                            onPressed: onTap,
+                            child: const Text('View details'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -595,11 +586,15 @@ class _CompactDetail extends StatelessWidget {
       children: [
         Icon(icon, size: 17, color: resolvedColor),
         const SizedBox(width: AppSpacing.xs),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: resolvedColor,
-            fontWeight: color == null ? FontWeight.w500 : FontWeight.w700,
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: resolvedColor,
+              fontWeight: color == null ? FontWeight.w500 : FontWeight.w700,
+            ),
           ),
         ),
       ],

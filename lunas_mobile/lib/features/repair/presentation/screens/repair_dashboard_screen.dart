@@ -1,5 +1,6 @@
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
@@ -70,9 +71,15 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
   Widget build(BuildContext context) {
     final name = AuthScope.of(context).user?.firstName.trim();
     return RepairPage(
-      appBar: RepairAppBar(
-        title: 'LUNAS Repair',
-        subtitle: 'Your assigned maintenance work',
+      appBar: LunasAppBar(
+        title: 'LUNAS',
+        titleWidget: Image.asset(
+          'assets/icons/lunas_logo.png',
+          height: 30,
+          width: 30,
+          fit: BoxFit.contain,
+          semanticLabel: 'LUNAS',
+        ),
         actions: [
           IconButton(
             tooltip: 'Refresh dashboard',
@@ -83,17 +90,14 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
         ],
       ),
       selectedNavigationIndex: 0,
+      fillAvailableHeight: _loading,
       child: _body(context, name),
     );
   }
 
   Widget _body(BuildContext context, String? firstName) {
     if (_loading) {
-      return const LunasStateView(
-        state: LunasViewState.loading,
-        title: 'Loading repair dashboard',
-        message: 'Getting your assigned work orders and SLA status.',
-      );
+      return const LunasHomeLoadingView();
     }
     if (_error != null) {
       return LunasStateView(
@@ -138,9 +142,9 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
             onOpenTasks: () => context.go(RepairRoutes.workOrders),
           ),
         ],
-        const SizedBox(height: AppSpacing.xxl),
+        const SizedBox(height: AppSpacing.xl),
         RepairSectionTitle(
-          title: 'Assigned work orders',
+          title: 'Assigned Work Orders',
           actionLabel: 'View All',
           onAction: () => context.go(RepairRoutes.workOrders),
         ),
@@ -173,42 +177,36 @@ class _RepairMetrics extends StatelessWidget {
         value: summary.pendingAssignments,
         icon: Icons.assignment_outlined,
         color: AppColorsLight.info,
-        detail: 'Awaiting your response',
       ),
       (
         label: 'Accepted',
         value: summary.accepted,
         icon: Icons.task_alt_outlined,
         color: AppColorsLight.success,
-        detail: 'Ready to start',
       ),
       (
-        label: 'In progress',
+        label: 'In Progress',
         value: summary.inProgress,
         icon: Icons.timelapse_outlined,
         color: AppColorsLight.alert,
-        detail: 'Active repairs',
       ),
       (
         label: 'Approaching',
         value: summary.approachingDeadline,
         icon: Icons.schedule_outlined,
         color: AppColorsLight.alert,
-        detail: 'SLA warning',
       ),
       (
         label: 'Overdue',
         value: summary.overdue,
         icon: Icons.warning_amber_rounded,
         color: AppColorsLight.critical,
-        detail: 'Needs attention',
       ),
       (
         label: 'Ready',
         value: summary.readyForCompletion,
         icon: Icons.pending_actions_outlined,
         color: AppColorsLight.success,
-        detail: 'Awaiting verification',
       ),
     ];
     return LayoutBuilder(
@@ -228,7 +226,6 @@ class _RepairMetrics extends StatelessWidget {
                   value: '${metric.value}',
                   icon: metric.icon,
                   color: metric.color,
-                  description: metric.detail,
                 ),
               ),
           ],

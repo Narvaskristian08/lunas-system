@@ -25,9 +25,16 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
     return AppBar(
       toolbarHeight: preferredSize.height,
-      automaticallyImplyLeading: showBackButton,
+      automaticallyImplyLeading: false,
+      leadingWidth: showBackButton ? 64 : null,
+      leading: showBackButton
+          ? const Padding(
+              padding: EdgeInsets.only(left: 12, right: 4),
+              child: Center(child: LunasBackButton()),
+            )
+          : null,
       centerTitle: false,
-      titleSpacing: AppSpacing.xl,
+      titleSpacing: showBackButton ? 0 : AppSpacing.xl,
       title:
           titleWidget ??
           Column(
@@ -37,6 +44,7 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
               Text(
                 title,
                 style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -.3,
                 ),
@@ -50,4 +58,21 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: actions,
     );
   }
+}
+
+class LunasBackButton extends StatelessWidget {
+  const LunasBackButton({this.onPressed, super.key});
+  final VoidCallback? onPressed;
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'Back',
+    onPressed: onPressed ?? () => Navigator.of(context).maybePop(),
+    style: IconButton.styleFrom(
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
+      minimumSize: const Size(48, 48),
+      maximumSize: const Size(48, 48),
+      padding: EdgeInsets.zero,
+    ),
+    icon: const Icon(Icons.arrow_back_rounded, size: 22),
+  );
 }

@@ -421,7 +421,8 @@ class _BarangayPickerScreenState extends State<_BarangayPickerScreen> {
             ),
             Expanded(
               child: matches.isEmpty
-                  ? const Center(
+                  ? const Align(
+                      alignment: Alignment(0, -.18),
                       child: Padding(
                         padding: EdgeInsets.all(AppSpacing.xl),
                         child: Text(

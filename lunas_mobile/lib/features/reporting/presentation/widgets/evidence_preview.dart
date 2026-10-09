@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 
@@ -35,9 +36,8 @@ class LocalEvidencePreview extends StatelessWidget {
       if (snapshot.hasError) return _PreviewFallback(height: height);
       return SizedBox(
         height: height,
-        child: const Align(
-          alignment: Alignment(0, -.18),
-          child: CircularProgressIndicator(),
+        child: const Center(
+          child: SizedBox.square(dimension: 36, child: LunasLoadingIndicator()),
         ),
       );
     },
@@ -77,9 +77,11 @@ class RemoteEvidencePreview extends StatelessWidget {
                 errorBuilder: (_, _, _) => const _PreviewFallback(),
                 loadingBuilder: (context, child, progress) => progress == null
                     ? child
-                    : const Align(
-                        alignment: Alignment(0, -.18),
-                        child: CircularProgressIndicator(),
+                    : const Center(
+                        child: SizedBox.square(
+                          dimension: 36,
+                          child: LunasLoadingIndicator(),
+                        ),
                       ),
               ),
               for (final finding in findings)

@@ -70,6 +70,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
     final user = AuthScope.of(context).user;
     return CitizenScaffold(
       title: 'LUNAS',
+      fillAvailableHeight: _loading,
       titleWidget: Image.asset(
         'assets/icons/lunas_logo.png',
         height: 30,
@@ -85,98 +86,93 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
         ),
         const SizedBox(width: AppSpacing.sm),
       ],
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Good Morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text('Report local issues and track their progress.'),
-          const SizedBox(height: AppSpacing.xl),
-          _ActiveReportSummary(reports: _reports),
-          const SizedBox(height: AppSpacing.md),
-          _ReportCallout(onCreate: () => context.push('/reports/new')),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: _DashboardAction(
-                  icon: Icons.map_outlined,
-                  title: 'View Map',
-                  subtitle: 'Explore the Map',
-                  onTap: () => context.push('/reports/location'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _DashboardAction(
-                  icon: Icons.insights_outlined,
-                  title: 'City Insights',
-                  subtitle: 'Coming Soon',
-                  onTap: null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          if (_loading)
-            const LunasStateView(
-              state: LunasViewState.loading,
-              title: 'Loading your reports',
-              message: 'Getting your current report summary.',
-              compact: true,
-            )
-          else if (_error != null)
-            LunasStateView(
-              state: LunasViewState.error,
-              title: 'Could not load reports',
-              message: _error!,
-              actionLabel: 'Try again',
-              onAction: _loadReports,
-              compact: true,
-            )
-          else ...[
-            Row(
+      body: _loading
+          ? const LunasHomeLoadingView()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Text(
-                    'Recent Reports',
-                    style: Theme.of(context).textTheme.titleLarge,
+                Text(
+                  'Good Morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                TextButton(
-                  onPressed: () => context.go('/reports'),
-                  child: const Text('View All'),
+                const SizedBox(height: AppSpacing.xs),
+                const Text('Report local issues and track their progress.'),
+                const SizedBox(height: AppSpacing.xl),
+                _ActiveReportSummary(reports: _reports),
+                const SizedBox(height: AppSpacing.md),
+                _ReportCallout(onCreate: () => context.push('/reports/new')),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DashboardAction(
+                        icon: Icons.map_outlined,
+                        title: 'View Map',
+                        subtitle: 'Explore the Map',
+                        onTap: () => context.push('/reports/location'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _DashboardAction(
+                        icon: Icons.insights_outlined,
+                        title: 'City Insights',
+                        subtitle: 'Coming Soon',
+                        onTap: null,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: AppSpacing.xxl),
+                if (_error != null)
+                  LunasStateView(
+                    state: LunasViewState.error,
+                    title: 'Could not load reports',
+                    message: _error!,
+                    actionLabel: 'Try again',
+                    onAction: _loadReports,
+                    compact: true,
+                  )
+                else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Recent Reports',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.go('/reports'),
+                        child: const Text('View All'),
+                      ),
+                    ],
+                  ),
+                  if (_reports.isEmpty)
+                    LunasStateView(
+                      state: LunasViewState.empty,
+                      title: 'No reports yet',
+                      message:
+                          'When you submit a report, its status and history will appear here.',
+                      actionLabel: 'New Report',
+                      onAction: () => context.push('/reports/new'),
+                      compact: true,
+                    )
+                  else
+                    ..._reports.map(
+                      (report) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _ReportListCard(
+                          report: report,
+                          onTap: () => context.push('/reports/${report.id}'),
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
-            if (_reports.isEmpty)
-              LunasStateView(
-                state: LunasViewState.empty,
-                title: 'No reports yet',
-                message:
-                    'When you submit a report, its status and history will appear here.',
-                actionLabel: 'New Report',
-                onAction: () => context.push('/reports/new'),
-                compact: true,
-              )
-            else
-              ..._reports.map(
-                (report) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _ReportListCard(
-                    report: report,
-                    onTap: () => context.push('/reports/${report.id}'),
-                  ),
-                ),
-              ),
-          ],
-        ],
-      ),
     );
   }
 }

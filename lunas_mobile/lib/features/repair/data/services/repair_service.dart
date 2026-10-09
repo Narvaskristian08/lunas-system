@@ -132,7 +132,7 @@ class RepairService {
       'stage': stage.apiValue,
       if (trimmedNotes.isNotEmpty) 'notes': trimmedNotes,
       ..._locationBody(latitude: latitude, longitude: longitude),
-      if (version != null) 'version': version,
+      'version': ?version,
     };
     if (progressPercent == 100 && finalEvidence == null) {
       throw ArgumentError.value(
@@ -206,7 +206,7 @@ class RepairService {
     _requireId(workOrderId);
     final payload = await _apiClient.post(
       '/work-orders/$workOrderId/$action',
-      body: {...?body, if (version != null) 'version': version},
+      body: {...?body, 'version': ?version},
     );
     return RepairWorkOrder.fromJson(payload);
   }
@@ -229,8 +229,9 @@ class RepairService {
 
   void _checkPage(int page, int limit) {
     if (page < 1) throw ArgumentError.value(page, 'page', 'Must be at least 1');
-    if (limit < 1)
+    if (limit < 1) {
       throw ArgumentError.value(limit, 'limit', 'Must be at least 1');
+    }
   }
 
   void _requireId(String value) {

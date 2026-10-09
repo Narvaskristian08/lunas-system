@@ -32,17 +32,18 @@ class ReportStatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (events.isEmpty) {
+    final visible = visibleReportHistory(events);
+    if (visible.isEmpty) {
       return const Text(
         'No status history has been returned for this report yet.',
       );
     }
     return Column(
       children: [
-        for (var index = 0; index < events.length; index++)
+        for (var index = 0; index < visible.length; index++)
           _TimelineEvent(
-            event: events[events.length - 1 - index],
-            showLine: index != events.length - 1,
+            event: visible[visible.length - 1 - index],
+            showLine: index != visible.length - 1,
             isLatest: highlightLatest && index == 0,
             compact: compact,
           ),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 
 class AuthLayout extends StatelessWidget {
   const AuthLayout({
@@ -45,7 +46,7 @@ class AuthLayout extends StatelessWidget {
                 if (showBackButton)
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: IconButton(
+                    child: LunasBackButton(
                       onPressed: () {
                         if (context.canPop()) {
                           context.pop();
@@ -53,8 +54,6 @@ class AuthLayout extends StatelessWidget {
                           context.go('/login');
                         }
                       },
-                      tooltip: 'Back',
-                      icon: const Icon(Icons.arrow_back_rounded),
                     ),
                   )
                 else if (showBrand)

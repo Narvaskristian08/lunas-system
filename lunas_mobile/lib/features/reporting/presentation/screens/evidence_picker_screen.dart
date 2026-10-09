@@ -48,7 +48,7 @@ class _EvidencePickerScreenState extends State<EvidencePickerScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
       title: 'Add evidence',
-      subtitle: 'Use a clear image of the infrastructure concern',
+      subtitle: 'Add a clear photo of the issue.',
       showBackButton: true,
     ),
     body: SafeArea(

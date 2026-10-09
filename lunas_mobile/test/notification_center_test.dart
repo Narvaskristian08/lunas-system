@@ -203,7 +203,7 @@ void main() {
     await tester.tap(find.text('Mark All As Read'));
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
-    expect(find.text('0 Unread Updates'), findsOneWidget);
+    expect(find.text('Stay updated on your work orders.'), findsOneWidget);
   });
 
   testWidgets(

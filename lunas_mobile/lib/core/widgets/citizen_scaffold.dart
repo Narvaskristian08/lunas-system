@@ -42,11 +42,13 @@ class CitizenScaffold extends StatelessWidget {
       top: false,
       child: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl,
+          padding: EdgeInsets.fromLTRB(
+            constraints.maxWidth < 360 ? AppSpacing.md : AppSpacing.xl,
             AppSpacing.md,
-            AppSpacing.xl,
-            AppSpacing.hero,
+            constraints.maxWidth < 360 ? AppSpacing.md : AppSpacing.xl,
+            showReportFab || floatingActionButton != null
+                ? AppSpacing.hero
+                : AppSpacing.xxl,
           ),
           child: Align(
             alignment: Alignment.topCenter,
@@ -54,7 +56,11 @@ class CitizenScaffold extends StatelessWidget {
               constraints: BoxConstraints(
                 maxWidth: 760,
                 minHeight: fillAvailableHeight
-                    ? (constraints.maxHeight - AppSpacing.md - AppSpacing.hero)
+                    ? (constraints.maxHeight -
+                              AppSpacing.md -
+                              (showReportFab || floatingActionButton != null
+                                  ? AppSpacing.hero
+                                  : AppSpacing.xxl))
                           .clamp(0.0, double.infinity)
                     : 0,
               ),

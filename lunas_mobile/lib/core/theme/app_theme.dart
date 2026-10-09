@@ -148,12 +148,15 @@ abstract final class AppTheme {
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        indicatorShape: RoundedRectangleBorder(borderRadius: AppRadius.input),
+        indicatorColor: primary,
+        indicatorShape: const StadiumBorder(),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => AppTextStyles.bodySmall.copyWith(
-            fontSize: 11,
+            fontSize: 10,
+            height: 1.2,
+            letterSpacing: 0,
             fontWeight: states.contains(WidgetState.selected)
-                ? FontWeight.w700
+                ? FontWeight.w600
                 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
                 ? primary

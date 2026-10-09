@@ -1,5 +1,7 @@
 "use client";
 
+import { distinctTimelineEvents, timelineMilestoneLabel } from "@/lib/timeline-display";
+
 /* Signed evidence URLs are supplied by the protected API and should not be optimized by Next image. */
 /* eslint-disable @next/next/no-img-element */
 
@@ -343,11 +345,14 @@ function EvidenceGallery({ title, description, evidence }: { title: string; desc
 }
 
 function WorkOrderTimeline({ workOrder }: { workOrder: WorkOrder }) {
-  const events = useMemo(() => [...workOrder.history].sort((left, right) => (right.createdAt ?? "").localeCompare(left.createdAt ?? "")), [workOrder.history]);
+  const events = useMemo(() => distinctTimelineEvents(
+    [...workOrder.history].sort((left, right) => (right.createdAt ?? "").localeCompare(left.createdAt ?? "")),
+    (entry) => ({ timestamp: entry.createdAt, values: [entry.type, entry.status, entry.progressPercent, entry.stage, entry.actorRole, entry.notes?.trim() ?? ""] }),
+  ), [workOrder.history]);
   return (
     <Card className="overflow-hidden">
       <CardHeader title="Operational Timeline" description="Append-oriented work-order events returned by the backend." />
-      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Repair Reached 100%" : titleCase(entry.type ?? entry.status, "Work Order Update")}</p>{entry.progressPercent !== undefined ? <Badge tone={entry.progressPercent === 100 ? "success" : "information"}>{entry.progressPercent}%</Badge> : null}</div>{entry.stage ? <p className="mt-1 text-xs font-semibold text-slate-500">{titleCase(entry.stage)}</p> : null}{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
+      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Repair Reached 100%" : (timelineMilestoneLabel(entry.type ?? entry.status ?? "") ?? titleCase(entry.type ?? entry.status, "Work Order Update"))}</p>{entry.progressPercent !== undefined && entry.type !== "ready_for_completion" ? <Badge tone={entry.progressPercent === 100 ? "success" : "information"}>{entry.progressPercent}%</Badge> : null}</div>{entry.stage ? <p className="mt-1 text-xs font-semibold text-slate-500">{titleCase(entry.stage)}</p> : null}{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
     </Card>
   );
 }

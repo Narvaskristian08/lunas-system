@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_filter_button.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -78,9 +79,11 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
 
   @override
   Widget build(BuildContext context) => RepairPage(
+    fillAvailableHeight:
+        _loading || _error != null || (_page?.items.isEmpty ?? true),
     appBar: RepairAppBar(
-      title: 'LUNAS Repair',
-      subtitle: 'Assigned work orders',
+      title: 'Work Orders',
+      subtitle: 'Manage your assigned repairs.',
       actions: [
         IconButton(
           tooltip: 'Refresh work orders',
@@ -96,7 +99,12 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
       children: [
         _StatusFilters(selected: _status, onSelected: _selectStatus),
         const SizedBox(height: AppSpacing.lg),
-        _body(),
+        if (_loading || _error != null || (_page?.items.isEmpty ?? true))
+          Expanded(
+            child: Align(alignment: const Alignment(0, -.18), child: _body()),
+          )
+        else
+          _body(),
       ],
     ),
   );
@@ -163,23 +171,25 @@ class _StatusFilters extends StatelessWidget {
       (null, 'All'),
       (RepairWorkOrderStatus.pending, 'Pending'),
       (RepairWorkOrderStatus.accepted, 'Accepted'),
-      (RepairWorkOrderStatus.inProgress, 'In progress'),
-      (RepairWorkOrderStatus.completed, 'Provider review'),
+      (RepairWorkOrderStatus.inProgress, 'In Progress'),
+      (RepairWorkOrderStatus.completed, 'Provider Review'),
       (RepairWorkOrderStatus.reworkRequired, 'Correction'),
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final status in statuses)
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.xs),
-              child: ChoiceChip(
-                label: Text(status.$2),
-                selected: selected == status.$1,
-                onSelected: (_) => onSelected(status.$1),
+          for (var index = 0; index < statuses.length; index++) ...[
+            if (index > 0) const SizedBox(width: AppSpacing.xs),
+            SizedBox(
+              width: statuses[index].$2.length > 10 ? 120 : 88,
+              child: LunasFilterButton(
+                label: statuses[index].$2,
+                selected: selected == statuses[index].$1,
+                onTap: () => onSelected(statuses[index].$1),
               ),
             ),
+          ],
         ],
       ),
     );

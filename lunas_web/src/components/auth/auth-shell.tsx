@@ -33,7 +33,7 @@ export function AuthShell({
           sizes="(min-width: 1024px) 46vw, 0px"
           className="-z-20 object-cover object-[62%_center]"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#032b52]/80 via-[#032b52]/65 to-[#062641]/95" aria-hidden="true" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-b from-[#032b52]/80 via-[#032b52]/65 to-brand-950/95" aria-hidden="true" />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(3,43,82,.28),transparent_70%)]" aria-hidden="true" />
 
         <LunasBrand inverse href="/login" className="w-fit" />
@@ -74,7 +74,7 @@ export function AuthShell({
         </header>
 
         <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8 sm:py-12 xl:px-14">
-          <div className={wide ? "w-full max-w-2xl" : "w-full max-w-[480px]"}>
+          <div className={wide ? "w-full max-w-2xl" : "w-full max-w-120"}>
             <div className="mb-7">
               <p className="text-xs font-bold tracking-normal text-brand-700">{eyebrow}</p>
               <h1 className="mt-2 text-balance text-3xl font-semibold tracking-[-0.025em] text-slate-950 sm:text-[2rem]">

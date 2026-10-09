@@ -11,6 +11,9 @@ const environment = {
   LUNAS_SESSION_SECRET:
     process.env.LUNAS_SESSION_SECRET || "lunas-playwright-isolated-session-secret-only",
   LUNAS_API_URL: process.env.LUNAS_API_URL || "http://127.0.0.1:5119/api/v1",
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA",
+  ACCOUNT_UI_TESTS: process.env.ACCOUNT_UI_TESTS || "true",
 };
 
 const server = spawn(process.execPath, [join(root, ".next", "standalone", "server.js")], {

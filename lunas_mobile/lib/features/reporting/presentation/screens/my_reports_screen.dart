@@ -91,7 +91,7 @@ class _MyReportsScreenState extends State<MyReportsScreen>
     return CitizenScaffold(
       title: 'My Reports',
       showReportFab: true,
-      fillAvailableHeight: !_loading && _error == null && filtered.isEmpty,
+      fillAvailableHeight: _loading || _error != null || filtered.isEmpty,
       subtitle: 'Track the progress of your reports.',
       actions: [
         IconButton(
@@ -132,18 +132,22 @@ class _MyReportsScreenState extends State<MyReportsScreen>
             ),
           const SizedBox(height: AppSpacing.md),
           if (_loading)
-            const LunasStateView(
-              state: LunasViewState.loading,
-              title: 'Loading your reports',
-              message: 'Checking report status and history.',
+            const Expanded(
+              child: LunasStateView(
+                state: LunasViewState.loading,
+                title: 'Loading your reports',
+                message: 'Checking report status and history.',
+              ),
             )
           else if (_error != null)
-            LunasStateView(
-              state: LunasViewState.error,
-              title: 'Could not load your reports',
-              message: _error!,
-              actionLabel: 'Try again',
-              onAction: _load,
+            Expanded(
+              child: LunasStateView(
+                state: LunasViewState.error,
+                title: 'Could not load your reports',
+                message: _error!,
+                actionLabel: 'Try again',
+                onAction: _load,
+              ),
             )
           else if (filtered.isEmpty)
             Expanded(

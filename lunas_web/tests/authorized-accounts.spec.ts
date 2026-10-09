@@ -33,7 +33,7 @@ test.describe("authorized account screens", () => {
       }
       if (path === "/auth/activate-account") {
         if (input.token !== "a".repeat(64)) { res.statusCode = 400; return send({}, "Invalid activation link"); }
-        return send({}, "Account activated");
+        return send({}, "Account Activated");
       }
       res.statusCode = 404; return send({});
     });
@@ -45,19 +45,19 @@ test.describe("authorized account screens", () => {
   test("administrator creates an approved account, views Pending Activation, and confirms deactivation", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
     await page.goto("/admin/users");
-    await expect(page.getByRole("heading", { name: "Authorized accounts", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Authorized Accounts", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Create Authorized Account", exact: true }).click();
-    await page.getByLabel("First name").fill("Ana");
-    await page.getByLabel("Last name").fill("Santos");
+    await page.getByLabel("First Name").fill("Ana");
+    await page.getByLabel("Last Name").fill("Santos");
     await page.getByLabel("Email", { exact: false }).fill("ana@example.test");
-    await page.getByLabel("Contact number").fill("09123456789");
-    await page.getByLabel("Position / designation").fill("Barangay official");
-    await page.getByLabel("Office / organization").fill("Barangay Pantal");
-    await page.getByLabel("Assigned barangay").selectOption("Pantal");
-    await page.getByLabel("Approved by / approving authority").fill("Responsible superior");
-    await page.getByLabel("Approval reference / remarks").fill("Offline approval REF-001");
-    await expect(page.getByLabel("System role").locator('option[value="admin"]')).toHaveCount(0);
-    await page.getByRole("button", { name: "Create account and send activation" }).click();
+    await page.getByLabel("Contact Number").fill("09123456789");
+    await page.getByLabel("Position / Designation").fill("Barangay official");
+    await page.getByLabel("Office / Organization").fill("Barangay Pantal");
+    await page.getByLabel("Assigned Barangay").selectOption("Pantal");
+    await page.getByLabel("Approved By / Approving Authority").fill("Responsible superior");
+    await page.getByLabel("Approval Reference / Remarks").fill("Offline approval REF-001");
+    await expect(page.getByLabel("System Role").locator('option[value="admin"]')).toHaveCount(0);
+    await page.getByRole("button", { name: "Create Account and Send Activation" }).click();
     await expect(page.getByRole("cell", { name: "Pending Activation", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "View", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Ana Santos" })).toBeVisible();
@@ -65,7 +65,7 @@ test.describe("authorized account screens", () => {
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Deactivate", exact: true }).click();
     await expect(dialog.getByText("Enter the reason for this access change.")).toBeVisible();
-    await dialog.getByLabel("Reason (required)").fill("Personnel transferred");
+    await dialog.getByLabel("Reason (Required)").fill("Personnel transferred");
     await dialog.getByRole("button", { name: "Deactivate", exact: true }).click();
     await expect(page.getByRole("cell", { name: "Deactivated", exact: true })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
@@ -80,9 +80,9 @@ test.describe("authorized account screens", () => {
   test("activation uses the email fragment, removes it from history, and permits password setup", async ({ page }) => {
     await page.goto(`/activate-account#token=${"a".repeat(64)}`);
     await expect(page).toHaveURL(/\/activate-account$/);
-    await page.getByLabel(/^Create password/).fill("AccountTest2026!");
-    await page.getByLabel(/^Confirm password/).fill("AccountTest2026!");
-    await page.getByRole("button", { name: "Activate account", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Account activated" })).toBeVisible();
+    await page.getByLabel(/^Create password/i).fill("AccountTest2026!");
+    await page.getByLabel(/^Confirm password/i).fill("AccountTest2026!");
+    await page.getByRole("button", { name: "Activate Account", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Account Activated" })).toBeVisible();
   });
 });

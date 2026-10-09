@@ -158,7 +158,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
       title: 'Confirm Details',
-      subtitle: 'Review before submitting your report',
+      subtitle: 'Check your report before submitting.',
       showBackButton: true,
     ),
     body: SafeArea(

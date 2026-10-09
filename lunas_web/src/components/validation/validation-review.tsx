@@ -5,6 +5,7 @@
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { distinctTimelineEvents, timelineMilestoneLabel } from "@/lib/timeline-display";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
 import {
@@ -172,11 +173,15 @@ function Evidence({ incident }: { incident: ValidationIncident }) {
 }
 
 function Timeline({ incident }: { incident: ValidationIncident }) {
+  const events = distinctTimelineEvents(incident.history, (entry) => ({
+    timestamp: entry.changedAt,
+    values: [timelineMilestoneLabel(entry.status) ?? entry.status, entry.notes?.trim() ?? ""],
+  }));
   return (
     <Card className="overflow-hidden">
       <CardHeader title="Status History" description="Events are recorded by the backend; this timeline is not fabricated by the interface." />
       <ol className="divide-y divide-slate-200">
-        {incident.history.length ? incident.history.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div><p className="font-semibold text-slate-900">{titleCase(entry.status)}</p>{entry.changedAt ? <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(entry.changedAt)}</p> : null}{entry.notes ? <p className="mt-1 text-sm text-slate-600">{entry.notes}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
+        {events.length ? events.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div><p className="font-semibold text-slate-900">{timelineMilestoneLabel(entry.status) ?? titleCase(entry.status)}</p>{entry.changedAt ? <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(entry.changedAt)}</p> : null}{entry.notes ? <p className="mt-1 text-sm text-slate-600">{entry.notes}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
       </ol>
     </Card>
   );

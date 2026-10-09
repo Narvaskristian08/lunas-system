@@ -19,7 +19,7 @@ export function DataTable({
 }) {
   return (
     <div className={cn("max-w-full overflow-x-auto", className)} tabIndex={0} role="region" aria-label={`${caption}, horizontally scrollable on small screens`}>
-      <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+      <table className="w-full min-w-190 border-collapse text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold tracking-normal text-slate-500">

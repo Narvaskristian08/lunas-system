@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
@@ -18,7 +19,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Sign out?'),
+        title: const Text('Sign Out?'),
         content: const Text('You will be signed out on this device.'),
         actions: [
           TextButton(
@@ -27,7 +28,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Sign out'),
+            child: const Text('Sign Out'),
           ),
         ],
       ),
@@ -43,54 +44,60 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
         ? user!.firstName.trim().substring(0, 1).toUpperCase()
         : '?';
     return RepairPage(
-      appBar: const RepairAppBar(
-        title: 'Repair account',
-        subtitle: 'Profile and account access',
+      appBar: const LunasAppBar(
+        title: 'My Profile',
+        subtitle: 'View your account details.',
       ),
       selectedNavigationIndex: 3,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ProfileHero(
-            name: user?.fullName ?? 'Repair personnel',
+            name: user?.fullName ?? 'Repair Personnel',
             email: user?.email ?? '',
             role: roleLabel(user?.role ?? 'repair_personnel'),
             initials: initial,
             imageUrl: user?.profileImage,
           ),
           const SizedBox(height: AppSpacing.md),
-          if (user?.barangay?.trim().isNotEmpty == true)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: Text('Assigned barangay: ${user!.barangay}'),
-            ),
           ProfileSection(
-            title: 'Account details',
-            icon: Icons.engineering_outlined,
+            title: 'Account Details',
             child: Column(
               children: [
                 ProfileReadOnlyField(
-                  label: 'First name',
+                  label: 'First Name',
                   value: user?.firstName ?? '',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProfileReadOnlyField(
-                  label: 'Last name',
+                  label: 'Last Name',
                   value: user?.lastName ?? '',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProfileReadOnlyField(
-                  label: 'Mobile number',
+                  label: 'Mobile Number',
                   value: user?.phone ?? '',
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                OutlinedButton.icon(
-                  onPressed: auth.isSubmitting ? null : _signOut,
-                  icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Sign out'),
+                const SizedBox(height: AppSpacing.md),
+                ProfileReadOnlyField(
+                  label: 'Address',
+                  value: user?.address?['street']?.toString() ?? '',
                 ),
+                if (user?.barangay?.trim().isNotEmpty == true) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  ProfileReadOnlyField(
+                    label: 'Assigned Barangay',
+                    value: user!.barangay!,
+                  ),
+                ],
               ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          OutlinedButton.icon(
+            onPressed: auth.isSubmitting ? null : _signOut,
+            icon: const Icon(Icons.logout_rounded, size: 20),
+            label: const Text('Sign Out'),
           ),
         ],
       ),

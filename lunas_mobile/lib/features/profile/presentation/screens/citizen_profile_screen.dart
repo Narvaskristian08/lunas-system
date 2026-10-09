@@ -42,7 +42,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
         : '?';
     return CitizenScaffold(
       title: 'My Profile',
-      subtitle: 'Your LUNAS citizen account',
+      subtitle: 'View your account details.',
       showReportFab: false,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

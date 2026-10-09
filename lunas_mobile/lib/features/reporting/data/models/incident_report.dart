@@ -141,8 +141,9 @@ class IncidentRepairSummary {
     if (status == 'pending' && assignmentState == 'declined') {
       return 'Work Order Awaiting Reassignment';
     }
-    if (status == 'pending' || status == 'accepted')
+    if (status == 'pending' || status == 'accepted') {
       return 'Assigned for Repair';
+    }
     return _statusLabel(status);
   }
 
@@ -156,15 +157,19 @@ class IncidentRepairSummary {
     if (status == 'city_correction_required' || status == 'rework_required') {
       return 'Corrective work';
     }
-    if (status == 'in_progress' && progressPercent > 0)
+    if (status == 'in_progress' && progressPercent > 0) {
       return '$progressPercent% repair';
+    }
     if (status == 'in_progress') return 'Repair in progress';
-    if (status == 'pending' && assignmentState == 'unassigned')
+    if (status == 'pending' && assignmentState == 'unassigned') {
       return 'Work order created';
-    if (status == 'pending' && assignmentState == 'declined')
+    }
+    if (status == 'pending' && assignmentState == 'declined') {
       return 'Awaiting reassignment';
-    if (status == 'pending' || status == 'accepted')
+    }
+    if (status == 'pending' || status == 'accepted') {
       return 'Assigned for repair';
+    }
     return _statusLabel(status);
   }
 
@@ -402,15 +407,19 @@ class ReportStatusEvent {
     if (event == 'work_order_created') return 'Work Order Created';
     if (status == 'completed' ||
         status == 'repair_completed' ||
-        status == 'provider_review')
-      return 'Repair Completed · Awaiting Utility Provider Review';
-    if (status == 'provider_accepted')
-      return 'Utility Provider Accepted · Awaiting City Engineering Verification';
-    if (status == 'city_verification')
-      return 'Awaiting City Engineering Final Verification';
-    if (status == 'rework_required' || status == 'city_correction_required')
+        status == 'provider_review') {
+      return 'Repair Completed';
+    }
+    if (status == 'provider_accepted') {
+      return 'Repair Approved by Utility Provider';
+    }
+    if (status == 'city_verification') {
+      return 'Sent for City Engineering Review';
+    }
+    if (status == 'rework_required' || status == 'city_correction_required') {
       return 'Corrective Work Required';
-    if (status == 'verified') return 'Verified by City Engineering';
+    }
+    if (status == 'verified') return 'Repair Verified by City Engineering';
     if (status == 'resolved' || status == 'closed') return 'Resolved';
     if (progressPercent == 100) return 'Repair Progress Reached 100%';
     if (status == 'barangay_validated') return 'Validated by Barangay Official';
@@ -464,3 +473,24 @@ String _statusLabel(String value) => value
     .where((part) => part.isNotEmpty)
     .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
     .join(' ');
+
+/// Collapses repeated display milestones without changing backend history.
+List<ReportStatusEvent> visibleReportHistory(List<ReportStatusEvent> events) {
+  final visible = <ReportStatusEvent>[];
+  for (final event in events) {
+    final previous = visible.isEmpty ? null : visible.last;
+    final sameMinute =
+        previous?.changedAt != null &&
+        event.changedAt != null &&
+        previous!.changedAt!.millisecondsSinceEpoch ~/ 60000 ==
+            event.changedAt!.millisecondsSinceEpoch ~/ 60000;
+    if (sameMinute &&
+        previous.citizenLabel == event.citizenLabel &&
+        (previous.notes ?? '').trim() == (event.notes ?? '').trim()) {
+      visible[visible.length - 1] = event;
+    } else {
+      visible.add(event);
+    }
+  }
+  return visible;
+}

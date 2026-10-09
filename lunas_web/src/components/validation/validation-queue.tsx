@@ -141,7 +141,7 @@ export function ValidationQueue({
   const hasFilters = Boolean(search || category || jurisdiction || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
 
   return (
-    <div className="mx-auto max-w-[1580px]">
+    <div className="mx-auto max-w-395">
       <PageHeader
         eyebrow={`${viewer.organization} · Official Workflow`}
         title={isCityEngineering ? "City Engineering Review" : "Barangay Report Review"}

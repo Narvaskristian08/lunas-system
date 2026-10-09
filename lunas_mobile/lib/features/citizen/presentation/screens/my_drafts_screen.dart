@@ -32,7 +32,7 @@ class _MyDraftsScreenState extends State<MyDraftsScreen> {
     final theme = Theme.of(context);
     return LunasAppScaffold(
       title: 'My Draft Reports',
-      subtitle: 'Finish a saved report when you are ready',
+      subtitle: 'Continue your saved reports.',
       selectedIndex: 3,
       showBackButton: true,
       child: Column(

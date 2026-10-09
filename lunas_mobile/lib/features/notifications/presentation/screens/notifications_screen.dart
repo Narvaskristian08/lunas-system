@@ -203,7 +203,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   @override
   Widget build(BuildContext context) {
     final fillEmpty =
-        !widget.repairWorkspace &&
         !_loading &&
         _error == null &&
         !_items.any((item) => _filter == null || item.kind == _filter);
@@ -215,9 +214,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     );
     if (widget.repairWorkspace) {
       return RepairPage(
+        fillAvailableHeight: _loading || _error != null || fillEmpty,
         appBar: RepairAppBar(
-          title: 'Repair notifications',
-          subtitle: '$_unreadCount Unread Updates',
+          title: 'Notifications',
+          subtitle: _unreadCount == 0
+              ? 'Stay updated on your work orders.'
+              : '$_unreadCount Unread Update${_unreadCount == 1 ? '' : 's'}',
           actions: [
             refreshAction,
             const SizedBox(width: AppSpacing.sm),
@@ -230,12 +232,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     }
     return LunasAppScaffold(
       title: 'Notifications',
-      fillAvailableHeight: fillEmpty,
+      fillAvailableHeight: _loading || _error != null || fillEmpty,
       subtitle: _unreadCount == 0
           ? 'Stay updated on your reports.'
           : '$_unreadCount Unread Update${_unreadCount == 1 ? '' : 's'}',
       selectedIndex: null,
-      showBackButton: true,
+      showBackButton: false,
       actions: [
         refreshAction,
         const SizedBox(width: AppSpacing.sm),
@@ -245,23 +247,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   Widget _body(BuildContext context, {bool fillEmpty = false}) {
-    if (_loading) {
-      return const LunasStateView(
-        state: LunasViewState.loading,
-        title: 'Loading notifications',
-        message: 'Getting your latest LUNAS updates.',
-      );
-    }
-    if (_error != null) {
-      return LunasStateView(
-        state: LunasViewState.error,
-        title: 'Could not load notifications',
-        message: _error!,
-        actionLabel: 'Try again',
-        onAction: _load,
-      );
-    }
-
     final visible = _filter == null
         ? _items
         : _items.where((item) => item.kind == _filter).toList();
@@ -320,7 +305,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               ),
             ),
             TextButton(
-              onPressed: _unreadCount == 0 ? null : _markAllRead,
+              onPressed: _loading || _unreadCount == 0 ? null : _markAllRead,
               style: TextButton.styleFrom(
                 textStyle: const TextStyle(
                   fontSize: 12,
@@ -333,7 +318,25 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        if (visible.isEmpty)
+        if (_loading)
+          const Expanded(
+            child: LunasStateView(
+              state: LunasViewState.loading,
+              title: 'Loading notifications',
+              message: 'Getting your latest LUNAS updates.',
+            ),
+          )
+        else if (_error != null)
+          Expanded(
+            child: LunasStateView(
+              state: LunasViewState.error,
+              title: 'Could not load notifications',
+              message: _error!,
+              actionLabel: 'Try again',
+              onAction: _load,
+            ),
+          )
+        else if (visible.isEmpty)
           if (fillEmpty)
             const Expanded(
               child: Align(
@@ -360,7 +363,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
-        if (_page < _pages) ...[
+        if (!_loading && _error == null && _page < _pages) ...[
           const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
             onPressed: _loadingMore ? null : _loadMore,

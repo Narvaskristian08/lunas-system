@@ -42,105 +42,22 @@ class CitizenBottomNavigation extends StatelessWidget {
     final theme = Theme.of(context);
     final path = GoRouterState.of(context).uri.path;
     final selectedIndex = _selectedIndexFor(path);
-    final isNarrow = MediaQuery.sizeOf(context).width < 360;
-    final inactiveColor = theme.colorScheme.onSurfaceVariant;
-    final activeColor = theme.colorScheme.primary;
-
-    return SafeArea(
-      top: false,
-      minimum: EdgeInsets.fromLTRB(isNarrow ? 6 : 10, 6, isNarrow ? 6 : 10, 8),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x14000000),
-              blurRadius: 14,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: List.generate(_destinations.length, (index) {
-              final destination = _destinations[index];
-              final isSelected = index == selectedIndex;
-              return Expanded(
-                child: Semantics(
-                  selected: isSelected,
-                  button: true,
-                  label: destination.label,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: isSelected
-                            ? null
-                            : () => context.go(destination.route),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 220),
-                                curve: Curves.easeOutCubic,
-                                width: isNarrow ? 46 : 52,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? activeColor
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 180),
-                                  child: Icon(
-                                    isSelected
-                                        ? destination.selectedIcon
-                                        : destination.icon,
-                                    key: ValueKey(isSelected),
-                                    size: 21,
-                                    color: isSelected
-                                        ? theme.colorScheme.onPrimary
-                                        : inactiveColor,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                destination.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.fade,
-                                softWrap: false,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: isSelected
-                                      ? activeColor
-                                      : inactiveColor,
-                                  fontSize: isNarrow ? 10 : 11,
-                                  letterSpacing: 0,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      height: 64,
+      indicatorColor: theme.colorScheme.primary,
+      onDestinationSelected: (index) {
+        if (index == selectedIndex) return;
+        context.go(_destinations[index].route);
+      },
+      destinations: [
+        for (final destination in _destinations)
+          NavigationDestination(
+            icon: Icon(destination.icon, size: 22),
+            selectedIcon: Icon(destination.selectedIcon, size: 22),
+            label: destination.label,
           ),
-        ),
-      ),
+      ],
     );
   }
 

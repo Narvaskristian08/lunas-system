@@ -54,7 +54,7 @@ class LunasAppScaffold extends StatelessWidget {
                 horizontalPadding,
                 AppSpacing.md,
                 horizontalPadding,
-                AppSpacing.hero,
+                floatingActionButton != null ? AppSpacing.hero : AppSpacing.xxl,
               ),
               child: Align(
                 alignment: Alignment.topCenter,
@@ -64,7 +64,9 @@ class LunasAppScaffold extends StatelessWidget {
                     minHeight: fillAvailableHeight
                         ? (constraints.maxHeight -
                                   AppSpacing.md -
-                                  AppSpacing.hero)
+                                  (floatingActionButton != null
+                                      ? AppSpacing.hero
+                                      : AppSpacing.xxl))
                               .clamp(0.0, double.infinity)
                         : 0,
                   ),

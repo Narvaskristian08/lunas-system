@@ -4,6 +4,17 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 
 enum LunasViewState { loading, empty, success, error }
 
+class LunasHomeLoadingView extends StatelessWidget {
+  const LunasHomeLoadingView({super.key});
+
+  @override
+  Widget build(BuildContext context) => const LunasStateView(
+    state: LunasViewState.loading,
+    title: 'Loading your dashboard',
+    message: 'Getting your latest updates.',
+  );
+}
+
 class LunasStateView extends StatelessWidget {
   const LunasStateView({
     required this.state,
@@ -46,7 +57,7 @@ class LunasStateView extends StatelessWidget {
       liveRegion: true,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          vertical: compact ? AppSpacing.xl : AppSpacing.hero,
+          vertical: compact ? AppSpacing.md : AppSpacing.xxl,
           horizontal: AppSpacing.md,
         ),
         child: Column(
@@ -55,7 +66,7 @@ class LunasStateView extends StatelessWidget {
             if (state == LunasViewState.loading)
               const SizedBox.square(
                 dimension: 42,
-                child: CircularProgressIndicator(strokeWidth: 3),
+                child: LunasLoadingIndicator(),
               )
             else
               Icon(icon, color: color, size: compact ? 42 : 58),
@@ -81,16 +92,34 @@ class LunasStateView extends StatelessWidget {
         ),
       ),
     );
-    if (state != LunasViewState.loading) return content;
-    if (compact) {
-      return Transform.translate(offset: const Offset(0, -12), child: content);
-    }
-    return SizedBox(
-      height: (MediaQuery.sizeOf(context).height - 200).clamp(
-        240.0,
-        double.infinity,
-      ),
-      child: Align(alignment: const Alignment(0, -.18), child: content),
-    );
+    if (compact || state == LunasViewState.success) return content;
+    return Align(alignment: const Alignment(0, -.18), child: content);
   }
+}
+
+class LunasLoadingIndicator extends StatefulWidget {
+  const LunasLoadingIndicator({super.key});
+
+  @override
+  State<LunasLoadingIndicator> createState() => _LunasLoadingIndicatorState();
+}
+
+class _LunasLoadingIndicatorState extends State<LunasLoadingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _rotation = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _rotation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RotationTransition(
+    turns: _rotation,
+    child: const CircularProgressIndicator(value: .72, strokeWidth: 3),
+  );
 }

@@ -110,7 +110,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen>
             AppSpacing.xl,
             AppSpacing.md,
             AppSpacing.xl,
-            AppSpacing.hero,
+            AppSpacing.xxl,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

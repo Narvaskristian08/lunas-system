@@ -7,6 +7,7 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/maps/data/services/location_service.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 
@@ -260,7 +261,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(),
+                    SizedBox.square(
+                      dimension: 42,
+                      child: LunasLoadingIndicator(),
+                    ),
                     SizedBox(height: AppSpacing.md),
                     Text('Getting your current location…'),
                   ],

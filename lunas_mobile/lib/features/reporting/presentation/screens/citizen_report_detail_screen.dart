@@ -111,7 +111,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
       );
     }
     final report = _report!;
-    final history = _history ?? report.statusHistory;
+    final history = visibleReportHistory(_history ?? report.statusHistory);
     return Scaffold(
       appBar: LunasAppBar(
         title: 'Report Details',
@@ -125,7 +125,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
             AppSpacing.xl,
             AppSpacing.md,
             AppSpacing.xl,
-            AppSpacing.hero,
+            AppSpacing.xxl,
           ),
           child: Align(
             alignment: Alignment.topCenter,

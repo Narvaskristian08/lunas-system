@@ -44,7 +44,7 @@ class _CategoryPickerScreenState extends State<CategoryPickerScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
       title: 'Select category',
-      subtitle: 'Choose the type of infrastructure concern',
+      subtitle: 'Choose the category that fits the issue.',
       showBackButton: true,
     ),
     body: SafeArea(
