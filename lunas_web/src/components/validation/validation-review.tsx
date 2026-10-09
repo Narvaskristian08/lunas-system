@@ -44,13 +44,6 @@ function statusTone(status: string): Severity {
   return "warning";
 }
 
-function priorityTone(priority: ValidationPriority): Severity {
-  if (priority === "critical") return "critical";
-  if (priority === "high") return "warning";
-  if (priority === "medium") return "information";
-  return "neutral";
-}
-
 function fieldClass() {
   return "mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70";
 }
@@ -215,7 +208,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
   const initialDecision: Decision = isBarangay
     ? "validate"
     : incident.status === "barangay_validated" ? "confirm"
-      : incident.status === "city_confirmed" ? "priority"
+      : ["city_confirmed", "prioritized"].includes(incident.status) ? "priority"
         : "route";
   const [decision, setDecision] = useState<Decision>(initialDecision);
   const [priority, setPriority] = useState<ValidationPriority | "">(incident.priority ?? "");
@@ -259,6 +252,10 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
       setError("Select the priority City Engineering has determined for this incident.");
       return;
     }
+    if (["priority", "route"].includes(decision) && !organization) {
+      setError("Select the responsible Utility Provider.");
+      return;
+    }
     setConfirm(true);
   };
 
@@ -275,7 +272,18 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
               : decision === "clarification"
                 ? await requestClarificationAction({ incidentId: incident.id, reason })
                 : decision === "priority"
-                  ? await assignIncidentPriorityAction({ incidentId: incident.id, priority: priority as ValidationPriority })
+                  ? await (async () => {
+                    if (incident.status === "city_confirmed" || priority !== incident.priority) {
+                      const priorityResult = await assignIncidentPriorityAction({ incidentId: incident.id, priority: priority as ValidationPriority });
+                      if (!priorityResult.ok) return priorityResult;
+                    }
+                    const routingResult = await routeIncidentAction({ incidentId: incident.id, organization, reason: routingReason });
+                    if (!routingResult.ok) {
+                      router.refresh();
+                      return { ...routingResult, message: `Priority saved. ${routingResult.message}` };
+                    }
+                    return routingResult;
+                  })()
                   : await routeIncidentAction({ incidentId: incident.id, organization, reason: routingReason });
       setConfirm(false);
       if (!result.ok) {
@@ -293,7 +301,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
       : decision === "duplicate" ? "Mark report as duplicate"
         : decision === "confirm" ? "Confirm at City Engineering"
           : decision === "clarification" ? "Return for Clarification"
-            : decision === "priority" ? "Assign incident priority"
+            : decision === "priority" ? "Confirm Priority and Route"
               : "Route to Utility Provider";
   return (
     <div className="mx-auto max-w-[1480px]">
@@ -331,15 +339,16 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
               {decision === "confirm" ? <><label className="block text-sm font-semibold text-slate-800">Engineering Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label></> : <label className="block text-sm font-semibold text-slate-800">Clarification Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={2000} required /></label>}
               <Button type="submit" variant={decision === "clarification" ? "secondary" : "primary"} className="w-full" disabled={pending}>{decision === "confirm" ? "Confirm for Engineering" : "Return with reason"}</Button>
             </form> : null}
-            {canCityReview && incident.status === "city_confirmed" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Manual Priority<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority | "")} className={fieldClass()} required><option value="">Select City Engineering Priority</option>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label><Badge tone={priority ? priorityTone(priority) : "neutral"}>LUNAS calculates the SLA deadline after City Engineering records a priority.</Badge><Button type="submit" className="w-full" disabled={pending || !priority}>Assign Priority and Start SLA</Button></form> : null}
-            {canCityReview && incident.status === "prioritized" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Responsible Utility Provider<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an Active Provider Organization</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>{utilityProviders.length ? <p className="text-xs leading-5 text-slate-500">Only organizations with active, provisioned Utility Provider accounts are selectable.</p> : <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">No active Utility Provider organization is provisioned. An Admin must authorize and provision one before City Engineering can route this incident.</p>}<label className="block text-sm font-semibold text-slate-800">Routing Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label><Button type="submit" className="w-full" disabled={pending || utilityProviders.length === 0}><Route className="size-4" /> Route to Utility Provider</Button></form> : null}
+            {canCityReview && ["city_confirmed", "prioritized"].includes(incident.status) ? <form onSubmit={submit} className="space-y-4 p-5">
+              <label className="block text-sm font-semibold text-slate-800">Priority and SLA<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority | "")} className={fieldClass()} required><option value="">Select Priority</option>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select><span className="mt-2 block text-xs font-normal leading-5 text-slate-500">The SLA timer starts when the report is assigned to the selected Utility Provider.</span></label>
+              <label className="block text-sm font-semibold text-slate-800">Responsible Utility Provider<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an Active Provider Organization</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>{utilityProviders.length ? <p className="text-xs leading-5 text-slate-500">Only organizations with active, provisioned Utility Provider accounts are selectable.</p> : <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">No active Utility Provider organization is provisioned. An Admin must authorize and provision one before City Engineering can route this incident.</p>}<label className="block text-sm font-semibold text-slate-800">Routing Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label><Button type="submit" className="w-full" disabled={pending || !organization || utilityProviders.length === 0 || !priority}><Route className="size-4" /> Confirm Priority and Route</Button></form> : null}
             {!canBarangayReview && !(canCityReview && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status)) ? <div className="p-5 text-sm text-slate-600">No decision controls are available for this role or incident state.</div> : null}
           </Card>
           {incident.workOrder?.id ? <Card className="overflow-hidden"><CardHeader title="Work Order" description="This incident already has its primary maintenance work order." /><div className="p-5"><p className="font-semibold text-slate-950">{incident.workOrder.reference ?? "Work order created"}</p><p className="mt-1 text-sm text-slate-600">{incident.workOrder.status?.replaceAll("_", " ") ?? "Operational status available"}</p><Link href={`/work-orders/${encodeURIComponent(incident.workOrder.id)}`} className="mt-4 inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Open Work Order <Route className="ml-1 size-4" /></Link></div></Card> : null}
         </aside>
       </div>
 
-      <ConfirmationDialog open={confirm} onClose={() => !pending && setConfirm(false)} onConfirm={confirmDecision} loading={pending} icon="none" destructive={decision === "reject" || decision === "clarification"} title={decisionTitle} description={decision === "validate" ? "This records Barangay validation and forwards the report to City Engineering. Priority and provider assignment remain separate decisions." : decision === "reject" ? "This rejects the report with the reason entered above." : decision === "duplicate" ? "This records a human duplicate decision. Candidate matching alone does not change the report." : decision === "confirm" ? "This records City Engineering confirmation. Priority and SLA are assigned in the next step." : decision === "clarification" ? "This returns the report for clarification and records your reason." : decision === "priority" ? "This records your manual priority decision and calculates the configured SLA deadline." : "This assigns the incident to the named Utility Provider organization."} confirmLabel={decisionTitle} />
+      <ConfirmationDialog open={confirm} onClose={() => !pending && setConfirm(false)} onConfirm={confirmDecision} loading={pending} icon="none" destructive={decision === "reject" || decision === "clarification"} title={decisionTitle} description={decision === "validate" ? "This records Barangay validation and forwards the report to City Engineering. Priority and provider assignment remain separate decisions." : decision === "reject" ? "This rejects the report with the reason entered above." : decision === "duplicate" ? "This records a human duplicate decision. Candidate matching alone does not change the report." : decision === "confirm" ? "This records City Engineering confirmation. Priority and SLA are assigned in the next step." : decision === "clarification" ? "This returns the report for clarification and records your reason." : decision === "priority" ? "This records the selected priority, assigns the report to the selected Utility Provider, and starts the SLA timer." : "This assigns the incident to the named Utility Provider organization."} confirmLabel={decisionTitle} />
     </div>
   );
 }

@@ -294,7 +294,8 @@ const findScopedWorkOrder = (req, id, includeIncident = true) => {
 const listFilter = async (req) => {
   const filter = { ...buildWorkOrderScope(req.user) };
   const query = req.query || {};
-  if (query.status) filter.status = query.status;
+  if (query.status === 'needs_correction') filter.status = { $in: ['rework_required', 'city_correction_required'] };
+  else if (query.status) filter.status = query.status;
   else if (req.user.role === 'utility_provider') filter.status = { $ne: 'verified' };
   if (query.priority) filter.priority = query.priority;
   if (query.assignmentStatus) filter.assignmentState = query.assignmentStatus;
@@ -325,14 +326,18 @@ const listFilter = async (req) => {
   if (query.slaState === 'overdue') {
     filter['sla.state'] = { $nin: ['met', 'breached', 'cancelled'] };
     filter['sla.deadline'] = { $lt: now };
-    filter.status = { $in: ACTIVE_WORK_ORDER_STATUSES };
+    if (query.status || (req.user.role === 'repair_personnel' && query.repairView)) {
+      filter.$and = [...(filter.$and || []), { status: { $in: ACTIVE_WORK_ORDER_STATUSES } }];
+    } else filter.status = { $in: ACTIVE_WORK_ORDER_STATUSES };
   } else if (query.slaState === 'approaching') {
     filter['sla.state'] = { $nin: ['met', 'breached', 'cancelled'] };
     filter['sla.deadline'] = {
       $gte: now,
       $lte: new Date(now.getTime() + thresholdHours * 60 * 60 * 1000)
     };
-    filter.status = { $in: ACTIVE_WORK_ORDER_STATUSES };
+    if (query.status || (req.user.role === 'repair_personnel' && query.repairView)) {
+      filter.$and = [...(filter.$and || []), { status: { $in: ACTIVE_WORK_ORDER_STATUSES } }];
+    } else filter.status = { $in: ACTIVE_WORK_ORDER_STATUSES };
   }
   return filter;
 };
@@ -1409,7 +1414,7 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
     count({ status: 'accepted' }),
     count(req.user.role === REPAIR_PERSONNEL_ROLE
       ? { status: 'in_progress', assignmentState: 'accepted' }
-      : { status: { $in: ['in_progress', 'rework_required'] } }),
+      : { status: 'in_progress' }),
     count({ status: 'completed', progressPercent: 100 }),
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $gte: now, $lte: deadline } }),
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $lt: now } }),

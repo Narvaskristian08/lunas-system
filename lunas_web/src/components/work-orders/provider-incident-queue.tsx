@@ -34,9 +34,11 @@ function hasFilters(filters: ProviderIncidentFilters) {
 export function ProviderIncidentQueue({
   queue,
   filters,
+  embedded = false,
 }: {
   queue: ProviderIncidentQueueData;
   filters: ProviderIncidentFilters;
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +56,7 @@ export function ProviderIncidentQueue({
     };
     if (!Object.prototype.hasOwnProperty.call(patch, "page")) values.page = "1";
     const query = new URLSearchParams();
+    if (embedded) query.set("assignmentStatus", "unassigned");
     for (const [key, value] of Object.entries(values)) {
       if (value) query.set(key, value);
     }
@@ -66,8 +69,8 @@ export function ProviderIncidentQueue({
   };
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className={embedded ? "w-full" : "mx-auto max-w-6xl"}>
+      {!embedded ? <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold tracking-normal text-brand-700">Maintenance Operations · Provider Intake</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">Routed Incidents</h1>
@@ -76,11 +79,11 @@ export function ProviderIncidentQueue({
           </p>
         </div>
         <Link href="/work-orders" className={buttonStyles({ variant: "secondary" })}>Open Work Orders</Link>
-      </div>
+      </div> : null}
 
       <Card className="overflow-hidden">
         <CardHeader
-          title="Organization Intake Queue"
+          title={embedded ? "Reports Awaiting Work Order" : "Organization Intake Queue"}
           description={`${queue.pagination.total} routed ${queue.pagination.total === 1 ? "incident" : "incidents"} in your authorized organization scope.`}
           action={<StatusBadge tone="information">Provider assigned</StatusBadge>}
         />

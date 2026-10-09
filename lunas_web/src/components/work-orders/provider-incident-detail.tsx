@@ -48,8 +48,8 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <Link href="/work-orders/intake" className={buttonStyles({ variant: "ghost", size: "sm" })}>
-          <ArrowLeft className="size-4" aria-hidden="true" /> Routed Incidents
+        <Link href="/work-orders?assignmentStatus=unassigned" className={buttonStyles({ variant: "ghost", size: "sm" })}>
+          <ArrowLeft className="size-4" aria-hidden="true" /> Awaiting Assignment
         </Link>
         <Link href="/work-orders" className={buttonStyles({ variant: "secondary", size: "sm" })}>Open Work Orders</Link>
       </div>

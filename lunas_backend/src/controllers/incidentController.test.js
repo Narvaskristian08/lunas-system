@@ -394,7 +394,7 @@ const slaQuery = (value) => {
 };
 
 test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
-  'City prioritization starts the %s SLA after submission (%i hours)', async (priority, hours) => {
+  'City prioritization prepares the %s SLA without starting the timer (%i hours)', async (priority, hours) => {
     jest.clearAllMocks();
     const time = new Date('2026-10-02T00:00:00Z');
     jest.useFakeTimers().setSystemTime(time);
@@ -408,8 +408,10 @@ test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
       user: { _id: '507f191e810c19729de860a1', role: 'city_engineer' }, headers: {} }, res, next);
     expect(next).not.toHaveBeenCalled();
     const sla = Incident.findOneAndUpdate.mock.calls[0][1].$set.sla;
-    expect(sla.startedAt).toEqual(time);
-    expect(sla.deadline.getTime() - time.getTime()).toBe(hours * 3600000);
+    expect(sla.startedAt).toBeUndefined();
+    expect(sla.deadline).toBeUndefined();
+    expect(sla.state).toBe('not_started');
+    expect(sla.targetResolutionTime).toBe(hours);
     expect(res.status).toHaveBeenCalledWith(200);
     jest.useRealTimers();
   }

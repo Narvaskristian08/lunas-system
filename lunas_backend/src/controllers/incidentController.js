@@ -769,7 +769,7 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   const numericLimit = Number(limit);
   const allowedSorts = new Set(['createdAt', '-createdAt', 'priority', '-priority']);
   const filter = req.user.role === 'city_engineer'
-    ? { status: req.query.stage === 'confirmed' ? 'city_confirmed' : 'barangay_validated' }
+    ? { status: req.query.stage === 'confirmed' ? { $in: ['city_confirmed', 'prioritized'] } : 'barangay_validated' }
     : { status: { $in: ['submitted', 'clarification_required'] } };
 
   if (category) filter.category = category;
@@ -1149,19 +1149,19 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'city_confirmed') {
+  if (!['city_confirmed', 'prioritized'].includes(before.status)) {
     return res.status(409).json({ success: false, message: 'City Engineering must confirm an incident before assigning its priority' });
   }
   const now = new Date();
   const updated = await Incident.findOneAndUpdate(
-    combineIncidentFilters({ _id: before._id, status: 'city_confirmed' }, officialScope(req)),
+    combineIncidentFilters({ _id: before._id, status: before.status }, officialScope(req)),
     {
       $set: {
         status: 'prioritized',
         priority,
         priorityAssignedBy: req.user._id,
         priorityAssignedAt: now,
-        sla: initializeIncidentSLA(priority, before.sla?.startedAt || now)
+        sla: { targetResolutionTime: initializeIncidentSLA(priority, now).targetResolutionTime, state: 'not_started', isOverdue: false, escalationLevel: 0, remindersSent: 0 }
       },
       $push: {
         statusHistory: {
@@ -1170,7 +1170,7 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
           actorRole: req.user.role,
           changedAt: now,
           notes: `City Engineering assigned ${priority} priority and calculated the SLA deadline`,
-          metadata: { priority, sla: initializeIncidentSLA(priority, now) }
+          metadata: { priority, targetResolutionTime: initializeIncidentSLA(priority, now).targetResolutionTime }
         }
       }
     },
@@ -1243,7 +1243,7 @@ exports.routeIncident = asyncHandler(async (req, res) => {
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (before.status !== 'prioritized' || !before.priority || !before.sla?.deadline) {
+  if (before.status !== 'prioritized' || !before.priority) {
     return res.status(409).json({ success: false, message: 'Assign City Engineering priority and SLA before routing to a Utility Provider' });
   }
   const jurisdiction = normalizeJurisdiction(before, before.jurisdiction || {});
@@ -1279,7 +1279,8 @@ exports.routeIncident = asyncHandler(async (req, res) => {
         routing,
         assignedUtility: providerAccount._id,
         providerAssignedBy: req.user._id,
-        providerAssignedAt: now
+        providerAssignedAt: now,
+        sla: initializeIncidentSLA(before.priority, now)
       },
       $push: {
         statusHistory: {

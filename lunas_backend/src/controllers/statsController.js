@@ -148,7 +148,7 @@ exports.getValidationSummary = asyncHandler(async (req, res) => {
     ? ['barangay_validated']
     : ['submitted', 'clarification_required'];
   const pending = await Incident.countDocuments(combineIncidentFilters(scope, { status: { $in: pendingStates } }));
-  const validatedState = req.user.role === 'barangay_official' ? 'barangay_validated' : 'city_confirmed';
+  const validatedState = req.user.role === 'barangay_official' ? 'barangay_validated' : { $in: ['city_confirmed', 'prioritized'] };
   const [validated, rejected, duplicate] = await Promise.all([
     count(validatedState),
     count('rejected'),

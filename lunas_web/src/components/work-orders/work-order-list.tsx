@@ -15,7 +15,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { buttonStyles } from "@/components/ui/button";
 import type { UserProfile } from "@/types";
-import type { WorkOrderFilters, WorkOrderQueueData, WorkOrderSummary } from "@/lib/work-orders.server";
+import type { ProviderIncidentQueueData, WorkOrderFilters, WorkOrderQueueData, WorkOrderSummary } from "@/lib/work-orders.server";
 import { assignmentLabel, assignmentTone, formatLocation, formatPerson, priorityTone, SlaBadges, titleCase, workOrderStatusTone, workOrderStatusLabel } from "@/components/work-orders/work-order-ui";
 import { formatDateTime } from "@/lib/utils";
 
@@ -42,6 +42,7 @@ function hasFilters(filters: WorkOrderFilters) {
 function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"], isSla: boolean) {
   const cards = {
     unassigned: { label: "Awaiting Assignment", value: summary.unassigned },
+    pendingRepairs: { label: "Pending Repairs", value: summary.accepted },
     pending: { label: "Pending Acceptance", value: summary.pendingAcceptance },
     active: { label: "Active Repairs", value: summary.active },
     approaching: { label: "Approaching Deadline", value: summary.approaching },
@@ -49,14 +50,14 @@ function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"
     providerReview: { label: "Awaiting Repair Review", value: summary.readyForCompletion },
     cityVerification: { label: "Awaiting Verification", value: summary.awaitingFinalVerification },
     cityCorrections: { label: "Returned for Correction", value: summary.cityCorrections },
-    corrective: { label: "Corrective Repairs", value: summary.correctiveRepairs },
+    corrective: { label: "Needs Correction", value: summary.correctiveRepairs + (role === "utility_provider" ? summary.cityCorrections : 0) },
   };
   if (isSla) return [cards.active, cards.approaching, cards.overdue];
   if (role === "city_engineer") {
     return [cards.cityVerification, cards.active, cards.approaching, cards.overdue];
   }
   if (role === "utility_provider") {
-    return [cards.unassigned, cards.active, cards.providerReview, cards.cityCorrections, cards.approaching, cards.overdue];
+    return [cards.unassigned, cards.pendingRepairs, cards.active, cards.providerReview, cards.corrective, cards.approaching, cards.overdue];
   }
   if (role === "repair_personnel") {
     return [cards.pending, cards.active, cards.corrective, cards.approaching, cards.overdue];
@@ -71,11 +72,13 @@ export function WorkOrderList({
   summary,
   mode = "work-orders",
   workspaceView,
+  intake,
 }: {
   viewer: UserProfile;
   queue: WorkOrderQueueData;
   filters: WorkOrderFilters;
   summary?: WorkOrderSummary;
+  intake?: ProviderIncidentQueueData;
   mode?: "work-orders" | "sla";
   workspaceView?: "orders" | "verification";
 }) {
@@ -106,12 +109,12 @@ export function WorkOrderList({
     : [
       { value: "", label: "All Work States" },
       { value: "pending", label: "Pending Assignment" },
-      { value: "accepted", label: "Accepted" },
+      { value: "accepted", label: "Pending Repairs" },
       { value: "in_progress", label: "In Progress" },
       { value: "completed", label: "Awaiting Provider Review" },
-      { value: "rework_required", label: "Corrective Work" },
+      { value: viewer.backendRole === "utility_provider" ? "needs_correction" : "rework_required", label: "Needs Correction" },
       { value: "provider_accepted", label: "Awaiting City Verification" },
-      { value: "city_correction_required", label: "Returned to Provider" },
+      ...(viewer.backendRole !== "utility_provider" ? [{ value: "city_correction_required", label: "Returned to Provider" }] : []),
       { value: "verified", label: "Closed" },
     ];
 
@@ -162,6 +165,14 @@ export function WorkOrderList({
     : workspaceView && filters.slaState === "approaching" ? "Approaching Deadline"
     : workspaceView && filters.slaState === "overdue" ? "Overdue Repairs"
     : workspaceView && filters.status === "in_progress" ? "Active Repairs"
+    : filters.assignmentStatus === "unassigned" ? "Awaiting Assignment"
+    : filters.slaState === "approaching" ? "Approaching Deadline"
+    : filters.slaState === "overdue" ? "Overdue Repairs"
+    : filters.status === "accepted" ? "Pending Repairs"
+    : filters.status === "in_progress" ? "Active Repairs"
+    : filters.status === "completed" ? "Awaiting Repair Review"
+    : filters.status === "city_correction_required" ? "Returned for Correction"
+    : ["rework_required", "needs_correction"].includes(filters.status ?? "") ? "Needs Correction"
     : "Operational Work Orders";
 
   const columns = [
@@ -185,15 +196,26 @@ export function WorkOrderList({
       </div> : null}
 
       {summary && !workspaceView ? (
-        <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
-          {summaryCards(summary, viewer.backendRole, isSla).map((item) => (
-            <Card key={item.label} className="p-4">
-              <p className="text-sm font-medium text-slate-600">{item.label}</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value)}</p>
-            </Card>
-          ))}
+        <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
+          {summaryCards(summary, viewer.backendRole, isSla).map((item) => {
+            const provider = viewer.backendRole === "utility_provider" && !isSla;
+            const cardFilter: QueryPatch = item.label === "Awaiting Assignment" ? { assignmentStatus: "unassigned" }
+              : item.label === "Pending Repairs" ? { status: "accepted" }
+              : item.label === "Active Repairs" ? { status: "in_progress" }
+              : item.label === "Awaiting Repair Review" ? { status: "completed" }
+              : item.label === "Returned for Correction" ? { status: "city_correction_required" }
+              : item.label === "Needs Correction" ? { status: "needs_correction" }
+              : item.label === "Approaching Deadline" ? { slaState: "approaching" }
+              : item.label === "Overdue" ? { slaState: "overdue" } : {};
+            const selected = provider && Object.entries(cardFilter).every(([key, value]) => ({ status: filters.status, assignmentStatus: filters.assignmentStatus, slaState: filters.slaState } as QueryPatch)[key] === value)
+              && (cardFilter.status || !filters.status) && (cardFilter.assignmentStatus || !filters.assignmentStatus) && (cardFilter.slaState || !filters.slaState);
+            const content = <><p className="text-sm font-medium text-slate-600">{item.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value + (item.label === "Awaiting Assignment" ? intake?.pagination.total ?? 0 : 0))}</p></>;
+            return provider ? <button key={item.label} type="button" aria-pressed={Boolean(selected)} onClick={() => navigate({ status: undefined, assignmentStatus: undefined, slaState: undefined, ...cardFilter })} className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700 ${selected ? "border-brand-700 ring-2 ring-brand-700" : "border-slate-200"}`}>{content}</button>
+              : <Card key={item.label} className="p-4">{content}</Card>;
+          })}
         </div>
       ) : null}
+
 
       <Card className="overflow-hidden">
         <CardHeader
@@ -202,7 +224,7 @@ export function WorkOrderList({
           action={workspaceView ? <Link href="/work-orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ArrowUpDown className="size-3.5" aria-hidden="true" /> Sort and Filter</span>}
         />
         <form onSubmit={(event) => { event.preventDefault(); navigate({ search: search.trim() || undefined }); }} className="border-b border-slate-200 bg-white p-4">
-          <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder="Search work-order reference" aria-label="Search Work Orders" className="max-w-xl" />
+          <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder={filters.assignmentStatus === "unassigned" ? "Search report or work-order reference" : "Search work-order reference"} aria-label="Search Work Orders" className="max-w-xl" />
         </form>
         <FilterBar>
           <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All Priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
@@ -222,9 +244,9 @@ export function WorkOrderList({
               id: workOrder.id,
               cells: {
                 workOrder: <div className="space-y-2">
-                  <Link href={`/work-orders/${encodeURIComponent(workOrder.id)}`} className="block whitespace-nowrap text-sm font-semibold text-brand-700 hover:underline">{workOrder.reference}</Link>
+                  <Link href={workOrder.intakeIncidentId ? `/work-orders/intake/${encodeURIComponent(workOrder.intakeIncidentId)}` : `/work-orders/${encodeURIComponent(workOrder.id)}`} className="block whitespace-nowrap text-sm font-semibold text-brand-700 hover:underline">{workOrder.reference}</Link>
                   <p className="text-sm font-medium text-slate-800">{categoryLabel(workOrder.incident?.category, "Uncategorized")}</p>
-                  <p className="whitespace-nowrap text-xs text-slate-500">{workOrder.incident?.reportNumber ?? "Incident unavailable"}</p>
+                  <p className="whitespace-nowrap text-xs text-slate-500">{workOrder.intakeIncidentId ? "Create Work Order & Assign" : workOrder.incident?.reportNumber ?? "Incident unavailable"}</p>
                 </div>,
                 location: <p className="line-clamp-3 text-sm leading-6 text-slate-600" title={formatLocation(workOrder.incident?.location)}>{formatLocation(workOrder.incident?.location)}</p>,
                 assignee: <div className="space-y-1.5">

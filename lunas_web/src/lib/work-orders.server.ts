@@ -132,6 +132,7 @@ export interface WorkOrderSla {
 }
 
 export interface WorkOrder {
+  intakeIncidentId?: string;
   id: string;
   reference: string;
   priority?: string;
@@ -218,7 +219,7 @@ export interface WorkOrderFilters {
   page: number;
   limit: number;
   search?: string;
-  status?: WorkOrderStatus;
+  status?: WorkOrderStatus | "needs_correction";
   priority?: "critical" | "high" | "medium" | "low";
   assignmentStatus?: AssignmentState;
   progress?: 0 | 25 | 50 | 75 | 100;
@@ -598,7 +599,7 @@ export function readWorkOrderFilters(searchParams: Record<string, string | strin
     page: Number.isInteger(page) && page > 0 ? page : defaultWorkOrderFilters.page,
     limit: Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : defaultWorkOrderFilters.limit,
     search: one(searchParams, "search")?.trim().slice(0, 100) || undefined,
-    status: status && validStatuses.has(status as WorkOrderStatus) ? status as WorkOrderStatus : undefined,
+    status: status === "needs_correction" ? status : status && validStatuses.has(status as WorkOrderStatus) ? status as WorkOrderStatus : undefined,
     priority: priority && validPriorities.has(priority) ? priority as WorkOrderFilters["priority"] : undefined,
     assignmentStatus: assignmentStatus && validAssignmentStates.has(assignmentStatus as AssignmentState)
       ? assignmentStatus as AssignmentState
@@ -753,4 +754,45 @@ export async function getWorkOrderSummary(): Promise<WorkOrderSummary> {
     correctiveRepairs: count(values, "correctiveRepairs", "reworkRequired"),
     closed: count(values, "closed", "verified"),
   };
+}
+
+
+export async function getAwaitingAssignmentQueue(filters: WorkOrderFilters): Promise<WorkOrderQueueData> {
+  const orders: WorkOrder[] = [];
+  const reports: ProviderRoutedIncident[] = [];
+  const collectOrders = async () => {
+    let page = 1;
+    while (true) {
+      const batch = await getWorkOrders({ ...filters, page, limit: 100 });
+      orders.push(...batch.workOrders);
+      if (page >= batch.pagination.pages) break;
+      page++;
+    }
+  };
+  const collectReports = async () => {
+    if (filters.status || filters.slaState || filters.personnel || filters.progress !== undefined) return;
+    let page = 1;
+    while (true) {
+      const batch = await getProviderIncidentQueue({ page, limit: 100, search: filters.search, priority: filters.priority, category: filters.category });
+      reports.push(...batch.incidents.filter(report => !report.workOrder));
+      if (page >= batch.pagination.pages) break;
+      page++;
+    }
+  };
+  await Promise.all([collectOrders(), collectReports()]);
+  const rows = [...orders, ...reports.map(report => ({
+    ...normalizeWorkOrder({ _id: report.id, orderNumber: report.reportNumber, status: 'pending', assignmentState: 'unassigned',
+      incident: { ...report, _id: report.id }, priority: report.priority, responsibleOrganization: report.responsibleOrganization,
+      createdAt: report.createdAt, updatedAt: report.routedAt ?? report.createdAt, sla: report.sla })!,
+    intakeIncidentId: report.id,
+  }))];
+  const ranks: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+  const time = (value?: string) => value ? Date.parse(value) || 0 : 0;
+  rows.sort((a, b) => {
+    if (filters.sortBy === '-priority' || filters.sortBy === 'priority') return (ranks[a.priority ?? ''] ?? 0) === (ranks[b.priority ?? ''] ?? 0) ? time(b.updatedAt) - time(a.updatedAt) : ((ranks[b.priority ?? ''] ?? 0) - (ranks[a.priority ?? ''] ?? 0)) * (filters.sortBy === 'priority' ? -1 : 1);
+    if (filters.sortBy === 'deadline' || filters.sortBy === '-deadline') return (time(a.sla.deadline) - time(b.sla.deadline)) * (filters.sortBy === '-deadline' ? -1 : 1);
+    return filters.sortBy === 'oldest' ? time(a.createdAt) - time(b.createdAt) : time(b.updatedAt) - time(a.updatedAt);
+  });
+  const total = rows.length;
+  return { workOrders: rows.slice((filters.page - 1) * filters.limit, filters.page * filters.limit), pagination: { page: filters.page, limit: filters.limit, total, pages: Math.max(1, Math.ceil(total / filters.limit)) } };
 }

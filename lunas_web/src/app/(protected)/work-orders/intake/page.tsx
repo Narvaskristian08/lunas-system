@@ -1,14 +1,7 @@
-import { ProviderIncidentQueue } from "@/components/work-orders/provider-incident-queue";
+import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth/dal.server";
-import { getProviderIncidentQueue, readProviderIncidentFilters } from "@/lib/work-orders.server";
 
-export default async function ProviderIncidentIntakePage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function ProviderIncidentIntakePage() {
   await requirePermission("work_orders.manage");
-  const filters = readProviderIncidentFilters(await searchParams);
-  const queue = await getProviderIncidentQueue(filters);
-  return <ProviderIncidentQueue queue={queue} filters={filters} />;
+  redirect("/work-orders?assignmentStatus=unassigned");
 }

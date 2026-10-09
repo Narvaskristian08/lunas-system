@@ -145,7 +145,7 @@ export function ValidationQueue({
   const hasFilters = Boolean(search || category || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
 
   return (
-    <div className="mx-auto max-w-395">
+    <div className="mx-auto max-w-[1680px]">
       {!embedded ? <PageHeader
         eyebrow={`${viewer.organization} · Official Workflow`}
         title={isCityEngineering ? "City Engineering Review" : "Barangay Report Review"}
@@ -172,16 +172,16 @@ export function ValidationQueue({
 
       <Card className="overflow-hidden">
         <CardHeader
-          title={confirmed ? "Priority Assignment Queue" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
-          description={confirmed ? "Confirmed by City Engineering and awaiting priority assignment. Open a report to continue." : isCityEngineering
+          title={confirmed ? "Priority & Routing" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
+          description={confirmed ? "Set report priority and assign a Utility Provider." : isCityEngineering
             ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
             : "Search and filters are applied by the server; reports outside your assigned Barangay are never returned."}
         />
         <form onSubmit={submitFilters} noValidate>
-          <div className="border-b border-slate-200 bg-slate-50/70 p-4">
+          <div className="border-b border-slate-200 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => setSearch("")} placeholder="Search reference, description, or location" aria-label="Search Submitted Reports" className="w-full flex-1" disabled={pending} />
-              <Button type="submit" variant="secondary" disabled={pending}><Search className="size-4" aria-hidden="true" /> Search</Button>
+              <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => setSearch("")} placeholder="Search reference, description, or location" aria-label="Search Submitted Reports" className={embedded ? "w-full sm:max-w-lg" : "w-full flex-1"} disabled={pending} />
+              {!embedded ? <Button type="submit" variant="secondary" disabled={pending}><Search className="size-4" aria-hidden="true" /> Search</Button> : null}
               {hasFilters ? <Button type="button" variant="ghost" onClick={clearFilters} disabled={pending}>Clear Filters</Button> : null}
             </div>
           </div>
@@ -204,6 +204,7 @@ export function ValidationQueue({
                 })),
               ]}
             />
+            {!confirmed ? <>
             <FilterSelect label="Possible Duplicate" value={duplicate} onChange={(event) => setDuplicate(event.target.value)} disabled={pending} options={[{ value: "", label: "Any Duplicate State" }, { value: "yes", label: "Possible Duplicate" }, { value: "no", label: "No Duplicate Candidates" }]} />
             <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
               <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
@@ -214,8 +215,9 @@ export function ValidationQueue({
               <span className="sr-only">To Date</span>
               <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Submitted on or Before" className="min-w-0 bg-transparent outline-none" disabled={pending} />
             </label>
-            <FilterSelect label="Sort Queue" value={sortBy} onChange={(event) => setSortBy(event.target.value as NonNullable<ValidationQueueFilters["sortBy"]>)} disabled={pending} options={[{ value: "createdAt_desc", label: "Newest Submitted" }, { value: "createdAt_asc", label: "Oldest Submitted" }, { value: "priority_desc", label: "Highest Priority" }]} />
-            <Button type="submit" variant="ghost" size="sm" disabled={pending}><ArrowUpDown className="size-4" aria-hidden="true" /> Apply</Button>
+            </> : null}
+            <FilterSelect label="Sort Queue" value={sortBy} onChange={(event) => { const value = event.target.value as NonNullable<ValidationQueueFilters["sortBy"]>; setSortBy(value); navigate({ page: 1, sortBy: value }); }} disabled={pending} options={[{ value: "createdAt_desc", label: "Newest Submitted" }, { value: "createdAt_asc", label: "Oldest Submitted" }, { value: "priority_desc", label: "Highest Priority" }]} />
+            {!confirmed ? <Button type="submit" variant="ghost" size="sm" disabled={pending}><ArrowUpDown className="size-4" aria-hidden="true" /> Apply</Button> : null}
           </FilterBar>
         </form>
 
@@ -225,25 +227,25 @@ export function ValidationQueue({
               caption={isCityEngineering ? "Barangay-validated incidents awaiting City Engineering" : "Citizen reports awaiting Barangay review"}
               columns={[
                 { key: "reference", label: "Reference" },
-                { key: "evidence", label: "Evidence" },
-                { key: "category", label: "Category" },
+                ...(!confirmed ? [{ key: "evidence", label: "Evidence" }] : []),
+                ...(!confirmed ? [{ key: "category", label: "Category" }] : []),
                 { key: "location", label: "Location" },
                 { key: "submitted", label: "Submitted" },
-                { key: "duplicate", label: "Duplicates" },
-                { key: "status", label: "Status" },
+                ...(!confirmed ? [{ key: "duplicate", label: "Duplicates" }] : []),
+                { key: "status", label: isCityEngineering ? "Priority" : "Status" },
                 { key: "action", label: "" },
               ]}
               rows={queue.incidents.map((incident) => ({
                 id: incident.id,
                 cells: {
-                  reference: <div><Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} className="font-semibold text-brand-700 hover:underline">{incident.reportNumber}</Link><p className="mt-0.5 max-w-64 truncate text-xs text-slate-500">{incident.description}</p></div>,
+                  reference: <div><Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} className="font-semibold text-brand-700 hover:underline">{incident.reportNumber}</Link>{confirmed ? <p className="mt-1 font-medium text-slate-900">{categoryLabel(incident.category)}</p> : null}<p className="mt-0.5 max-w-64 truncate text-xs text-slate-500">{incident.description}</p></div>,
                   evidence: incident.evidenceThumbnail ? <span className="block size-12 overflow-hidden rounded-lg border border-slate-200 bg-slate-100"><img src={incident.evidenceThumbnail} alt={`Evidence supplied with ${incident.reportNumber}`} className="size-full object-cover" /></span> : <span className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500"><FileImage className="size-5" aria-label="No Evidence Thumbnail Available" /></span>,
-                  category: <div><p className="font-medium text-slate-900">{categoryLabel(incident.category)}</p><p className="mt-0.5 text-xs font-semibold text-brand-700">AI Assistance Only</p><p className="text-xs text-amber-700">Manual Review Required</p>{incident.aiAnalysis?.hazardType ? <p className="mt-0.5 text-xs text-slate-500">Advisory Result: {titleCase(incident.aiAnalysis.hazardType)}{confidenceLabel(incident.aiAnalysis.confidence) ? ` · ${confidenceLabel(incident.aiAnalysis.confidence)}` : ""}</p> : null}</div>,
-                  location: <span className="inline-flex max-w-56 items-start gap-1.5"><MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden="true" /><span>{locationLabel(incident.location)}</span></span>,
+                  category: <div><p className="font-medium text-slate-900">{categoryLabel(incident.category)}</p>{!confirmed ? <><p className="mt-0.5 text-xs font-semibold text-brand-700">AI Assistance Only</p><p className="text-xs text-amber-700">Manual Review Required</p>{incident.aiAnalysis?.hazardType ? <p className="mt-0.5 text-xs text-slate-500">Advisory Result: {titleCase(incident.aiAnalysis.hazardType)}{confidenceLabel(incident.aiAnalysis.confidence) ? ` · ${confidenceLabel(incident.aiAnalysis.confidence)}` : ""}</p> : null}</> : null}</div>,
+                  location: <span className="inline-flex max-w-56 items-start gap-1.5"><MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden="true" /><span className="line-clamp-3">{locationLabel(incident.location)}</span></span>,
                   submitted: <span className="whitespace-nowrap text-sm text-slate-600">{compactDate(incident.createdAt)}</span>,
                   duplicate: <Badge tone={duplicateTone(incident.duplicateCandidateCount)}>{incident.duplicateCandidateCount ? `${incident.duplicateCandidateCount} candidate${incident.duplicateCandidateCount === 1 ? "" : "s"}` : "None"}</Badge>,
-                  status: <StatusBadge tone={incident.status === "city_confirmed" ? "information" : "warning"}>{incident.status === "clarification_required" ? "Clarification Requested" : titleCase(incident.status)}</StatusBadge>,
-                  action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`${confirmed ? "Assign Priority to" : "Review"} ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">{confirmed ? "Assign Priority" : "Review"} <ChevronRight className="size-4" aria-hidden="true" /></Link>,
+                  status: isCityEngineering ? <StatusBadge tone={incident.priority === "critical" ? "critical" : incident.priority === "high" ? "warning" : incident.priority === "medium" ? "information" : "neutral"}>{titleCase(incident.priority)}</StatusBadge> : <StatusBadge tone={incident.status === "city_confirmed" ? "information" : "warning"}>{incident.status === "clarification_required" ? "Clarification Requested" : titleCase(incident.status)}</StatusBadge>,
+                  action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`${confirmed ? "Set Priority and Route" : "Review"} ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">{confirmed ? "Set Priority & Route" : "Review"} <ChevronRight className="size-4" aria-hidden="true" /></Link>,
                 },
               }))}
             />
