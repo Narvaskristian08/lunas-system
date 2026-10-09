@@ -80,7 +80,7 @@ describe('work-order domain rules', () => {
     expect(validateProgressUpdate({ ...update, updateType: 'completion', nextProgress: 100, stage: 'ready_for_completion', notes: '' }).valid).toBe(true);
   });
 
-  test('requires an active, available, organization-compatible repair worker', () => {
+  test('requires an active, available or assigned, organization-compatible repair worker', () => {
     expect(isEligibleRepairPersonnel(repairWorker, workOrder)).toBe(true);
     expect(isEligibleRepairPersonnel({
       ...repairWorker,
@@ -133,4 +133,13 @@ describe('work-order domain rules', () => {
     if (previous === undefined) delete process.env.SLA_APPROACHING_THRESHOLD_HOURS;
     else process.env.SLA_APPROACHING_THRESHOLD_HOURS = previous;
   });
+});
+
+
+test('assigned personnel can queue repairs without bypassing ownership and jurisdiction', () => {
+  expect(isEligibleRepairPersonnel({ ...repairWorker, availability: 'assigned' }, workOrder)).toBe(true);
+  expect(isEligibleRepairPersonnel({ ...repairWorker, availability: 'assigned', isActive: false }, workOrder)).toBe(false);
+  expect(isEligibleRepairPersonnel({ ...repairWorker, availability: 'assigned', isArchived: true }, workOrder)).toBe(false);
+  expect(isEligibleRepairPersonnel({ ...repairWorker, availability: 'assigned', repairOrganization: 'Other Provider' }, workOrder)).toBe(false);
+  expect(isEligibleRepairPersonnel({ ...repairWorker, availability: 'assigned', barangay: 'Other Barangay' }, workOrder)).toBe(false);
 });

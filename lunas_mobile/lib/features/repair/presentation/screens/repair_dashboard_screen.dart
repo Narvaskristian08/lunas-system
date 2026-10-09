@@ -201,6 +201,13 @@ class _RepairMetrics extends StatelessWidget {
         icon: Icons.warning_amber_rounded,
         color: AppColorsLight.critical,
       ),
+      (
+        label: 'Awaiting Review',
+        filter: 'review',
+        value: summary.readyForCompletion,
+        icon: Icons.fact_check_outlined,
+        color: AppColorsLight.brandBase,
+      ),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {

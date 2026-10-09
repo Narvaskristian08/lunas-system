@@ -81,20 +81,17 @@ const canAccessWorkOrder = (user, workOrder) => {
   return canManageWorkOrder(user, workOrder) || canReviewFinalWorkOrder(user, workOrder);
 };
 
-const isEligibleRepairPersonnel = (personnel, workOrder) => {
-  if (!personnel || personnel.role !== REPAIR_PERSONNEL_ROLE || !personnel.isActive) return false;
-  if (personnel.availability !== 'available') return false;
-
+const repairPersonnelIneligibility = (personnel, workOrder) => {
+  if (!personnel || personnel.role !== REPAIR_PERSONNEL_ROLE) return 'Select a repair personnel account';
+  if (!personnel.isActive || personnel.isArchived) return 'This repair personnel account is inactive';
+  if (!['available', 'assigned'].includes(personnel.availability)) return 'This repair personnel is off duty or unavailable';
   const organization = normalizeText(personnel.repairOrganization);
-  if (!organization || organization !== normalizeText(workOrder.responsibleOrganization)) {
-    return false;
-  }
-
-  // A repair worker with a barangay allocation may work only in that
-  // jurisdiction. An unallocated city-level worker may cover any barangay.
-  const workerBarangay = normalizeText(personnel.barangay);
-  return !workerBarangay || workerBarangay === getWorkOrderBarangay(workOrder);
+  if (!organization || organization !== normalizeText(workOrder.responsibleOrganization)) return 'This repair personnel belongs to another Utility Provider';
+  const barangay = normalizeText(personnel.barangay);
+  if (barangay && barangay !== getWorkOrderBarangay(workOrder)) return 'This repair personnel cannot work in this barangay';
+  return null;
 };
+const isEligibleRepairPersonnel = (personnel, workOrder) => !repairPersonnelIneligibility(personnel, workOrder);
 
 const getStageForProgress = (progressPercent) => PROGRESS_STAGES[Number(progressPercent)];
 
@@ -207,6 +204,7 @@ module.exports = {
   getSlaProjection,
   getStageForProgress,
   isEligibleRepairPersonnel,
+  repairPersonnelIneligibility,
   isOfficialWorkOrderRole,
   sameId,
   transitionMessage,

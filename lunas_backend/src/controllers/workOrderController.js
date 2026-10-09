@@ -19,6 +19,7 @@ const {
   getClosedSlaFields,
   getApproachingThresholdHours,
   isEligibleRepairPersonnel,
+  repairPersonnelIneligibility,
   sameId,
   transitionMessage,
   validateProgressUpdate,
@@ -283,7 +284,12 @@ const notify = async (recipient, template, workOrder) => {
 };
 
 const setAvailability = async (personnelId, availability) => {
-  if (personnelId) await User.findByIdAndUpdate(personnelId, { availability });
+  if (!personnelId) return;
+  if (availability === 'available') {
+    const remaining = await WorkOrder.countDocuments({ assignedTo: personnelId, assignmentState: { $in: ['pending', 'accepted'] }, status: { $in: ['pending', 'accepted', 'in_progress', 'rework_required'] } });
+    if (remaining > 0) availability = 'assigned';
+  }
+  await User.findByIdAndUpdate(personnelId, { availability });
 };
 
 const findScopedWorkOrder = (req, id, includeIncident = true) => {
@@ -308,7 +314,7 @@ const listFilter = async (req) => {
       assigned: { status: { $in: ['pending', 'accepted'] } },
       awaiting_acceptance: { status: { $in: ['pending', 'in_progress', 'rework_required'] }, assignmentState: 'pending' },
       active: { status: 'in_progress', assignmentState: 'accepted' },
-      review: { status: 'completed' },
+      review: { status: { $in: ['completed', 'provider_accepted'] } },
       correction: { status: { $in: ['rework_required', 'city_correction_required'] } }
     };
     Object.assign(filter, repairViews[query.repairView] || {});
@@ -507,11 +513,10 @@ exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
   if (!workOrder || !canManageWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
   const organization = normalizeText(workOrder.responsibleOrganization);
   const personnel = await User.find({ role: REPAIR_PERSONNEL_ROLE })
-    .select('firstName lastName role isActive repairOrganization repairTeam availability barangay expertise');
+    .select('firstName lastName role isActive isArchived repairOrganization repairTeam availability barangay expertise');
   return res.status(200).json({
     success: true,
-    data: personnel.filter((person) => organization
-      && normalizeText(person.repairOrganization) === organization).map((person) => ({
+    data: personnel.filter((person) => organization && isEligibleRepairPersonnel(person, workOrder)).map((person) => ({
       id: getId(person),
       firstName: person.firstName,
       lastName: person.lastName,
@@ -548,9 +553,8 @@ const assign = async (req, res, reassign) => {
 
   const assignee = await User.findById(req.body.assigneeId || req.body.assignedTo);
   if (!assignee) return fail(res, 404, 'Repair personnel not found');
-  if (!isEligibleRepairPersonnel(assignee, workOrder)) {
-    return fail(res, 400, 'The selected repair personnel is not eligible for this work order');
-  }
+  const ineligibility = repairPersonnelIneligibility(assignee, workOrder);
+  if (ineligibility) return fail(res, 400, ineligibility);
   const reason = String(req.body.reason || '').trim();
   if (reassign && !reason) return fail(res, 400, 'A reassignment reason is required');
 

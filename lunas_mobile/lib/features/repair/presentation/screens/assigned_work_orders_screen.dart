@@ -140,10 +140,17 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     }
     final page = _page;
     if (page == null || page.items.isEmpty) {
-      return const LunasStateView(
+      return LunasStateView(
         state: LunasViewState.empty,
-        title: 'No assigned work orders',
-        message: 'No work orders match the selected status.',
+        title: switch (_status) {
+          'assigned' => 'No assigned repairs',
+          'active' => 'No active repairs',
+          'correction' => 'No repairs need correction',
+          'overdue' => 'No overdue repairs',
+          'review' => 'No repairs awaiting review',
+          _ => 'No work orders',
+        },
+        message: '',
       );
     }
     return Column(

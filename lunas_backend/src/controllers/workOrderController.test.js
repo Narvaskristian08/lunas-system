@@ -44,7 +44,7 @@ test.each(['accepted', 'rework_required'])('assignment can be reassigned before 
     ...(status === 'rework_required' ? { startedAt: new Date() } : {}),
     currentAssignment: assignmentId, assignments: [{ _id: assignmentId, active: true }] };
   WorkOrder.findOne.mockReturnValue({ populate: jest.fn().mockReturnThis(), then: (resolve) => Promise.resolve(workOrder).then(resolve) });
-  User.findById.mockResolvedValue({ _id: '507f191e810c19729de860a6', role: 'repair_personnel', isActive: true, availability: 'available', repairOrganization: 'Water District' });
+  User.findById.mockResolvedValue({ _id: '507f191e810c19729de860a6', role: 'repair_personnel', isActive: true, availability: 'assigned', repairOrganization: 'Water District' });
   WorkOrder.findOneAndUpdate.mockResolvedValue(null);
   const next = jest.fn();
   const res = response();
@@ -138,7 +138,7 @@ test.each([
   ['awaiting_acceptance', { status: { $in: ['pending', 'in_progress', 'rework_required'] }, assignmentState: 'pending' }],
   ['assigned', { status: { $in: ['pending', 'accepted'] }, assignmentState: { $in: ['pending', 'accepted'] } }],
   ['active', { status: 'in_progress', assignmentState: 'accepted' }],
-  ['review', { status: 'completed' }],
+  ['review', { status: { $in: ['completed', 'provider_accepted'] } }],
   ['correction', { status: { $in: ['rework_required', 'city_correction_required'] }, assignmentState: { $in: ['pending', 'accepted'] } }]
 ])('repair queue %s filters both results and pagination', async (repairView, expected) => {
   const query = {};

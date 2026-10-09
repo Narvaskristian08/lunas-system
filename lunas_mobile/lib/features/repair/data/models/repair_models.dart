@@ -629,12 +629,13 @@ class RepairDashboardSummary {
           (_int(source['correctiveRepairs']) ?? 0) +
           (_int(source['cityCorrections']) ?? 0),
       readyForCompletion:
-          _int(
-            source['readyForCompletion'] ??
-                source['ready'] ??
-                source['completed'],
-          ) ??
-          0,
+          (_int(
+                source['readyForCompletion'] ??
+                    source['ready'] ??
+                    source['completed'],
+              ) ??
+              0) +
+          (_int(source['awaitingFinalVerification']) ?? 0),
     );
   }
 }
