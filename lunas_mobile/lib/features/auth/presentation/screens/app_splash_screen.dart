@@ -47,7 +47,7 @@ class AppSplashScreen extends StatelessWidget {
           if (failed) ...[
             Text(auth.message ?? 'Please try again.', textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.md),
-            LunasButton(label: 'Try again', onPressed: auth.restoreSession),
+            LunasButton(label: 'Try Again', onPressed: auth.restoreSession),
             TextButton(
               onPressed: () => context.go('/login'),
               child: const Text('Sign in instead'),

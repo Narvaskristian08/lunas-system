@@ -43,7 +43,7 @@ class NotificationDetailsScreen extends StatelessWidget {
         GoRouterState.of(context).extra as NotificationData? ??
         const NotificationData(
           id: 'notification',
-          title: 'LUNAS update',
+          title: 'LUNAS Update',
           message: 'A new update is available for your account.',
           time: 'Just now',
           icon: Icons.notifications_outlined,
@@ -197,7 +197,7 @@ class NotificationDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: repairWorkspace
           ? const RepairAppBar(
-              title: 'Notification details',
+              title: 'Notification Details',
               showBackButton: true,
             )
           : const LunasAppBar(

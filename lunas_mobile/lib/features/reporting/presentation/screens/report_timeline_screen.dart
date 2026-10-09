@@ -91,7 +91,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen>
           state: LunasViewState.error,
           title: 'Could not load timeline',
           message: _error ?? 'Report unavailable.',
-          actionLabel: 'Try again',
+          actionLabel: 'Try Again',
           onAction: _load,
         ),
       );

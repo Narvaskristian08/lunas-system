@@ -2,7 +2,7 @@
 
 import { categoryLabel } from "@/lib/category-label";
 
-import { distinctTimelineEvents, timelineMilestoneLabel } from "@/lib/timeline-display";
+import { distinctTimelineEvents, timelineEventLabel, timelineNoteLabel } from "@/lib/timeline-display";
 
 /* Signed evidence URLs are supplied by the protected API and should not be optimized by Next image. */
 /* eslint-disable @next/next/no-img-element */
@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  Clock3,
   ExternalLink,
   FileImage,
   MapPin,
@@ -332,7 +331,7 @@ function WorkOrderTimeline({ workOrder }: { workOrder: WorkOrder }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader title="Operational Timeline" description="Append-oriented work-order events returned by the backend." />
-      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Completion Submitted" : (timelineMilestoneLabel(entry.type ?? entry.status ?? "") ?? titleCase(entry.type ?? entry.status, "Work Order Update"))}</p></div>{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{workOrder.reviews.filter((review) => review.createdAt === entry.createdAt && review.stage === entry.actorRole && review.instructions && review.instructions !== entry.notes).map((review) => <p key={review.id} className="mt-1 text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p>)}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
+      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Completion Submitted" : (timelineEventLabel(entry.type ?? entry.status ?? "Work Order Update"))}</p></div>{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}{workOrder.reviews.filter((review) => review.createdAt === entry.createdAt && review.stage === entry.actorRole && review.instructions && review.instructions !== entry.notes).map((review) => <p key={review.id} className="mt-1 text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p>)}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
     </Card>
   );
 }
@@ -377,7 +376,7 @@ export function WorkOrderDetail({
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Repair Status</p><p className="mt-2 text-sm font-semibold text-slate-900">{workOrder.status === "verified" ? "Closed" : workOrderStatusLabel(workOrder.status)}</p></Card>
         <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Assignment</p><p className="mt-2 font-semibold text-slate-950">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p><StatusBadge className="mt-2" tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge></Card>
-        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA Deadline</p>{workOrder.sla.deadline ? <><p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(workOrder.sla.deadline)}</p><p className="mt-1 text-xs text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Deadline supplied by backend"}</p></> : <p className="mt-2 text-sm text-slate-600">No deadline returned</p>}</Card>
+        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA Deadline</p>{workOrder.sla.deadline ? <><p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(workOrder.sla.deadline)}</p><p className="mt-1 text-xs text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Deadline supplied by backend"}</p></> : <p className="mt-2 text-sm text-slate-600">No deadline returned</p>}{workOrder.sla.targetResolutionTime ? <p className="mt-1 text-xs text-slate-600">Target: {workOrder.sla.targetResolutionTime} hours</p> : null}</Card>
         <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA State</p><div className="mt-2"><SlaBadges sla={workOrder.sla} /></div><p className="mt-2 text-xs text-slate-600">State is calculated by the backend.</p></Card>
       </div>
 
@@ -411,8 +410,8 @@ export function WorkOrderDetail({
                   {workOrder.startedAt ? <div><dt className="text-xs font-medium text-slate-500">Repair Started</dt><dd className="mt-1 text-sm text-slate-700">{formatDateTime(workOrder.startedAt)}</dd></div> : null}
                 </dl>
               </div>
-              <section className="border-t border-slate-200 pt-5" aria-label="Reported Issue">
-                <h3 className="text-sm font-semibold text-slate-900">Reported Issue</h3>
+              <section className="border-t border-slate-200 pt-5" aria-label="Description">
+                <h3 className="text-sm font-semibold text-slate-900">Description</h3>
                 <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">{workOrder.incident?.description ?? "No citizen description is available."}</p>
               </section>
               <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4" aria-label="Work Instructions">
@@ -430,7 +429,6 @@ export function WorkOrderDetail({
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <Card className="overflow-hidden"><CardHeader title="SLA Monitoring" description="The API is the source of truth for deadline state." /><div className="space-y-4 p-5"><SlaBadges sla={workOrder.sla} includeDeadline />{workOrder.sla.targetResolutionTime ? <p className="text-sm text-slate-700">Target: {workOrder.sla.targetResolutionTime} hours</p> : null}{workOrder.sla.isApproaching ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><Clock3 className="mr-1 inline size-4" /> Deadline is approaching. Keep the responsible organization and assigned team informed.</p> : null}{workOrder.sla.isOverdue ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950"><AlertTriangle className="mr-1 inline size-4" /> This work order is overdue. It remains open and is not automatically closed or rejected.</p> : null}</div></Card>
           {official ? <AssignmentPanel workOrder={workOrder} eligiblePersonnel={eligiblePersonnel} onResult={result} /> : null}
           {repairAssignee ? <><RepairActions workOrder={workOrder} onResult={result} /></> : null}
           <CompletionReviewPanel workOrder={workOrder} viewer={viewer} onResult={result} />

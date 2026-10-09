@@ -502,10 +502,10 @@ async function getReportCategoryOptions(accessToken: string) {
   }
 }
 
-export async function getValidationQueue(filters: ValidationQueueFilters): Promise<ValidationQueueData> {
+export async function getValidationQueue(filters: ValidationQueueFilters, stage?: "confirmed"): Promise<ValidationQueueData> {
   const accessToken = await requireAccessToken();
   const [response, categoryOptions] = await Promise.all([
-    backendRequest<unknown>(`/incidents/pending-validation?${buildQueueQuery(filters)}`, { accessToken }),
+    backendRequest<unknown>(`/incidents/pending-validation?${buildQueueQuery(filters)}${stage === "confirmed" ? "&stage=confirmed" : ""}`, { accessToken }),
     getReportCategoryOptions(accessToken),
   ]);
   const rawData = responseData(response);

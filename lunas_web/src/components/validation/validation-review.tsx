@@ -7,7 +7,7 @@ import { categoryLabel } from "@/lib/category-label";
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { distinctTimelineEvents, timelineMilestoneLabel } from "@/lib/timeline-display";
+import { distinctTimelineEvents, timelineEventLabel, timelineMilestoneLabel, timelineNoteLabel } from "@/lib/timeline-display";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
 import {
@@ -63,7 +63,7 @@ function AiAssistance({ incident }: { incident: ValidationIncident }) {
   const analysis = incident.aiAnalysis;
   const status = analysis?.analysisStatus ?? "unavailable";
   const confidence = confidencePercent(analysis?.confidence);
-  const statusLabel = status === "completed" ? "Analysis completed" : status === "failed" ? "Analysis failed" : "Analysis unavailable";
+  const statusLabel = status === "completed" ? "Analysis Completed" : status === "failed" ? "Analysis Failed" : "Analysis Unavailable";
   const statusTone: Severity = status === "completed" ? "information" : "warning";
   const findingsCount = analysis?.findingsCount ?? incident.images.reduce((total, image) => total + image.aiFindings.length, 0);
 
@@ -72,15 +72,12 @@ function AiAssistance({ incident }: { incident: ValidationIncident }) {
       <CardHeader title="AI Assistance" description="Advisory screening from the server. It cannot change category, priority, routing, duplicate status, incident status, work orders, or closure." />
       <div className="space-y-4 p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={statusTone}><Sparkles className="mr-1 inline size-3.5" aria-hidden="true" />{statusLabel}</Badge>
-          <span className="text-sm font-bold text-brand-800">AI Assistance Only</span>
-        </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-950">
-          Manual review required
+          <StatusBadge tone="warning" className="min-h-8 px-3 py-1">Manual Review Required</StatusBadge>
+          <Badge tone={statusTone} className="min-h-8 px-3 py-1"><Sparkles className="size-3.5 shrink-0" aria-hidden="true" />{statusLabel}</Badge>
         </div>
         {status === "completed" ? (
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt className="text-slate-600">Advisory Hazard</dt><dd className="font-semibold text-slate-950">{analysis?.hazardType ? titleCase(analysis.hazardType) : "No hazard suggested"}</dd></div>
+            <div><dt className="text-slate-600">Advisory Hazard</dt><dd className="font-semibold text-slate-950">{analysis?.hazardType ? titleCase(analysis.hazardType) : "No Hazard Suggested"}</dd></div>
             <div><dt className="text-slate-600">Confidence</dt><dd className="font-semibold text-slate-950">{confidence !== undefined ? `${confidence}%` : "Not available"}</dd></div>
             <div><dt className="text-slate-600">Image Highlights</dt><dd className="font-semibold text-slate-950">{findingsCount}</dd></div>
             <div><dt className="text-slate-600">Category Model</dt><dd className="font-semibold text-slate-950">{analysis?.model ? titleCase(analysis.model) : "Available"}</dd></div>
@@ -109,14 +106,14 @@ function Coordinates({ incident }: { incident: ValidationIncident }) {
     <Card className="overflow-hidden">
       <CardHeader title="Location Review" description="Citizen-confirmed pin; geographic jurisdiction is unverified. Human verification is required." />
       <div className="space-y-2 px-5 pt-5 text-sm">
-        <p className="font-semibold">{incident.locationIntegrity?.comparison === "discrepancy" ? "Location differs from current GPS - location requires verification"
-          : incident.locationIntegrity?.comparison === "consistent" ? "No significant discrepancy detected"
-            : incident.locationIntegrity?.comparison === "inconclusive" ? "Comparison inconclusive" : "Comparison unavailable"}</p>
-        <p>Pin source: {titleCase(incident.locationIntegrity?.pinSource, "Not recorded (historical report)")}</p>
-        {incident.locationIntegrity?.distanceMeters !== undefined ? <p>Distance: {Math.round(incident.locationIntegrity.distanceMeters)} m; reported GPS accuracy: {incident.locationIntegrity.accuracyMeters} m</p> : null}
-        {incident.locationIntegrity?.unavailableReason ? <p>Comparison detail: {titleCase(incident.locationIntegrity.unavailableReason)}</p> : null}
-        {incident.locationIntegrity?.explanation?.reason ? <p>Citizen explanation: {titleCase(incident.locationIntegrity.explanation.reason)} {incident.locationIntegrity.explanation.text}</p> : null}
-        <p>Pin confirmation: {incident.locationIntegrity?.confirmedAt ? formatDateTime(incident.locationIntegrity.confirmedAt) : "Not recorded (historical report)"}</p>
+        <p className="font-semibold">{incident.locationIntegrity?.comparison === "discrepancy" ? "Location Differs from Current GPS — Verification Required"
+          : incident.locationIntegrity?.comparison === "consistent" ? "No Significant Discrepancy Detected"
+            : incident.locationIntegrity?.comparison === "inconclusive" ? "Comparison Inconclusive" : "Comparison Unavailable"}</p>
+        <p>Pin Source: {incident.locationIntegrity?.pinSource === "gps" ? "GPS" : titleCase(incident.locationIntegrity?.pinSource, "Not Recorded (Historical Report)")}</p>
+        {incident.locationIntegrity?.distanceMeters !== undefined ? <p>Distance: {Math.round(incident.locationIntegrity.distanceMeters)} m; Reported GPS Accuracy: {incident.locationIntegrity.accuracyMeters} m</p> : null}
+        {incident.locationIntegrity?.unavailableReason ? <p>Comparison Detail: {titleCase(incident.locationIntegrity.unavailableReason)}</p> : null}
+        {incident.locationIntegrity?.explanation?.reason ? <p>Citizen Explanation: {titleCase(incident.locationIntegrity.explanation.reason)} {incident.locationIntegrity.explanation.text}</p> : null}
+        <p>Pin Confirmation: {incident.locationIntegrity?.confirmedAt ? formatDateTime(incident.locationIntegrity.confirmedAt) : "Not Recorded (Historical Report)"}</p>
         <p>GPS is an untrusted advisory signal and does not establish photo capture location. Delayed and manual reporting are allowed.</p>
       </div>
       <div className="p-5">
@@ -125,7 +122,7 @@ function Coordinates({ incident }: { incident: ValidationIncident }) {
           <div className="min-w-0">
             <p className="font-semibold text-slate-950">{[incident.location.address.street, incident.location.address.barangay, incident.location.address.city].filter(Boolean).join(", ") || "Location details unavailable"}</p>
             {coordinateText ? <p className="mt-1 font-mono text-xs text-slate-600">{coordinateText}</p> : <p className="mt-1 text-sm text-amber-800">Coordinates were unavailable in this report.</p>}
-            {mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">Open reported pin in maps <ExternalLink className="size-3.5" aria-hidden="true" /></a> : null}
+            {mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">Open Reported Pin in Maps <ExternalLink className="size-3.5" aria-hidden="true" /></a> : null}
           </div>
         </div>
       </div>
@@ -170,6 +167,10 @@ function Evidence({ incident }: { incident: ValidationIncident }) {
           </div>
         )) : <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">No evidence preview is currently available.</div>}
       </div>
+      <div className="space-y-2 border-t border-slate-200 p-5">
+        <h3 className="text-sm font-semibold text-slate-950">Description</h3>
+        <p className="whitespace-pre-wrap break-words leading-7 text-slate-700">{incident.description}</p>
+      </div>
     </Card>
   );
 }
@@ -183,7 +184,7 @@ function Timeline({ incident }: { incident: ValidationIncident }) {
     <Card className="overflow-hidden">
       <CardHeader title="Status History" description="Events are recorded by the backend; this timeline is not fabricated by the interface." />
       <ol className="divide-y divide-slate-200">
-        {events.length ? events.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div><p className="font-semibold text-slate-900">{timelineMilestoneLabel(entry.status) ?? titleCase(entry.status)}</p>{entry.changedAt ? <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(entry.changedAt)}</p> : null}{entry.notes ? <p className="mt-1 text-sm text-slate-600">{entry.notes}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
+        {events.length ? events.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div><p className="font-semibold text-slate-900">{timelineEventLabel(entry.status)}</p>{entry.changedAt ? <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(entry.changedAt)}</p> : null}{entry.notes ? <p className="mt-1 text-sm text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
       </ol>
     </Card>
   );
@@ -198,7 +199,7 @@ function ValidationRoutingSummary({ incident }: { incident: ValidationIncident }
       <CardHeader title="Engineering and Provider Routing" description="Barangay review, City Engineering decisions, and provider assignment are recorded as separate handoffs." />
       <dl className="divide-y divide-slate-200 text-sm">
         <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Priority</dt><dd className="text-right font-semibold text-slate-900">{incident.priority ? titleCase(incident.priority) : "Not assigned by City Engineering"}</dd></div>
-        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Jurisdiction</dt><dd className="text-right font-semibold text-slate-900">{incident.jurisdiction ?? incident.location.address.barangay ?? "To be confirmed"}</dd></div>
+        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Barangay</dt><dd className="text-right font-semibold text-slate-900">{incident.jurisdiction ?? incident.location.address.barangay ?? "To be confirmed"}</dd></div>
         <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Utility Provider</dt><dd className="text-right font-semibold text-slate-900">{incident.routing?.responsibleOrganization ?? "Not Assigned"}</dd></div>
         <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">SLA Deadline</dt><dd className="max-w-56 text-right font-semibold text-slate-900">{deadline ? <>{targetHours ? `${targetHours} hour target` : titleCase(incident.sla?.state)}<span className="mt-0.5 block text-xs font-normal text-slate-600">Due {deadline}</span></> : "Calculated after City Engineering assigns priority"}</dd></div>
       </dl>
@@ -287,10 +288,10 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
   };
 
   const decisionTitle = decision === "validate" ? "Validate at barangay level"
-    : decision === "reject" ? "Reject report"
+    : decision === "reject" ? "Reject Report"
       : decision === "duplicate" ? "Mark report as duplicate"
         : decision === "confirm" ? "Confirm at City Engineering"
-          : decision === "clarification" ? "Return for clarification"
+          : decision === "clarification" ? "Return for Clarification"
             : decision === "priority" ? "Assign incident priority"
               : "Route to Utility Provider";
   return (
@@ -307,7 +308,6 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
         <div className="space-y-6">
           <Evidence incident={incident} />
           <AiAssistance incident={incident} />
-          <Card className="overflow-hidden"><CardHeader title="Citizen Report" description={incident.createdAt ? `Submitted ${formatDateTime(incident.createdAt)}` : "Submission time unavailable"} /><div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{categoryLabel(incident.category)}</Badge>{incident.subcategory ? <Badge>{titleCase(incident.subcategory)}</Badge> : null}{incident.aiAnalysis?.hazardType ? <Badge tone="neutral">AI suggestion: {titleCase(incident.aiAnalysis.hazardType)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{incident.description}</p></div></Card>
           <Coordinates incident={incident} />
           {(isBarangay || isCityEngineer) ? <FalseReportReview incidentId={incident.id} status={incident.status} /> : null}
           <ValidationRoutingSummary incident={incident} />
@@ -320,18 +320,18 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
           <Card className="overflow-hidden"><CardHeader title={isBarangay ? "Barangay Validation" : "City Engineering Decision"} description="Each handoff is recorded by the backend with the actor, state, timestamp, and decision notes." />
             {canBarangayReview ? <form onSubmit={submit} className="space-y-4 p-5">
               <div className="grid grid-cols-3 gap-2">{(["validate", "reject", "duplicate"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "reject" ? "border-red-700 bg-red-700 text-white" : value === "duplicate" ? "border-slate-700 bg-slate-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "validate" ? "Validate" : value === "reject" ? "Reject" : "Duplicate"}</button>)}</div>
-              {decision === "reject" ? <label className="block text-sm font-semibold text-slate-800">Rejection reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label> : null}
-              {decision === "duplicate" ? <><label className="block text-sm font-semibold text-slate-800">Canonical report<select value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} required><option value="">Select a Likely Match</option>{duplicateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Duplicate reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label></> : null}
-              <label className="block text-sm font-semibold text-slate-800">Review Note <span className="font-normal text-slate-500">(optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label>
-              <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and forward</> : decision === "reject" ? <><XCircle className="size-4" /> Reject report</> : <><Route className="size-4" /> Mark duplicate</>}</Button>
+              {decision === "reject" ? <label className="block text-sm font-semibold text-slate-800">Rejection Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label> : null}
+              {decision === "duplicate" ? <><label className="block text-sm font-semibold text-slate-800">Canonical Report<select value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} required><option value="">Select a Likely Match</option>{duplicateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Duplicate Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label></> : null}
+              <label className="block text-sm font-semibold text-slate-800">Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label>
+              <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and Forward</> : decision === "reject" ? <><XCircle className="size-4" /> Reject Report</> : <><Route className="size-4" /> Mark Duplicate</>}</Button>
             </form> : null}
             {canCityReview && incident.status === "barangay_validated" ? <form onSubmit={submit} className="space-y-4 p-5">
-              <div className="grid grid-cols-2 gap-2">{(["confirm", "clarification"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "clarification" ? "border-amber-700 bg-amber-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "confirm" ? "Confirm" : "Return for clarification"}</button>)}</div>
-              {decision === "confirm" ? <><label className="block text-sm font-semibold text-slate-800">Engineering review note <span className="font-normal text-slate-500">(optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label></> : <label className="block text-sm font-semibold text-slate-800">Clarification reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={2000} required /></label>}
-              <Button type="submit" variant={decision === "clarification" ? "secondary" : "primary"} className="w-full" disabled={pending}>{decision === "confirm" ? "Confirm for engineering" : "Return with reason"}</Button>
+              <div className="grid grid-cols-2 gap-2">{(["confirm", "clarification"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "clarification" ? "border-amber-700 bg-amber-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "confirm" ? "Confirm" : "Return for Clarification"}</button>)}</div>
+              {decision === "confirm" ? <><label className="block text-sm font-semibold text-slate-800">Engineering Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label></> : <label className="block text-sm font-semibold text-slate-800">Clarification Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={2000} required /></label>}
+              <Button type="submit" variant={decision === "clarification" ? "secondary" : "primary"} className="w-full" disabled={pending}>{decision === "confirm" ? "Confirm for Engineering" : "Return with reason"}</Button>
             </form> : null}
-            {canCityReview && incident.status === "city_confirmed" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Manual priority<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority | "")} className={fieldClass()} required><option value="">Select City Engineering Priority</option>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label><Badge tone={priority ? priorityTone(priority) : "neutral"}>LUNAS calculates the SLA deadline after City Engineering records a priority.</Badge><Button type="submit" className="w-full" disabled={pending || !priority}>Assign Priority and Start SLA</Button></form> : null}
-            {canCityReview && incident.status === "prioritized" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Responsible Utility Provider<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an Active Provider Organization</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>{utilityProviders.length ? <p className="text-xs leading-5 text-slate-500">Only organizations with active, provisioned Utility Provider accounts are selectable.</p> : <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">No active Utility Provider organization is provisioned. An Admin must authorize and provision one before City Engineering can route this incident.</p>}<label className="block text-sm font-semibold text-slate-800">Routing Note <span className="font-normal text-slate-500">(optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label><Button type="submit" className="w-full" disabled={pending || utilityProviders.length === 0}><Route className="size-4" /> Route to Utility Provider</Button></form> : null}
+            {canCityReview && incident.status === "city_confirmed" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Manual Priority<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority | "")} className={fieldClass()} required><option value="">Select City Engineering Priority</option>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label><Badge tone={priority ? priorityTone(priority) : "neutral"}>LUNAS calculates the SLA deadline after City Engineering records a priority.</Badge><Button type="submit" className="w-full" disabled={pending || !priority}>Assign Priority and Start SLA</Button></form> : null}
+            {canCityReview && incident.status === "prioritized" ? <form onSubmit={submit} className="space-y-4 p-5"><label className="block text-sm font-semibold text-slate-800">Responsible Utility Provider<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an Active Provider Organization</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>{utilityProviders.length ? <p className="text-xs leading-5 text-slate-500">Only organizations with active, provisioned Utility Provider accounts are selectable.</p> : <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">No active Utility Provider organization is provisioned. An Admin must authorize and provision one before City Engineering can route this incident.</p>}<label className="block text-sm font-semibold text-slate-800">Routing Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label><Button type="submit" className="w-full" disabled={pending || utilityProviders.length === 0}><Route className="size-4" /> Route to Utility Provider</Button></form> : null}
             {!canBarangayReview && !(canCityReview && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status)) ? <div className="p-5 text-sm text-slate-600">No decision controls are available for this role or incident state.</div> : null}
           </Card>
           {incident.workOrder?.id ? <Card className="overflow-hidden"><CardHeader title="Work Order" description="This incident already has its primary maintenance work order." /><div className="p-5"><p className="font-semibold text-slate-950">{incident.workOrder.reference ?? "Work order created"}</p><p className="mt-1 text-sm text-slate-600">{incident.workOrder.status?.replaceAll("_", " ") ?? "Operational status available"}</p><Link href={`/work-orders/${encodeURIComponent(incident.workOrder.id)}`} className="mt-4 inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Open Work Order <Route className="ml-1 size-4" /></Link></div></Card> : null}

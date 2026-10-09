@@ -192,7 +192,7 @@ class _CitizenRegistrationScreenState extends State<CitizenRegistrationScreen> {
                     const SizedBox(height: AppSpacing.md),
                   ],
                   LunasButton(
-                    label: 'Create citizen account',
+                    label: 'Create Citizen Account',
                     isLoading: auth.isSubmitting,
                     onPressed: auth.isSubmitting ? null : _submit,
                   ),

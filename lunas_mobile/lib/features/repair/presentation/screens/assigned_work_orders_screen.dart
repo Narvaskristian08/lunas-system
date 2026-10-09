@@ -122,7 +122,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
         state: LunasViewState.error,
         title: 'Could not load work orders',
         message: _error!,
-        actionLabel: 'Try again',
+        actionLabel: 'Try Again',
         onAction: _load,
       );
     }

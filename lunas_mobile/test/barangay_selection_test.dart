@@ -114,7 +114,7 @@ void main() {
     firstLoad.completeError(Exception('offline'));
     await tester.pumpAndSettle();
     expect(find.text('Barangay list unavailable'), findsOneWidget);
-    final retry = find.text('Try again');
+    final retry = find.text('Try Again');
     await tester.ensureVisible(retry);
     await tester.tap(retry);
     await tester.pumpAndSettle();

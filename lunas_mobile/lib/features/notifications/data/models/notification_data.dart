@@ -52,7 +52,7 @@ class NotificationData {
     return NotificationData(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       type: type,
-      title: (json['title'] ?? 'LUNAS update').toString(),
+      title: (json['title'] ?? 'LUNAS Update').toString(),
       message: (json['message'] ?? '').toString(),
       time: _relativeTime(createdAt),
       icon: _iconFor(type),

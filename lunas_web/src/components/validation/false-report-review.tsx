@@ -33,18 +33,18 @@ export function FalseReportReview({ incidentId, status }: { incidentId: string; 
       if (result.ok) { setReason(""); setEvidence(""); }
     });
   };
-  return <Card><CardHeader title="Documented False-report Review" description="Rejections, duplicates, unverifiable locations, and GPS mismatch do not establish deliberate fabrication. Findings require evidence and human review; no automatic punishment applies." />
+  return <Card><CardHeader title="Documented False-Report Review" description="Rejections, duplicates, unverifiable locations, and GPS mismatch do not establish deliberate fabrication. Findings require evidence and human review; no automatic punishment applies." />
     <div className="space-y-3 p-5 text-sm">
       {message ? <p role="status">{message}</p> : null}
       {!data ? <p>Loading review...</p> : <>
         <p>Active documented findings for this reporter within your jurisdiction: {data.confirmedFindingsInScope}</p>
-        <p>Current review: {correcting ? "Confirmed fabrication finding" : "No active fabrication finding"}</p>
-        {data.review?.history.map((entry, index) => <div key={index} className="rounded border p-3"><p>{entry.finding === "corrected" ? "Finding corrected" : "Documented finding"} - {entry.reviewedAt}</p><p>{entry.reason}</p><p>Evidence reference: {entry.evidenceReference}</p></div>)}
+        <p>Current Review: {correcting ? "Confirmed Fabrication Finding" : "No Active Fabrication Finding"}</p>
+        {data.review?.history.map((entry, index) => <div key={index} className="rounded border p-3"><p>{entry.finding === "corrected" ? "Finding Corrected" : "Documented Finding"} - {entry.reviewedAt}</p><p>{entry.reason}</p><p>Evidence Reference: {entry.evidenceReference}</p></div>)}
         {(status === "rejected" || correcting) ? <form onSubmit={submit} className="space-y-3">
-          <label className="block">{correcting ? "Correction reason" : "Evidence supporting deliberate fabrication"}<textarea className="block w-full rounded border p-2" value={reason} onChange={(event) => { setReason(event.target.value); setConfirming(false); }} required minLength={20} maxLength={2000} disabled={pending} /></label>
-          <label className="block">Evidence or documented decision reference<input className="block w-full rounded border p-2" value={evidenceReference} onChange={(event) => { setEvidence(event.target.value); setConfirming(false); }} required maxLength={500} disabled={pending} /></label>
+          <label className="block">{correcting ? "Correction Reason" : "Evidence Supporting Deliberate Fabrication"}<textarea className="block w-full rounded border p-2" value={reason} onChange={(event) => { setReason(event.target.value); setConfirming(false); }} required minLength={20} maxLength={2000} disabled={pending} /></label>
+          <label className="block">Evidence or Documented Decision Reference<input className="block w-full rounded border p-2" value={evidenceReference} onChange={(event) => { setEvidence(event.target.value); setConfirming(false); }} required maxLength={500} disabled={pending} /></label>
           {confirming ? <p role="alert">Confirm that you reviewed the cited evidence and documented this {correcting ? "correction" : "finding"}. This does not change the incident status or restrict the account.</p> : null}
-          <Button type="submit" disabled={pending}>{pending ? "Saving..." : confirming ? "Confirm reviewed decision" : correcting ? "Correct erroneous finding" : "Record reviewed finding"}</Button>
+          <Button type="submit" disabled={pending}>{pending ? "Saving..." : confirming ? "Confirm Reviewed Decision" : correcting ? "Correct Erroneous Finding" : "Record Reviewed Finding"}</Button>
         </form> : <p>A finding can only be recorded after a separate rejection decision.</p>}
       </>}
     </div>

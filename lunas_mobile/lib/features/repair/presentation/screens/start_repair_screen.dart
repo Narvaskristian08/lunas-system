@@ -101,7 +101,7 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
             state: LunasViewState.error,
             title: 'Could not start repair',
             message: _error ?? 'This work order is unavailable.',
-            actionLabel: 'Try again',
+            actionLabel: 'Try Again',
             onAction: _load,
           ),
         ),

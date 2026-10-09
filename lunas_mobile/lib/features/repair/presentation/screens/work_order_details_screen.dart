@@ -241,7 +241,7 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
             state: LunasViewState.error,
             title: 'Could not open this work order',
             message: _error ?? 'This work order is unavailable.',
-            actionLabel: 'Try again',
+            actionLabel: 'Try Again',
             onAction: _load,
           ),
         ),

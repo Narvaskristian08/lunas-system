@@ -85,7 +85,7 @@ class _RepairWorkOrderLocationScreenState
     if (_error != null || _workOrder == null) {
       return Scaffold(
         appBar: const RepairAppBar(
-          title: 'Work location',
+          title: 'Work Location',
           showBackButton: true,
         ),
         body: SafeArea(
@@ -93,7 +93,7 @@ class _RepairWorkOrderLocationScreenState
             state: LunasViewState.error,
             title: 'Could not open the location',
             message: _error ?? 'This work order is unavailable.',
-            actionLabel: 'Try again',
+            actionLabel: 'Try Again',
             onAction: _load,
           ),
         ),
@@ -104,7 +104,7 @@ class _RepairWorkOrderLocationScreenState
     final hasCoordinates = location.hasValidCoordinates;
     return RepairPage(
       appBar: RepairAppBar(
-        title: 'Work location',
+        title: 'Work Location',
         subtitle: workOrder.orderNumber,
         showBackButton: true,
       ),

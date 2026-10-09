@@ -145,7 +145,7 @@ class _MyReportsScreenState extends State<MyReportsScreen>
                 state: LunasViewState.error,
                 title: 'Could not load your reports',
                 message: _error!,
-                actionLabel: 'Try again',
+                actionLabel: 'Try Again',
                 onAction: _load,
               ),
             )

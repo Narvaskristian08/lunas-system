@@ -332,7 +332,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               state: LunasViewState.error,
               title: 'Could not load notifications',
               message: _error!,
-              actionLabel: 'Try again',
+              actionLabel: 'Try Again',
               onAction: _load,
             ),
           )
@@ -383,7 +383,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             textAlign: TextAlign.center,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
-          TextButton(onPressed: _loadMore, child: const Text('Try again')),
+          TextButton(onPressed: _loadMore, child: const Text('Try Again')),
         ],
       ],
     );

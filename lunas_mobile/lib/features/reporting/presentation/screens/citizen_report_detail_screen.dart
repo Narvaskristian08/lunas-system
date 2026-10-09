@@ -104,7 +104,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
             state: LunasViewState.error,
             title: 'Could not open this report',
             message: _error ?? 'This report is unavailable.',
-            actionLabel: 'Try again',
+            actionLabel: 'Try Again',
             onAction: _load,
           ),
         ),

@@ -72,8 +72,10 @@ export function ValidationQueue({
   summary,
   summaryUnavailable = false,
   embedded = false,
+  confirmed = false,
 }: {
   embedded?: boolean;
+  confirmed?: boolean;
   viewer: UserProfile;
   queue: ValidationQueueData;
   filters: ValidationQueueFilters;
@@ -117,7 +119,7 @@ export function ValidationQueue({
     if (values.dateFrom) query.set("dateFrom", values.dateFrom);
     if (values.dateTo) query.set("dateTo", values.dateTo);
     if (values.sortBy && values.sortBy !== "createdAt_desc") query.set("sortBy", values.sortBy);
-    if (embedded) query.set("view", "review");
+    if (embedded) query.set("view", confirmed ? "confirmed" : "review");
     const basePath = embedded ? "/work-orders" : "/validation-routing";
     const href = query.size ? `${basePath}?${query.toString()}` : basePath;
     startTransition(() => router.push(href));
@@ -137,7 +139,7 @@ export function ValidationQueue({
     setDateFrom("");
     setDateTo("");
     setSortBy("createdAt_desc");
-    startTransition(() => router.push(embedded ? "/work-orders?view=review" : "/validation-routing"));
+    startTransition(() => router.push(embedded ? `/work-orders?view=${confirmed ? "confirmed" : "review"}` : "/validation-routing"));
   };
 
   const hasFilters = Boolean(search || category || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
@@ -170,8 +172,8 @@ export function ValidationQueue({
 
       <Card className="overflow-hidden">
         <CardHeader
-          title={isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
-          description={isCityEngineering
+          title={confirmed ? "Priority Assignment Queue" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
+          description={confirmed ? "Confirmed by City Engineering and awaiting priority assignment. Open a report to continue." : isCityEngineering
             ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
             : "Search and filters are applied by the server; reports outside your assigned Barangay are never returned."}
         />
@@ -236,12 +238,12 @@ export function ValidationQueue({
                 cells: {
                   reference: <div><Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} className="font-semibold text-brand-700 hover:underline">{incident.reportNumber}</Link><p className="mt-0.5 max-w-64 truncate text-xs text-slate-500">{incident.description}</p></div>,
                   evidence: incident.evidenceThumbnail ? <span className="block size-12 overflow-hidden rounded-lg border border-slate-200 bg-slate-100"><img src={incident.evidenceThumbnail} alt={`Evidence supplied with ${incident.reportNumber}`} className="size-full object-cover" /></span> : <span className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500"><FileImage className="size-5" aria-label="No Evidence Thumbnail Available" /></span>,
-                  category: <div><p className="font-medium text-slate-900">{categoryLabel(incident.category)}</p><p className="mt-0.5 text-xs font-semibold text-brand-700">AI Assistance Only</p><p className="text-xs text-amber-700">Manual review required</p>{incident.aiAnalysis?.hazardType ? <p className="mt-0.5 text-xs text-slate-500">Advisory result: {titleCase(incident.aiAnalysis.hazardType)}{confidenceLabel(incident.aiAnalysis.confidence) ? ` · ${confidenceLabel(incident.aiAnalysis.confidence)}` : ""}</p> : null}</div>,
+                  category: <div><p className="font-medium text-slate-900">{categoryLabel(incident.category)}</p><p className="mt-0.5 text-xs font-semibold text-brand-700">AI Assistance Only</p><p className="text-xs text-amber-700">Manual Review Required</p>{incident.aiAnalysis?.hazardType ? <p className="mt-0.5 text-xs text-slate-500">Advisory Result: {titleCase(incident.aiAnalysis.hazardType)}{confidenceLabel(incident.aiAnalysis.confidence) ? ` · ${confidenceLabel(incident.aiAnalysis.confidence)}` : ""}</p> : null}</div>,
                   location: <span className="inline-flex max-w-56 items-start gap-1.5"><MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden="true" /><span>{locationLabel(incident.location)}</span></span>,
                   submitted: <span className="whitespace-nowrap text-sm text-slate-600">{compactDate(incident.createdAt)}</span>,
                   duplicate: <Badge tone={duplicateTone(incident.duplicateCandidateCount)}>{incident.duplicateCandidateCount ? `${incident.duplicateCandidateCount} candidate${incident.duplicateCandidateCount === 1 ? "" : "s"}` : "None"}</Badge>,
-                  status: <StatusBadge tone="warning">{isCityEngineering ? "Barangay validated" : incident.status === "clarification_required" ? "Clarification requested" : "Submitted"}</StatusBadge>,
-                  action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`Review ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">Review <ChevronRight className="size-4" aria-hidden="true" /></Link>,
+                  status: <StatusBadge tone={incident.status === "city_confirmed" ? "information" : "warning"}>{incident.status === "clarification_required" ? "Clarification Requested" : titleCase(incident.status)}</StatusBadge>,
+                  action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`${confirmed ? "Assign Priority to" : "Review"} ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">{confirmed ? "Assign Priority" : "Review"} <ChevronRight className="size-4" aria-hidden="true" /></Link>,
                 },
               }))}
             />

@@ -115,7 +115,7 @@ class _ResetPasswordWithTokenScreenState
                   const SizedBox(height: AppSpacing.md),
                 ],
                 LunasButton(
-                  label: 'Reset password',
+                  label: 'Reset Password',
                   isLoading: auth.isSubmitting,
                   onPressed: auth.isSubmitting ? null : _submit,
                 ),

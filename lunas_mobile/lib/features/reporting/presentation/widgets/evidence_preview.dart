@@ -158,7 +158,7 @@ class AiAssistanceCard extends StatelessWidget {
             children: [
               const Icon(Icons.auto_awesome_outlined),
               Text(status, style: Theme.of(context).textTheme.titleMedium),
-              const Chip(label: Text('AI assistance only')),
+              const Chip(label: Text('AI Assistance Only')),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),

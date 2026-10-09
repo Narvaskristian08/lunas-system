@@ -45,7 +45,7 @@ void main() {
     ),
   );
   Future<void> tap(WidgetTester tester, String text) async {
-    final target = find.text(text);
+    final target = find.text(text).last;
     await tester.ensureVisible(target);
     await tester.tap(target);
     await tester.pumpAndSettle();
@@ -69,6 +69,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tap(tester, 'Submit Report');
+      expect(find.text('Final Check'), findsOneWidget);
+      await tap(tester, 'Submit Report');
       expect(submitted, isNull);
       expect(
         find.text(
@@ -76,8 +78,16 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tap(tester, 'The pin marks the actual damage location.');
-      await tap(tester, 'I checked the image for private information.');
+      await tap(tester, 'I confirmed the damage location.');
+      await tap(tester, 'I reviewed the photo for privacy.');
+      await tap(tester, 'Back to Review');
+      await tap(tester, 'Submit Report');
+      expect(
+        tester
+            .widgetList<Checkbox>(find.byType(Checkbox))
+            .every((checkbox) => checkbox.value == true),
+        isTrue,
+      );
       await tap(tester, 'Submit Report');
       expect(submitted?.locationConfirmed, isTrue);
       expect(submitted?.location.pinSource, 'map_pin');
@@ -101,8 +111,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tap(tester, 'The pin marks the actual damage location.');
-      await tap(tester, 'I checked the image for private information.');
+      await tap(tester, 'Submit Report');
+      await tap(tester, 'I confirmed the damage location.');
+      await tap(tester, 'I reviewed the photo for privacy.');
       await tap(tester, 'Submit Report');
       expect(submitted, isNull);
       expect(

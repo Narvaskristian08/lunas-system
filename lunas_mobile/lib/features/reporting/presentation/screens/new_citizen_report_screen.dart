@@ -307,7 +307,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
               child: TextButton.icon(
                 onPressed: _loadBarangays,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Try again'),
+                label: const Text('Try Again'),
               ),
             ),
           ],

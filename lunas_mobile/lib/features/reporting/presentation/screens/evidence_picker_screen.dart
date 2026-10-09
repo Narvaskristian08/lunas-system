@@ -47,7 +47,7 @@ class _EvidencePickerScreenState extends State<EvidencePickerScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
-      title: 'Add evidence',
+      title: 'Add Evidence',
       subtitle: 'Add a clear photo of the issue.',
       showBackButton: true,
     ),
@@ -137,7 +137,7 @@ class _EvidencePickerScreenState extends State<EvidencePickerScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   LunasButton(
-                    label: 'Use this evidence',
+                    label: 'Use This Evidence',
                     isLoading: _selecting,
                     onPressed: _selecting ? null : () => context.pop(_evidence),
                   ),

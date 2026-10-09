@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/reporting/presentation/widgets/report_submitted_dialog.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 
 import 'package:flutter/material.dart';
@@ -16,7 +17,8 @@ import 'package:lunas_mobile/features/reporting/presentation/widgets/report_stat
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class CitizenDashboardScreen extends StatefulWidget {
-  const CitizenDashboardScreen({super.key});
+  const CitizenDashboardScreen({this.submittedReport, super.key});
+  final IncidentReport? submittedReport;
 
   @override
   State<CitizenDashboardScreen> createState() => _CitizenDashboardScreenState();
@@ -31,7 +33,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _loadReports();
+    if (widget.submittedReport == null) {
+      _loadReports();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _loadReports();
+        if (!mounted) return;
+        final destination = await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) =>
+              ReportSubmittedDialog(report: widget.submittedReport!),
+        );
+        if (!mounted) return;
+        if (destination != null) context.go(destination);
+      });
+    }
   }
 
   @override
@@ -131,7 +148,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                     state: LunasViewState.error,
                     title: 'Could not load reports',
                     message: _error!,
-                    actionLabel: 'Try again',
+                    actionLabel: 'Try Again',
                     onAction: _loadReports,
                     compact: true,
                   )

@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'dart:async';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:flutter/material.dart';
@@ -48,30 +49,30 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     super.initState();
     _loadPolicy();
     _comparisonTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (mounted && !_submitting) setState(() {});
+      if (mounted && !_submitting) _updateReview(() {});
     });
   }
 
   Future<void> _loadPolicy() async {
-    setState(() => _loadingPolicy = true);
+    _updateReview(() => _loadingPolicy = true);
     try {
       final policy =
           await (widget.policyLoader ?? reportService.getLocationPolicy)();
       if (mounted) {
-        setState(() {
+        _updateReview(() {
           _policy = policy;
           _error = null;
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(
+        _updateReview(
           () => _error =
               'Location review unavailable. Tap Retry location review.',
         );
       }
     } finally {
-      if (mounted) setState(() => _loadingPolicy = false);
+      if (mounted) _updateReview(() => _loadingPolicy = false);
     }
   }
 
@@ -88,14 +89,14 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
 
   Future<void> _submit() async {
     if (_policy == null) {
-      setState(
+      _updateReview(
         () =>
             _error = 'Location review unavailable. Tap Retry location review.',
       );
       return;
     }
     if (!_locationConfirmed) {
-      setState(
+      _updateReview(
         () => _error =
             'Confirm that the selected pin is the actual damage location.',
       );
@@ -105,7 +106,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         (_explanationReason == null ||
             (_explanationReason == 'other' &&
                 _explanationText.text.trim().length < 10))) {
-      setState(
+      _updateReview(
         () => _error =
             'Choose an explanation. Other requires at least 10 characters.',
       );
@@ -113,13 +114,13 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     }
     if (widget.draft.evidence.requiresPrivacyAcknowledgement &&
         !_acknowledgedPrivacy) {
-      setState(
+      _updateReview(
         () => _error =
             'Confirm that the evidence does not include private or identifying information before submitting.',
       );
       return;
     }
-    setState(() {
+    _updateReview(() {
       _submitting = true;
       _error = null;
     });
@@ -138,19 +139,247 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         ),
       );
       if (!mounted) return;
-      context.go('/reports/submitted', extra: report);
+      if (_sheetState != null) {
+        _sheetState = null;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      context.go('/citizen', extra: report);
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted) _updateReview(() => _error = error.message);
     } catch (_) {
       if (mounted) {
-        setState(
+        _updateReview(
           () => _error =
               'We could not submit this report. Your form is still available; please try again.',
         );
       }
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) _updateReview(() => _submitting = false);
     }
+  }
+
+  StateSetter? _sheetState;
+  void _updateReview(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+    _sheetState?.call(() {});
+  }
+
+  Future<void> _openConfirmation() async {
+    await showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (_, sheetState) {
+          _sheetState = sheetState;
+          return PopScope(
+            canPop: !_submitting,
+            child: Dialog(
+              alignment: Alignment.center,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl,
+                vertical: AppSpacing.lg,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.lg),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight:
+                        (MediaQuery.sizeOf(sheetContext).height -
+                            MediaQuery.viewInsetsOf(sheetContext).bottom -
+                            MediaQuery.paddingOf(sheetContext).vertical -
+                            AppSpacing.lg * 2) *
+                        .8,
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      0,
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Final Check',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Review both items to continue.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Padding(
+                          padding: EdgeInsets.zero,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (_comparison == 'discrepancy')
+                                  const Text(
+                                    'The pin is away from your current location. Tell us why—you can report from elsewhere or use an earlier photo.',
+                                  ),
+
+                                if (_loadingPolicy)
+                                  Semantics(
+                                    label: 'Loading location review',
+                                    child: const LinearProgressIndicator(),
+                                  ),
+                                if (_policy == null && !_loadingPolicy)
+                                  TextButton(
+                                    onPressed: _loadPolicy,
+                                    child: const Text('Retry location review'),
+                                  ),
+                                if (_comparison == 'discrepancy') ...[
+                                  DropdownButtonFormField<String>(
+                                    initialValue: _explanationReason,
+                                    decoration: const InputDecoration(
+                                      labelText:
+                                          'Location discrepancy explanation',
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'photo_taken_earlier',
+                                        child: Text('Photo was taken earlier'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'gps_inaccurate',
+                                        child: Text(
+                                          'GPS location is inaccurate',
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'reporting_elsewhere',
+                                        child: Text(
+                                          'Reporting from another location',
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'other',
+                                        child: Text('Other'),
+                                      ),
+                                    ],
+                                    onChanged: _submitting
+                                        ? null
+                                        : (value) => _updateReview(
+                                            () => _explanationReason = value,
+                                          ),
+                                  ),
+                                  if (_explanationReason == 'other')
+                                    TextField(
+                                      controller: _explanationText,
+                                      maxLength: 500,
+                                      decoration: const InputDecoration(
+                                        labelText:
+                                            'Explanation (at least 10 characters)',
+                                      ),
+                                    ),
+                                ],
+                                const SizedBox(height: AppSpacing.sm),
+                                _ConfirmationRow(
+                                  value: _locationConfirmed,
+                                  onChanged: _submitting
+                                      ? null
+                                      : (value) => _updateReview(
+                                          () => _locationConfirmed =
+                                              value ?? false,
+                                        ),
+                                  title: 'I confirmed the damage location.',
+                                  subtitle:
+                                      'The pin marks where the damage is.',
+                                ),
+                                if (widget
+                                    .draft
+                                    .evidence
+                                    .requiresPrivacyAcknowledgement) ...[
+                                  const Divider(height: AppSpacing.md),
+
+                                  _ConfirmationRow(
+                                    value: _acknowledgedPrivacy,
+                                    onChanged: _submitting
+                                        ? null
+                                        : (value) => _updateReview(
+                                            () => _acknowledgedPrivacy =
+                                                value ?? false,
+                                          ),
+                                    title: 'I reviewed the photo for privacy.',
+                                    subtitle:
+                                        'I checked for personal details. Faces and plates are also checked and redacted before storage.',
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              size: 16,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'An official reviews every report. AI assists with screening.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.lg),
+                        LunasButton(
+                          label: 'Submit Report',
+                          icon: Icons.send_rounded,
+                          isLoading: _submitting,
+                          onPressed: _submitting || _loadingPolicy
+                              ? null
+                              : _submit,
+                        ),
+                        TextButton(
+                          onPressed: _submitting
+                              ? null
+                              : () => Navigator.of(sheetContext).pop(),
+                          child: const Text('Back to Review'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    _sheetState = null;
   }
 
   @override
@@ -160,69 +389,62 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       subtitle: 'Check your report before submitting.',
       showBackButton: true,
     ),
-    bottomNavigationBar: ColoredBox(
-      color: Theme.of(context).colorScheme.surface,
-      child: SafeArea(
-        top: false,
-        child: Padding(
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.sm,
+          AppSpacing.xl,
+          AppSpacing.lg,
+        ),
+        child: LunasButton(
+          label: 'Submit Report',
+          icon: Icons.send_rounded,
+          isLoading: _submitting,
+          onPressed: _submitting || _loadingPolicy ? null : _openConfirmation,
+        ),
+      ),
+    ),
+    body: SafeArea(
+      top: false,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl,
             AppSpacing.md,
             AppSpacing.xl,
             AppSpacing.md,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LunasButton(
-                label: 'Submit Report',
-                icon: Icons.send_rounded,
-                isLoading: _submitting,
-                onPressed: _submitting || _loadingPolicy ? null : _submit,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - AppSpacing.md * 2).clamp(
+                0.0,
+                double.infinity,
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'An authorized official will review your report next.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-    body: SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          AppSpacing.md,
-          AppSpacing.xl,
-          AppSpacing.hero,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LunasCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Report summary',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: LocalEvidencePreview(
+                    evidence: widget.draft.evidence,
+                    height: 180,
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                LunasCard(
+                  child: Row(
                     children: [
-                      SizedBox(
-                        width: 88,
-                        child: LocalEvidencePreview(
-                          evidence: widget.draft.evidence,
-                          height: 88,
-                        ),
+                      Icon(
+                        reportCategoryIcon(widget.draft.category.code),
+                        size: 28,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
@@ -230,221 +452,119 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.draft.category.label,
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
+                              'Category',
+                              style: Theme.of(context).textTheme.labelSmall,
                             ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(widget.draft.description),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              widget.draft.category.label,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Report location',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            LunasCard(
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.draft.barangay,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(widget.draft.location.address),
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                widget.draft.location.coordinates,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Before you submit',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            LunasCard(
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Location check',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(switch (_comparison) {
-                      'discrepancy' =>
-                        'Location differs from current GPS. Reporting from home or using a photo taken earlier is allowed. Explain below.',
-                      'consistent' => 'No significant discrepancy detected.',
-                      'inconclusive' =>
-                        'Comparison inconclusive: GPS is stale or inaccurate. Manual reporting is allowed.',
-                      _ =>
-                        'Comparison unavailable. Manual reporting is allowed.',
-                    }),
-                    const Text(
-                      'GPS is a reference only. An official will verify the report location and barangay.',
-                    ),
-                    if (_loadingPolicy)
-                      Semantics(
-                        label: 'Loading location review',
-                        child: const LinearProgressIndicator(),
-                      ),
-                    if (_policy == null && !_loadingPolicy)
-                      TextButton(
-                        onPressed: _loadPolicy,
-                        child: const Text('Retry location review'),
-                      ),
-                    if (_comparison == 'discrepancy') ...[
-                      DropdownButtonFormField<String>(
-                        initialValue: _explanationReason,
-                        decoration: const InputDecoration(
-                          labelText: 'Location discrepancy explanation',
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'photo_taken_earlier',
-                            child: Text('Photo was taken earlier'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'gps_inaccurate',
-                            child: Text('GPS location is inaccurate'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'reporting_elsewhere',
-                            child: Text('Reporting from another location'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'other',
-                            child: Text('Other'),
-                          ),
-                        ],
-                        onChanged: _submitting
-                            ? null
-                            : (value) =>
-                                  setState(() => _explanationReason = value),
-                      ),
-                      if (_explanationReason == 'other')
-                        TextField(
-                          controller: _explanationText,
-                          maxLength: 500,
-                          decoration: const InputDecoration(
-                            labelText: 'Explanation (at least 10 characters)',
-                          ),
-                        ),
-                    ],
-                    const SizedBox(height: AppSpacing.md),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      value: _locationConfirmed,
-                      onChanged: _submitting
-                          ? null
-                          : (value) => setState(
-                              () => _locationConfirmed = value ?? false,
-                            ),
-                      title: const Text(
-                        'The pin marks the actual damage location.',
-                      ),
-                    ),
-                    if (widget
-                        .draft
-                        .evidence
-                        .requiresPrivacyAcknowledgement) ...[
-                      const Divider(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
+                LunasCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Evidence privacy',
+                        'Description',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
-                      CheckboxListTile(
-                        value: _acknowledgedPrivacy,
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        onChanged: _submitting
-                            ? null
-                            : (value) => setState(
-                                () => _acknowledgedPrivacy = value ?? false,
-                              ),
-                        title: const Text(
-                          'I checked the image for private information.',
-                        ),
-                        subtitle: const Text(
-                          'Faces and license plates are automatically checked and redacted before storage.',
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(widget.draft.description),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                LunasCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 22,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.draft.barangay,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              widget.draft.location.address,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(height: 1.5),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'AI may assist with image screening. An authorized official makes the review decision.',
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
               ],
             ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
+          ),
         ),
+      ),
+    ),
+  );
+}
+
+class _ConfirmationRow extends StatelessWidget {
+  const _ConfirmationRow({
+    required this.value,
+    required this.onChanged,
+    required this.title,
+    required this.subtitle,
+  });
+  final bool value;
+  final ValueChanged<bool?>? onChanged;
+  final String title;
+  final String subtitle;
+  @override
+  Widget build(BuildContext context) => InkWell(
+    borderRadius: BorderRadius.circular(8),
+    onTap: onChanged == null ? null : () => onChanged!(!value),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 32,
+            height: 28,
+            child: Checkbox(value: value, onChanged: onChanged),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
       ),
     ),
   );

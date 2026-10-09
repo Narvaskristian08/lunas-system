@@ -94,7 +94,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 children: [
                   const AuthHeading(
                     eyebrow: 'Registration security',
-                    title: 'Verify your email',
+                    title: 'Verify Your Email',
                     description:
                         'Enter the one-time code before your citizen account is activated.',
                   ),
@@ -139,7 +139,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ],
                   const SizedBox(height: AppSpacing.xl),
                   LunasButton(
-                    label: 'Verify and create account',
+                    label: 'Verify and Create Account',
                     icon: Icons.verified_user_outlined,
                     isLoading: auth.isSubmitting,
                     onPressed: challenge == null || auth.isSubmitting

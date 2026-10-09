@@ -84,7 +84,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 const SizedBox(height: AppSpacing.md),
               ],
               LunasButton(
-                label: 'Request reset link',
+                label: 'Request Reset Link',
                 isLoading: _sending,
                 onPressed: _sending ? null : _submit,
               ),

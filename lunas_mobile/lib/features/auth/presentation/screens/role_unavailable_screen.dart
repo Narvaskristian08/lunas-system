@@ -47,7 +47,7 @@ class RoleUnavailableScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
           LunasButton(
-            label: 'Sign out',
+            label: 'Sign Out',
             isLoading: auth.isSubmitting,
             onPressed: auth.isSubmitting ? null : auth.logout,
           ),

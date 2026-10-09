@@ -139,7 +139,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Could not load notifications'), findsOneWidget);
-    await tester.tap(find.text('Try again'));
+    await tester.tap(find.text('Try Again'));
     await tester.pumpAndSettle();
     expect(find.text('No notifications yet'), findsOneWidget);
     expect(retry.requestedPages, [1, 1]);

@@ -769,7 +769,7 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   const numericLimit = Number(limit);
   const allowedSorts = new Set(['createdAt', '-createdAt', 'priority', '-priority']);
   const filter = req.user.role === 'city_engineer'
-    ? { status: 'barangay_validated' }
+    ? { status: req.query.stage === 'confirmed' ? 'city_confirmed' : 'barangay_validated' }
     : { status: { $in: ['submitted', 'clarification_required'] } };
 
   if (category) filter.category = category;

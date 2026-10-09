@@ -235,7 +235,7 @@ class _UpdateRepairProgressScreenState
             state: LunasViewState.error,
             title: 'Could not update progress',
             message: _error ?? 'This work order is unavailable.',
-            actionLabel: 'Try again',
+            actionLabel: 'Try Again',
             onAction: _load,
           ),
         ),
@@ -254,7 +254,7 @@ class _UpdateRepairProgressScreenState
             title: 'Progress updates are unavailable',
             message:
                 'Only an in-progress work order can receive a repair update.',
-            actionLabel: 'View work order',
+            actionLabel: 'View Work Order',
             onAction: () => context.canPop()
                 ? context.pop()
                 : context.go(RepairRoutes.workOrders),

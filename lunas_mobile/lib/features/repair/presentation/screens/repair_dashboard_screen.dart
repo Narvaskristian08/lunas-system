@@ -104,7 +104,7 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
         state: LunasViewState.error,
         title: 'Could not load repair work',
         message: _error!,
-        actionLabel: 'Try again',
+        actionLabel: 'Try Again',
         onAction: _load,
       );
     }
@@ -114,7 +114,7 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
         state: LunasViewState.error,
         title: 'Repair summary unavailable',
         message: 'The server did not return a repair dashboard summary.',
-        actionLabel: 'Try again',
+        actionLabel: 'Try Again',
         onAction: _load,
       );
     }

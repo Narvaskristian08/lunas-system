@@ -274,6 +274,19 @@ describe('sequential incident review workflow', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+
+test('City Engineering can list confirmed incidents awaiting priority', async () => {
+  Incident.find.mockReturnValue(queryFor([]));
+  Incident.countDocuments.mockResolvedValue(0);
+  const res = response();
+  const next = jest.fn();
+  await getPendingValidation({ query: { stage: 'confirmed' }, user: { role: 'city_engineer' } }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  expect(Incident.find).toHaveBeenCalledWith(expect.objectContaining({
+    status: 'city_confirmed'
+  }));
+});
+
   test('returns submitted and clarification-required records only from the assigned barangay queue', async () => {
     Incident.find.mockReturnValue(queryFor([submitted]));
     Incident.countDocuments.mockResolvedValue(1);

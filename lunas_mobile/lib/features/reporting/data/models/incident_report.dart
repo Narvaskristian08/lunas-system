@@ -134,7 +134,7 @@ class IncidentRepairSummary {
     if (status == 'in_progress' && progressPercent > 0) {
       return 'Repair Progress: $progressPercent%';
     }
-    if (status == 'in_progress') return 'Repair In Progress';
+    if (status == 'in_progress') return 'Repair in Progress';
     if (status == 'pending' && assignmentState == 'unassigned') {
       return 'Work Order Created · Awaiting Assignment';
     }
@@ -430,7 +430,7 @@ class ReportStatusEvent {
       return 'Repair Progress: $progressPercent%';
     }
     if (status == 'assigned') return 'Assigned for Repair';
-    if (status == 'in_progress') return 'Repair In Progress';
+    if (status == 'in_progress') return 'Repair in Progress';
     return _statusLabel(status);
   }
 
@@ -468,10 +468,18 @@ DateTime? _date(Object? value) =>
     value == null ? null : DateTime.tryParse(value.toString())?.toLocal();
 
 String _statusLabel(String value) => value
-    .replaceAll('_', ' ')
+    .trim()
+    .toLowerCase()
+    .replaceAll(RegExp(r'[_-]+'), ' ')
     .split(' ')
     .where((part) => part.isNotEmpty)
-    .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+    .map(
+      (part) => ['ai', 'gps', 'sla', 'id'].contains(part)
+          ? part.toUpperCase()
+          : ['in', 'for', 'by', 'to', 'of', 'and'].contains(part)
+          ? part
+          : '${part[0].toUpperCase()}${part.substring(1)}',
+    )
     .join(' ');
 
 /// Collapses repeated display milestones without changing backend history.

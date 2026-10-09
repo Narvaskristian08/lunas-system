@@ -3,10 +3,18 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
 String humanStatus(String status) => status
-    .replaceAll('_', ' ')
+    .trim()
+    .toLowerCase()
+    .replaceAll(RegExp(r'[_-]+'), ' ')
     .split(' ')
     .where((part) => part.isNotEmpty)
-    .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+    .map(
+      (part) => ['ai', 'gps', 'sla', 'id'].contains(part)
+          ? part.toUpperCase()
+          : ['in', 'for', 'by', 'to', 'of', 'and'].contains(part)
+          ? part
+          : '${part[0].toUpperCase()}${part.substring(1)}',
+    )
     .join(' ');
 
 IconData categoryIcon(String category) => switch (category) {
@@ -127,7 +135,7 @@ class _TimelineEvent extends StatelessWidget {
                       event.notes!.trim().isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
-                      event.notes!,
+                      timelineNoteLabel(event.notes!),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -161,4 +169,28 @@ String formatReportDateTime(DateTime? value) {
   final minute = value.minute.toString().padLeft(2, '0');
   final period = value.hour >= 12 ? 'PM' : 'AM';
   return '${months[value.month - 1]} ${value.day}, ${value.year} · $hour:$minute $period';
+}
+
+String timelineNoteLabel(String value) {
+  const automaticNotes = <String, String>{
+    'incident reported': 'Incident Reported',
+    'barangay validation completed; forwarded to city engineering':
+        'Barangay Validation Completed; Forwarded to City Engineering',
+    'city engineering confirmed the incident':
+        'City Engineering Confirmed the Incident',
+    'jurisdiction confirmed': 'Jurisdiction Confirmed',
+    'work order created from validated incident':
+        'Work Order Created from Validated Incident',
+    'repair personnel assigned': 'Repair Personnel Assigned',
+    'repair assignment reassigned': 'Repair Assignment Reassigned',
+    'repair assignment declined; awaiting reassignment':
+        'Repair Assignment Declined; Awaiting Reassignment',
+    'corrective repair work started': 'Corrective Repair Work Started',
+    'repair work started': 'Repair Work Started',
+    'utility provider accepted the repair and forwarded it for city engineering verification':
+        'Utility Provider Accepted the Repair and Forwarded It for City Engineering Verification',
+    'city engineering verified the repair and closed the incident':
+        'City Engineering Verified the Repair and Closed the Incident',
+  };
+  return automaticNotes[value.trim().toLowerCase()] ?? value;
 }

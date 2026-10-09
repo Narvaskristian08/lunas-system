@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/barangay_picker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +30,6 @@ import 'package:lunas_mobile/features/repair/presentation/screens/start_repair_s
 import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_progress_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
-import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/category_picker_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/citizen_report_detail_screen.dart';
@@ -37,7 +37,6 @@ import 'package:lunas_mobile/features/reporting/presentation/screens/evidence_pi
 import 'package:lunas_mobile/features/reporting/presentation/screens/my_reports_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/new_citizen_report_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_review_screen.dart';
-import 'package:lunas_mobile/features/reporting/presentation/screens/report_submitted_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -128,7 +127,16 @@ final GoRouter appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/citizen',
-          builder: (_, _) => const CitizenDashboardScreen(),
+          builder: (_, state) => CitizenDashboardScreen(
+            key: ValueKey(
+              state.extra is IncidentReport
+                  ? (state.extra as IncidentReport).id
+                  : 'home',
+            ),
+            submittedReport: state.extra is IncidentReport
+                ? state.extra as IncidentReport
+                : null,
+          ),
         ),
         GoRoute(path: '/reports', builder: (_, _) => const MyReportsScreen()),
         GoRoute(
@@ -173,17 +181,6 @@ final GoRouter appRouter = GoRouter(
                 ? ReportReviewScreen(draft: draft)
                 : const _MissingRouteDataScreen(
                     message: 'Start a new report before reviewing it.',
-                  );
-          },
-        ),
-        GoRoute(
-          path: '/reports/submitted',
-          builder: (_, state) {
-            final report = state.extra;
-            return report is IncidentReport
-                ? ReportSubmittedScreen(report: report)
-                : const _MissingRouteDataScreen(
-                    message: 'The submitted report could not be opened.',
                   );
           },
         ),

@@ -43,7 +43,7 @@ class _CategoryPickerScreenState extends State<CategoryPickerScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: const LunasAppBar(
-      title: 'Select category',
+      title: 'Select Category',
       subtitle: 'Choose the category that fits the issue.',
       showBackButton: true,
     ),
@@ -60,7 +60,7 @@ class _CategoryPickerScreenState extends State<CategoryPickerScreen> {
               state: LunasViewState.error,
               title: 'Could not load categories',
               message: _error!,
-              actionLabel: 'Try again',
+              actionLabel: 'Try Again',
               onAction: _load,
             )
           : ListView.separated(
@@ -70,7 +70,8 @@ class _CategoryPickerScreenState extends State<CategoryPickerScreen> {
                 AppSpacing.xl,
                 AppSpacing.hero,
               ),
-              itemCount: _result!.categories.length +
+              itemCount:
+                  _result!.categories.length +
                   (_result!.usingConfiguredFallback ? 1 : 0),
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) {
@@ -86,12 +87,13 @@ class _CategoryPickerScreenState extends State<CategoryPickerScreen> {
                     ),
                   );
                 }
-                final category = _result!.categories[
-                    index - (_result!.usingConfiguredFallback ? 1 : 0)];
+                final category =
+                    _result!.categories[index -
+                        (_result!.usingConfiguredFallback ? 1 : 0)];
                 return ReportCategoryTile(
                   label: category.label,
                   description: category.description,
-                  icon: _categoryIcon(category.code),
+                  icon: reportCategoryIcon(category.code),
                   color: Theme.of(context).colorScheme.primary,
                   selected: widget.selected?.code == category.code,
                   onTap: () => context.pop(category),
@@ -101,13 +103,3 @@ class _CategoryPickerScreenState extends State<CategoryPickerScreen> {
     ),
   );
 }
-
-IconData _categoryIcon(String code) => switch (code) {
-  'road' => Icons.add_road_rounded,
-  'drainage' => Icons.water_damage_outlined,
-  'electrical' => Icons.electric_bolt_outlined,
-  'water' => Icons.water_drop_outlined,
-  'gas' => Icons.local_fire_department_outlined,
-  'streetlight' => Icons.lightbulb_outline_rounded,
-  _ => Icons.report_problem_outlined,
-};
