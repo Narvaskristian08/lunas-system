@@ -1,13 +1,13 @@
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets.dart';
 
 /// Read-only incident location for an assigned repair. It never modifies the
 /// citizen-reported pin or starts background personnel tracking.

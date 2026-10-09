@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
@@ -201,12 +202,9 @@ class MarkerDetailsSheet extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(
-                  context,
-                  '/reports/details',
-                  arguments: marker.id,
-                );
+                final router = GoRouter.of(context);
+                Navigator.pop(context); // Dismiss the marker sheet.
+                router.push('/reports/${Uri.encodeComponent(marker.id)}');
               },
               child: const Text('View Report Details'),
             ),

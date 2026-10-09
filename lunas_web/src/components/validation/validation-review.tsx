@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryLabel } from "@/lib/category-label";
+
 /* Signed private evidence URLs are dynamic and intentionally not passed to Next image optimization. */
 /* eslint-disable @next/next/no-img-element */
 
@@ -305,7 +307,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
         <div className="space-y-6">
           <Evidence incident={incident} />
           <AiAssistance incident={incident} />
-          <Card className="overflow-hidden"><CardHeader title="Citizen Report" description={incident.createdAt ? `Submitted ${formatDateTime(incident.createdAt)}` : "Submission time unavailable"} /><div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{titleCase(incident.category)}</Badge>{incident.subcategory ? <Badge>{titleCase(incident.subcategory)}</Badge> : null}{incident.aiAnalysis?.hazardType ? <Badge tone="neutral">AI suggestion: {titleCase(incident.aiAnalysis.hazardType)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{incident.description}</p></div></Card>
+          <Card className="overflow-hidden"><CardHeader title="Citizen Report" description={incident.createdAt ? `Submitted ${formatDateTime(incident.createdAt)}` : "Submission time unavailable"} /><div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{categoryLabel(incident.category)}</Badge>{incident.subcategory ? <Badge>{titleCase(incident.subcategory)}</Badge> : null}{incident.aiAnalysis?.hazardType ? <Badge tone="neutral">AI suggestion: {titleCase(incident.aiAnalysis.hazardType)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{incident.description}</p></div></Card>
           <Coordinates incident={incident} />
           {(isBarangay || isCityEngineer) ? <FalseReportReview incidentId={incident.id} status={incident.status} /> : null}
           <ValidationRoutingSummary incident={incident} />
@@ -313,7 +315,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <Card className="overflow-hidden"><CardHeader title="Duplicate Candidates" description="Suggestions only; LUNAS never marks a report duplicate automatically." /><div className="divide-y divide-slate-200">{incident.duplicateCandidates.length ? incident.duplicateCandidates.map((candidate) => <div key={candidate.id} className="p-4"><p className="font-semibold text-slate-900">{candidate.reportNumber}</p><p className="mt-1 text-sm text-slate-600">{titleCase(candidate.category)} · {candidate.location?.address.barangay ?? "Location unavailable"}</p><div className="mt-2 flex gap-2">{candidate.distanceMeters !== undefined ? <Badge>{Math.round(candidate.distanceMeters)} m away</Badge> : null}{candidate.score !== undefined ? <Badge tone="warning">Candidate score {Math.round(candidate.score)}</Badge> : null}</div></div>) : <p className="p-4 text-sm text-slate-600">No likely duplicate reports found.</p>}</div></Card>
+          <Card className="overflow-hidden"><CardHeader title="Duplicate Candidates" description="Suggestions only; LUNAS never marks a report duplicate automatically." /><div className="divide-y divide-slate-200">{incident.duplicateCandidates.length ? incident.duplicateCandidates.map((candidate) => <div key={candidate.id} className="p-4"><p className="font-semibold text-slate-900">{candidate.reportNumber}</p><p className="mt-1 text-sm text-slate-600">{categoryLabel(candidate.category)} · {candidate.location?.address.barangay ?? "Location unavailable"}</p><div className="mt-2 flex gap-2">{candidate.distanceMeters !== undefined ? <Badge>{Math.round(candidate.distanceMeters)} m away</Badge> : null}{candidate.score !== undefined ? <Badge tone="warning">Candidate score {Math.round(candidate.score)}</Badge> : null}</div></div>) : <p className="p-4 text-sm text-slate-600">No likely duplicate reports found.</p>}</div></Card>
 
           <Card className="overflow-hidden"><CardHeader title={isBarangay ? "Barangay Validation" : "City Engineering Decision"} description="Each handoff is recorded by the backend with the actor, state, timestamp, and decision notes." />
             {canBarangayReview ? <form onSubmit={submit} className="space-y-4 p-5">

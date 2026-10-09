@@ -475,7 +475,7 @@ export function readValidationFilters(searchParams: Record<string, string | stri
 }
 
 const fallbackReportCategories = [
-  { value: "road", label: "Roads and Sidewalks" },
+  { value: "road", label: "Road Damage" },
   { value: "drainage", label: "Drainage" },
   { value: "electrical", label: "Electrical" },
   { value: "water", label: "Water" },
@@ -492,7 +492,7 @@ async function getReportCategoryOptions(accessToken: string) {
       const category = asRecord(item);
       const value = typeof item === "string" ? item : String(category.code ?? category.value ?? "");
       const fallback = fallbackReportCategories.find((option) => option.value === value);
-      const label = String(category.label ?? category.name ?? fallback?.label ?? value)
+      const label = value === "road" ? "Road Damage" : String(category.label ?? category.name ?? fallback?.label ?? value)
         .replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
       return { value, label };
     }).filter((option) => option.value);

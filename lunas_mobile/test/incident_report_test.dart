@@ -63,7 +63,7 @@ void main() {
     });
 
     expect(report.id, 'incident-1');
-    expect(report.categoryLabel, 'Roads and Sidewalks');
+    expect(report.categoryLabel, 'Road Damage');
     expect(report.location.displayAddress, 'Rizal Avenue, Barangay 5');
     expect(report.images.single.url, isEmpty);
     expect(report.images.single.qualityStatus, 'passed');

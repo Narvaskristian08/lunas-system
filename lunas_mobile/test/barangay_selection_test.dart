@@ -1,3 +1,5 @@
+import 'package:go_router/go_router.dart';
+import 'package:lunas_mobile/features/reporting/presentation/screens/barangay_picker_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -62,11 +64,23 @@ void main() {
   testWidgets('loads and searches only backend-provided barangays', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: NewCitizenReportScreen(barangayLoader: () async => _barangays),
-      ),
+    final router = GoRouter(
+      initialLocation: '/reports/new',
+      routes: [
+        GoRoute(
+          path: '/reports/new',
+          builder: (_, _) =>
+              NewCitizenReportScreen(barangayLoader: () async => _barangays),
+        ),
+        GoRoute(
+          path: '/reports/barangays',
+          builder: (_, state) =>
+              BarangayPickerScreen(barangays: state.extra as List<String>),
+        ),
+      ],
     );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
 
     final selector = find.text('Select Barangay');

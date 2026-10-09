@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryLabel } from "@/lib/category-label";
+
 import { distinctTimelineEvents, timelineMilestoneLabel } from "@/lib/timeline-display";
 
 /* Signed evidence URLs are supplied by the protected API and should not be optimized by Next image. */
@@ -367,7 +369,7 @@ export function WorkOrderDetail({
       <PageHeader
         eyebrow={`${workOrder.responsibleOrganization ?? "Maintenance"} · ${workOrder.jurisdiction?.barangay ?? "Authorized Scope"}`}
         title={workOrder.reference}
-        description={workOrder.incident?.category ? `${titleCase(workOrder.incident.category)} repair work order` : "Maintenance work order"}
+        description={workOrder.incident?.category ? `${categoryLabel(workOrder.incident.category)} repair work order` : "Maintenance work order"}
         actions={<><StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrder.status === "completed" ? "Completed · provider review" : titleCase(workOrder.status)}</StatusBadge><StatusBadge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)}</StatusBadge></>}
       />
       <ActionNotice message={notice?.message} kind={notice?.kind} />
@@ -388,7 +390,7 @@ export function WorkOrderDetail({
                 <div>
                   <dt className="text-xs font-medium text-slate-500">Incident Reference</dt>
                   <dd className="mt-1.5 break-words text-base font-semibold text-slate-950">{workOrder.incident?.reportNumber ?? "Unavailable"}</dd>
-                  <dd className="mt-2"><Badge tone="information">{titleCase(workOrder.incident?.category, "Uncategorized")}</Badge></dd>
+                  <dd className="mt-2"><Badge tone="information">{categoryLabel(workOrder.incident?.category, "Uncategorized")}</Badge></dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">Responsible Organization</dt>

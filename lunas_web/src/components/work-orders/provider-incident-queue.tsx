@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryLabel } from "@/lib/category-label";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -117,7 +119,7 @@ export function ProviderIncidentQueue({
             onChange={(event) => navigate({ category: event.target.value || undefined })}
             options={[
               { value: "", label: "All Categories" },
-              ...categories.map((category) => ({ value: category, label: titleCase(category) })),
+              ...categories.map((category) => ({ value: category, label: categoryLabel(category) })),
             ]}
           />
           <FilterSelect
@@ -148,7 +150,7 @@ export function ProviderIncidentQueue({
                         {incident.reportNumber}
                       </Link>
                       {incident.priority ? <Badge tone={priorityTone(incident.priority)}>{titleCase(incident.priority)}</Badge> : null}
-                      <Badge tone="neutral">{titleCase(incident.category, "Uncategorized")}</Badge>
+                      <Badge tone="neutral">{categoryLabel(incident.category, "Uncategorized")}</Badge>
                       {incident.workOrder ? <StatusBadge tone="success">Work order created</StatusBadge> : <StatusBadge tone="warning">Ready for work order</StatusBadge>}
                     </div>
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-700">{incident.description ?? "No incident description available."}</p>

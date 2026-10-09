@@ -1,7 +1,8 @@
+import 'package:lunas_mobile/features/reporting/presentation/screens/barangay_picker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lunas_mobile/core/app_services.dart';
-import 'package:lunas_mobile/core/widgets/citizen_bottom_navigation.dart';
+import 'package:lunas_mobile/app/app_services.dart';
+import 'package:lunas_mobile/features/citizen/presentation/widgets/citizen_bottom_navigation.dart';
 import 'package:lunas_mobile/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/app_splash_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
@@ -12,8 +13,8 @@ import 'package:lunas_mobile/features/auth/presentation/screens/reset_password_w
 import 'package:lunas_mobile/features/auth/presentation/screens/role_unavailable_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashboard_screen.dart';
-import 'package:lunas_mobile/features/citizen/presentation/screens/my_drafts_screen.dart';
-import 'package:lunas_mobile/features/citizen_extra/presentation/screens/report_timeline_screen.dart';
+import 'package:lunas_mobile/features/reporting/presentation/screens/my_drafts_screen.dart';
+import 'package:lunas_mobile/features/reporting/presentation/screens/report_timeline_screen.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/screens/notifications_screen.dart';
@@ -137,6 +138,14 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/reports/evidence',
           builder: (_, _) => const EvidencePickerScreen(),
+        ),
+        GoRoute(
+          path: '/reports/barangays',
+          builder: (_, state) => state.extra is List<String>
+              ? BarangayPickerScreen(barangays: state.extra as List<String>)
+              : const _MissingRouteDataScreen(
+                  message: 'Start a new report before selecting a barangay.',
+                ),
         ),
         GoRoute(
           path: '/reports/categories',

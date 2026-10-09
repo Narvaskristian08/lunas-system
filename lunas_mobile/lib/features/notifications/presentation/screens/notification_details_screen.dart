@@ -7,8 +7,8 @@ import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/repair/routes/repair_routes.dart';
+import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets.dart';
 
 /// Returns a role-safe destination derived only from a server resource ID.
 /// Notification-provided URL strings are intentionally ignored.

@@ -6,7 +6,7 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
-import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_flow_widgets.dart';
+import 'package:lunas_mobile/features/citizen/presentation/widgets/citizen_flow_widgets.dart';
 
 class MyDraftsScreen extends StatefulWidget {
   const MyDraftsScreen({super.key});

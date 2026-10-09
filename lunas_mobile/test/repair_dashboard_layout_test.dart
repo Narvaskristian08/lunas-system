@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/core/theme/app_theme.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets.dart';
 
 void main() {
   testWidgets('assigned task cards stay bounded in a scrolling dashboard', (

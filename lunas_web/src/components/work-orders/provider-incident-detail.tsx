@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryLabel } from "@/lib/category-label";
+
 /* Signed private evidence URLs are dynamic and intentionally not passed to Next image optimization. */
 /* eslint-disable @next/next/no-img-element */
 
@@ -68,7 +70,7 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
             <CardHeader title="Incident Details" description="The report is read-only at the Utility Provider handoff." />
             <div className="space-y-5 p-5">
               <div className="flex flex-wrap gap-2">
-                <Badge tone="neutral">{titleCase(incident.category, "Uncategorized")}</Badge>
+                <Badge tone="neutral">{categoryLabel(incident.category, "Uncategorized")}</Badge>
                 {incident.routedAt ? <span className="text-xs text-slate-500">Routed {formatDateTime(incident.routedAt)}</span> : null}
               </div>
               <div>

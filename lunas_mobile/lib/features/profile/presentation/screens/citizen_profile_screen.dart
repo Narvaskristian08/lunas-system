@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
-import 'package:lunas_mobile/core/widgets/citizen_scaffold.dart';
+import 'package:lunas_mobile/features/citizen/presentation/widgets/citizen_scaffold.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart';
 
@@ -27,13 +28,9 @@ class MapPickerScreen extends StatefulWidget {
     BuildContext context, {
     SelectedLocation? initialLocation,
   }) {
-    return Navigator.of(context).push<SelectedLocation>(
-      MaterialPageRoute(
-        builder: (_) => MapPickerScreen(
-          initialLocation: initialLocation,
-          showLocationConfirmation: true,
-        ),
-      ),
+    return context.push<SelectedLocation>(
+      '/reports/location?mode=picker',
+      extra: initialLocation,
     );
   }
 
@@ -320,8 +317,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             isLoading: _isGeocoding,
                             onPressed: selected == null || _isGeocoding
                                 ? null
-                                : () => Navigator.pop(
-                                    context,
+                                : () => context.pop(
                                     SelectedLocation(
                                       latitude: selected.latitude,
                                       longitude: selected.longitude,

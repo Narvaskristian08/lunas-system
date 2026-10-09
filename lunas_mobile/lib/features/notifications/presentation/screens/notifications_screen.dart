@@ -2,13 +2,13 @@ import 'package:lunas_mobile/features/notifications/presentation/screens/notific
 import 'package:lunas_mobile/core/widgets/lunas_filter_button.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
-import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/notifications/data/services/notification_service.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({

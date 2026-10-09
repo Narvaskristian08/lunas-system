@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/routes/app_router.dart';
 import 'package:lunas_mobile/core/theme/app_theme.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';

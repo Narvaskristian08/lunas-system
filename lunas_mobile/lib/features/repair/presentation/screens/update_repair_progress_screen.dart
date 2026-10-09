@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -10,8 +10,8 @@ import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/maps/data/services/location_service.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_widgets.dart';
+import 'package:lunas_mobile/features/repair/routes/repair_routes.dart';
+import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 
 /// Records field notes or submits completed repair evidence for review.
@@ -255,7 +255,9 @@ class _UpdateRepairProgressScreenState
             message:
                 'Only an in-progress work order can receive a repair update.',
             actionLabel: 'View work order',
-            onAction: () => Navigator.of(context).pop(),
+            onAction: () => context.canPop()
+                ? context.pop()
+                : context.go(RepairRoutes.workOrders),
           ),
         ),
       );

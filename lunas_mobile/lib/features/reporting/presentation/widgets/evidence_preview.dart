@@ -212,10 +212,13 @@ class _PreviewFallback extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.image_not_supported_outlined, size: 42),
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: height < 100 ? 24 : 42,
+          ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Evidence preview unavailable',
+            height < 100 ? 'No preview' : 'Evidence preview unavailable',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

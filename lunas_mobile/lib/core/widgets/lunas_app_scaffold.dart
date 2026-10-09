@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
@@ -26,9 +27,9 @@ class LunasAppScaffold extends StatelessWidget {
   final bool fillAvailableHeight;
 
   static const _routes = [
-    '/home',
-    '/dashboard',
-    '/maps',
+    '/citizen',
+    '/reports',
+    '/reports/location',
     '/reports/new',
     '/profile',
   ];
@@ -86,7 +87,7 @@ class LunasAppScaffold extends StatelessWidget {
               selectedIndex: selectedIndex!,
               onDestinationSelected: (index) {
                 if (index == selectedIndex) return;
-                Navigator.pushReplacementNamed(context, _routes[index]);
+                context.go(_routes[index]);
               },
             ),
     );

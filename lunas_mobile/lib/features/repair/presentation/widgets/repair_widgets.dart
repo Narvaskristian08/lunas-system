@@ -8,7 +8,7 @@ import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
+import 'package:lunas_mobile/features/repair/routes/repair_routes.dart';
 
 /// Shared components for the authenticated repair-personnel workspace.
 /// Data and workflow actions are supplied by the API-backed repair screens.

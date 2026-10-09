@@ -76,11 +76,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tap(
-        tester,
-        'I confirm that the selected pin represents the actual damage location.',
-      );
-      await tap(tester, 'I reviewed this image for private information.');
+      await tap(tester, 'The pin marks the actual damage location.');
+      await tap(tester, 'I checked the image for private information.');
       await tap(tester, 'Submit Report');
       expect(submitted?.locationConfirmed, isTrue);
       expect(submitted?.location.pinSource, 'map_pin');
@@ -104,11 +101,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tap(
-        tester,
-        'I confirm that the selected pin represents the actual damage location.',
-      );
-      await tap(tester, 'I reviewed this image for private information.');
+      await tap(tester, 'The pin marks the actual damage location.');
+      await tap(tester, 'I checked the image for private information.');
       await tap(tester, 'Submit Report');
       expect(submitted, isNull);
       expect(

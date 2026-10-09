@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryLabel } from "@/lib/category-label";
+
 /* Signed private evidence URLs are dynamic and intentionally not passed to Next image optimization. */
 /* eslint-disable @next/next/no-img-element */
 
@@ -196,7 +198,7 @@ export function ValidationQueue({
                 { value: "", label: "All Categories" },
                 ...categorySuggestions.map((value) => ({
                   value,
-                  label: queue.categoryOptions?.find((option) => option.value === value)?.label ?? titleCase(value),
+                  label: queue.categoryOptions?.find((option) => option.value === value)?.label ?? categoryLabel(value),
                 })),
               ]}
             />
@@ -234,7 +236,7 @@ export function ValidationQueue({
                 cells: {
                   reference: <div><Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} className="font-semibold text-brand-700 hover:underline">{incident.reportNumber}</Link><p className="mt-0.5 max-w-64 truncate text-xs text-slate-500">{incident.description}</p></div>,
                   evidence: incident.evidenceThumbnail ? <span className="block size-12 overflow-hidden rounded-lg border border-slate-200 bg-slate-100"><img src={incident.evidenceThumbnail} alt={`Evidence supplied with ${incident.reportNumber}`} className="size-full object-cover" /></span> : <span className="flex size-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500"><FileImage className="size-5" aria-label="No Evidence Thumbnail Available" /></span>,
-                  category: <div><p className="font-medium text-slate-900">{titleCase(incident.category)}</p><p className="mt-0.5 text-xs font-semibold text-brand-700">AI Assistance Only</p><p className="text-xs text-amber-700">Manual review required</p>{incident.aiAnalysis?.hazardType ? <p className="mt-0.5 text-xs text-slate-500">Advisory result: {titleCase(incident.aiAnalysis.hazardType)}{confidenceLabel(incident.aiAnalysis.confidence) ? ` · ${confidenceLabel(incident.aiAnalysis.confidence)}` : ""}</p> : null}</div>,
+                  category: <div><p className="font-medium text-slate-900">{categoryLabel(incident.category)}</p><p className="mt-0.5 text-xs font-semibold text-brand-700">AI Assistance Only</p><p className="text-xs text-amber-700">Manual review required</p>{incident.aiAnalysis?.hazardType ? <p className="mt-0.5 text-xs text-slate-500">Advisory result: {titleCase(incident.aiAnalysis.hazardType)}{confidenceLabel(incident.aiAnalysis.confidence) ? ` · ${confidenceLabel(incident.aiAnalysis.confidence)}` : ""}</p> : null}</div>,
                   location: <span className="inline-flex max-w-56 items-start gap-1.5"><MapPin className="mt-0.5 size-3.5 shrink-0 text-slate-500" aria-hidden="true" /><span>{locationLabel(incident.location)}</span></span>,
                   submitted: <span className="whitespace-nowrap text-sm text-slate-600">{compactDate(incident.createdAt)}</span>,
                   duplicate: <Badge tone={duplicateTone(incident.duplicateCandidateCount)}>{incident.duplicateCandidateCount ? `${incident.duplicateCandidateCount} candidate${incident.duplicateCandidateCount === 1 ? "" : "s"}` : "None"}</Badge>,

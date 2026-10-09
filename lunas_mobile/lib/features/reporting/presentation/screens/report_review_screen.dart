@@ -3,7 +3,7 @@ import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lunas_mobile/core/app_services.dart';
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
@@ -11,7 +11,6 @@ import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
-import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class ReportReviewScreen extends StatefulWidget {
   const ReportReviewScreen({
@@ -161,6 +160,37 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       subtitle: 'Check your report before submitting.',
       showBackButton: true,
     ),
+    bottomNavigationBar: ColoredBox(
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.md,
+            AppSpacing.xl,
+            AppSpacing.md,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LunasButton(
+                label: 'Submit Report',
+                icon: Icons.send_rounded,
+                isLoading: _submitting,
+                onPressed: _submitting || _loadingPolicy ? null : _submit,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'An authorized official will review your report next.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
     body: SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -173,151 +203,239 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ReportProgressIndicator(current: 3, total: 3),
-            const SizedBox(height: AppSpacing.xl),
-            LocalEvidencePreview(evidence: widget.draft.evidence, height: 220),
-            const SizedBox(height: AppSpacing.md),
-            LunasCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _ReviewRow(
-                    label: 'Category',
-                    value: widget.draft.category.label,
-                  ),
-                  const Divider(height: AppSpacing.xl),
-                  _ReviewRow(label: 'Barangay', value: widget.draft.barangay),
-                  const Divider(height: AppSpacing.xl),
-                  _ReviewRow(
-                    label: 'Coordinates',
-                    value: widget.draft.location.coordinates,
-                  ),
-                  const Divider(height: AppSpacing.xl),
-                  _ReviewRow(
-                    label: 'Location',
-                    value: widget.draft.location.address,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
             LunasCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Description',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(widget.draft.description),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.auto_awesome_outlined),
-                  SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'LUNAS may provide server-side AI assistance after you submit this image. AI assistance is advisory only; an authorized official must manually review your report.',
+                    'Report summary',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 88,
+                        child: LocalEvidencePreview(
+                          evidence: widget.draft.evidence,
+                          height: 88,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.draft.category.label,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(widget.draft.description),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Report location',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            LunasCard(
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.draft.barangay,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(widget.draft.location.address),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                widget.draft.location.coordinates,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Before you submit',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            LunasCard(
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Location check',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(switch (_comparison) {
+                      'discrepancy' =>
+                        'Location differs from current GPS. Reporting from home or using a photo taken earlier is allowed. Explain below.',
+                      'consistent' => 'No significant discrepancy detected.',
+                      'inconclusive' =>
+                        'Comparison inconclusive: GPS is stale or inaccurate. Manual reporting is allowed.',
+                      _ =>
+                        'Comparison unavailable. Manual reporting is allowed.',
+                    }),
+                    const Text(
+                      'GPS is a reference only. An official will verify the report location and barangay.',
+                    ),
+                    if (_loadingPolicy)
+                      Semantics(
+                        label: 'Loading location review',
+                        child: const LinearProgressIndicator(),
+                      ),
+                    if (_policy == null && !_loadingPolicy)
+                      TextButton(
+                        onPressed: _loadPolicy,
+                        child: const Text('Retry location review'),
+                      ),
+                    if (_comparison == 'discrepancy') ...[
+                      DropdownButtonFormField<String>(
+                        initialValue: _explanationReason,
+                        decoration: const InputDecoration(
+                          labelText: 'Location discrepancy explanation',
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'photo_taken_earlier',
+                            child: Text('Photo was taken earlier'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'gps_inaccurate',
+                            child: Text('GPS location is inaccurate'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'reporting_elsewhere',
+                            child: Text('Reporting from another location'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'other',
+                            child: Text('Other'),
+                          ),
+                        ],
+                        onChanged: _submitting
+                            ? null
+                            : (value) =>
+                                  setState(() => _explanationReason = value),
+                      ),
+                      if (_explanationReason == 'other')
+                        TextField(
+                          controller: _explanationText,
+                          maxLength: 500,
+                          decoration: const InputDecoration(
+                            labelText: 'Explanation (at least 10 characters)',
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: AppSpacing.md),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _locationConfirmed,
+                      onChanged: _submitting
+                          ? null
+                          : (value) => setState(
+                              () => _locationConfirmed = value ?? false,
+                            ),
+                      title: const Text(
+                        'The pin marks the actual damage location.',
+                      ),
+                    ),
+                    if (widget
+                        .draft
+                        .evidence
+                        .requiresPrivacyAcknowledgement) ...[
+                      const Divider(height: AppSpacing.xl),
+                      Text(
+                        'Evidence privacy',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      CheckboxListTile(
+                        value: _acknowledgedPrivacy,
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: _submitting
+                            ? null
+                            : (value) => setState(
+                                () => _acknowledgedPrivacy = value ?? false,
+                              ),
+                        title: const Text(
+                          'I checked the image for private information.',
+                        ),
+                        subtitle: const Text(
+                          'Faces and license plates are automatically checked and redacted before storage.',
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(switch (_comparison) {
-              'discrepancy' =>
-                'Location differs from current GPS. Reporting from home or using a photo taken earlier is allowed. Explain below.',
-              'consistent' => 'No significant discrepancy detected.',
-              'inconclusive' =>
-                'Comparison inconclusive: GPS is stale or inaccurate. Manual reporting is allowed.',
-              _ => 'Comparison unavailable. Manual reporting is allowed.',
-            }),
-            const Text(
-              'Current GPS does not establish where the photo was taken. Barangay jurisdiction is unverified geographically; human review is required.',
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'AI may assist with image screening. An authorized official makes the review decision.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
             ),
-            if (_loadingPolicy)
-              Semantics(
-                label: 'Loading location review',
-                child: const LinearProgressIndicator(),
-              ),
-            if (_policy == null && !_loadingPolicy)
-              TextButton(
-                onPressed: _loadPolicy,
-                child: const Text('Retry location review'),
-              ),
-            if (_comparison == 'discrepancy') ...[
-              DropdownButtonFormField<String>(
-                initialValue: _explanationReason,
-                decoration: const InputDecoration(
-                  labelText: 'Location discrepancy explanation',
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'photo_taken_earlier',
-                    child: Text('Photo was taken earlier'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'gps_inaccurate',
-                    child: Text('GPS location is inaccurate'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'reporting_elsewhere',
-                    child: Text('Reporting from another location'),
-                  ),
-                  DropdownMenuItem(value: 'other', child: Text('Other')),
-                ],
-                onChanged: _submitting
-                    ? null
-                    : (value) => setState(() => _explanationReason = value),
-              ),
-              if (_explanationReason == 'other')
-                TextField(
-                  controller: _explanationText,
-                  maxLength: 500,
-                  decoration: const InputDecoration(
-                    labelText: 'Explanation (at least 10 characters)',
-                  ),
-                ),
-            ],
-            CheckboxListTile(
-              value: _locationConfirmed,
-              onChanged: _submitting
-                  ? null
-                  : (value) =>
-                        setState(() => _locationConfirmed = value ?? false),
-              title: const Text(
-                'I confirm that the selected pin represents the actual damage location.',
-              ),
-            ),
-            if (widget.draft.evidence.requiresPrivacyAcknowledgement) ...[
-              const SizedBox(height: AppSpacing.md),
-              CheckboxListTile(
-                value: _acknowledgedPrivacy,
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: _submitting
-                    ? null
-                    : (value) =>
-                          setState(() => _acknowledgedPrivacy = value ?? false),
-                title: const Text(
-                  'I reviewed this image for private information.',
-                ),
-                subtitle: const Text(
-                  'I understand LUNAS automatically checks for faces and license plates and redacts them before storage.',
-                ),
-              ),
-            ],
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -325,38 +443,9 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            LunasButton(
-              label: 'Submit Report',
-              icon: Icons.send_rounded,
-              isLoading: _submitting,
-              onPressed: _submitting || _loadingPolicy ? null : _submit,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Submitting creates a report in the “Submitted” status. An authorized official will review it next.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
           ],
         ),
       ),
     ),
-  );
-}
-
-class _ReviewRow extends StatelessWidget {
-  const _ReviewRow({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label.toUpperCase(), style: Theme.of(context).textTheme.labelSmall),
-      const SizedBox(height: AppSpacing.xxs),
-      Text(value),
-    ],
   );
 }

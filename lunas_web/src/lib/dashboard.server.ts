@@ -1,3 +1,4 @@
+import { categoryLabel } from "@/lib/category-label";
 import "server-only";
 
 import { backendRequest, responseData } from "@/lib/api/backend.server";
@@ -95,7 +96,7 @@ function recordFromIncident(incident: BackendIncident): DashboardRecord {
   return {
     id: incident.reportNumber ?? incident.id ?? incident._id ?? "Report",
     href: incident.id || incident._id ? `/validation-routing/${encodeURIComponent(incident.id ?? incident._id ?? "")}` : undefined,
-    category: titleCase(incident.category, "Infrastructure report"),
+    category: categoryLabel(incident.category, "Infrastructure report"),
     status: repairStatus ?? titleCase(incident.status, "Submitted"),
     priority: titleCase(incident.priority, "Standard"),
     location: incidentLocation(incident),
@@ -110,7 +111,7 @@ function recordFromWorkOrder(workOrder: WorkOrder): DashboardRecord {
     id: workOrder.reference,
     href: `/work-orders/${encodeURIComponent(workOrder.id)}`,
     category: workOrder.incident?.category
-      ? `Work order · ${titleCase(workOrder.incident.category, "Infrastructure repair")}`
+      ? `Work order · ${categoryLabel(workOrder.incident.category, "Infrastructure repair")}`
       : "Maintenance work order",
     status: workOrder.status === "completed"
       ? "Repair completed · awaiting Utility Provider review"

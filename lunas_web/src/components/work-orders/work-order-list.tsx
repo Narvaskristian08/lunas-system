@@ -1,5 +1,7 @@
 "use client";
 
+import { categoryLabel } from "@/lib/category-label";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -221,7 +223,7 @@ export function WorkOrderList({
               cells: {
                 workOrder: <div className="space-y-2">
                   <Link href={`/work-orders/${encodeURIComponent(workOrder.id)}`} className="block whitespace-nowrap text-sm font-semibold text-brand-700 hover:underline">{workOrder.reference}</Link>
-                  <p className="text-sm font-medium text-slate-800">{titleCase(workOrder.incident?.category, "Uncategorized")}</p>
+                  <p className="text-sm font-medium text-slate-800">{categoryLabel(workOrder.incident?.category, "Uncategorized")}</p>
                   <p className="whitespace-nowrap text-xs text-slate-500">{workOrder.incident?.reportNumber ?? "Incident unavailable"}</p>
                 </div>,
                 location: <p className="line-clamp-3 text-sm leading-6 text-slate-600" title={formatLocation(workOrder.incident?.location)}>{formatLocation(workOrder.incident?.location)}</p>,

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 
@@ -66,7 +67,24 @@ class LunasBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: 'Back',
-    onPressed: onPressed ?? () => Navigator.of(context).maybePop(),
+    onPressed:
+        onPressed ??
+        () {
+          if (context.canPop()) {
+            context.pop();
+            return;
+          }
+          final path = GoRouterState.of(context).uri.path;
+          final segments = path
+              .split('/')
+              .where((segment) => segment.isNotEmpty)
+              .toList();
+          if (segments.length > 1) {
+            context.go('/${segments.take(segments.length - 1).join('/')}');
+          } else {
+            context.go(path.startsWith('/repair') ? '/repair' : '/citizen');
+          }
+        },
     style: IconButton.styleFrom(
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       minimumSize: const Size(48, 48),

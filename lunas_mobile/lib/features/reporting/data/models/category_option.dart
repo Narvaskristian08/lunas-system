@@ -22,9 +22,11 @@ class CategoryOption {
     final fallback = categoryFromCode(code);
     return CategoryOption(
       code: code.isEmpty ? fallback.code : code,
-      label: _categoryTitle(
-        (json['label'] ?? json['name'] ?? fallback.label).toString(),
-      ),
+      label: code == 'road'
+          ? 'Road Damage'
+          : _categoryTitle(
+              (json['label'] ?? json['name'] ?? fallback.label).toString(),
+            ),
       description: (json['description'] ?? fallback.description).toString(),
     );
   }
@@ -33,7 +35,7 @@ class CategoryOption {
 const supportedReportCategories = <CategoryOption>[
   CategoryOption(
     code: 'road',
-    label: 'Roads and Sidewalks',
+    label: 'Road Damage',
     description: 'Potholes, damaged roads, and unsafe walkways.',
   ),
   CategoryOption(
