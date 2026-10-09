@@ -7,6 +7,7 @@ import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
+import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_routes.dart';
 
 /// Shared components for the authenticated repair-personnel workspace.
@@ -478,93 +479,84 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
         : workOrder.sla.isApproaching
         ? AppColorsLight.alert
         : null;
+    final theme = Theme.of(context);
     return LunasCard(
       onTap: onTap,
-      padding: EdgeInsets.zero,
-      child: ClipRRect(
-        borderRadius: AppRadius.card,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(width: 4, color: priorityColor),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              workOrder.orderNumber,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(fontFamily: 'RobotoMono'),
-                            ),
-                          ),
-                          RepairStatusChip(
-                            label: workOrder.priority ?? 'Priority unavailable',
-                            color: priorityColor,
-                            icon: Icons.priority_high_rounded,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        workOrder.category,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _CompactDetail(
-                        icon: Icons.location_on_outlined,
-                        label: workOrder.location.displayAddress,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _CompactDetail(
-                        icon: Icons.timer_outlined,
-                        label: _slaLabel(),
-                        color: slaColor,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      LinearProgressIndicator(
-                        value: workOrder.progressPercent / 100,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        '${workOrder.progressPercent}% · ${workOrder.progressStage.label}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        child: Divider(),
-                      ),
-                      Wrap(
-                        spacing: AppSpacing.xs,
-                        runSpacing: AppSpacing.xs,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          RepairStatusChip(
-                            label: workOrder.isPendingAcceptance
-                                ? 'Awaiting acceptance'
-                                : workOrder.status.label,
-                            color: statusColor,
-                          ),
-                          TextButton(
-                            onPressed: onTap,
-                            child: const Text('View details'),
-                          ),
-                        ],
-                      ),
-                    ],
+                child: Text(
+                  categoryFromCode(workOrder.category).label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
+              const SizedBox(width: AppSpacing.sm),
+              RepairStatusChip(
+                label: workOrder.priority ?? 'Priority unavailable',
+                color: priorityColor,
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(workOrder.orderNumber, style: theme.textTheme.bodySmall),
+          const SizedBox(height: AppSpacing.md),
+          _CompactDetail(
+            icon: Icons.location_on_outlined,
+            label: workOrder.location.displayAddress,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _CompactDetail(
+            icon: Icons.timer_outlined,
+            label: _slaLabel(),
+            color: slaColor,
+          ),
+          if (workOrder.progressPercent > 0) ...[
+            const SizedBox(height: AppSpacing.md),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: workOrder.progressPercent / 100,
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '${workOrder.progressPercent}% · ${workOrder.progressStage.label}',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Icon(Icons.circle, size: 8, color: statusColor),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  workOrder.isPendingAcceptance
+                      ? 'Awaiting acceptance'
+                      : workOrder.status.label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

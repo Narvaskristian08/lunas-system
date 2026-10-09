@@ -80,6 +80,7 @@ export function toViewer(user: BackendUser): UserProfile | null {
     role,
     backendRole: user.role,
     organization: organizationFor(user, user.role),
+    barangay: user.barangay?.trim() || user.address?.barangay?.trim() || undefined,
     unit: user.unit,
     personnelId: user.personnelId,
     status: user.isActive === false ? "Deactivated" : "Active",

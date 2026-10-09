@@ -37,18 +37,29 @@ function hasFilters(filters: WorkOrderFilters) {
   );
 }
 
-function summaryCards(summary: WorkOrderSummary) {
-  return [
-    { label: "Unassigned", value: summary.unassigned, tone: "warning" as const },
-    { label: "Pending Acceptance", value: summary.pendingAcceptance, tone: "information" as const },
-    { label: "Active Repairs", value: summary.active, tone: "information" as const },
-    { label: "Approaching Deadline", value: summary.approaching, tone: "warning" as const },
-    { label: "Overdue", value: summary.overdue, tone: "critical" as const },
-    { label: "Completed · Provider Review", value: summary.readyForCompletion, tone: "warning" as const },
-    { label: "Awaiting City Verification", value: summary.awaitingFinalVerification, tone: "information" as const },
-    { label: "City Returns to Coordinate", value: summary.cityCorrections, tone: "warning" as const },
-    { label: "Corrective Repairs", value: summary.correctiveRepairs, tone: "information" as const },
-  ];
+function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"], isSla: boolean) {
+  const cards = {
+    unassigned: { label: "Awaiting Assignment", value: summary.unassigned },
+    pending: { label: "Pending Acceptance", value: summary.pendingAcceptance },
+    active: { label: "Active Repairs", value: summary.active },
+    approaching: { label: "Approaching Deadline", value: summary.approaching },
+    overdue: { label: "Overdue", value: summary.overdue },
+    providerReview: { label: "Awaiting Repair Review", value: summary.readyForCompletion },
+    cityVerification: { label: "Awaiting Verification", value: summary.awaitingFinalVerification },
+    cityCorrections: { label: "Returned for Correction", value: summary.cityCorrections },
+    corrective: { label: "Corrective Repairs", value: summary.correctiveRepairs },
+  };
+  if (isSla) return [cards.active, cards.approaching, cards.overdue];
+  if (role === "city_engineer") {
+    return [cards.cityVerification, cards.active, cards.approaching, cards.overdue];
+  }
+  if (role === "utility_provider") {
+    return [cards.unassigned, cards.active, cards.providerReview, cards.cityCorrections, cards.approaching, cards.overdue];
+  }
+  if (role === "repair_personnel") {
+    return [cards.pending, cards.active, cards.corrective, cards.approaching, cards.overdue];
+  }
+  return Object.values(cards);
 }
 
 export function WorkOrderList({
@@ -73,7 +84,11 @@ export function WorkOrderList({
     ? "Backend-calculated deadlines and repair status for work orders in your authorized scope."
     : viewer.backendRole === "repair_personnel"
       ? "Only work orders assigned to you are shown."
-      : "Create, assign, and monitor maintenance work within your authorized scope.";
+      : viewer.backendRole === "city_engineer"
+        ? "Monitor provider repairs, review completed work, and track deadlines across the city."
+        : viewer.backendRole === "utility_provider"
+          ? "Assign repairs to your team, review completed work, and manage deadlines."
+          : "Create, assign, and monitor maintenance work within your authorized scope.";
 
   const navigate = (patch: QueryPatch) => {
     const next = new URLSearchParams();
@@ -140,7 +155,16 @@ export function WorkOrderList({
         {!isSla && viewer.permissions.includes("reports.view") ? <Link href="/validation-routing" className={buttonStyles({ variant: "secondary" })}><ClipboardList className="size-4" aria-hidden="true" /> Open Validation Queue</Link> : null}
       </div>
 
-      {summary ? <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{summaryCards(summary).map((item) => <Card key={item.label} className="border-l-4 border-l-slate-300 p-4"><p className="text-xs font-semibold text-slate-600">{item.label}</p><p className="mt-1 text-2xl font-bold text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value)}</p><StatusBadge className="mt-2" tone={item.tone}>{item.value === 1 ? "1 work order" : `${item.value} work orders`}</StatusBadge></Card>)}</div> : null}
+      {summary ? (
+        <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
+          {summaryCards(summary, viewer.backendRole, isSla).map((item) => (
+            <Card key={item.label} className="p-4">
+              <p className="text-sm font-medium text-slate-600">{item.label}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value)}</p>
+            </Card>
+          ))}
+        </div>
+      ) : null}
 
       <Card className="overflow-hidden">
         <CardHeader
@@ -163,6 +187,7 @@ export function WorkOrderList({
 
         {queue.workOrders.length ? <>
           <DataTable
+            className="max-h-[60dvh] overflow-auto overscroll-contain [scrollbar-gutter:stable] [&_table]:min-w-360 [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-slate-50"
             caption={isSla ? "SLA work-order monitor" : "Work-order register"}
             columns={columns}
             rows={queue.workOrders.map((workOrder) => ({

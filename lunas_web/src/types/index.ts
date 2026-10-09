@@ -39,6 +39,7 @@ export interface UserProfile {
   role: UserRole;
   backendRole: BackendUserRole;
   organization: string;
+  barangay?: string;
   unit?: string;
   personnelId?: string;
   status: "Active" | "Suspended" | "Deactivated";

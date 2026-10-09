@@ -147,10 +147,10 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
   if (role === "barangay_official") {
     return {
       metrics: [
-        metric("Awaiting Barangay Review", asNumber(summary.pending), "warning", "reports"),
+        metric("Awaiting Review", asNumber(summary.pending), "warning", "reports"),
         metric("Forwarded to City Engineering", asNumber(summary.validated), "information", "verified"),
         metric("Rejected", asNumber(summary.rejected), "critical", "incident"),
-        metric("Possible Duplicates Reviewed", asNumber(summary.duplicate), "neutral", "reports"),
+        metric("Confirmed Duplicates", asNumber(summary.duplicate), "neutral", "reports"),
       ],
       records: incidents.map(recordFromIncident),
       emptyTitle: "No reports awaiting Barangay review",

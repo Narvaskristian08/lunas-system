@@ -157,6 +157,7 @@ export interface ValidationQueueData {
   incidents: ValidationIncident[];
   pagination: ValidationPagination;
   categories: string[];
+  categoryOptions?: Array<{ value: string; label: string }>;
   jurisdictions: string[];
 }
 
@@ -478,9 +479,40 @@ export function readValidationFilters(searchParams: Record<string, string | stri
   };
 }
 
+const fallbackReportCategories = [
+  { value: "road", label: "Roads and Sidewalks" },
+  { value: "drainage", label: "Drainage" },
+  { value: "electrical", label: "Electrical" },
+  { value: "water", label: "Water" },
+  { value: "gas", label: "Gas" },
+  { value: "streetlight", label: "Streetlight" },
+  { value: "other", label: "Other Infrastructure Concern" },
+];
+
+async function getReportCategoryOptions(accessToken: string) {
+  try {
+    const data = responseData(await backendRequest<unknown>("/categories", { accessToken }));
+    const items = Array.isArray(data) ? data : asArray(asRecord(data).categories);
+    const options = items.map((item) => {
+      const category = asRecord(item);
+      const value = typeof item === "string" ? item : String(category.code ?? category.value ?? "");
+      const fallback = fallbackReportCategories.find((option) => option.value === value);
+      const label = String(category.label ?? category.name ?? fallback?.label ?? value)
+        .replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+      return { value, label };
+    }).filter((option) => option.value);
+    return options.length ? options : fallbackReportCategories;
+  } catch {
+    return fallbackReportCategories;
+  }
+}
+
 export async function getValidationQueue(filters: ValidationQueueFilters): Promise<ValidationQueueData> {
   const accessToken = await requireAccessToken();
-  const response = await backendRequest<unknown>(`/incidents/pending-validation?${buildQueueQuery(filters)}`, { accessToken });
+  const [response, categoryOptions] = await Promise.all([
+    backendRequest<unknown>(`/incidents/pending-validation?${buildQueueQuery(filters)}`, { accessToken }),
+    getReportCategoryOptions(accessToken),
+  ]);
   const rawData = responseData(response);
   const payload = queuePayload(rawData);
   const topLevel = asRecord(response);
@@ -495,7 +527,8 @@ export async function getValidationQueue(filters: ValidationQueueFilters): Promi
       ...pagination,
       total: pagination.total || (incidents.length < pagination.limit ? incidents.length : pagination.total),
     },
-    categories: valuesFrom(payload, "categories"),
+    categories: categoryOptions.map((option) => option.value),
+    categoryOptions,
     jurisdictions: valuesFrom(payload, "jurisdictions"),
   };
 }

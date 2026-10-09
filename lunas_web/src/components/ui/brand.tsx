@@ -27,10 +27,12 @@ export function LunasBrand({
   inverse = false,
   href = "/dashboard",
   className,
+  subtitle = "Urban Infrastructure Command Center",
 }: {
   compact?: boolean;
   inverse?: boolean;
   href?: string;
+  subtitle?: string;
   className?: string;
 }) {
   return (
@@ -43,7 +45,7 @@ export function LunasBrand({
       {!compact ? (
         <span className="min-w-0">
           <span className={cn("block text-lg font-bold tracking-[0.18em]", inverse ? "text-white" : "text-[#111c2d]")}>LUNAS</span>
-          <span className={cn("block truncate text-[10px] font-medium uppercase tracking-[0.08em]", inverse ? "text-blue-100" : "text-slate-500")}>Urban Infrastructure Command Center</span>
+          <span className={cn("block truncate text-[10px] font-medium uppercase tracking-[0.08em]", inverse ? "text-blue-100" : "text-slate-500")}>{subtitle}</span>
         </span>
       ) : null}
     </Link>

@@ -76,6 +76,7 @@ export function ValidationQueue({
   summaryUnavailable?: boolean;
 }) {
   const isCityEngineering = viewer.backendRole === "city_engineer";
+  const canFilterJurisdiction = viewer.backendRole !== "barangay_official";
   const [search, setSearch] = useState(filters.search ?? "");
   const [category, setCategory] = useState(filters.category ?? "");
   const [jurisdiction, setJurisdiction] = useState(filters.jurisdiction ?? "");
@@ -87,8 +88,9 @@ export function ValidationQueue({
 
   const categorySuggestions = useMemo(() => Array.from(new Set([
     ...queue.categories,
+    ...(category ? [category] : []),
     ...queue.incidents.map((incident) => incident.category),
-  ])).sort((left, right) => left.localeCompare(right)), [queue.categories, queue.incidents]);
+  ])), [category, queue.categories, queue.incidents]);
   const jurisdictionSuggestions = useMemo(() => Array.from(new Set([
     ...queue.jurisdictions,
     ...queue.incidents.map((incident) => incident.jurisdiction || incident.location.address.barangay || "").filter(Boolean),
@@ -100,7 +102,7 @@ export function ValidationQueue({
       limit: next.limit ?? filters.limit,
       search: next.search ?? (search.trim() || undefined),
       category: next.category ?? (category.trim() || undefined),
-      jurisdiction: next.jurisdiction ?? (jurisdiction.trim() || undefined),
+      jurisdiction: canFilterJurisdiction ? next.jurisdiction ?? (jurisdiction.trim() || undefined) : undefined,
       duplicate: next.duplicate === undefined ? (duplicate === "yes" || duplicate === "no" ? duplicate : undefined) : next.duplicate,
       dateFrom: next.dateFrom ?? (dateFrom || undefined),
       dateTo: next.dateTo ?? (dateTo || undefined),
@@ -138,7 +140,7 @@ export function ValidationQueue({
     startTransition(() => window.history.pushState(null, "", "/validation-routing"));
   };
 
-  const hasFilters = Boolean(search || category || jurisdiction || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
+  const hasFilters = Boolean(search || category || (canFilterJurisdiction && jurisdiction) || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
 
   return (
     <div className="mx-auto max-w-395">
@@ -157,7 +159,7 @@ export function ValidationQueue({
           <SummaryCard label={isCityEngineering ? "Awaiting Engineering Review" : "Awaiting Review"} value={summary.pending} tone="warning" />
           <SummaryCard label={isCityEngineering ? "City Confirmed" : "Forwarded to City Engineering"} value={summary.validated} tone="information" />
           <SummaryCard label="Rejected" value={summary.rejected} tone="critical" />
-          <SummaryCard label="Marked Duplicate" value={summary.duplicate} tone="neutral" />
+          <SummaryCard label="Confirmed Duplicates" value={summary.duplicate} tone="neutral" />
         </div>
       ) : summaryUnavailable ? (
         <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -184,16 +186,30 @@ export function ValidationQueue({
           </div>
 
           <FilterBar>
-            <label className="min-w-0">
-              <span className="sr-only">Category</span>
-              <input list="validation-categories" value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Category" className="min-h-10 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" disabled={pending} />
-              <datalist id="validation-categories">{categorySuggestions.map((value) => <option key={value} value={value} />)}</datalist>
-            </label>
-            <label className="min-w-0">
-              <span className="sr-only">Barangay or Jurisdiction</span>
-              <input list="validation-jurisdictions" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} placeholder="Barangay / Jurisdiction" className="min-h-10 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" disabled={pending} />
-              <datalist id="validation-jurisdictions">{jurisdictionSuggestions.map((value) => <option key={value} value={value} />)}</datalist>
-            </label>
+            <FilterSelect
+              label="Category"
+              value={category}
+              onChange={(event) => {
+                const value = event.target.value;
+                setCategory(value);
+                navigate({ page: 1, category: value });
+              }}
+              disabled={pending}
+              options={[
+                { value: "", label: "All Categories" },
+                ...categorySuggestions.map((value) => ({
+                  value,
+                  label: queue.categoryOptions?.find((option) => option.value === value)?.label ?? titleCase(value),
+                })),
+              ]}
+            />
+            {canFilterJurisdiction ? (
+              <label className="min-w-0">
+                <span className="sr-only">Barangay or Jurisdiction</span>
+                <input list="validation-jurisdictions" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} placeholder="Barangay / Jurisdiction" className="min-h-10 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" disabled={pending} />
+                <datalist id="validation-jurisdictions">{jurisdictionSuggestions.map((value) => <option key={value} value={value} />)}</datalist>
+              </label>
+            ) : null}
             <FilterSelect label="Possible Duplicate" value={duplicate} onChange={(event) => setDuplicate(event.target.value)} disabled={pending} options={[{ value: "", label: "Any Duplicate State" }, { value: "yes", label: "Possible Duplicate" }, { value: "no", label: "No Duplicate Candidates" }]} />
             <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
               <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
