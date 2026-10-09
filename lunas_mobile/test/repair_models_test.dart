@@ -107,7 +107,7 @@ void main() {
     expect(repairProgressValues.contains(80), isFalse);
   });
 
-  test('keeps reassigned in-progress work behind assignment acceptance', () {
+  test('legacy pending handoffs can resume before updating progress', () {
     final workOrder = RepairWorkOrder.fromJson({
       'id': 'reassigned-work-order',
       'reference': 'WO-202608-0003',
@@ -119,6 +119,18 @@ void main() {
     });
 
     expect(workOrder.isPendingAcceptance, isTrue);
+    expect(workOrder.canStart, isTrue);
     expect(workOrder.canUpdateProgress, isFalse);
+  });
+  test('assigned and corrective work can start without separate acceptance', () {
+    for (final status in ['pending', 'accepted', 'rework_required']) {
+      final workOrder = RepairWorkOrder.fromJson({
+        'id': 'assigned-work-order', 'status': status,
+        'assignmentState': 'pending',
+        'currentAssignment': {'id': 'assignment-1', 'status': 'pending'},
+      });
+      expect(workOrder.canStart, isTrue);
+      expect(workOrder.canUpdateProgress, isFalse);
+    }
   });
 }

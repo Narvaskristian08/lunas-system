@@ -17,9 +17,9 @@ export function priorityTone(priority: string | undefined): Severity {
 
 export function workOrderStatusLabel(status: string | undefined) {
   const labels: Record<string, string> = {
-    pending: "Pending Assignment", accepted: "Accepted", in_progress: "In Progress",
+    pending: "Pending", accepted: "Pending", in_progress: "In Progress",
     completed: "Awaiting Provider Review", provider_accepted: "Awaiting City Verification",
-    rework_required: "Corrective Work Requested", city_correction_required: "Returned to Provider",
+    rework_required: "Needs Correction", city_correction_required: "Returned to Provider",
     verified: "Closed",
   };
   return labels[status ?? ""] ?? titleCase(status);
@@ -35,11 +35,16 @@ export function workOrderStatusTone(status: string | undefined): Severity {
   return "neutral";
 }
 
+export function assignmentLabel(status: string | undefined, history = false) {
+  if (status === "reassigned") return history ? "Reassigned" : "Assigned";
+  if (status === "accepted" || status === "pending") return "Assigned";
+  return "Pending";
+}
+
 export function assignmentTone(status: string | undefined): Severity {
-  if (status === "accepted") return "success";
-  if (status === "declined") return "critical";
-  if (status === "pending") return "warning";
-  return "neutral";
+  if (status === "accepted" || status === "pending") return "information";
+  if (status === "reassigned") return "neutral";
+  return "warning";
 }
 
 export function slaTone(sla: WorkOrderSla): Severity {

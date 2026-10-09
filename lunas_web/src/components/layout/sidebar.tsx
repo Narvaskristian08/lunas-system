@@ -24,7 +24,9 @@ export function Sidebar({
 }) {
   const viewer = useViewer();
   const pathname = usePathname();
-  const scopeLabel = viewer.backendRole === "barangay_official" && viewer.barangay
+  const scopeLabel = viewer.backendRole === "utility_provider"
+    ? viewer.organization.trim() || "Utility Provider"
+    : viewer.backendRole === "barangay_official" && viewer.barangay
     ? `Barangay ${viewer.barangay}`
     : "Dagupan City";
   return (

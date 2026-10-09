@@ -26,7 +26,6 @@ import 'package:lunas_mobile/features/repair/presentation/screens/assigned_work_
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_dashboard_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_profile_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_work_order_location_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/start_repair_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_progress_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
@@ -220,12 +219,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
     GoRoute(
       path: '/repair/work-orders',
-      builder: (_, _) => const AssignedWorkOrdersScreen(),
-    ),
-    GoRoute(
-      path: '/repair/work-orders/:id/start',
-      builder: (_, state) =>
-          StartRepairScreen(workOrderId: state.pathParameters['id'] ?? ''),
+      builder: (_, state) => AssignedWorkOrdersScreen(
+        initialFilter: state.uri.queryParameters['filter'],
+      ),
     ),
     GoRoute(
       path: '/repair/work-orders/:id/progress',

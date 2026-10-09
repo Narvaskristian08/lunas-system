@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
@@ -173,45 +174,76 @@ class _RepairMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final metrics = [
       (
-        label: 'Pending',
-        value: summary.pendingAssignments,
+        label: 'Assigned',
+        filter: 'assigned',
+        value: summary.pendingAssignments + summary.accepted,
         icon: Icons.assignment_outlined,
         color: AppColorsLight.info,
       ),
       (
-        label: 'Accepted',
-        value: summary.accepted,
-        icon: Icons.task_alt_outlined,
-        color: AppColorsLight.success,
-      ),
-      (
-        label: 'In Progress',
+        label: 'Active Repairs',
+        filter: 'active',
         value: summary.inProgress,
-        icon: Icons.timelapse_outlined,
-        color: AppColorsLight.alert,
+        icon: Icons.build_outlined,
+        color: AppColorsLight.brandBase,
       ),
       (
-        label: 'Approaching',
-        value: summary.approachingDeadline,
-        icon: Icons.schedule_outlined,
+        label: 'Needs Correction',
+        filter: 'correction',
+        value: summary.needsCorrection,
+        icon: Icons.build_circle_outlined,
         color: AppColorsLight.alert,
       ),
       (
         label: 'Overdue',
+        filter: 'overdue',
         value: summary.overdue,
         icon: Icons.warning_amber_rounded,
         color: AppColorsLight.critical,
       ),
-      (
-        label: 'Ready',
-        value: summary.readyForCompletion,
-        icon: Icons.pending_actions_outlined,
-        color: AppColorsLight.success,
-      ),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 600 ? 3 : 2;
+        if (constraints.maxWidth < 600) {
+          return Column(
+            children: [
+              for (var index = 0; index < metrics.length; index++) ...[
+                if (index > 0) const SizedBox(height: AppSpacing.sm),
+                LunasCard(
+                  onTap: () => context.go(
+                    RepairRoutes.filteredWorkOrders(metrics[index].filter),
+                  ),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      Icon(
+                        metrics[index].icon,
+                        color: metrics[index].color,
+                        size: 24,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          metrics[index].label,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        '${metrics[index].value}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: metrics[index].color,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          );
+        }
+        final columns = constraints.maxWidth >= 900 ? 4 : 2;
         final width =
             (constraints.maxWidth - (AppSpacing.sm * (columns - 1))) / columns;
         return Wrap(
@@ -226,6 +258,9 @@ class _RepairMetrics extends StatelessWidget {
                   value: '${metric.value}',
                   icon: metric.icon,
                   color: metric.color,
+                  onTap: () => context.go(
+                    RepairRoutes.filteredWorkOrders(metric.filter),
+                  ),
                 ),
               ),
           ],

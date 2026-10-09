@@ -13,7 +13,9 @@ import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets
 /// Paginated, assignee-scoped work-order list. Filters are sent to the server
 /// with the authenticated repair-personnel request.
 class AssignedWorkOrdersScreen extends StatefulWidget {
-  const AssignedWorkOrdersScreen({super.key});
+  const AssignedWorkOrdersScreen({super.key, this.initialFilter});
+
+  final String? initialFilter;
 
   @override
   State<AssignedWorkOrdersScreen> createState() =>
@@ -26,12 +28,22 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   bool _loading = true;
   String? _error;
   RepairWorkOrderPage? _page;
-  RepairWorkOrderStatus? _status;
+  String? _status;
 
   @override
   void initState() {
     super.initState();
+    _status = widget.initialFilter;
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant AssignedWorkOrdersScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialFilter != oldWidget.initialFilter) {
+      _status = widget.initialFilter;
+      _load();
+    }
   }
 
   @override
@@ -52,7 +64,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
       final result = await repairService.getMyWorkOrders(
         page: page,
         limit: _pageSize,
-        status: _status,
+        repairView: _status,
       );
       if (mounted) {
         setState(() {
@@ -71,7 +83,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     }
   }
 
-  void _selectStatus(RepairWorkOrderStatus? status) {
+  void _selectStatus(String? status) {
     if (_status == status) return;
     setState(() => _status = status);
     _load();
@@ -162,18 +174,18 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
 class _StatusFilters extends StatelessWidget {
   const _StatusFilters({required this.selected, required this.onSelected});
 
-  final RepairWorkOrderStatus? selected;
-  final ValueChanged<RepairWorkOrderStatus?> onSelected;
+  final String? selected;
+  final ValueChanged<String?> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    const statuses = <(RepairWorkOrderStatus?, String)>[
+    const statuses = <(String?, String)>[
       (null, 'All'),
-      (RepairWorkOrderStatus.pending, 'Pending'),
-      (RepairWorkOrderStatus.accepted, 'Accepted'),
-      (RepairWorkOrderStatus.inProgress, 'In Progress'),
-      (RepairWorkOrderStatus.completed, 'Provider Review'),
-      (RepairWorkOrderStatus.reworkRequired, 'Correction'),
+      ('assigned', 'Assigned'),
+      ('active', 'Active Repairs'),
+      ('correction', 'Needs Correction'),
+      ('overdue', 'Overdue'),
+      ('review', 'Awaiting Review'),
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -182,7 +194,11 @@ class _StatusFilters extends StatelessWidget {
           for (var index = 0; index < statuses.length; index++) ...[
             if (index > 0) const SizedBox(width: AppSpacing.xs),
             SizedBox(
-              width: statuses[index].$2.length > 10 ? 120 : 88,
+              width: statuses[index].$2.length > 16
+                  ? 164
+                  : statuses[index].$2.length > 10
+                  ? 144
+                  : 72,
               child: LunasFilterButton(
                 label: statuses[index].$2,
                 selected: selected == statuses[index].$1,

@@ -1,10 +1,11 @@
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
@@ -278,74 +279,63 @@ class _UpdateRepairProgressScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              categoryFromCode(workOrder.category).label,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              workOrder.location.displayAddress,
-              style: Theme.of(context).textTheme.bodySmall,
+            LunasCard(
+              child: Row(
+                children: [
+                  Icon(
+                    reportCategoryIcon(workOrder.category),
+                    size: 24,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          categoryFromCode(workOrder.category).label,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          workOrder.location.barangay ??
+                              workOrder.location.displayAddress,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            LunasCard(
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Update Repair',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Add Progress Update'),
-                      subtitle: const Text(
-                        'Record work performed, delays, or field conditions.',
-                      ),
-                      leading: Icon(
-                        !_submitCompletion
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                      ),
-                      selected: !_submitCompletion,
-                      onTap: _saving
-                          ? null
-                          : () => setState(() => _submitCompletion = false),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        workOrder.isCorrectionResubmission
-                            ? 'Resubmit Completed Repair'
-                            : 'Submit Completed Repair',
-                      ),
-                      subtitle: const Text(
-                        'Upload final repair evidence for review.',
-                      ),
-                      leading: Icon(
-                        _submitCompletion
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                      ),
-                      selected: _submitCompletion,
-                      onTap: _saving
-                          ? null
-                          : () => setState(() => _submitCompletion = true),
-                    ),
-                  ],
-                ),
-              ),
+            Text('Update Type', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.sm),
+            _UpdateChoice(
+              title: 'Progress Update',
+              subtitle: 'Record work done or explain a delay.',
+              selected: !_submitCompletion,
+              onTap: _saving
+                  ? null
+                  : () => setState(() => _submitCompletion = false),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _UpdateChoice(
+              title: workOrder.isCorrectionResubmission
+                  ? 'Resubmit Repair'
+                  : 'Complete Repair',
+              subtitle: 'Send a completed repair photo for review.',
+              selected: _submitCompletion,
+              onTap: _saving
+                  ? null
+                  : () => setState(() => _submitCompletion = true),
             ),
             const SizedBox(height: AppSpacing.lg),
             if (!_submitCompletion) ...[
               Text(
                 'Progress Notes',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
@@ -362,13 +352,9 @@ class _UpdateRepairProgressScreenState
               ),
             ],
             if (_submitCompletion) ...[
-              const SizedBox(height: AppSpacing.lg),
               _EvidencePicker(
                 evidence: _evidence,
                 onPick: _saving ? null : _pickEvidence,
-                onRemove: _saving
-                    ? null
-                    : () => setState(() => _evidence = null),
               ),
             ],
           ],
@@ -379,15 +365,10 @@ class _UpdateRepairProgressScreenState
 }
 
 class _EvidencePicker extends StatelessWidget {
-  const _EvidencePicker({
-    required this.evidence,
-    required this.onPick,
-    required this.onRemove,
-  });
+  const _EvidencePicker({required this.evidence, required this.onPick});
 
   final EvidenceSelection? evidence;
   final VoidCallback? onPick;
-  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) => LunasCard(
@@ -395,34 +376,39 @@ class _EvidencePicker extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Final Repair Evidence',
-          style: Theme.of(context).textTheme.titleLarge,
+          'Completed Repair Photo',
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text('Add a JPG or PNG photo of the completed repair, up to 10 MB.'),
+        Text(
+          'Show the completed work clearly. An official will review the photo.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'JPG or PNG · Up to 10 MB',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         const SizedBox(height: AppSpacing.md),
+        if (evidence != null) ...[
+          LocalEvidencePreview(
+            key: ObjectKey(evidence),
+            evidence: evidence!,
+            height: 220,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         if (evidence == null)
           OutlinedButton.icon(
             onPressed: onPick,
             icon: const Icon(Icons.add_a_photo_outlined),
-            label: Text('Add Final Evidence'),
+            label: const Text('Add Photo'),
           )
         else
-          Row(
-            children: [
-              const Icon(Icons.image_outlined, color: AppColorsLight.success),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  '${evidence!.filename} · ${(evidence!.byteLength / 1024).ceil()} KB',
-                ),
-              ),
-              IconButton(
-                tooltip: 'Remove selected evidence',
-                onPressed: onRemove,
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
+          OutlinedButton.icon(
+            onPressed: onPick,
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text('Choose Another Photo'),
           ),
       ],
     ),
@@ -459,9 +445,87 @@ class _SaveProgressActionBar extends StatelessWidget {
                 height: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.save_outlined),
-        label: Text(saving ? 'Saving progress…' : 'Save Progress Update'),
+            : Icon(submitCompletion ? Icons.send_rounded : Icons.save_outlined),
+        label: Text(
+          saving
+              ? (_submitLabel(submitCompletion, true))
+              : _submitLabel(submitCompletion, false),
+        ),
       ),
     ),
   );
+}
+
+String _submitLabel(bool completion, bool saving) => saving
+    ? (completion ? 'Submitting…' : 'Saving…')
+    : (completion ? 'Submit for Review' : 'Save Update');
+
+class _UpdateChoice extends StatelessWidget {
+  const _UpdateChoice({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: selected
+          ? theme.colorScheme.primary.withValues(alpha: .04)
+          : theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: selected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.outlineVariant,
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Semantics(
+          selected: selected,
+          button: true,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 22,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleSmall),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(height: 1.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

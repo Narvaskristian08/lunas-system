@@ -16,7 +16,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { buttonStyles } from "@/components/ui/button";
 import type { UserProfile } from "@/types";
 import type { WorkOrderFilters, WorkOrderQueueData, WorkOrderSummary } from "@/lib/work-orders.server";
-import { assignmentTone, formatLocation, formatPerson, priorityTone, SlaBadges, titleCase, workOrderStatusTone, workOrderStatusLabel } from "@/components/work-orders/work-order-ui";
+import { assignmentLabel, assignmentTone, formatLocation, formatPerson, priorityTone, SlaBadges, titleCase, workOrderStatusTone, workOrderStatusLabel } from "@/components/work-orders/work-order-ui";
 import { formatDateTime } from "@/lib/utils";
 
 type QueryPatch = Record<string, string | undefined>;
@@ -207,7 +207,7 @@ export function WorkOrderList({
         <FilterBar>
           <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All Priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
           {!workspaceView ? <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={workStateOptions} /> : null}
-          {!workspaceView ? <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Unassigned" }, { value: "pending", label: "Pending Acceptance" }, { value: "accepted", label: "Accepted" }, { value: "declined", label: "Declined" }]} /> : null}
+          {!workspaceView ? <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Pending" }, { value: "accepted", label: "Assigned" }]} /> : null}
           {!workspaceView ? <FilterSelect label="SLA State" value={optionValue(filters.slaState)} onChange={(event) => navigate({ slaState: event.target.value || undefined })} options={[{ value: "", label: "All SLA States" }, { value: "approaching", label: "Approaching Deadline" }, { value: "overdue", label: "Overdue" }]} /> : null}
           <FilterSelect label="Sort Work Orders" value={optionValue(filters.sortBy)} onChange={(event) => navigate({ sortBy: event.target.value || "newest" })} options={[{ value: "newest", label: "Recently Updated" }, { value: "oldest", label: "Oldest First" }, { value: "deadline", label: "Deadline First" }, { value: "-deadline", label: "Latest Deadline" }, { value: "-priority", label: "Priority" }]} />
           {hasRefinements ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear Filters</button> : null}
@@ -230,7 +230,7 @@ export function WorkOrderList({
                 assignee: <div className="space-y-1.5">
                   <p className="text-sm font-semibold text-slate-900">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p>
                   <p className="text-xs leading-5 text-slate-600">{workOrder.responsibleOrganization ?? "Not routed"}{workOrder.assignee?.team ? ` · ${workOrder.assignee.team}` : ""}</p>
-                  <Badge tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</Badge>
+                  <Badge tone={assignmentTone(workOrder.assignmentState)}>{assignmentLabel(workOrder.assignmentState)}</Badge>
                 </div>,
                 repair: <div className="flex flex-col items-start gap-2">
                   <StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrderStatusLabel(workOrder.status)}</StatusBadge>

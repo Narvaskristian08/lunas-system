@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/timeline_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
@@ -52,7 +53,8 @@ class ReportStatusTimeline extends StatelessWidget {
           _TimelineEvent(
             event: visible[visible.length - 1 - index],
             showLine: index != visible.length - 1,
-            isLatest: highlightLatest && index == 0,
+            isLatest: index == 0,
+            showLatestLabel: highlightLatest && index == 0,
             compact: compact,
           ),
       ],
@@ -65,11 +67,13 @@ class _TimelineEvent extends StatelessWidget {
     required this.event,
     required this.showLine,
     this.isLatest = false,
+    this.showLatestLabel = false,
     this.compact = false,
   });
   final ReportStatusEvent event;
   final bool showLine;
   final bool isLatest;
+  final bool showLatestLabel;
   final bool compact;
 
   @override
@@ -79,27 +83,7 @@ class _TimelineEvent extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            width: 28,
-            child: Column(
-              children: [
-                Icon(
-                  isLatest
-                      ? Icons.radio_button_checked
-                      : Icons.check_circle_rounded,
-                  size: 20,
-                  color: color,
-                ),
-                if (showLine)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          TimelineMarker(latest: isLatest, showLine: showLine),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Padding(
@@ -111,7 +95,7 @@ class _TimelineEvent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isLatest) ...[
+                  if (showLatestLabel) ...[
                     Text(
                       'Latest Update',
                       style: Theme.of(

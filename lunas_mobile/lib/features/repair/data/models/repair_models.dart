@@ -26,8 +26,7 @@ extension RepairProgressStageValue on RepairProgressStage {
     RepairProgressStage.sitePreparation => 'Site Preparation',
     RepairProgressStage.mainRepair => 'Main Repair Underway',
     RepairProgressStage.finishing => 'Finishing Work',
-    RepairProgressStage.readyForCompletion =>
-      'Completion Submitted · Awaiting Provider Review',
+    RepairProgressStage.readyForCompletion => 'Awaiting Review',
   };
 }
 
@@ -82,11 +81,11 @@ extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
   };
 
   String get label => switch (this) {
-    RepairWorkOrderStatus.pending => 'Pending Acceptance',
-    RepairWorkOrderStatus.accepted => 'Accepted',
+    RepairWorkOrderStatus.pending => 'Pending',
+    RepairWorkOrderStatus.accepted => 'Pending',
     RepairWorkOrderStatus.inProgress => 'In Progress',
-    RepairWorkOrderStatus.completed => 'Completed · Awaiting Provider Review',
-    RepairWorkOrderStatus.reworkRequired => 'Corrective Work Requested',
+    RepairWorkOrderStatus.completed => 'Awaiting Review',
+    RepairWorkOrderStatus.reworkRequired => 'Needs Correction',
     RepairWorkOrderStatus.unknown => 'Status Unavailable',
   };
 }
@@ -433,9 +432,14 @@ class RepairWorkOrder {
           (status == RepairWorkOrderStatus.pending && assignmentState == null));
 
   bool get canStart =>
-      (status == RepairWorkOrderStatus.accepted ||
-          status == RepairWorkOrderStatus.reworkRequired) &&
-      (_hasAcceptedAssignment || assignmentState == null);
+      (status == RepairWorkOrderStatus.pending ||
+          status == RepairWorkOrderStatus.accepted ||
+          status == RepairWorkOrderStatus.reworkRequired ||
+          (status == RepairWorkOrderStatus.inProgress &&
+              _hasPendingAssignment)) &&
+      (_hasPendingAssignment ||
+          _hasAcceptedAssignment ||
+          assignmentState == null);
 
   bool get canUpdateProgress =>
       status == RepairWorkOrderStatus.inProgress &&
@@ -582,6 +586,7 @@ class RepairDashboardSummary {
     required this.approachingDeadline,
     required this.overdue,
     required this.readyForCompletion,
+    this.needsCorrection = 0,
   });
 
   final int pendingAssignments;
@@ -590,6 +595,7 @@ class RepairDashboardSummary {
   final int approachingDeadline;
   final int overdue;
   final int readyForCompletion;
+  final int needsCorrection;
 
   factory RepairDashboardSummary.fromPayload(Map<String, dynamic> payload) {
     final data = _map(payload['data']);
@@ -619,6 +625,9 @@ class RepairDashboardSummary {
           ) ??
           0,
       overdue: _int(source['overdue'] ?? source['overdueRepairs']) ?? 0,
+      needsCorrection:
+          (_int(source['correctiveRepairs']) ?? 0) +
+          (_int(source['cityCorrections']) ?? 0),
       readyForCompletion:
           _int(
             source['readyForCompletion'] ??

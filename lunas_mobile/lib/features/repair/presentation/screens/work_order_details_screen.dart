@@ -1,3 +1,5 @@
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
+import 'package:lunas_mobile/core/widgets/timeline_marker.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
@@ -76,148 +78,35 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
     }
   }
 
-  Future<void> _accept() async {
+  Future<void> _startRepair() async {
     final workOrder = _workOrder;
-    if (workOrder == null) return;
-    await _runAction(
-      () => repairService.accept(workOrder.id, version: workOrder.version),
-      successMessage: 'Assignment accepted. You can now start repair work.',
-    );
-  }
-
-  Future<void> _decline() async {
-    final workOrder = _workOrder;
-    if (workOrder == null) return;
-    final request = await _showDeclineDialog();
-    if (request == null || !mounted) return;
-    await _runAction(
-      () => repairService.decline(
-        workOrder.id,
-        reason: request.reason,
-        notes: request.notes,
-        version: workOrder.version,
-      ),
-      successMessage:
-          'Assignment declined. The responsible official can reassign it.',
-      returnToList: true,
-    );
-  }
-
-  Future<void> _runAction(
-    Future<RepairWorkOrder> Function() action, {
-    required String successMessage,
-    bool returnToList = false,
-  }) async {
+    if (_submitting || workOrder == null || !workOrder.canStart) return;
+    final resume =
+        workOrder.status == RepairWorkOrderStatus.reworkRequired ||
+        workOrder.status == RepairWorkOrderStatus.inProgress;
     setState(() => _submitting = true);
     await waitForDataRequest();
     if (!mounted) return;
     try {
-      final updated = await action();
+      final updated = await repairService.start(
+        workOrder.id,
+        version: workOrder.version,
+      );
       if (!mounted) return;
       setState(() => _workOrder = updated);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(successMessage)));
-      if (returnToList) {
-        context.go(RepairRoutes.workOrders);
-        return;
-      }
-      await _load();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resume ? 'Repair resumed.' : 'Repair started.')),
+      );
     } on ApiException catch (error) {
       if (!mounted) return;
-      if (error.isConflict) {
-        await _load();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'This work order changed on the server. The latest record is shown.',
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.message)));
-      }
+      if (error.isConflict) await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
+      if (mounted) setState(() => _submitting = false);
     }
-  }
-
-  Future<_DeclineRequest?> _showDeclineDialog() async {
-    final reasonController = TextEditingController();
-    final notesController = TextEditingController();
-    String? validationError;
-    final result = await showDialog<_DeclineRequest>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Decline Assignment'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'A reason is required so the official can safely reassign this work order.',
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: reasonController,
-                  maxLength: 500,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: 'Decline reason',
-                    errorText: validationError,
-                  ),
-                ),
-                TextField(
-                  controller: notesController,
-                  maxLength: 2000,
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Additional notes (optional)',
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final reason = reasonController.text.trim();
-                if (reason.length < 2) {
-                  setDialogState(
-                    () => validationError =
-                        'Enter at least 2 characters for the reason.',
-                  );
-                  return;
-                }
-                Navigator.pop(
-                  dialogContext,
-                  _DeclineRequest(
-                    reason: reason,
-                    notes: notesController.text.trim(),
-                  ),
-                );
-              },
-              child: const Text('Decline Assignment'),
-            ),
-          ],
-        ),
-      ),
-    );
-    reasonController.dispose();
-    notesController.dispose();
-    return result;
   }
 
   @override
@@ -265,9 +154,7 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
       bottomActionBar: _ActionBar(
         workOrder: workOrder,
         submitting: _submitting,
-        onAccept: _accept,
-        onDecline: _decline,
-        onStart: () => context.push(RepairRoutes.start(workOrder.id)),
+        onStart: _startRepair,
         onProgress: () => context.push(RepairRoutes.progress(workOrder.id)),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -284,69 +171,35 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
   }
 }
 
-class _DeclineRequest {
-  const _DeclineRequest({required this.reason, required this.notes});
-
-  final String reason;
-  final String notes;
-}
-
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.workOrder,
     required this.submitting,
-    required this.onAccept,
-    required this.onDecline,
     required this.onStart,
     required this.onProgress,
   });
 
   final RepairWorkOrder workOrder;
   final bool submitting;
-  final VoidCallback onAccept;
-  final VoidCallback onDecline;
   final VoidCallback onStart;
   final VoidCallback onProgress;
 
   @override
   Widget build(BuildContext context) {
     if (workOrder.isReadyForCompletion) {
-      return _ActionContainer(
-        child: const Text(
-          'Repair Personnel submitted completion. The Utility Provider must review it before City Engineering performs final verification.',
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-    if (workOrder.isPendingAcceptance) {
-      return _ActionContainer(
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: submitting ? null : onDecline,
-                child: const Text('Decline'),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              flex: 2,
-              child: FilledButton.icon(
-                onPressed: submitting ? null : onAccept,
-                icon: const Icon(Icons.assignment_turned_in_outlined),
-                label: const Text('Accept Assignment'),
-              ),
-            ),
-          ],
-        ),
-      );
+      return const SizedBox.shrink();
     }
     if (workOrder.canStart) {
       return _ActionContainer(
         child: FilledButton.icon(
           onPressed: submitting ? null : onStart,
           icon: const Icon(Icons.play_circle_outline_rounded),
-          label: const Text('Start Repair'),
+          label: Text(
+            workOrder.status == RepairWorkOrderStatus.reworkRequired ||
+                    workOrder.status == RepairWorkOrderStatus.inProgress
+                ? 'Resume Repair'
+                : 'Start Repair',
+          ),
         ),
       );
     }
@@ -355,7 +208,7 @@ class _ActionBar extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: submitting ? null : onProgress,
           icon: const Icon(Icons.edit_note_rounded),
-          label: const Text('Update Repair Progress'),
+          label: const Text('Update Progress'),
         ),
       );
     }
@@ -398,207 +251,282 @@ class _WorkOrderBody extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
+  Widget build(BuildContext context) {
+    final corrections =
+        workOrder.history
+            .where(
+              (event) =>
+                  event.type == 'provider_correction_requested' ||
+                  event.type == 'city_returned',
+            )
+            .toList()
+          ..sort(
+            (a, b) => (b.createdAt ?? DateTime(1970)).compareTo(
+              a.createdAt ?? DateTime(1970),
+            ),
+          );
+    final latestCorrection = corrections.isEmpty ? null : corrections.first;
+    final correction = latestCorrection?.type == 'provider_correction_requested'
+        ? latestCorrection
+        : null;
+    final awaitingInstructions = latestCorrection?.type == 'city_returned';
+    final instructions = awaitingInstructions
+        ? 'Awaiting updated work instructions from the Utility Provider.'
+        : workOrder.instructions?.trim().isNotEmpty == true
+        ? workOrder.instructions!
+        : correction?.notes;
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LunasCard(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    reportCategoryIcon(workOrder.category),
+                    color: theme.colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          categoryFromCode(workOrder.category).label,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          workOrder.incidentReference,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: RepairStatusChip(
+                      label: workOrder.status.label,
+                      color: repairWorkOrderStatusColor(
+                        context,
+                        workOrder.status,
+                      ),
+                      icon:
+                          workOrder.status ==
+                              RepairWorkOrderStatus.reworkRequired
+                          ? Icons.build_outlined
+                          : Icons.work_outline_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: RepairStatusChip(
+                      label: workOrder.priority == null
+                          ? 'Priority Unassigned'
+                          : '${formatRepairLabel(workOrder.priority!)} Priority',
+                      color: _priorityColor,
+                      icon: Icons.priority_high_rounded,
+                    ),
+                  ),
+                ],
+              ),
+              if (workOrder.status != RepairWorkOrderStatus.reworkRequired) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  child: Divider(height: 1),
+                ),
+                _SlaCard(sla: workOrder.sla),
+              ],
+            ],
+          ),
+        ),
+        if (instructions?.trim().isNotEmpty == true &&
+            correction == null &&
+            !awaitingInstructions) ...[
+          const SizedBox(height: AppSpacing.md),
+          LunasCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  categoryFromCode(workOrder.category).label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  correction != null
+                      ? 'Correction Instructions'
+                      : 'Work Instructions',
+                  style: theme.textTheme.titleSmall,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  workOrder.incidentReference,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          RepairStatusChip(
-            label: workOrder.priority ?? 'Priority unavailable',
-            color: _priorityColor,
-            icon: Icons.priority_high_rounded,
-          ),
-        ],
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      _ProgressCard(workOrder: workOrder),
-      const SizedBox(height: AppSpacing.md),
-      _SlaCard(sla: workOrder.sla),
-      const SizedBox(height: AppSpacing.lg),
-      _Section(
-        title: 'Incident Details',
-        child: LunasCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _WorkOrderField(
-                label: 'Category',
-                value: categoryFromCode(workOrder.category).label,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _WorkOrderField(
-                label: 'Incident Reference',
-                value: workOrder.incidentReference,
-              ),
-              if (workOrder.description.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                  child: Divider(),
-                ),
-                Text(workOrder.description),
-              ],
-              if (workOrder.instructions?.isNotEmpty == true) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                  child: Divider(),
-                ),
-                Text(
-                  'Repair Instructions',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(workOrder.instructions!),
-              ],
-              for (final event in workOrder.history.where(
-                (event) =>
-                    event.type == 'provider_correction_requested' ||
-                    event.type == 'city_returned',
-              )) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                  child: Divider(),
-                ),
-                Text(
-                  event.type == 'city_returned'
-                      ? 'City Engineering Correction'
-                      : 'Utility Provider Correction',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  event.notes ??
-                      'No additional correction instructions were provided.',
-                ),
-                if (event.createdAt != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.sm),
+                if (correction != null) ...[
                   Text(
-                    formatReportDateTime(event.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    'From Utility Provider',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                ],
+                Text(
+                  instructions!,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                ),
+                if (correction?.createdAt != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    formatReportDateTime(correction!.createdAt),
+                    style: theme.textTheme.bodySmall,
                   ),
                 ],
               ],
-            ],
+            ),
           ),
-        ),
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      _Section(
-        title: 'Location and Directions',
-        child: LunasCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        ],
+        if (workOrder.status == RepairWorkOrderStatus.reworkRequired) ...[
+          const SizedBox(height: AppSpacing.md),
+          LunasCard(child: _SlaCard(sla: workOrder.sla)),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        LunasCard(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.location_on_outlined),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(workOrder.location.displayAddress)),
-                ],
+              Icon(
+                Icons.location_on_outlined,
+                color: theme.colorScheme.primary,
+                size: 24,
               ),
-              const SizedBox(height: AppSpacing.md),
-              OutlinedButton.icon(
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workOrder.location.barangay ?? 'Damage Location',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    if (workOrder.location.address?.trim().isNotEmpty == true ||
+                        workOrder.location.city?.trim().isNotEmpty == true) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        [workOrder.location.address, workOrder.location.city]
+                            .whereType<String>()
+                            .where((part) => part.trim().isNotEmpty)
+                            .join(', '),
+                        style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              TextButton(
                 onPressed: onOpenLocation,
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('Open Location Map'),
+                child: const Text('View Map'),
               ),
             ],
           ),
         ),
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      _Section(
-        title: 'Assignment',
-        child: _AssignmentCard(workOrder: workOrder),
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      _Section(
-        title: 'Citizen Evidence',
-        child: _CitizenEvidence(images: workOrder.citizenEvidence),
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      if (workOrder.repairEvidence.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.lg),
         _Section(
-          title: 'Repair Evidence',
-          child: _RepairEvidence(evidence: workOrder.repairEvidence),
+          title: 'Reported Photo',
+          child: _CitizenEvidence(images: workOrder.citizenEvidence),
         ),
-        const SizedBox(height: AppSpacing.lg),
-      ],
-      _Section(
-        title: 'Repair Progress Timeline',
-        child: _ProgressTimeline(items: workOrder.progressUpdates),
-      ),
-    ],
-  );
-}
-
-class _ProgressCard extends StatelessWidget {
-  const _ProgressCard({required this.workOrder});
-
-  final RepairWorkOrder workOrder;
-
-  @override
-  Widget build(BuildContext context) => LunasCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Repair Progress',
-                style: Theme.of(context).textTheme.titleMedium,
+        if (workOrder.description.trim().isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          LunasCard(
+            padding: EdgeInsets.zero,
+            child: ExpansionTile(
+              key: PageStorageKey('reported-description-${workOrder.id}'),
+              initiallyExpanded: false,
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
               ),
+              childrenPadding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text(
+                'Reported Description',
+                style: theme.textTheme.titleSmall,
+              ),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    workOrder.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                  ),
+                ),
+              ],
             ),
-            RepairStatusChip(
-              label: workOrder.status.label,
-              color: switch (workOrder.status) {
-                RepairWorkOrderStatus.pending => AppColorsLight.info,
-                RepairWorkOrderStatus.accepted => AppColorsLight.success,
-                RepairWorkOrderStatus.inProgress => AppColorsLight.alert,
-                RepairWorkOrderStatus.completed => AppColorsLight.alert,
-                RepairWorkOrderStatus.reworkRequired => AppColorsLight.critical,
-                RepairWorkOrderStatus.unknown => AppColorsLight.brandBase,
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
-        if (workOrder.isPendingAcceptance &&
-            workOrder.status == RepairWorkOrderStatus.inProgress) ...[
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'This is an in-progress handoff awaiting your acceptance. Existing progress and evidence are preserved; accept to resume work.',
+        if (workOrder.repairEvidence.isNotEmpty) ...[
+          _Section(
+            title: 'Repair Photos',
+            child: _RepairEvidence(evidence: workOrder.repairEvidence),
           ),
         ],
-        if (workOrder.isReadyForCompletion) ...[
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Your completion is awaiting Utility Provider review. This repair is not yet verified or resolved.',
+        if (instructions?.trim().isNotEmpty == true &&
+            (correction != null || awaitingInstructions)) ...[
+          const SizedBox(height: AppSpacing.md),
+          LunasCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  correction != null
+                      ? 'Correction Instructions'
+                      : 'Work Instructions',
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                if (correction != null) ...[
+                  Text(
+                    'From Utility Provider',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                ],
+                Text(
+                  instructions!,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                ),
+                if (correction?.createdAt != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    formatReportDateTime(correction!.createdAt),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
+        const SizedBox(height: AppSpacing.lg),
+        _Section(
+          title: 'Repair Progress Timeline',
+          child: _ProgressTimeline(items: workOrder.progressUpdates),
+        ),
       ],
-    ),
-  );
+    );
+  }
 }
 
 class _SlaCard extends StatelessWidget {
@@ -617,37 +545,45 @@ class _SlaCard extends StatelessWidget {
         ? 'Overdue'
         : sla.isApproaching
         ? 'Approaching Deadline'
-        : 'SLA Status';
+        : 'Repair Deadline';
     final deadline = sla.deadline == null
         ? 'No deadline returned by the server.'
         : 'Deadline: ${formatReportDateTime(sla.deadline)}';
-    return LunasCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.timer_outlined, color: color),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.timer_outlined, color: color, size: 24),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (sla.isOverdue || sla.isApproaching) ...[
                 Text(
                   title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: color),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(deadline),
-                if (sla.timeRemaining != null) ...[
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text('Time Remaining: ${sla.timeRemaining}'),
-                ],
               ],
-            ),
+              if (sla.timeRemaining != null) ...[
+                Text(
+                  '${sla.timeRemaining}${sla.isOverdue ? "" : " remaining"}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: sla.isOverdue || sla.isApproaching
+                        ? color
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xxs),
+              Text(deadline, style: Theme.of(context).textTheme.bodySmall),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -669,51 +605,6 @@ class _Section extends StatelessWidget {
   );
 }
 
-class _AssignmentCard extends StatelessWidget {
-  const _AssignmentCard({required this.workOrder});
-
-  final RepairWorkOrder workOrder;
-
-  @override
-  Widget build(BuildContext context) {
-    final assignment = workOrder.currentAssignment;
-    final person = assignment?.assignee;
-    return LunasCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _WorkOrderField(
-            label: 'Assignment Status',
-            value: formatRepairLabel(
-              assignment?.status ??
-                  workOrder.assignmentState ??
-                  workOrder.status.label,
-            ),
-          ),
-          if (person != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _WorkOrderField(label: 'Assigned Personnel', value: person.name),
-          ],
-          if (assignment?.assignedAt != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _WorkOrderField(
-              label: 'Assigned At',
-              value: formatReportDateTime(assignment!.assignedAt),
-            ),
-          ],
-          if (assignment?.acceptedAt != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _WorkOrderField(
-              label: 'Accepted At',
-              value: formatReportDateTime(assignment!.acceptedAt),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 class _CitizenEvidence extends StatelessWidget {
   const _CitizenEvidence({required this.images});
 
@@ -727,10 +618,17 @@ class _CitizenEvidence extends StatelessWidget {
       );
     }
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final image in images) ...[
-          LunasCard(child: RemoteEvidencePreview(url: image.url)),
-          const SizedBox(height: AppSpacing.sm),
+          LunasCard(
+            padding: EdgeInsets.zero,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _FullWidthPhoto(url: image.url),
+            ),
+          ),
+          if (image != images.last) const SizedBox(height: AppSpacing.md),
         ],
       ],
     );
@@ -739,39 +637,59 @@ class _CitizenEvidence extends StatelessWidget {
 
 class _RepairEvidence extends StatelessWidget {
   const _RepairEvidence({required this.evidence});
-
   final List<RepairEvidence> evidence;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      if (evidence.isEmpty)
-        const LunasCard(child: Text('No repair evidence uploaded yet.'))
-      else
-        for (final item in evidence) ...[
-          LunasCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                RemoteEvidencePreview(url: item.url),
-                if (item.caption?.isNotEmpty == true) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(item.caption!),
-                ],
-                if (item.uploadedAt != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    formatReportDateTime(item.uploadedAt),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
+  Widget build(BuildContext context) {
+    if (evidence.isEmpty) {
+      return const LunasCard(child: Text('No repair evidence uploaded yet.'));
+    }
+    // Uploads are appended by the API. Prefer the newest timestamp and retain
+    // append order when timestamps are equal or unavailable.
+    var latest = evidence.last;
+    for (final item in evidence.reversed) {
+      if (item.uploadedAt != null &&
+          latest.uploadedAt != null &&
+          item.uploadedAt!.isAfter(latest.uploadedAt!)) {
+        latest = item;
+      }
+    }
+    return LunasCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: _FullWidthPhoto(url: latest.url),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          if (latest.caption?.isNotEmpty == true)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(latest.caption!),
+            ),
         ],
-    ],
+      ),
+    );
+  }
+}
+
+class _FullWidthPhoto extends StatelessWidget {
+  const _FullWidthPhoto({required this.url});
+  final String url;
+
+  @override
+  Widget build(BuildContext context) => Image.network(
+    url,
+    width: double.infinity,
+    fit: BoxFit.fitWidth,
+    errorBuilder: (_, _, _) => RemoteEvidencePreview(url: url),
+    loadingBuilder: (_, child, progress) => progress == null
+        ? child
+        : const AspectRatio(
+            aspectRatio: 4 / 3,
+            child: Center(child: CircularProgressIndicator()),
+          ),
   );
 }
 
@@ -785,80 +703,69 @@ class _ProgressTimeline extends StatelessWidget {
     if (items.isEmpty) {
       return const LunasCard(child: Text('No repair updates yet.'));
     }
+    // Progress updates are appended oldest first by the API. Preserve that
+    // order for equal timestamps, then display the newest entry first.
+    final ordered = items.asMap().entries.toList()
+      ..sort((a, b) {
+        final aTime = a.value.updatedAt;
+        final bTime = b.value.updatedAt;
+        final comparison = aTime != null && bTime != null
+            ? aTime.compareTo(bTime)
+            : 0;
+        return comparison != 0 ? comparison : a.key.compareTo(b.key);
+      });
+    final visible = ordered.reversed.map((entry) => entry.value).toList();
     return LunasCard(
       child: Column(
         children: [
-          for (final item in items) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  child: Icon(
-                    item.progressPercent == 100 && item.evidence.isNotEmpty
-                        ? Icons.task_alt
-                        : Icons.edit_note,
-                    size: 18,
+          for (var index = 0; index < visible.length; index++)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TimelineMarker(
+                    latest: index == 0,
+                    showLine: index < visible.length - 1,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.progressPercent == 100 && item.evidence.isNotEmpty
-                            ? 'Completion Submitted'
-                            : 'Progress Update',
-                        style: Theme.of(context).textTheme.titleSmall,
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: index < visible.length - 1 ? AppSpacing.xxl : 0,
                       ),
-                      Text(
-                        formatReportDateTime(item.updatedAt),
-                        style: Theme.of(context).textTheme.bodySmall,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            visible[index].progressPercent == 100 &&
+                                    visible[index].evidence.isNotEmpty
+                                ? 'Completion Submitted'
+                                : 'Progress Update',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontSize: 15, height: 1.5),
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            formatReportDateTime(visible[index].updatedAt),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          if (visible[index].notes?.trim().isNotEmpty ==
+                              true) ...[
+                            const SizedBox(height: AppSpacing.xxs),
+                            Text(
+                              visible[index].notes!,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ],
                       ),
-                      if (item.notes?.isNotEmpty == true) ...[
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(item.notes!),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            if (item != items.last)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                child: Divider(),
+                ],
               ),
-          ],
+            ),
         ],
       ),
     );
   }
-}
-
-class _WorkOrderField extends StatelessWidget {
-  const _WorkOrderField({required this.label, required this.value});
-  final String label;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-      const SizedBox(height: AppSpacing.xxs),
-      Text(
-        value,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-          height: 1.5,
-        ),
-      ),
-    ],
-  );
 }

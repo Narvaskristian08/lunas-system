@@ -7,7 +7,8 @@ abstract final class RepairRoutes {
   static const profile = '/repair/profile';
 
   static String workOrder(String id) => '$workOrders/$id';
-  static String start(String id) => '${workOrder(id)}/start';
+  static String filteredWorkOrders(String filter) =>
+      '$workOrders?filter=${Uri.encodeQueryComponent(filter)}';
   static String progress(String id) => '${workOrder(id)}/progress';
   static String location(String id) => '${workOrder(id)}/location';
 }

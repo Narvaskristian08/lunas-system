@@ -295,8 +295,19 @@ const listFilter = async (req) => {
   const filter = { ...buildWorkOrderScope(req.user) };
   const query = req.query || {};
   if (query.status) filter.status = query.status;
+  else if (req.user.role === 'utility_provider') filter.status = { $ne: 'verified' };
   if (query.priority) filter.priority = query.priority;
   if (query.assignmentStatus) filter.assignmentState = query.assignmentStatus;
+  if (req.user.role === 'repair_personnel' && query.repairView) {
+    const repairViews = {
+      assigned: { status: { $in: ['pending', 'accepted'] } },
+      awaiting_acceptance: { status: { $in: ['pending', 'in_progress', 'rework_required'] }, assignmentState: 'pending' },
+      active: { status: 'in_progress', assignmentState: 'accepted' },
+      review: { status: 'completed' },
+      correction: { status: { $in: ['rework_required', 'city_correction_required'] } }
+    };
+    Object.assign(filter, repairViews[query.repairView] || {});
+  }
   if (query.personnel && ['admin', 'city_engineer', 'barangay_official', 'utility_provider'].includes(req.user.role)) {
     filter.assignedTo = query.personnel;
   }
@@ -502,6 +513,10 @@ exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
 const assign = async (req, res, reassign) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
   if (!workOrder || !canManageWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
+  if (workOrder.status !== 'rework_required'
+    && (workOrder.startedAt || workOrder.actualStartTime || !['pending', 'accepted'].includes(workOrder.status))) {
+    return fail(res, 409, 'Repair work has started or is under review and cannot be reassigned');
+  }
   if (!activeWorkOrder(workOrder)) return fail(res, 409, transitionMessage(workOrder.status, 'assign'));
 
   const activeAssignment = (workOrder.assignments || []).find(
@@ -527,18 +542,18 @@ const assign = async (req, res, reassign) => {
 
   const now = new Date();
   const assignmentId = new mongoose.Types.ObjectId();
-  // A not-yet-started accepted order returns to pending acceptance for the
-  // new worker. An in-progress handoff stays in progress, but still requires
-  // the new current assignment to accept before it can submit progress.
-  const statusAfterAssignment = reassign && workOrder.status === 'accepted'
-    ? 'pending'
+  // Provider assignment authorizes the worker immediately; existing repair
+  // progress and correction state remain intact when reassigned.
+  const statusAfterAssignment = workOrder.status === 'pending'
+    ? 'accepted'
     : workOrder.status;
   const assignment = {
     _id: assignmentId,
     assignee: assignee._id,
     assignedBy: req.user._id,
     assignedAt: now,
-    status: 'pending',
+    status: 'accepted',
+    acceptedAt: now,
     active: true
   };
   const update = {
@@ -547,9 +562,9 @@ const assign = async (req, res, reassign) => {
       assignedBy: req.user._id,
       assignedAt: now,
       currentAssignment: assignmentId,
-      assignmentState: 'pending',
+      assignmentState: 'accepted',
       status: statusAfterAssignment,
-      ...(reassign && workOrder.status === 'accepted' ? { acceptedAt: null } : {})
+      acceptedAt: now
     },
     $push: {
       assignments: assignment,
@@ -595,10 +610,12 @@ const assign = async (req, res, reassign) => {
   const condition = {
     _id: workOrder._id,
     version: workOrder.version,
-    status: { $in: ACTIVE_WORK_ORDER_STATUSES }
+    status: workOrder.status,
+    ...(workOrder.status === 'rework_required' ? {} : { startedAt: null, actualStartTime: null })
   };
   if (reassign) {
     if (activeAssignment) {
+      condition.assignmentState = workOrder.assignmentState;
       condition.currentAssignment = activeAssignment._id;
       condition.assignments = { $elemMatch: { _id: activeAssignment._id, active: true } };
     } else {
@@ -810,7 +827,9 @@ exports.declineWorkOrder = asyncHandler(async (req, res) => {
 exports.startWorkOrder = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
-  if (!['accepted', 'rework_required'].includes(workOrder.status) || workOrder.assignmentState !== 'accepted') {
+  if (!['pending', 'accepted', 'rework_required', 'in_progress'].includes(workOrder.status)
+    || !['pending', 'accepted'].includes(workOrder.assignmentState)
+    || (workOrder.status === 'in_progress' && workOrder.assignmentState !== 'pending')) {
     return fail(res, 409, transitionMessage(workOrder.status, 'start'));
   }
   const assignment = (workOrder.assignments || []).find(
@@ -825,11 +844,15 @@ exports.startWorkOrder = asyncHandler(async (req, res) => {
       version: workOrder.version,
       assignedTo: req.user._id,
       currentAssignment: assignment._id,
-      assignmentState: 'accepted',
+      assignmentState: workOrder.assignmentState,
       status: workOrder.status
     },
     {
-      $set: { status: 'in_progress', startedAt: now, actualStartTime: now },
+      $set: { status: 'in_progress', startedAt: workOrder.startedAt || now,
+        actualStartTime: workOrder.actualStartTime || now, assignmentState: 'accepted',
+        acceptedAt: workOrder.acceptedAt || now,
+        'assignments.$[active].status': 'accepted',
+        'assignments.$[active].acceptedAt': assignment.acceptedAt || now },
       $push: {
         history: workOrderHistoryEntry({
           type: workOrder.status === 'rework_required' ? 'correction_started' : 'started',
@@ -843,7 +866,7 @@ exports.startWorkOrder = asyncHandler(async (req, res) => {
       },
       $inc: { version: 1 }
     },
-    { new: true }
+    { new: true, arrayFilters: [{ 'active._id': assignment._id }] }
   );
   if (!updated) return fail(res, 409, 'The work order changed. Refresh and try again.');
   await updateIncidentForWorkOrder({
@@ -881,6 +904,11 @@ const parseObject = (value) => {
 const repairFiles = async (req, workOrderId) => {
   const files = Array.isArray(req.files) ? req.files : [];
   if (!files.length) return [];
+  if (files.length > 1) {
+    const error = new Error('Upload one repair photo at a time');
+    error.statusCode = 400;
+    throw error;
+  }
   return processAndUploadRepairEvidence(files, { workOrderId, uploaderId: req.user._id });
 };
 
@@ -949,6 +977,7 @@ exports.updateProgress = asyncHandler(async (req, res) => {
           status: nextStatus,
           progressPercent: progress.progressPercent,
           progressStage: progress.stage,
+          ...(evidence.length ? { repairEvidence: evidence } : {}),
           ...(completed ? { readyForCompletionAt: now, actualCompletionTime: now } : {})
         },
         $push: {
@@ -966,7 +995,6 @@ exports.updateProgress = asyncHandler(async (req, res) => {
             updatedBy: req.user._id,
             updatedAt: now
           },
-          repairEvidence: { $each: evidence },
           history: workOrderHistoryEntry({
             type: completed ? 'ready_for_completion' : 'progress',
             actor: req.user,
@@ -987,6 +1015,8 @@ exports.updateProgress = asyncHandler(async (req, res) => {
       await cleanupEvidence(uploads);
       return fail(res, 409, 'The repair progress changed. Refresh and try again.');
     }
+    uploads = [];
+    if (evidence.length) await cleanupEvidence(workOrder.repairEvidence || []);
     if (completed) await setAvailability(req.user._id, 'available');
     await updateIncidentForWorkOrder({
       incidentId: updated.incident,
@@ -1076,7 +1106,6 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
       ...(progressUpdate ? { progressUpdate: progressUpdate._id } : {})
     }));
     const push = {
-      repairEvidence: { $each: evidence },
       history: workOrderHistoryEntry({
         type: 'evidence_uploaded',
         actor: req.user,
@@ -1095,7 +1124,7 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
     if (progressUpdate) {
       // Keep the durable evidence record and the append-only progress event
       // connected in the same guarded write.
-      push['progressUpdates.$[progress].evidence'] = { $each: evidence.map((entry) => entry._id) };
+      // The current photo replaces the previous photo for this progress event.
       options.arrayFilters = [{ 'progress._id': progressUpdate._id }];
     }
     const updated = await WorkOrder.findOneAndUpdate(
@@ -1107,13 +1136,17 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
         assignmentState: 'accepted',
         status: 'in_progress'
       },
-      { $push: push, $inc: { version: 1 } },
+      { $set: { repairEvidence: evidence,
+        ...(progressUpdate ? { 'progressUpdates.$[progress].evidence': evidence.map((entry) => entry._id) } : {}) },
+      $push: push, $inc: { version: 1 } },
       options
     );
     if (!updated) {
       await cleanupEvidence(uploads);
       return fail(res, 409, 'The work order changed. Refresh and retry the upload.');
     }
+    uploads = [];
+    await cleanupEvidence(workOrder.repairEvidence || []);
     await createAuditLog({
       action: 'repair_evidence_uploaded',
       performedBy: req.user._id,
@@ -1374,7 +1407,9 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
     count({ assignmentState: { $in: ['unassigned', 'declined'] }, status: 'pending' }),
     count({ assignmentState: 'pending', status: { $in: ['pending', 'in_progress'] } }),
     count({ status: 'accepted' }),
-    count({ status: { $in: ['in_progress', 'rework_required'] } }),
+    count(req.user.role === REPAIR_PERSONNEL_ROLE
+      ? { status: 'in_progress', assignmentState: 'accepted' }
+      : { status: { $in: ['in_progress', 'rework_required'] } }),
     count({ status: 'completed', progressPercent: 100 }),
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $gte: now, $lte: deadline } }),
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $lt: now } }),

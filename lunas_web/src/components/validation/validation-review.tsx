@@ -7,6 +7,7 @@ import { categoryLabel } from "@/lib/category-label";
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { TimelineMarker } from "@/components/ui/timeline-marker";
 import { distinctTimelineEvents, timelineEventLabel, timelineMilestoneLabel, timelineNoteLabel } from "@/lib/timeline-display";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
@@ -176,15 +177,15 @@ function Evidence({ incident }: { incident: ValidationIncident }) {
 }
 
 function Timeline({ incident }: { incident: ValidationIncident }) {
-  const events = distinctTimelineEvents(incident.history, (entry) => ({
+  const events = distinctTimelineEvents([...incident.history].reverse(), (entry) => ({
     timestamp: entry.changedAt,
     values: [timelineMilestoneLabel(entry.status) ?? entry.status, entry.notes?.trim() ?? ""],
   }));
   return (
     <Card className="overflow-hidden">
       <CardHeader title="Status History" description="Events are recorded by the backend; this timeline is not fabricated by the interface." />
-      <ol className="divide-y divide-slate-200">
-        {events.length ? events.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div><p className="font-semibold text-slate-900">{timelineEventLabel(entry.status)}</p>{entry.changedAt ? <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(entry.changedAt)}</p> : null}{entry.notes ? <p className="mt-1 text-sm text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
+      <ol className="space-y-6 p-5">
+        {events.length ? events.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-4"><TimelineMarker latest={index === 0} last={index === events.length - 1} /><div className="min-w-0 flex-1 break-words"><div className="flex flex-col gap-0.5"><p className="text-sm font-semibold leading-6 text-slate-900">{timelineEventLabel(entry.status)}</p>{entry.changedAt ? <time dateTime={entry.changedAt} className="text-xs leading-5 text-slate-500">{formatDateTime(entry.changedAt)}</time> : null}</div>{entry.notes ? <p className="mt-1 text-sm text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
       </ol>
     </Card>
   );

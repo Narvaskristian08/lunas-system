@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
@@ -214,6 +215,18 @@ class RepairSectionTitle extends StatelessWidget {
   }
 }
 
+Color repairWorkOrderStatusColor(
+  BuildContext context,
+  RepairWorkOrderStatus status,
+) => switch (status) {
+  RepairWorkOrderStatus.reworkRequired => AppColorsLight.alert,
+  RepairWorkOrderStatus.completed => AppColorsLight.success,
+  RepairWorkOrderStatus.unknown => Theme.of(
+    context,
+  ).colorScheme.onSurfaceVariant,
+  _ => Theme.of(context).colorScheme.primary,
+};
+
 class RepairStatusChip extends StatelessWidget {
   const RepairStatusChip({
     required this.label,
@@ -229,6 +242,7 @@ class RepairStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 32),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.xs,
@@ -239,17 +253,22 @@ class RepairStatusChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
             Icon(icon, size: 15, color: color),
             const SizedBox(width: AppSpacing.xs),
           ],
-          Text(
-            formatRepairLabel(label),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-              letterSpacing: .35,
+          Flexible(
+            child: Text(
+              formatRepairLabel(label),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+                letterSpacing: .2,
+                height: 1.2,
+              ),
             ),
           ),
         ],
@@ -264,6 +283,7 @@ class RepairMetricCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
     super.key,
   });
 
@@ -271,11 +291,13 @@ class RepairMetricCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return LunasCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Container(
         decoration: BoxDecoration(
@@ -445,22 +467,11 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
     _ => Theme.of(context).colorScheme.primary,
   };
 
-  Color _statusColor(BuildContext context) => switch (workOrder.status) {
-    RepairWorkOrderStatus.pending => AppColorsLight.info,
-    RepairWorkOrderStatus.accepted => AppColorsLight.success,
-    RepairWorkOrderStatus.inProgress => AppColorsLight.alert,
-    RepairWorkOrderStatus.completed => AppColorsLight.alert,
-    RepairWorkOrderStatus.reworkRequired => AppColorsLight.critical,
-    RepairWorkOrderStatus.unknown => Theme.of(
-      context,
-    ).colorScheme.onSurfaceVariant,
-  };
-
   String _slaLabel() {
     if (workOrder.sla.isOverdue) return 'Overdue';
-    if (workOrder.sla.isApproaching) return 'Approaching deadline';
+    if (workOrder.sla.isApproaching) return 'Approaching Deadline';
     if (workOrder.sla.timeRemaining != null) {
-      return 'SLA: ${workOrder.sla.timeRemaining}';
+      return '${workOrder.sla.timeRemaining} remaining';
     }
     if (workOrder.sla.deadline != null) {
       final deadline = workOrder.sla.deadline!;
@@ -470,13 +481,13 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
       final period = deadline.hour >= 12 ? 'PM' : 'AM';
       return 'Due ${deadline.month}/${deadline.day}, $hour:${deadline.minute.toString().padLeft(2, '0')} $period';
     }
-    return 'No SLA deadline returned';
+    return 'Deadline unavailable';
   }
 
   @override
   Widget build(BuildContext context) {
     final priorityColor = _priorityColor(context);
-    final statusColor = _statusColor(context);
+    final statusColor = repairWorkOrderStatusColor(context, workOrder.status);
     final slaColor = workOrder.sla.isOverdue
         ? AppColorsLight.critical
         : workOrder.sla.isApproaching
@@ -485,13 +496,19 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
     final theme = Theme.of(context);
     return LunasCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Icon(
+                reportCategoryIcon(workOrder.category),
+                size: 24,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   categoryFromCode(workOrder.category).label,
@@ -507,32 +524,48 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xxs),
+          const SizedBox(height: AppSpacing.sm),
           Text(workOrder.orderNumber, style: theme.textTheme.bodySmall),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           _CompactDetail(
             icon: Icons.location_on_outlined,
-            label: workOrder.location.displayAddress,
+            label:
+                [workOrder.location.barangay, workOrder.location.city]
+                    .whereType<String>()
+                    .where((part) => part.trim().isNotEmpty)
+                    .join(', ')
+                    .isNotEmpty
+                ? [workOrder.location.barangay, workOrder.location.city]
+                      .whereType<String>()
+                      .where((part) => part.trim().isNotEmpty)
+                      .join(', ')
+                : workOrder.location.displayAddress,
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.sm),
           _CompactDetail(
             icon: Icons.timer_outlined,
             label: _slaLabel(),
             color: slaColor,
           ),
+          const SizedBox(height: AppSpacing.lg),
+          const Divider(height: 1),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              Icon(Icons.circle, size: 8, color: statusColor),
-              const SizedBox(width: AppSpacing.xs),
               Expanded(
-                child: Text(
-                  workOrder.isPendingAcceptance
-                      ? 'Awaiting acceptance'
-                      : workOrder.status.label,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: RepairStatusChip(
+                    label:
+                        workOrder.status == RepairWorkOrderStatus.reworkRequired
+                        ? 'Needs Correction'
+                        : workOrder.isPendingAcceptance
+                        ? 'Pending'
+                        : workOrder.status == RepairWorkOrderStatus.accepted
+                        ? 'Pending'
+                        : workOrder.status.label,
                     color: statusColor,
-                    fontWeight: FontWeight.w600,
+                    icon: Icons.work_outline_rounded,
                   ),
                 ),
               ),
