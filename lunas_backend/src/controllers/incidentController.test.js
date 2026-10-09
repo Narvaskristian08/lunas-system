@@ -1,3 +1,5 @@
+jest.mock('../models/WorkOrder', () => ({ create: jest.fn(), deleteOne: jest.fn() }));
+jest.mock('../models/User', () => ({ findOne: jest.fn(), find: jest.fn() }));
 jest.mock('../models/Incident', () => ({
   create: jest.fn(),
   findById: jest.fn(),
@@ -445,4 +447,27 @@ test('citizen, official and operational map projections never disclose raw GPS o
   }
   expect(official.locationIntegrity.comparison).toBe('unavailable');
   expect(operational.locationIntegrity).toBeUndefined();
+});
+
+
+test.each(['success', 'conflict', 'failure'])('routing creates an unassigned work order and handles %s', async (outcome) => {
+  jest.clearAllMocks();
+  const record = { _id: '507f191e810c19729de860a1', status: 'prioritized', priority: 'high', images: [],
+    jurisdiction: { barangay: 'Poblacion Oeste', city: 'Dagupan City' } };
+  const chain = value => ({ populate: jest.fn().mockReturnThis(), then: resolve => Promise.resolve(value).then(resolve) });
+  Incident.findOne.mockReturnValue(chain(record));
+  require('../models/User').findOne.mockReturnValue({ select: jest.fn().mockResolvedValue({ _id: '507f191e810c19729de860a2' }) });
+  require('../models/User').find.mockReturnValue({ select: jest.fn().mockResolvedValue([]) });
+  const WorkOrder = require('../models/WorkOrder');
+  WorkOrder.create.mockResolvedValue({ _id: '507f191e810c19729de860a3' });
+  WorkOrder.deleteOne.mockResolvedValue({ deletedCount: 1 });
+  Incident.findOneAndUpdate.mockReturnValue(outcome === 'failure' ? { populate: () => Promise.reject(new Error('write failed')) } : chain(outcome === 'conflict' ? null : { ...record, status: 'provider_assigned' }));
+  const res = createResponse();
+  const next = jest.fn();
+  await require('./incidentController').routeIncident({ params: { id: record._id }, body: { responsibleOrganization: 'Water District', responsibleRole: 'utility_provider' }, user: { _id: '507f191e810c19729de860a4', role: 'city_engineer' }, headers: {} }, res, next);
+  expect(WorkOrder.create).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending', assignmentState: 'unassigned', priority: 'high', sla: expect.objectContaining({ state: 'active', startedAt: expect.any(Date), deadline: expect.any(Date) }) }));
+  expect(Incident.findOneAndUpdate.mock.calls[0][1].$set.workOrder).toBe('507f191e810c19729de860a3');
+  if (outcome !== 'success') expect(WorkOrder.deleteOne).toHaveBeenCalledWith({ _id: '507f191e810c19729de860a3' });
+  if (outcome === 'failure') expect(next).toHaveBeenCalledWith(expect.any(Error));
+  else expect(res.status).toHaveBeenCalledWith(outcome === 'conflict' ? 409 : 200);
 });

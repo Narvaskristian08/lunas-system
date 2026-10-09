@@ -1,5 +1,5 @@
 jest.mock('../models/WorkOrder', () => ({ create: jest.fn(), find: jest.fn(), findOne: jest.fn(), findOneAndUpdate: jest.fn(), countDocuments: jest.fn() }));
-jest.mock('../models/Incident', () => ({ findById: jest.fn() }));
+jest.mock('../models/Incident', () => ({ findById: jest.fn(), find: jest.fn().mockImplementation(() => ({ select: jest.fn().mockResolvedValue([{ _id: 'matched-incident' }]) })) }));
 jest.mock('../models/User', () => ({ findById: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn() }));
 jest.mock('../services/evidenceService', () => ({ processAndUploadRepairEvidence: jest.fn(), cleanupEvidence: jest.fn() }));
@@ -187,7 +187,7 @@ test.each(['approaching', 'overdue'])('SLA %s preserves combined provider filter
   } }, response(), next);
   expect(next).not.toHaveBeenCalled();
   const expected = expect.objectContaining({ status: 'completed', priority: 'high', assignmentState: 'accepted',
-    orderNumber: { $regex: 'WO-123', $options: 'i' }, $and: [expect.objectContaining({ status: expect.any(Object) })],
+    $or: [{ orderNumber: { $regex: 'WO-123', $options: 'i' } }, { incident: { $in: ['matched-incident'] } }], $and: [expect.objectContaining({ status: expect.any(Object) })],
     'sla.deadline': expect.any(Object) });
   expect(WorkOrder.find).toHaveBeenLastCalledWith(expected);
   expect(WorkOrder.countDocuments).toHaveBeenLastCalledWith(expected);
@@ -205,11 +205,12 @@ test('provider Active Repairs count excludes correction', async () => {
 
 
 test.each([
+  [{ status: 'awaiting_review' }, { status: { $in: ['completed', 'provider_accepted'] } }],
   [{ status: 'needs_correction' }, { status: { $in: ['rework_required', 'city_correction_required'] } }],
   ...['critical', 'high', 'medium', 'low'].map(value => [{ priority: value }, { priority: value }]),
   ...['pending', 'accepted', 'in_progress', 'completed', 'rework_required', 'provider_accepted', 'city_correction_required', 'verified'].map(value => [{ status: value }, { status: value }]),
   ...['unassigned', 'accepted'].map(value => [{ assignmentStatus: value }, { assignmentState: value }]),
-  [{ search: 'WO-123' }, { orderNumber: { $regex: 'WO-123', $options: 'i' } }]
+  [{ search: 'WO-123' }, { $or: [{ orderNumber: { $regex: 'WO-123', $options: 'i' } }, { incident: { $in: ['matched-incident'] } }] }]
 ])('provider filter %j applies to results and total', async (filters, expected) => {
   const query = {};
   for (const method of ['populate', 'sort', 'limit', 'skip']) query[method] = jest.fn().mockReturnValue(query);
@@ -221,4 +222,13 @@ test.each([
   expect(next).not.toHaveBeenCalled();
   expect(WorkOrder.find).toHaveBeenLastCalledWith(expect.objectContaining(expected));
   expect(WorkOrder.countDocuments).toHaveBeenLastCalledWith(expect.objectContaining(expected));
+});
+
+
+test('provider queue counts match pending and review list rules', async () => {
+  WorkOrder.countDocuments.mockClear();
+  WorkOrder.countDocuments.mockResolvedValue(0);
+  await require('./workOrderController').getWorkOrderSummary({ user: { role: 'utility_provider', organization: 'Water District' } }, response(), jest.fn());
+  expect(WorkOrder.countDocuments.mock.calls[0][0]).toEqual(expect.objectContaining({ status: 'pending', assignmentState: 'unassigned' }));
+  expect(WorkOrder.countDocuments.mock.calls[4][0]).not.toHaveProperty('progressPercent');
 });

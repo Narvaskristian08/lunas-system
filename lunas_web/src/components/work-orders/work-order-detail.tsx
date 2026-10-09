@@ -88,6 +88,7 @@ function AssignmentPanel({
 }) {
   const [assigneeId, setAssigneeId] = useState("");
   const [reason, setReason] = useState("");
+  const [assignmentInstructions, setAssignmentInstructions] = useState(workOrder.instructions ?? "");
   const [confirmReassignment, setConfirmReassignment] = useState(false);
   const [pending, startTransition] = useTransition();
   const hasAssignment = Boolean(workOrder.currentAssignment || workOrder.assignee);
@@ -100,7 +101,7 @@ function AssignmentPanel({
     startTransition(async () => {
       const result = isReassignment
         ? await reassignWorkOrderAction({ workOrderId: workOrder.id, assigneeId, reason })
-        : await assignWorkOrderAction({ workOrderId: workOrder.id, assigneeId });
+        : await assignWorkOrderAction({ workOrderId: workOrder.id, assigneeId, instructions: assignmentInstructions });
       setConfirmReassignment(false);
       onResult(result);
     });
@@ -142,10 +143,11 @@ function AssignmentPanel({
               {eligiblePersonnel.map((person) => <option key={person.id} value={person.id}>{personName(person)}{person.team ? ` · ${person.team}` : ""}{person.availability ? ` · ${titleCase(person.availability)}` : ""}</option>)}
             </select>
           </label>
+          {!isReassignment ? <label className="block text-sm font-semibold text-slate-800">Instructions (Optional)<textarea value={assignmentInstructions} onChange={event => setAssignmentInstructions(event.target.value)} maxLength={4000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 p-3 text-sm" placeholder="Add repair, access, or safety instructions" /></label> : null}
           {isReassignment ? <label className="block text-sm font-semibold text-slate-800">Reassignment Reason
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} required minLength={2} maxLength={500} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain why this assignment must change" />
           </label> : null}
-          {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={isReassignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{isReassignment ? "Reassign Work Order" : "Assign Work Order"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No repair personnel were found for this organization.</p>}
+          {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={isReassignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{isReassignment ? "Reassign Work Order" : "Assign Repair"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No repair personnel were found for this organization.</p>}
         </form> : <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">Assignment is locked during active repair and review. It can be changed before repair starts or while waiting for corrective work to resume.</p>}
       </div>
       <ConfirmationDialog

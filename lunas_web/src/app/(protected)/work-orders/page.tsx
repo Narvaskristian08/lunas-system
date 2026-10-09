@@ -11,13 +11,15 @@ export default async function WorkOrdersPage({ searchParams }: {
   const viewer = await requirePermission("work_orders.view");
   const params = await searchParams;
   if (viewer.backendRole !== "city_engineer") {
-    const filters = readWorkOrderFilters(params);
+    const hasQueueSelection = params.view === "orders" || params.status || params.assignmentStatus || params.slaState;
+    const filters = readWorkOrderFilters(viewer.backendRole === "utility_provider" && !hasQueueSelection
+      ? { ...params, assignmentStatus: "unassigned" } : params);
     const [queue, summary] = await Promise.all([viewer.backendRole === "utility_provider" && filters.assignmentStatus === "unassigned" ? getAwaitingAssignmentQueue(filters) : getWorkOrders(filters), getWorkOrderSummary()]);
     const intakeFilters = readProviderIncidentFilters({});
     const intake = viewer.backendRole === "utility_provider" ? await getProviderIncidentQueue(intakeFilters) : undefined;
     return <WorkOrderList viewer={viewer} queue={queue} filters={filters} summary={summary} intake={intake} />;
   }
-  const view = params.view === "confirmed" ? "confirmed" : params.view === "review" ? "review" : params.view === "verification" ? "verification" : "orders";
+  const view = params.view === "confirmed" ? "confirmed" : params.view === "review" ? "review" : params.view === "verification" ? "verification" : params.view === "orders" || params.status || params.slaState || params.assignmentStatus ? "orders" : "review";
   const [summary, validationSummary] = await Promise.all([
     getWorkOrderSummary(), getValidationSummary().catch(() => undefined),
   ]);

@@ -126,6 +126,7 @@ export async function createWorkOrderAction(input: {
 export async function assignWorkOrderAction(input: {
   workOrderId: string;
   assigneeId: string;
+  instructions?: string;
 }): Promise<WorkOrderActionResult> {
   try {
     await requireUtilityProvider();
@@ -134,7 +135,7 @@ export async function assignWorkOrderAction(input: {
     if (!workOrderId || !assigneeId) return { ok: false, message: "Select an eligible repair person before assigning this work order." };
     return mutateWorkOrder(
       `/work-orders/${encodeURIComponent(workOrderId)}/assign`,
-      JSON.stringify({ assigneeId }),
+      JSON.stringify({ assigneeId, instructions: safeText(input.instructions, 4000) }),
       workOrderId,
       "Repair personnel assigned.",
     );

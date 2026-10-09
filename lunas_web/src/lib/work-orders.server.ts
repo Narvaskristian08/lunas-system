@@ -219,7 +219,7 @@ export interface WorkOrderFilters {
   page: number;
   limit: number;
   search?: string;
-  status?: WorkOrderStatus | "needs_correction";
+  status?: WorkOrderStatus | "needs_correction" | "awaiting_review";
   priority?: "critical" | "high" | "medium" | "low";
   assignmentStatus?: AssignmentState;
   progress?: 0 | 25 | 50 | 75 | 100;
@@ -576,6 +576,7 @@ function providerIncidentQuery(filters: ProviderIncidentFilters) {
     page: String(filters.page),
     limit: String(filters.limit),
     status: "provider_assigned",
+    withoutWorkOrder: "true",
     sortBy: filters.sortBy === "oldest"
       ? "createdAt"
       : filters.sortBy === "priority" ? "-priority" : "-createdAt",
@@ -599,7 +600,7 @@ export function readWorkOrderFilters(searchParams: Record<string, string | strin
     page: Number.isInteger(page) && page > 0 ? page : defaultWorkOrderFilters.page,
     limit: Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : defaultWorkOrderFilters.limit,
     search: one(searchParams, "search")?.trim().slice(0, 100) || undefined,
-    status: status === "needs_correction" ? status : status && validStatuses.has(status as WorkOrderStatus) ? status as WorkOrderStatus : undefined,
+    status: status === "needs_correction" || status === "awaiting_review" ? status : status && validStatuses.has(status as WorkOrderStatus) ? status as WorkOrderStatus : undefined,
     priority: priority && validPriorities.has(priority) ? priority as WorkOrderFilters["priority"] : undefined,
     assignmentStatus: assignmentStatus && validAssignmentStates.has(assignmentStatus as AssignmentState)
       ? assignmentStatus as AssignmentState

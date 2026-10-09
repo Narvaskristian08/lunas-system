@@ -1,5 +1,6 @@
 const { getSlaProjection } = require('../services/workOrderService');
 const Incident = require('../models/Incident');
+const WorkOrder = require('../models/WorkOrder');
 const User = require('../models/User');
 const { buildLocationIntegrity, safeLocationIntegrity } = require('../services/locationIntegrityService');
 const { createAuditLog } = require('../utils/auditLogger');
@@ -489,6 +490,7 @@ exports.getIncidents = asyncHandler(async (req, res) => {
   const safeSortBy = allowedSorts.has(sortBy) ? sortBy : '-createdAt';
   const filter = {};
 
+  if (req.user.role === "utility_provider" && req.query.withoutWorkOrder === "true") filter.workOrder = null;
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
   if (category) filter.category = category;
@@ -1235,7 +1237,7 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: 'Incident jurisdiction updated', data: await serializeIncidentForOfficial(updated) });
 });
 
-// @desc    Route a validated incident to an accountable organization (not a work order)
+// @desc    Route a validated incident and create its primary work order
 // @route   POST /api/v1/incidents/:id/route
 exports.routeIncident = asyncHandler(async (req, res) => {
   if (req.user.role !== 'city_engineer') {
@@ -1271,7 +1273,21 @@ exports.routeIncident = asyncHandler(async (req, res) => {
     routedAt: now,
     history: pushRoutingHistory(before.routing, route, req.user._id, now)
   };
-  const updated = await Incident.findOneAndUpdate(
+  const sla = initializeIncidentSLA(before.priority, now);
+  let workOrder;
+  try {
+    workOrder = await WorkOrder.create({ incident: before._id, responsibleOrganization: route.responsibleOrganization,
+      responsibleRole: 'utility_provider', jurisdiction, priority: before.priority, createdBy: req.user._id,
+      status: 'pending', assignmentState: 'unassigned', progressPercent: 0, progressStage: 'assigned', sla,
+      history: [{ type: 'created', actor: req.user._id, actorRole: req.user.role, status: 'pending',
+        notes: 'Work order created when City Engineering assigned the Utility Provider', createdAt: now }] });
+  } catch (error) {
+    if (error.code === 11000) return respondConflict(res);
+    throw error;
+  }
+  let updated;
+  try {
+    updated = await Incident.findOneAndUpdate(
     combineIncidentFilters({ _id: before._id, status: 'prioritized' }, officialScope(req)),
     {
       $set: {
@@ -1280,7 +1296,8 @@ exports.routeIncident = asyncHandler(async (req, res) => {
         assignedUtility: providerAccount._id,
         providerAssignedBy: req.user._id,
         providerAssignedAt: now,
-        sla: initializeIncidentSLA(before.priority, now)
+        sla,
+        workOrder: workOrder._id
       },
       $push: {
         statusHistory: {
@@ -1295,7 +1312,14 @@ exports.routeIncident = asyncHandler(async (req, res) => {
     },
     { new: true, runValidators: true }
   ).populate('reporter', 'firstName lastName');
-  if (!updated) return respondConflict(res);
+  } catch (error) {
+    await WorkOrder.deleteOne({ _id: workOrder._id });
+    throw error;
+  }
+  if (!updated) {
+    await WorkOrder.deleteOne({ _id: workOrder._id });
+    return respondConflict(res);
+  }
   await recordOfficialAction({
     action: 'incident_routed',
     incident: updated,

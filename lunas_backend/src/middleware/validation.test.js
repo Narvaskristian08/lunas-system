@@ -170,3 +170,10 @@ describe('request validation', () => {
     ]));
   });
 });
+
+
+test.each(['awaiting_review', 'needs_correction', 'rework_required', 'city_correction_required'])('work order query permits correction queue %s', async (status) => {
+  const req = { query: { status }, user: { role: 'utility_provider' } };
+  for (const rule of require('./validation').workOrderQueryValidation) await rule.run(req);
+  expect(validationResult(req).array()).toEqual([]);
+});

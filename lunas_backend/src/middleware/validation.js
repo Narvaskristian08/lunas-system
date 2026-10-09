@@ -284,6 +284,7 @@ exports.updateWorkOrderValidation = [
 ];
 
 exports.assignWorkOrderValidation = [
+  body("instructions").optional().isString().trim().isLength({ max: 4000 }),
   body().custom((value, { req }) => {
     const assigneeId = req.body.assigneeId || req.body.assignedTo;
     if (!assigneeId || !/^[a-f\d]{24}$/i.test(String(assigneeId))) {
@@ -336,7 +337,7 @@ exports.repairEvidenceValidation = [
 
 exports.workOrderQueryValidation = [
   query('status').optional().isIn([
-    'pending', 'accepted', 'in_progress', 'completed', 'rework_required',
+    'pending', 'accepted', 'in_progress', 'completed', 'rework_required', 'needs_correction', 'awaiting_review',
     'provider_accepted', 'city_correction_required', 'verified', 'declined', 'reassigned'
   ]),
   query('priority').optional().isIn(['critical', 'high', 'medium', 'low']),

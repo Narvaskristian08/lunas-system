@@ -294,11 +294,15 @@ const findScopedWorkOrder = (req, id, includeIncident = true) => {
 const listFilter = async (req) => {
   const filter = { ...buildWorkOrderScope(req.user) };
   const query = req.query || {};
-  if (query.status === 'needs_correction') filter.status = { $in: ['rework_required', 'city_correction_required'] };
+  if (query.status === 'awaiting_review') filter.status = { $in: ['completed', 'provider_accepted'] };
+  else if (query.status === 'needs_correction') filter.status = { $in: ['rework_required', 'city_correction_required'] };
   else if (query.status) filter.status = query.status;
   else if (req.user.role === 'utility_provider') filter.status = { $ne: 'verified' };
   if (query.priority) filter.priority = query.priority;
   if (query.assignmentStatus) filter.assignmentState = query.assignmentStatus;
+  if (req.user.role === "utility_provider" && query.assignmentStatus === "unassigned") {
+    filter.$and = [...(filter.$and || []), { status: "pending" }];
+  }
   if (req.user.role === 'repair_personnel' && query.repairView) {
     const repairViews = {
       assigned: { status: { $in: ['pending', 'accepted'] } },
@@ -316,7 +320,12 @@ const listFilter = async (req) => {
     filter.responsibleOrganization = query.organization;
   }
   if (query.progress !== undefined) filter.progressPercent = Number(query.progress);
-  if (query.search) filter.orderNumber = { $regex: String(query.search).trim(), $options: 'i' };
+  if (query.search) {
+    const text = String(query.search).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = { $regex: text, $options: 'i' };
+    const incidents = await Incident.find({ reportNumber: regex }).select('_id');
+    filter.$or = [{ orderNumber: regex }, { incident: { $in: incidents.map(incident => incident._id) } }];
+  }
   if (query.category) {
     const incidents = await Incident.find({ category: query.category }).select('_id');
     filter.incident = { $in: incidents.map((incident) => incident._id) };
@@ -569,7 +578,8 @@ const assign = async (req, res, reassign) => {
       currentAssignment: assignmentId,
       assignmentState: 'accepted',
       status: statusAfterAssignment,
-      acceptedAt: now
+      acceptedAt: now,
+      ...(!reassign && req.body.instructions !== undefined ? { instructions: String(req.body.instructions).trim() } : {})
     },
     $push: {
       assignments: assignment,
@@ -1409,13 +1419,13 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
   const deadline = new Date(now.getTime() + thresholdHours * 60 * 60 * 1000);
   const count = (filter) => WorkOrder.countDocuments({ ...scope, ...filter });
   const result = await Promise.all([
-    count({ assignmentState: { $in: ['unassigned', 'declined'] }, status: 'pending' }),
+    count({ assignmentState: 'unassigned', status: 'pending' }),
     count({ assignmentState: 'pending', status: { $in: ['pending', 'in_progress'] } }),
     count({ status: 'accepted' }),
     count(req.user.role === REPAIR_PERSONNEL_ROLE
       ? { status: 'in_progress', assignmentState: 'accepted' }
       : { status: 'in_progress' }),
-    count({ status: 'completed', progressPercent: 100 }),
+    count({ status: 'completed' }),
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $gte: now, $lte: deadline } }),
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $lt: now } }),
     count({ status: 'provider_accepted' }),

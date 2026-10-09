@@ -17,7 +17,7 @@ export function priorityTone(priority: string | undefined): Severity {
 
 export function workOrderStatusLabel(status: string | undefined) {
   const labels: Record<string, string> = {
-    pending: "Pending", accepted: "Pending", in_progress: "In Progress",
+    pending: "Pending", accepted: "Assigned", in_progress: "In Progress",
     completed: "Awaiting Provider Review", provider_accepted: "Awaiting City Verification",
     rework_required: "Needs Correction", city_correction_required: "Returned to Provider",
     verified: "Closed",

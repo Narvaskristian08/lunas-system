@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ProviderIncidentDetail } from "@/components/work-orders/provider-incident-detail";
 import { BackendApiError } from "@/lib/api/backend.server";
 import { requirePermission } from "@/lib/auth/dal.server";
@@ -21,5 +21,6 @@ export default async function ProviderIncidentIntakeDetailPage({
   await requirePermission("work_orders.manage");
   const { id } = await params;
   const incident = await loadProviderIncident(id);
+  if (incident.workOrder) redirect(`/work-orders/${encodeURIComponent(incident.workOrder.id)}`);
   return <ProviderIncidentDetail incident={incident} />;
 }

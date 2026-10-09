@@ -41,13 +41,13 @@ function hasFilters(filters: WorkOrderFilters) {
 
 function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"], isSla: boolean) {
   const cards = {
-    unassigned: { label: "Awaiting Assignment", value: summary.unassigned },
-    pendingRepairs: { label: "Pending Repairs", value: summary.accepted },
+    unassigned: { label: "Pending Repairs", value: summary.unassigned },
+    pendingRepairs: { label: "Assigned Repairs", value: summary.accepted },
     pending: { label: "Pending Acceptance", value: summary.pendingAcceptance },
     active: { label: "Active Repairs", value: summary.active },
     approaching: { label: "Approaching Deadline", value: summary.approaching },
     overdue: { label: "Overdue", value: summary.overdue },
-    providerReview: { label: "Awaiting Repair Review", value: summary.readyForCompletion },
+    providerReview: { label: "Awaiting Review", value: summary.readyForCompletion + (role === "utility_provider" ? summary.awaitingFinalVerification : 0) },
     cityVerification: { label: "Awaiting Verification", value: summary.awaitingFinalVerification },
     cityCorrections: { label: "Returned for Correction", value: summary.cityCorrections },
     corrective: { label: "Needs Correction", value: summary.correctiveRepairs + (role === "utility_provider" ? summary.cityCorrections : 0) },
@@ -57,7 +57,7 @@ function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"
     return [cards.cityVerification, cards.active, cards.approaching, cards.overdue];
   }
   if (role === "utility_provider") {
-    return [cards.unassigned, cards.pendingRepairs, cards.active, cards.providerReview, cards.corrective, cards.approaching, cards.overdue];
+    return [cards.unassigned, cards.pendingRepairs, cards.active, cards.corrective, cards.providerReview];
   }
   if (role === "repair_personnel") {
     return [cards.pending, cards.active, cards.corrective, cards.approaching, cards.overdue];
@@ -109,7 +109,7 @@ export function WorkOrderList({
     : [
       { value: "", label: "All Work States" },
       { value: "pending", label: "Pending Assignment" },
-      { value: "accepted", label: "Pending Repairs" },
+      { value: "accepted", label: "Assigned Repairs" },
       { value: "in_progress", label: "In Progress" },
       { value: "completed", label: "Awaiting Provider Review" },
       { value: viewer.backendRole === "utility_provider" ? "needs_correction" : "rework_required", label: "Needs Correction" },
@@ -120,7 +120,8 @@ export function WorkOrderList({
 
   const navigate = (patch: QueryPatch) => {
     const next = new URLSearchParams();
-    if (workspaceView === "verification") next.set("view", "verification");
+    if (workspaceView) next.set("view", workspaceView);
+    else if (viewer.backendRole === "utility_provider") next.set("view", "orders");
     const current: QueryPatch = {
       search: filters.search,
       status: filters.status,
@@ -147,9 +148,9 @@ export function WorkOrderList({
     setSearch("");
     navigate({
       search: undefined,
-      status: workspaceView ? filters.status : undefined,
+      status: workspaceView || viewer.backendRole === "utility_provider" ? filters.status : undefined,
       priority: undefined,
-      assignmentStatus: undefined,
+      assignmentStatus: viewer.backendRole === "utility_provider" ? filters.assignmentStatus : undefined,
       progress: undefined,
       slaState: workspaceView ? filters.slaState : undefined,
       personnel: undefined,
@@ -165,12 +166,12 @@ export function WorkOrderList({
     : workspaceView && filters.slaState === "approaching" ? "Approaching Deadline"
     : workspaceView && filters.slaState === "overdue" ? "Overdue Repairs"
     : workspaceView && filters.status === "in_progress" ? "Active Repairs"
-    : filters.assignmentStatus === "unassigned" ? "Awaiting Assignment"
+    : filters.assignmentStatus === "unassigned" ? "Pending Repairs"
     : filters.slaState === "approaching" ? "Approaching Deadline"
     : filters.slaState === "overdue" ? "Overdue Repairs"
-    : filters.status === "accepted" ? "Pending Repairs"
+    : filters.status === "accepted" ? "Assigned Repairs"
     : filters.status === "in_progress" ? "Active Repairs"
-    : filters.status === "completed" ? "Awaiting Repair Review"
+    : ["completed", "awaiting_review"].includes(filters.status ?? "") ? "Awaiting Review"
     : filters.status === "city_correction_required" ? "Returned for Correction"
     : ["rework_required", "needs_correction"].includes(filters.status ?? "") ? "Needs Correction"
     : "Operational Work Orders";
@@ -196,21 +197,21 @@ export function WorkOrderList({
       </div> : null}
 
       {summary && !workspaceView ? (
-        <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
+        <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
           {summaryCards(summary, viewer.backendRole, isSla).map((item) => {
             const provider = viewer.backendRole === "utility_provider" && !isSla;
-            const cardFilter: QueryPatch = item.label === "Awaiting Assignment" ? { assignmentStatus: "unassigned" }
-              : item.label === "Pending Repairs" ? { status: "accepted" }
+            const cardFilter: QueryPatch = item.label === "Pending Repairs" ? { assignmentStatus: "unassigned" }
+              : item.label === "Assigned Repairs" ? { status: "accepted" }
               : item.label === "Active Repairs" ? { status: "in_progress" }
-              : item.label === "Awaiting Repair Review" ? { status: "completed" }
+              : item.label === "Awaiting Review" ? { status: "awaiting_review" }
               : item.label === "Returned for Correction" ? { status: "city_correction_required" }
               : item.label === "Needs Correction" ? { status: "needs_correction" }
               : item.label === "Approaching Deadline" ? { slaState: "approaching" }
               : item.label === "Overdue" ? { slaState: "overdue" } : {};
             const selected = provider && Object.entries(cardFilter).every(([key, value]) => ({ status: filters.status, assignmentStatus: filters.assignmentStatus, slaState: filters.slaState } as QueryPatch)[key] === value)
-              && (cardFilter.status || !filters.status) && (cardFilter.assignmentStatus || !filters.assignmentStatus) && (cardFilter.slaState || !filters.slaState);
-            const content = <><p className="text-sm font-medium text-slate-600">{item.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value + (item.label === "Awaiting Assignment" ? intake?.pagination.total ?? 0 : 0))}</p></>;
-            return provider ? <button key={item.label} type="button" aria-pressed={Boolean(selected)} onClick={() => navigate({ status: undefined, assignmentStatus: undefined, slaState: undefined, ...cardFilter })} className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700 ${selected ? "border-brand-700 ring-2 ring-brand-700" : "border-slate-200"}`}>{content}</button>
+              && (cardFilter.status || !filters.status) && (cardFilter.assignmentStatus || !filters.assignmentStatus);
+            const content = <><p className="text-sm font-medium text-slate-600">{item.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value + (item.label === "Pending Repairs" ? intake?.pagination.total ?? 0 : 0))}</p></>;
+            return provider ? <button key={item.label} type="button" aria-pressed={Boolean(selected)} onClick={() => navigate({ status: undefined, assignmentStatus: undefined, ...cardFilter })} className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700 ${selected ? "border-brand-700 ring-2 ring-brand-700" : "border-slate-200"}`}>{content}</button>
               : <Card key={item.label} className="p-4">{content}</Card>;
           })}
         </div>
@@ -221,18 +222,18 @@ export function WorkOrderList({
         <CardHeader
           title={isSla ? "Deadline Watch" : queueTitle}
           description={isSla ? "Filter the live work-order register for at-risk and overdue repairs." : "Track repairs, assignments, and deadlines across your authorized area."}
-          action={workspaceView ? <Link href="/work-orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ArrowUpDown className="size-3.5" aria-hidden="true" /> Sort and Filter</span>}
+          action={workspaceView || viewer.backendRole === "utility_provider" ? <Link href="/work-orders?view=orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ArrowUpDown className="size-3.5" aria-hidden="true" /> Sort and Filter</span>}
         />
         <form onSubmit={(event) => { event.preventDefault(); navigate({ search: search.trim() || undefined }); }} className="border-b border-slate-200 bg-white p-4">
-          <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder={filters.assignmentStatus === "unassigned" ? "Search report or work-order reference" : "Search work-order reference"} aria-label="Search Work Orders" className="max-w-xl" />
+          <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder="Search report or work-order reference" aria-label="Search Work Orders" className="max-w-xl" />
         </form>
         <FilterBar>
           <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All Priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
-          {!workspaceView ? <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={workStateOptions} /> : null}
-          {!workspaceView ? <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Pending" }, { value: "accepted", label: "Assigned" }]} /> : null}
+          {!workspaceView && viewer.backendRole !== "utility_provider" ? <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={workStateOptions} /> : null}
+          {!workspaceView && viewer.backendRole !== "utility_provider" ? <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Pending" }, { value: "accepted", label: "Assigned" }]} /> : null}
           {!workspaceView ? <FilterSelect label="SLA State" value={optionValue(filters.slaState)} onChange={(event) => navigate({ slaState: event.target.value || undefined })} options={[{ value: "", label: "All SLA States" }, { value: "approaching", label: "Approaching Deadline" }, { value: "overdue", label: "Overdue" }]} /> : null}
           <FilterSelect label="Sort Work Orders" value={optionValue(filters.sortBy)} onChange={(event) => navigate({ sortBy: event.target.value || "newest" })} options={[{ value: "newest", label: "Recently Updated" }, { value: "oldest", label: "Oldest First" }, { value: "deadline", label: "Deadline First" }, { value: "-deadline", label: "Latest Deadline" }, { value: "-priority", label: "Priority" }]} />
-          {hasRefinements ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear Filters</button> : null}
+          {hasRefinements && viewer.backendRole !== "utility_provider" ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear Filters</button> : null}
         </FilterBar>
 
         {queue.workOrders.length ? <>
@@ -264,7 +265,7 @@ export function WorkOrderList({
             }))}
           />
           <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page: String(page) })} />
-        </> : <EmptyState icon={hasRefinements ? "search" : "records"} title={hasRefinements ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasRefinements ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasRefinements ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
+        </> : <EmptyState icon={hasRefinements ? "search" : "records"} title={hasRefinements ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasRefinements ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasRefinements && viewer.backendRole !== "utility_provider" ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
       </Card>
     </div>
   );

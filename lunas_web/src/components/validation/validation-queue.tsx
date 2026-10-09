@@ -172,6 +172,7 @@ export function ValidationQueue({
 
       <Card className="overflow-hidden">
         <CardHeader
+          action={embedded ? <Link href="/work-orders?view=orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : undefined}
           title={confirmed ? "Priority & Routing" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
           description={confirmed ? "Set report priority and assign a Utility Provider." : isCityEngineering
             ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
