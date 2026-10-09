@@ -58,7 +58,6 @@ export interface DashboardRecord {
 }
 
 export interface RealDashboardData {
-  engineeringSummary?: { total: number; unresolved: number; overdue: number };
   barangayReports?: Array<{ barangay: string; reports: number; unresolved: number }>;
   metrics: DashboardMetric[];
   records: DashboardRecord[];
@@ -141,12 +140,16 @@ function metric(label: string, value: number, tone: Severity, icon: DashboardMet
 }
 
 async function reviewQueueDashboard(accessToken: string, role: "barangay_official" | "city_engineer"): Promise<RealDashboardData> {
+  if (role === "city_engineer") {
+    const barangayReports = responseData(await backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken }));
+    return { barangayReports, metrics: [], records: [], emptyTitle: "No reports", emptyDescription: "" };
+  }
   const [summary, queue] = await Promise.all([
     responseData(await backendRequest<ValidationSummaryPayload>("/stats/validation-summary", { accessToken })),
     responseData(await backendRequest<IncidentListPayload | BackendIncident[]>("/incidents/pending-validation?limit=5", { accessToken })),
   ]);
   const { incidents } = extractIncidentList(queue);
-  if (role === "barangay_official") {
+  {
     return {
       metrics: [
         metric("Awaiting Review", asNumber(summary.pending), "warning", "reports"),
@@ -159,26 +162,6 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
       emptyDescription: "New reports in your assigned Barangay will appear here.",
     };
   }
-  const [workOrderSummary, finalQueue, barangayReports] = await Promise.all([
-    getWorkOrderSummary(),
-    getWorkOrders({ page: 1, limit: 5, status: "provider_accepted", sortBy: "newest" }),
-    backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken }).then(responseData),
-  ]);
-  return {
-    barangayReports,
-    engineeringSummary: { total: barangayReports.reduce((sum, row) => sum + row.reports, 0), unresolved: barangayReports.reduce((sum, row) => sum + row.unresolved, 0), overdue: workOrderSummary.overdue },
-    metrics: [
-      metric("Awaiting City Engineering Review", asNumber(summary.pending), "warning", "reports"),
-      metric("Awaiting Final Verification", finalQueue.pagination.total, "information", "verified"),
-      metric("Active Repairs", workOrderSummary.active, "information", "workOrder"),
-      metric("Approaching Deadlines", workOrderSummary.approaching, "warning", "sla"),
-      metric("Overdue Repairs", workOrderSummary.overdue, "critical", "sla"),
-      metric("Repair Awaiting Provider Review", workOrderSummary.readyForCompletion, "neutral", "workOrder"),
-    ],
-    records: [...finalQueue.workOrders.map(recordFromWorkOrder), ...incidents.map(recordFromIncident)],
-    emptyTitle: "No City Engineering reviews are waiting",
-    emptyDescription: "Barangay-validated reports and provider-approved repairs will appear in their respective queues.",
-  };
 }
 
 async function providerOperationsDashboard(): Promise<RealDashboardData> {

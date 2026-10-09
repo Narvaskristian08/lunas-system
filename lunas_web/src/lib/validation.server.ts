@@ -158,7 +158,6 @@ export interface ValidationQueueData {
   pagination: ValidationPagination;
   categories: string[];
   categoryOptions?: Array<{ value: string; label: string }>;
-  jurisdictions: string[];
 }
 
 type ApiRecord = Record<string, unknown>;
@@ -417,10 +416,6 @@ function normalizedPagination(value: unknown, fallback: ValidationQueueFilters):
   };
 }
 
-function valuesFrom(payload: ApiRecord, key: string) {
-  return asArray(payload[key]).map(asString).filter((item): item is string => Boolean(item));
-}
-
 function queuePayload(value: unknown) {
   const payload = asRecord(value);
   const nested = asRecord(payload.data);
@@ -509,10 +504,9 @@ async function getReportCategoryOptions(accessToken: string) {
 
 export async function getValidationQueue(filters: ValidationQueueFilters): Promise<ValidationQueueData> {
   const accessToken = await requireAccessToken();
-  const [response, categoryOptions, barangayResponse] = await Promise.all([
+  const [response, categoryOptions] = await Promise.all([
     backendRequest<unknown>(`/incidents/pending-validation?${buildQueueQuery(filters)}`, { accessToken }),
     getReportCategoryOptions(accessToken),
-    backendRequest<string[]>("/incidents/barangays", { accessToken }),
   ]);
   const rawData = responseData(response);
   const payload = queuePayload(rawData);
@@ -530,7 +524,6 @@ export async function getValidationQueue(filters: ValidationQueueFilters): Promi
     },
     categories: categoryOptions.map((option) => option.value),
     categoryOptions,
-    jurisdictions: responseData(barangayResponse),
   };
 }
 

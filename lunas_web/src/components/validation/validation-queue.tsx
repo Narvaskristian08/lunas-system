@@ -80,10 +80,8 @@ export function ValidationQueue({
 }) {
   const router = useRouter();
   const isCityEngineering = viewer.backendRole === "city_engineer";
-  const canFilterJurisdiction = viewer.backendRole !== "barangay_official";
   const [search, setSearch] = useState(filters.search ?? "");
   const [category, setCategory] = useState(filters.category ?? "");
-  const jurisdiction = "";
   const [duplicate, setDuplicate] = useState(filters.duplicate ?? "");
   const [dateFrom, setDateFrom] = useState(filters.dateFrom ?? "");
   const [dateTo, setDateTo] = useState(filters.dateTo ?? "");
@@ -103,7 +101,6 @@ export function ValidationQueue({
       limit: next.limit ?? filters.limit,
       search: next.search ?? (search.trim() || undefined),
       category: next.category ?? (category.trim() || undefined),
-      jurisdiction: canFilterJurisdiction ? next.jurisdiction ?? (jurisdiction.trim() || undefined) : undefined,
       duplicate: next.duplicate === undefined ? (duplicate === "yes" || duplicate === "no" ? duplicate : undefined) : next.duplicate,
       dateFrom: next.dateFrom ?? (dateFrom || undefined),
       dateTo: next.dateTo ?? (dateTo || undefined),
@@ -114,7 +111,6 @@ export function ValidationQueue({
     if (values.limit !== 20) query.set("limit", String(values.limit));
     if (values.search) query.set("search", values.search);
     if (values.category) query.set("category", values.category);
-    if (values.jurisdiction) query.set("jurisdiction", values.jurisdiction);
     if (values.duplicate) query.set("duplicate", values.duplicate);
     if (values.dateFrom) query.set("dateFrom", values.dateFrom);
     if (values.dateTo) query.set("dateTo", values.dateTo);
@@ -142,7 +138,7 @@ export function ValidationQueue({
     startTransition(() => router.push(embedded ? "/work-orders?view=review" : "/validation-routing"));
   };
 
-  const hasFilters = Boolean(search || category || (canFilterJurisdiction && jurisdiction) || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
+  const hasFilters = Boolean(search || category || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
 
   return (
     <div className="mx-auto max-w-395">

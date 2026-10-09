@@ -1,5 +1,5 @@
 import { Badge, StatusBadge } from "@/components/ui/badge";
-import { cn, formatDateTime } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import type { Severity } from "@/types";
 import type { WorkOrderLocation, WorkOrderSla } from "@/lib/work-orders.server";
 
@@ -69,20 +69,6 @@ export function formatRemaining(remainingMilliseconds: number | undefined) {
   const minutes = totalMinutes % 60;
   const display = days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes}m` : `${minutes}m`;
   return remainingMilliseconds < 0 ? `${display} overdue` : `${display} remaining`;
-}
-
-export function ProgressBar({ value, className, label = true }: { value: number; className?: string; label?: boolean }) {
-  const clamped = Math.min(100, Math.max(0, value));
-  return (
-    <div className={cn("min-w-[116px]", className)}>
-      <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-700">
-        {label ? <span>{clamped}%</span> : <span className="sr-only">{clamped}% repair progress</span>}
-      </div>
-      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-label="Repair Progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={clamped}>
-        <div className={cn("h-full rounded-full transition-[width]", clamped === 100 ? "bg-emerald-600" : "bg-brand-600")} style={{ width: `${clamped}%` }} />
-      </div>
-    </div>
-  );
 }
 
 export function SlaBadges({ sla, includeDeadline = false }: { sla: WorkOrderSla; includeDeadline?: boolean }) {

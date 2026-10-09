@@ -72,15 +72,3 @@ export function RoleBadge({ role, compact = false }: { role: UserRole; compact?:
     </span>
   );
 }
-
-export function NotificationBadge({ count }: { count: number }) {
-  if (count < 1) return null;
-  return (
-    <span
-      className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-700 px-1.5 text-[11px] font-bold leading-5 text-white"
-      aria-label={`${count} unread notifications`}
-    >
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-}
