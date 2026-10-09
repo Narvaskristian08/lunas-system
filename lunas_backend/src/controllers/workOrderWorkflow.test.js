@@ -423,6 +423,31 @@ describe('work-order controller boundaries', () => {
     }));
   });
 
+  test('saves a field note at the current progress without completing or freeing the worker', async () => {
+    const assignment = { _id: '507f191e810c19729de860e1', assignee: assignedWorker._id,
+      assignedBy: utilityProvider._id, active: true, status: 'accepted' };
+    const workOrder = pendingWorkOrder({ status: 'in_progress', assignmentState: 'accepted',
+      assignedTo: assignedWorker._id, assignedBy: utilityProvider._id,
+      currentAssignment: assignment._id, assignments: [assignment],
+      progressPercent: 0, progressStage: 'assigned' });
+    WorkOrder.findOne.mockReturnValue(scopedQuery(workOrder));
+    WorkOrder.findOneAndUpdate.mockResolvedValue(workOrder);
+    Incident.findById.mockReturnValue(scopedQuery({ status: 'in_progress' }));
+    Incident.findOneAndUpdate.mockResolvedValue({});
+    Incident.findByIdAndUpdate.mockResolvedValue(null);
+    const res = response();
+    await updateProgress({ params: { id: workOrder._id },
+      body: { updateType: 'note', progressPercent: 0, stage: 'assigned',
+        notes: 'Repair area secured.', location: { coordinates: [120.3387, 16.0433] } },
+      files: [], user: assignedWorker, headers: {} }, res, jest.fn());
+    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledWith(expect.any(Object),
+      expect.objectContaining({ $set: expect.objectContaining({ status: 'in_progress', progressPercent: 0 }),
+        $push: expect.objectContaining({ progressUpdates: expect.objectContaining({ notes: 'Repair area secured.' }) }) }),
+      { new: true });
+    expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   test('requires final evidence before Repair Personnel can submit 100% completion', async () => {
     const assignment = {
       _id: '507f191e810c19729de860e1',

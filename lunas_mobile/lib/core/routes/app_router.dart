@@ -26,7 +26,6 @@ import 'package:lunas_mobile/features/repair/presentation/screens/repair_profile
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_work_order_location_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/start_repair_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_progress_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/upload_repair_evidence_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
@@ -225,12 +224,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/repair/work-orders/:id/progress',
       builder: (_, state) => UpdateRepairProgressScreen(
-        workOrderId: state.pathParameters['id'] ?? '',
-      ),
-    ),
-    GoRoute(
-      path: '/repair/work-orders/:id/evidence',
-      builder: (_, state) => UploadRepairEvidenceScreen(
         workOrderId: state.pathParameters['id'] ?? '',
       ),
     ),

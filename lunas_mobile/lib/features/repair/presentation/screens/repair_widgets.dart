@@ -104,14 +104,17 @@ class RepairPage extends StatelessWidget {
         ),
       ),
       floatingActionButton: floatingActionButton,
-      bottomNavigationBar:
-          bottomActionBar ??
-          (selectedNavigationIndex == null
-              ? null
-              : RepairBottomNavigation(
-                  selectedIndex: selectedNavigationIndex!,
-                  notificationUnreadCount: notificationUnreadCount,
-                )),
+      bottomNavigationBar: bottomActionBar != null
+          ? ColoredBox(
+              color: Theme.of(context).colorScheme.surface,
+              child: bottomActionBar!,
+            )
+          : (selectedNavigationIndex == null
+                ? null
+                : RepairBottomNavigation(
+                    selectedIndex: selectedNavigationIndex!,
+                    notificationUnreadCount: notificationUnreadCount,
+                  )),
     );
   }
 }
@@ -242,7 +245,7 @@ class RepairStatusChip extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
           ],
           Text(
-            label.toUpperCase(),
+            formatRepairLabel(label),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w700,
@@ -517,21 +520,6 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
             label: _slaLabel(),
             color: slaColor,
           ),
-          if (workOrder.progressPercent > 0) ...[
-            const SizedBox(height: AppSpacing.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: workOrder.progressPercent / 100,
-                minHeight: 4,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${workOrder.progressPercent}% · ${workOrder.progressStage.label}',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
@@ -743,3 +731,10 @@ class RepairFilterChips extends StatelessWidget {
     );
   }
 }
+
+String formatRepairLabel(String value) => value
+    .replaceAll(RegExp(r'[_-]+'), ' ')
+    .replaceAllMapped(RegExp(r'[A-Za-z]+'), (match) {
+      final word = match.group(0)!;
+      return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
+    });

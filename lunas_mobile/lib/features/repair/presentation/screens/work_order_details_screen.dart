@@ -1,5 +1,6 @@
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
@@ -154,7 +155,7 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Decline assignment'),
+          title: const Text('Decline Assignment'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -208,7 +209,7 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
                   ),
                 );
               },
-              child: const Text('Decline assignment'),
+              child: const Text('Decline Assignment'),
             ),
           ],
         ),
@@ -234,7 +235,7 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
     }
     if (_error != null || _workOrder == null) {
       return Scaffold(
-        appBar: const RepairAppBar(title: 'Work order', showBackButton: true),
+        appBar: const RepairAppBar(title: 'Work Order', showBackButton: true),
         body: SafeArea(
           child: LunasStateView(
             state: LunasViewState.error,
@@ -249,7 +250,7 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
     final workOrder = _workOrder!;
     return RepairPage(
       appBar: RepairAppBar(
-        title: 'Work order',
+        title: 'Work Order',
         subtitle: workOrder.orderNumber,
         showBackButton: true,
         actions: [
@@ -278,8 +279,6 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
       child: _WorkOrderBody(
         workOrder: workOrder,
         onOpenLocation: () => context.push(RepairRoutes.location(workOrder.id)),
-        onUploadEvidence: () =>
-            context.push(RepairRoutes.evidence(workOrder.id)),
       ),
     );
   }
@@ -335,7 +334,7 @@ class _ActionBar extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: submitting ? null : onAccept,
                 icon: const Icon(Icons.assignment_turned_in_outlined),
-                label: const Text('Accept assignment'),
+                label: const Text('Accept Assignment'),
               ),
             ),
           ],
@@ -347,7 +346,7 @@ class _ActionBar extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: submitting ? null : onStart,
           icon: const Icon(Icons.play_circle_outline_rounded),
-          label: const Text('Start repair'),
+          label: const Text('Start Repair'),
         ),
       );
     }
@@ -356,7 +355,7 @@ class _ActionBar extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: submitting ? null : onProgress,
           icon: const Icon(Icons.edit_note_rounded),
-          label: const Text('Update repair progress'),
+          label: const Text('Update Repair Progress'),
         ),
       );
     }
@@ -386,15 +385,10 @@ class _ActionContainer extends StatelessWidget {
 }
 
 class _WorkOrderBody extends StatelessWidget {
-  const _WorkOrderBody({
-    required this.workOrder,
-    required this.onOpenLocation,
-    required this.onUploadEvidence,
-  });
+  const _WorkOrderBody({required this.workOrder, required this.onOpenLocation});
 
   final RepairWorkOrder workOrder;
   final VoidCallback onOpenLocation;
-  final VoidCallback onUploadEvidence;
 
   Color get _priorityColor => switch (workOrder.priority) {
     'critical' => AppColorsLight.critical,
@@ -415,10 +409,10 @@ class _WorkOrderBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  workOrder.orderNumber,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  categoryFromCode(workOrder.category).label,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -439,17 +433,20 @@ class _WorkOrderBody extends StatelessWidget {
       _ProgressCard(workOrder: workOrder),
       const SizedBox(height: AppSpacing.md),
       _SlaCard(sla: workOrder.sla),
-      const SizedBox(height: AppSpacing.xl),
+      const SizedBox(height: AppSpacing.lg),
       _Section(
-        title: 'Incident details',
+        title: 'Incident Details',
         child: LunasCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RepairInfoRow(label: 'Category', value: workOrder.category),
+              _WorkOrderField(
+                label: 'Category',
+                value: categoryFromCode(workOrder.category).label,
+              ),
               const SizedBox(height: AppSpacing.sm),
-              RepairInfoRow(
-                label: 'Incident reference',
+              _WorkOrderField(
+                label: 'Incident Reference',
                 value: workOrder.incidentReference,
               ),
               if (workOrder.description.isNotEmpty) ...[
@@ -465,7 +462,7 @@ class _WorkOrderBody extends StatelessWidget {
                   child: Divider(),
                 ),
                 Text(
-                  'Official instructions',
+                  'Repair Instructions',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -482,8 +479,8 @@ class _WorkOrderBody extends StatelessWidget {
                 ),
                 Text(
                   event.type == 'city_returned'
-                      ? 'City Engineering correction'
-                      : 'Utility Provider correction',
+                      ? 'City Engineering Correction'
+                      : 'Utility Provider Correction',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -503,9 +500,9 @@ class _WorkOrderBody extends StatelessWidget {
           ),
         ),
       ),
-      const SizedBox(height: AppSpacing.xl),
+      const SizedBox(height: AppSpacing.lg),
       _Section(
-        title: 'Location and directions',
+        title: 'Location and Directions',
         child: LunasCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -522,34 +519,32 @@ class _WorkOrderBody extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onOpenLocation,
                 icon: const Icon(Icons.map_outlined),
-                label: const Text('Open location map'),
+                label: const Text('Open Location Map'),
               ),
             ],
           ),
         ),
       ),
-      const SizedBox(height: AppSpacing.xl),
+      const SizedBox(height: AppSpacing.lg),
       _Section(
         title: 'Assignment',
         child: _AssignmentCard(workOrder: workOrder),
       ),
-      const SizedBox(height: AppSpacing.xl),
+      const SizedBox(height: AppSpacing.lg),
       _Section(
-        title: 'Citizen evidence',
+        title: 'Citizen Evidence',
         child: _CitizenEvidence(images: workOrder.citizenEvidence),
       ),
-      const SizedBox(height: AppSpacing.xl),
-      _Section(
-        title: 'Repair evidence',
-        child: _RepairEvidence(
-          evidence: workOrder.repairEvidence,
-          canUpload: workOrder.canUpdateProgress,
-          onUpload: onUploadEvidence,
+      const SizedBox(height: AppSpacing.lg),
+      if (workOrder.repairEvidence.isNotEmpty) ...[
+        _Section(
+          title: 'Repair Evidence',
+          child: _RepairEvidence(evidence: workOrder.repairEvidence),
         ),
-      ),
-      const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.lg),
+      ],
       _Section(
-        title: 'Repair progress timeline',
+        title: 'Repair Progress Timeline',
         child: _ProgressTimeline(items: workOrder.progressUpdates),
       ),
     ],
@@ -570,8 +565,8 @@ class _ProgressCard extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Repair progress',
-                style: Theme.of(context).textTheme.titleLarge,
+                'Repair Progress',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
             RepairStatusChip(
@@ -588,21 +583,11 @@ class _ProgressCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          '${workOrder.progressPercent}%',
-          style: Theme.of(
-            context,
-          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        LinearProgressIndicator(value: workOrder.progressPercent / 100),
-        const SizedBox(height: AppSpacing.sm),
-        Text(workOrder.progressStage.label),
         if (workOrder.isPendingAcceptance &&
             workOrder.status == RepairWorkOrderStatus.inProgress) ...[
           const SizedBox(height: AppSpacing.sm),
           const Text(
-            'This is an in-progress handoff awaiting your acceptance. Existing progress and evidence are preserved; accept to resume from the current milestone.',
+            'This is an in-progress handoff awaiting your acceptance. Existing progress and evidence are preserved; accept to resume work.',
           ),
         ],
         if (workOrder.isReadyForCompletion) ...[
@@ -631,18 +616,17 @@ class _SlaCard extends StatelessWidget {
     final title = sla.isOverdue
         ? 'Overdue'
         : sla.isApproaching
-        ? 'Approaching SLA deadline'
-        : 'SLA status';
+        ? 'Approaching Deadline'
+        : 'SLA Status';
     final deadline = sla.deadline == null
         ? 'No deadline returned by the server.'
         : 'Deadline: ${formatReportDateTime(sla.deadline)}';
     return LunasCard(
-      color: color.withValues(alpha: .08),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.timer_outlined, color: color),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,7 +641,7 @@ class _SlaCard extends StatelessWidget {
                 Text(deadline),
                 if (sla.timeRemaining != null) ...[
                   const SizedBox(height: AppSpacing.xxs),
-                  Text('Time remaining: ${sla.timeRemaining}'),
+                  Text('Time Remaining: ${sla.timeRemaining}'),
                 ],
               ],
             ),
@@ -698,28 +682,29 @@ class _AssignmentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RepairInfoRow(
-            label: 'Assignment status',
-            value:
-                assignment?.status ??
-                workOrder.assignmentState ??
-                workOrder.status.label,
+          _WorkOrderField(
+            label: 'Assignment Status',
+            value: formatRepairLabel(
+              assignment?.status ??
+                  workOrder.assignmentState ??
+                  workOrder.status.label,
+            ),
           ),
           if (person != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            RepairInfoRow(label: 'Assigned personnel', value: person.name),
+            _WorkOrderField(label: 'Assigned Personnel', value: person.name),
           ],
           if (assignment?.assignedAt != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            RepairInfoRow(
-              label: 'Assigned at',
+            _WorkOrderField(
+              label: 'Assigned At',
               value: formatReportDateTime(assignment!.assignedAt),
             ),
           ],
           if (assignment?.acceptedAt != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            RepairInfoRow(
-              label: 'Accepted at',
+            _WorkOrderField(
+              label: 'Accepted At',
               value: formatReportDateTime(assignment!.acceptedAt),
             ),
           ],
@@ -753,15 +738,9 @@ class _CitizenEvidence extends StatelessWidget {
 }
 
 class _RepairEvidence extends StatelessWidget {
-  const _RepairEvidence({
-    required this.evidence,
-    required this.canUpload,
-    required this.onUpload,
-  });
+  const _RepairEvidence({required this.evidence});
 
   final List<RepairEvidence> evidence;
-  final bool canUpload;
-  final VoidCallback onUpload;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -792,14 +771,6 @@ class _RepairEvidence extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-      if (canUpload) ...[
-        const SizedBox(height: AppSpacing.sm),
-        OutlinedButton.icon(
-          onPressed: onUpload,
-          icon: const Icon(Icons.add_a_photo_outlined),
-          label: const Text('Upload field evidence'),
-        ),
-      ],
     ],
   );
 }
@@ -823,7 +794,12 @@ class _ProgressTimeline extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  child: Text('${item.progressPercent}%'),
+                  child: Icon(
+                    item.progressPercent == 100 && item.evidence.isNotEmpty
+                        ? Icons.task_alt
+                        : Icons.edit_note,
+                    size: 18,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -831,7 +807,9 @@ class _ProgressTimeline extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.stage.label,
+                        item.progressPercent == 100 && item.evidence.isNotEmpty
+                            ? 'Completion Submitted'
+                            : 'Progress Update',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       Text(
@@ -857,4 +835,30 @@ class _ProgressTimeline extends StatelessWidget {
       ),
     );
   }
+}
+
+class _WorkOrderField extends StatelessWidget {
+  const _WorkOrderField({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xxs),
+      Text(
+        value,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          height: 1.5,
+        ),
+      ),
+    ],
+  );
 }

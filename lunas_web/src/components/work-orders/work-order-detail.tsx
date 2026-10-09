@@ -19,7 +19,6 @@ import {
   ClipboardCheck,
   Play,
   Route,
-  Upload,
   UserRoundCheck,
   UsersRound,
   Wrench,
@@ -36,7 +35,6 @@ import {
   reviewCompletedWorkAction,
   startWorkOrderAction,
   updateRepairProgressAction,
-  uploadRepairEvidenceAction,
   type WorkOrderActionResult,
 } from "@/app/actions/work-orders";
 import { Breadcrumbs, PageHeader } from "@/components/layout/page-header";
@@ -47,7 +45,6 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import type { UserProfile } from "@/types";
 import type { EligibleRepairPersonnel, WorkOrder } from "@/lib/work-orders.server";
-import { repairProgressStages } from "@/lib/work-order-progress";
 import { cn, formatDateTime } from "@/lib/utils";
 import {
   assignmentTone,
@@ -55,13 +52,11 @@ import {
   formatPerson,
   formatRemaining,
   priorityTone,
-  ProgressBar,
   SlaBadges,
   titleCase,
   workOrderStatusTone,
+  workOrderStatusLabel,
 } from "@/components/work-orders/work-order-ui";
-
-const progressValues = [25, 50, 75, 100] as const;
 
 function alertClass(kind: "success" | "error") {
   return kind === "success"
@@ -133,7 +128,7 @@ function AssignmentPanel({
             <StatusBadge tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge>
           </div>
           {workOrder.currentAssignment?.assignedAt ? <p className="mt-3 text-xs text-slate-600">Assigned {formatDateTime(workOrder.currentAssignment.assignedAt)}</p> : null}
-          {workOrder.assignmentState === "pending" && workOrder.status === "in_progress" ? <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><span className="font-semibold">Pending reassignment acceptance.</span> Repair progress remains at {workOrder.progressPercent}% and field updates are paused until the new assignee accepts.</p> : null}
+          {workOrder.assignmentState === "pending" && workOrder.status === "in_progress" ? <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><span className="font-semibold">Pending reassignment acceptance.</span> Recorded field updates are preserved and new updates are paused until the new assignee accepts.</p> : null}
           {workOrder.currentAssignment?.declineReason ? <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-900"><span className="font-semibold">Declined:</span> {workOrder.currentAssignment.declineReason}</p> : null}
         </div>
 
@@ -169,7 +164,7 @@ function AssignmentPanel({
 function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult: (result: WorkOrderActionResult) => void }) {
   const [declineReason, setDeclineReason] = useState("");
   const [declineNotes, setDeclineNotes] = useState("");
-  const [progressPercent, setProgressPercent] = useState<25 | 50 | 75 | 100>(() => progressValues.find((value) => value > workOrder.progressPercent) ?? 100);
+  const [submitCompletion, setSubmitCompletion] = useState(false);
   const [progressNotes, setProgressNotes] = useState("");
   const [pending, startTransition] = useTransition();
   const [confirmStart, setConfirmStart] = useState(false);
@@ -179,7 +174,6 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
   const canAccept = ["pending", "in_progress", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "pending";
   const canStart = ["accepted", "rework_required"].includes(workOrder.status) && workOrder.assignmentState === "accepted";
   const canProgress = ["in_progress"].includes(workOrder.status) && workOrder.assignmentState === "accepted";
-  const nextValues = isCorrectionResubmission ? [100] : progressValues.filter((value) => value > workOrder.progressPercent);
 
   const run = (operation: () => Promise<WorkOrderActionResult>) => {
     startTransition(async () => onResult(await operation()));
@@ -203,24 +197,47 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
 
         {canStart ? <Button type="button" className="w-full" loading={pending} loadingLabel="Starting…" onClick={() => setConfirmStart(true)}><Play className="size-4" />Start Repair Work</Button> : null}
 
-        {canProgress ? <form onSubmit={(event) => { event.preventDefault(); if (progressPercent === 100) { const formData = new FormData(event.currentTarget); run(() => completeRepairWorkAction(formData)); } else { run(() => updateRepairProgressAction({ workOrderId: workOrder.id, progressPercent, notes: progressNotes })); } }} className="space-y-3 rounded-xl border border-slate-200 p-4">
+        {canProgress ? <form onSubmit={(event) => {
+          event.preventDefault();
+          const formData = new FormData(event.currentTarget);
+          run(async () => {
+            try {
+              const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error("Location is unavailable in this browser."));
+                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+              });
+              const location = { longitude: position.coords.longitude, latitude: position.coords.latitude };
+              if (submitCompletion) {
+                formData.set("longitude", String(location.longitude));
+                formData.set("latitude", String(location.latitude));
+                return completeRepairWorkAction(formData);
+              }
+              return updateRepairProgressAction({ workOrderId: workOrder.id, progressPercent: workOrder.progressPercent, notes: progressNotes, location });
+            } catch {
+              return { ok: false, message: "Allow current location access and enable location services, then try again." };
+            }
+          });
+        }} className="space-y-4 rounded-xl border border-slate-200 p-4">
           <input type="hidden" name="workOrderId" value={workOrder.id} />
-          <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-950">{isCorrectionResubmission ? "Resubmit corrected completion" : "Update repair progress"}</p><Badge tone="information">Current: {workOrder.progressPercent}%</Badge></div>
-          <label className="block text-sm font-semibold text-slate-800">New progress
-            <select value={progressPercent} onChange={(event) => setProgressPercent(Number(event.target.value) as 25 | 50 | 75 | 100)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
-              {nextValues.map((value) => <option key={value} value={value}>{value}% · {isCorrectionResubmission ? "Resubmit completion" : titleCase(repairProgressStages[value as keyof typeof repairProgressStages])}</option>)}
-            </select>
-          </label>
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Repair stage is set centrally to <strong>{titleCase(repairProgressStages[progressPercent])}</strong>. Progress cannot move backward.</p>
-          <label className="block text-sm font-semibold text-slate-800">Progress note {progressPercent === 100 ? <span className="text-red-700">(required at 100%)</span> : <span className="font-normal text-slate-500">(optional)</span>}
-            <textarea name="notes" value={progressNotes} onChange={(event) => setProgressNotes(event.target.value)} required={progressPercent === 100} minLength={progressPercent === 100 ? 2 : undefined} maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Describe field conditions or work completed" />
-          </label>
-          {progressPercent === 100 ? <label className="block text-sm font-semibold text-slate-800">Final post-maintenance evidence <span className="text-red-700">(required)</span><input name="finalEvidence" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800" /><span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG, or WebP; up to 10 MB. Submitted atomically with completion.</span></label> : null}
-          <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving Progress…"><Wrench className="size-4" />{progressPercent === 100 ? "Complete repair and submit evidence" : "Save progress update"}</Button>
+          <fieldset disabled={pending} className="space-y-3">
+            <legend className="mb-3 font-semibold text-slate-950">Update Repair</legend>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3">
+              <input type="radio" name="updateType" value="note" checked={!submitCompletion} onChange={() => setSubmitCompletion(false)} className="mt-1 accent-blue-700" />
+              <span><span className="block text-sm font-semibold">Add Progress Update</span><span className="text-sm text-slate-600">Record work performed, delays, or field conditions.</span></span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3">
+              <input type="radio" name="updateType" value="completion" checked={submitCompletion} onChange={() => setSubmitCompletion(true)} className="mt-1 accent-blue-700" />
+              <span><span className="block text-sm font-semibold">{isCorrectionResubmission ? "Resubmit Completed Repair" : "Submit Completed Repair"}</span><span className="text-sm text-slate-600">Upload final repair evidence for review.</span></span>
+            </label>
+            {!submitCompletion ? <label className="block text-sm font-semibold text-slate-800">Progress Notes
+              <textarea name="notes" value={progressNotes} onChange={(event) => setProgressNotes(event.target.value)} required maxLength={2000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Describe work performed, materials, delays, or field conditions" />
+            </label> : <label className="block text-sm font-semibold text-slate-800">Final Repair Evidence <span className="text-red-700">(required)</span><input name="finalEvidence" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800" /><span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG, or WebP; up to 10 MB.</span></label>}
+          </fieldset>
+          <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving…"><Wrench className="size-4" />{submitCompletion ? "Submit Completed Repair" : "Save Progress Update"}</Button>
         </form> : null}
 
         {workOrder.status === "completed" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Repair Completed · Awaiting Utility Provider Review</p><p className="mt-1">Your completion and final evidence are submitted. The incident remains open until the provider and City Engineering finish their reviews.</p></div> : null}
-        {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective Work Requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and submit final evidence again at 100%.</p></div> : null}
+        {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective Work Requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and resubmit final repair evidence.</p></div> : null}
         {!canAccept && !canStart && !canProgress && workOrder.status !== "completed" ? <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">This work order is waiting for its next controlled assignment or repair transition.</p> : null}
       </div>
       <ConfirmationDialog open={confirmStart} icon="none" title="Start Repair Work" description="This records the start time and changes the work order to in progress. It does not complete or verify the repair." confirmLabel="Start Work" loading={pending} onClose={() => !pending && setConfirmStart(false)} onConfirm={() => { setConfirmStart(false); run(() => startWorkOrderAction(workOrder.id)); }} />
@@ -293,45 +310,6 @@ function CompletionReviewPanel({
   );
 }
 
-function WorkOrderReviews({ workOrder }: { workOrder: WorkOrder }) {
-  if (!workOrder.reviews.length) return null;
-  return <Card className="overflow-hidden"><CardHeader title="Completion Review History" description="Provider and City Engineering decisions recorded by the backend." /><ol className="divide-y divide-slate-200">{workOrder.reviews.map((review) => <li key={review.id} className="space-y-1 px-5 py-4"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{titleCase(review.stage)} · {titleCase(review.decision)}</p>{review.createdAt ? <span className="text-xs text-slate-500">{formatDateTime(review.createdAt)}</span> : null}</div>{review.reason ? <p className="text-sm leading-6 text-slate-700">{review.reason}</p> : null}{review.instructions && review.instructions !== review.reason ? <p className="text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p> : null}</li>)}</ol></Card>;
-}
-
-function RepairEvidenceUpload({ workOrder, onResult }: { workOrder: WorkOrder; onResult: (result: WorkOrderActionResult) => void }) {
-  const [pending, startTransition] = useTransition();
-  const [selectedCount, setSelectedCount] = useState(0);
-  const canUpload = workOrder.status === "in_progress" && workOrder.assignmentState === "accepted";
-  if (!canUpload) return null;
-
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader title="Add Field Evidence" description="JPEG, PNG, or WebP images; upload confirmation comes from the server." />
-      <form onSubmit={(event) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const formData = new FormData(form);
-        startTransition(async () => {
-          const result = await uploadRepairEvidenceAction(formData);
-          if (result.ok) form.reset();
-          setSelectedCount(0);
-          onResult(result);
-        });
-      }} className="space-y-3 p-5">
-        <input type="hidden" name="workOrderId" value={workOrder.id} />
-        <label className="block text-sm font-semibold text-slate-800">Evidence images
-          <input name="evidence" type="file" multiple accept="image/jpeg,image/jpg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onChange={(event) => setSelectedCount(event.currentTarget.files?.length ?? 0)} className="mt-1 block w-full rounded-xl border border-slate-300 bg-white p-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:font-semibold file:text-brand-800 hover:file:bg-brand-100" required />
-        </label>
-        <p className="text-xs leading-5 text-slate-600">{selectedCount ? `${selectedCount} image${selectedCount === 1 ? "" : "s"} selected.` : "Up to five images, 10 MB each. Image validation, privacy redaction, metadata removal, and private storage happen on the backend."}</p>
-        <label className="block text-sm font-semibold text-slate-800">Caption <span className="font-normal text-slate-500">(optional)</span>
-          <input name="caption" maxLength={500} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="What This Field Evidence Shows" />
-        </label>
-        <Button type="submit" variant="secondary" className="w-full" loading={pending} loadingLabel="Uploading…"><Upload className="size-4" />Upload Evidence</Button>
-      </form>
-    </Card>
-  );
-}
-
 function EvidenceGallery({ title, description, evidence }: { title: string; description: string; evidence: WorkOrder["evidence"] }) {
   return (
     <Card className="overflow-hidden">
@@ -352,7 +330,7 @@ function WorkOrderTimeline({ workOrder }: { workOrder: WorkOrder }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader title="Operational Timeline" description="Append-oriented work-order events returned by the backend." />
-      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Repair Reached 100%" : (timelineMilestoneLabel(entry.type ?? entry.status ?? "") ?? titleCase(entry.type ?? entry.status, "Work Order Update"))}</p>{entry.progressPercent !== undefined && entry.progressPercent > 0 && entry.type !== "ready_for_completion" ? <Badge tone={entry.progressPercent === 100 ? "success" : "information"}>{entry.progressPercent}%</Badge> : null}</div>{entry.stage ? <p className="mt-1 text-xs font-semibold text-slate-500">{titleCase(entry.stage)}</p> : null}{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
+      {events.length ? <ol className="divide-y divide-slate-200">{events.map((entry) => <li key={entry.id} className="flex gap-3 px-5 py-4"><span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand-700" aria-hidden="true" /><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{entry.type === "ready_for_completion" ? "Completion Submitted" : (timelineMilestoneLabel(entry.type ?? entry.status ?? "") ?? titleCase(entry.type ?? entry.status, "Work Order Update"))}</p></div>{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{entry.notes}</p> : null}{workOrder.reviews.filter((review) => review.createdAt === entry.createdAt && review.stage === entry.actorRole && review.instructions && review.instructions !== entry.notes).map((review) => <p key={review.id} className="mt-1 text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p>)}{entry.createdAt ? <p className="mt-1.5 text-xs text-slate-500">{formatDateTime(entry.createdAt)}</p> : null}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
     </Card>
   );
 }
@@ -395,7 +373,7 @@ export function WorkOrderDetail({
       <ActionNotice message={notice?.message} kind={notice?.kind} />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Repair Progress</p><ProgressBar value={workOrder.progressPercent} className="mt-3" /><p className="mt-2 text-sm font-semibold text-slate-900">{titleCase(workOrder.progressStage)}</p></Card>
+        <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Repair Status</p><p className="mt-2 text-sm font-semibold text-slate-900">{workOrder.status === "verified" ? "Closed" : workOrderStatusLabel(workOrder.status)}</p></Card>
         <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">Assignment</p><p className="mt-2 font-semibold text-slate-950">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p><StatusBadge className="mt-2" tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge></Card>
         <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA Deadline</p>{workOrder.sla.deadline ? <><p className="mt-2 text-sm font-semibold text-slate-950">{formatDateTime(workOrder.sla.deadline)}</p><p className="mt-1 text-xs text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Deadline supplied by backend"}</p></> : <p className="mt-2 text-sm text-slate-600">No deadline returned</p>}</Card>
         <Card className="p-4"><p className="text-xs font-bold tracking-normal text-slate-500">SLA State</p><div className="mt-2"><SlaBadges sla={workOrder.sla} /></div><p className="mt-2 text-xs text-slate-600">State is calculated by the backend.</p></Card>
@@ -404,33 +382,55 @@ export function WorkOrderDetail({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-6">
           <Card className="overflow-hidden">
-            <CardHeader title="Incident and Work-order Information" description="The citizen report remains separate from the maintenance task." />
-            <dl className="grid divide-y divide-slate-200 text-sm sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Incident Reference</dt><dd className="mt-1.5 font-semibold text-slate-950">{workOrder.incident?.reportNumber ?? "Unavailable"}</dd></div>
-              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Responsible Organization</dt><dd className="mt-1.5 font-semibold text-slate-950">{workOrder.responsibleOrganization ?? "Not routed"}</dd></div>
-              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Location</dt><dd className="mt-1.5 leading-6 text-slate-800">{formatLocation(incidentLocation)}</dd>{mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline"><MapPin className="size-3.5" />Open directions <ExternalLink className="size-3.5" /></a> : null}</div>
-              <div className="p-5"><dt className="text-xs font-bold tracking-normal text-slate-500">Created</dt><dd className="mt-1.5 text-slate-800">{workOrder.createdAt ? formatDateTime(workOrder.createdAt) : "Unavailable"}</dd>{workOrder.startedAt ? <p className="mt-3 text-xs text-slate-600">Started {formatDateTime(workOrder.startedAt)}</p> : null}</div>
-              <div className="p-5 sm:col-span-2"><dt className="text-xs font-bold tracking-normal text-slate-500">Work Instructions</dt><dd className="mt-1.5 whitespace-pre-wrap leading-6 text-slate-800">{workOrder.instructions ?? "No additional work instructions were provided."}</dd></div>
-            </dl>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader title="Citizen Report" description="Only repair-relevant report information is shown." />
-            <div className="space-y-4 p-5"><div className="flex flex-wrap gap-2"><Badge tone="information">{titleCase(workOrder.incident?.category, "Uncategorized")}</Badge>{workOrder.incident?.priority ? <Badge tone={priorityTone(workOrder.incident.priority)}>{titleCase(workOrder.incident.priority)}</Badge> : null}</div><p className="whitespace-pre-wrap leading-7 text-slate-700">{workOrder.incident?.description ?? "No citizen description is available."}</p></div>
+            <CardHeader title="Incident and Work Details" />
+            <div className="space-y-5 p-5 sm:p-6">
+              <dl className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div>
+                  <dt className="text-xs font-medium text-slate-500">Incident Reference</dt>
+                  <dd className="mt-1.5 break-words text-base font-semibold text-slate-950">{workOrder.incident?.reportNumber ?? "Unavailable"}</dd>
+                  <dd className="mt-2"><Badge tone="information">{titleCase(workOrder.incident?.category, "Uncategorized")}</Badge></dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-500">Responsible Organization</dt>
+                  <dd className="mt-1.5 text-sm font-semibold leading-6 text-slate-900">{workOrder.responsibleOrganization ?? "Not routed"}</dd>
+                </div>
+              </dl>
+              <div className="grid gap-5 border-t border-slate-200 pt-5 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-medium text-slate-500">Location</h3>
+                    <p className="mt-1.5 text-sm leading-6 text-slate-700">{formatLocation(incidentLocation)}</p>
+                    {mapsHref ? <a href={mapsHref} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg text-sm font-semibold text-brand-700 hover:underline">Open Directions <ExternalLink className="size-3.5" aria-hidden="true" /></a> : null}
+                  </div>
+                </div>
+                <dl className="space-y-3">
+                  <div><dt className="text-xs font-medium text-slate-500">Created</dt><dd className="mt-1 text-sm text-slate-700">{workOrder.createdAt ? formatDateTime(workOrder.createdAt) : "Unavailable"}</dd></div>
+                  {workOrder.startedAt ? <div><dt className="text-xs font-medium text-slate-500">Repair Started</dt><dd className="mt-1 text-sm text-slate-700">{formatDateTime(workOrder.startedAt)}</dd></div> : null}
+                </dl>
+              </div>
+              <section className="border-t border-slate-200 pt-5" aria-label="Reported Issue">
+                <h3 className="text-sm font-semibold text-slate-900">Reported Issue</h3>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">{workOrder.incident?.description ?? "No citizen description is available."}</p>
+              </section>
+              <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4" aria-label="Work Instructions">
+                <h3 className="text-sm font-semibold text-brand-900">Work Instructions</h3>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{workOrder.instructions ?? "No additional work instructions were provided."}</p>
+              </section>
+            </div>
           </Card>
 
           <div className="grid min-w-0 gap-5 md:grid-cols-2">
             <EvidenceGallery title="Citizen Evidence" description="Short-lived signed evidence URLs are supplied by the protected API. New evidence is privacy-redacted before storage." evidence={workOrder.incident?.images ?? []} />
             <EvidenceGallery title="Repair Field Evidence" description="Traceable maintenance evidence uploaded during repair progress is privacy-redacted before storage." evidence={workOrder.evidence} />
           </div>
-          <WorkOrderReviews workOrder={workOrder} />
           <WorkOrderTimeline workOrder={workOrder} />
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
           <Card className="overflow-hidden"><CardHeader title="SLA Monitoring" description="The API is the source of truth for deadline state." /><div className="space-y-4 p-5"><SlaBadges sla={workOrder.sla} includeDeadline />{workOrder.sla.targetResolutionTime ? <p className="text-sm text-slate-700">Target: {workOrder.sla.targetResolutionTime} hours</p> : null}{workOrder.sla.isApproaching ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><Clock3 className="mr-1 inline size-4" /> Deadline is approaching. Keep the responsible organization and assigned team informed.</p> : null}{workOrder.sla.isOverdue ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950"><AlertTriangle className="mr-1 inline size-4" /> This work order is overdue. It remains open and is not automatically closed or rejected.</p> : null}</div></Card>
           {official ? <AssignmentPanel workOrder={workOrder} eligiblePersonnel={eligiblePersonnel} onResult={result} /> : null}
-          {repairAssignee ? <><RepairActions workOrder={workOrder} onResult={result} /><RepairEvidenceUpload workOrder={workOrder} onResult={result} /></> : null}
+          {repairAssignee ? <><RepairActions workOrder={workOrder} onResult={result} /></> : null}
           <CompletionReviewPanel workOrder={workOrder} viewer={viewer} onResult={result} />
           <Card className="overflow-hidden"><CardHeader title="Assignment History" description="Previous assignments remain available for audit and reassignment context." />{workOrder.assignments.length ? <ol className="divide-y divide-slate-200">{workOrder.assignments.map((assignment) => <li key={assignment.id} className="p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold text-slate-900">{formatPerson(assignment.assignee?.firstName, assignment.assignee?.lastName)}</p><StatusBadge tone={assignmentTone(assignment.status)}>{titleCase(assignment.status)}</StatusBadge></div>{assignment.assignedAt ? <p className="mt-1 text-xs text-slate-600">Assigned {formatDateTime(assignment.assignedAt)}</p> : null}{assignment.endedAt ? <p className="mt-1 text-xs text-slate-600">Ended {formatDateTime(assignment.endedAt)}</p> : null}{assignment.declineReason ? <p className="mt-2 text-sm leading-6 text-red-800">Decline Reason: {assignment.declineReason}</p> : null}{assignment.endedReason ? <p className="mt-2 text-sm leading-6 text-slate-600">Reassignment: {assignment.endedReason}</p> : null}</li>)}</ol> : <p className="p-5 text-sm text-slate-600">No assignment history is available yet.</p>}</Card>
           <Link href="/work-orders" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"><Route className="size-4" />Return to Work Orders<ChevronRight className="size-4" /></Link>

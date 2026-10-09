@@ -14,7 +14,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { buttonStyles } from "@/components/ui/button";
 import type { UserProfile } from "@/types";
 import type { WorkOrderFilters, WorkOrderQueueData, WorkOrderSummary } from "@/lib/work-orders.server";
-import { assignmentTone, formatLocation, formatPerson, priorityTone, ProgressBar, SlaBadges, titleCase, workOrderStatusTone } from "@/components/work-orders/work-order-ui";
+import { assignmentTone, formatLocation, formatPerson, priorityTone, SlaBadges, titleCase, workOrderStatusTone, workOrderStatusLabel } from "@/components/work-orders/work-order-ui";
 import { formatDateTime } from "@/lib/utils";
 
 type QueryPatch = Record<string, string | undefined>;
@@ -68,12 +68,14 @@ export function WorkOrderList({
   filters,
   summary,
   mode = "work-orders",
+  workspaceView,
 }: {
   viewer: UserProfile;
   queue: WorkOrderQueueData;
   filters: WorkOrderFilters;
   summary?: WorkOrderSummary;
   mode?: "work-orders" | "sla";
+  workspaceView?: "orders" | "verification";
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -90,8 +92,30 @@ export function WorkOrderList({
           ? "Assign repairs to your team, review completed work, and manage deadlines."
           : "Create, assign, and monitor maintenance work within your authorized scope.";
 
+  const workStateOptions = viewer.backendRole === "city_engineer"
+    ? [
+      { value: "", label: "All Repair States" },
+      { value: "in_progress", label: "Active Repairs" },
+      { value: "completed", label: "Awaiting Provider Review" },
+      { value: "provider_accepted", label: "Awaiting Final Verification" },
+      { value: "city_correction_required", label: "Returned to Provider" },
+      { value: "verified", label: "Closed" },
+    ]
+    : [
+      { value: "", label: "All Work States" },
+      { value: "pending", label: "Pending Assignment" },
+      { value: "accepted", label: "Accepted" },
+      { value: "in_progress", label: "In Progress" },
+      { value: "completed", label: "Awaiting Provider Review" },
+      { value: "rework_required", label: "Corrective Work" },
+      { value: "provider_accepted", label: "Awaiting City Verification" },
+      { value: "city_correction_required", label: "Returned to Provider" },
+      { value: "verified", label: "Closed" },
+    ];
+
   const navigate = (patch: QueryPatch) => {
     const next = new URLSearchParams();
+    if (workspaceView === "verification") next.set("view", "verification");
     const current: QueryPatch = {
       search: filters.search,
       status: filters.status,
@@ -118,11 +142,11 @@ export function WorkOrderList({
     setSearch("");
     navigate({
       search: undefined,
-      status: undefined,
+      status: workspaceView ? filters.status : undefined,
       priority: undefined,
       assignmentStatus: undefined,
       progress: undefined,
-      slaState: undefined,
+      slaState: workspaceView ? filters.slaState : undefined,
       personnel: undefined,
       organization: undefined,
       category: undefined,
@@ -130,32 +154,35 @@ export function WorkOrderList({
     });
   };
 
+  const hasRefinements = hasFilters(workspaceView ? { ...filters, status: undefined, slaState: undefined } : filters);
+  const isClosedQueue = Boolean(workspaceView && filters.status === "verified");
+  const queueTitle = isClosedQueue ? "Closed Orders" : workspaceView === "verification" ? "Awaiting Verification"
+    : workspaceView && filters.slaState === "approaching" ? "Approaching Deadline"
+    : workspaceView && filters.slaState === "overdue" ? "Overdue Repairs"
+    : workspaceView && filters.status === "in_progress" ? "Active Repairs"
+    : "Operational Work Orders";
+
   const columns = [
-    { key: "workOrder", label: "Work Order" },
-    { key: "incident", label: "Incident" },
-    { key: "location", label: "Location" },
-    { key: "priority", label: "Priority" },
-    { key: "organization", label: "Organization" },
-    { key: "assignee", label: "Assigned Personnel" },
-    { key: "assignment", label: "Assignment" },
-    { key: "repair", label: "Repair Status" },
-    { key: "progress", label: "Progress" },
-    { key: "sla", label: "SLA" },
-    { key: "updated", label: "Updated" },
+    { key: "workOrder", label: "Work Order / Incident", className: "w-[22%] min-w-64" },
+    { key: "location", label: "Location", className: "w-[17%] min-w-48" },
+    { key: "assignee", label: "Responsibility", className: "w-[20%] min-w-56" },
+    { key: "repair", label: "Status / Priority", className: "w-[16%] min-w-48" },
+    { key: "sla", label: isClosedQueue ? "Closed At" : "Deadline", className: "w-[15%] min-w-48" },
+    { key: "updated", label: "Last Updated", className: "w-[10%] min-w-40" },
   ];
 
   return (
     <div className="mx-auto max-w-[1680px]">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      {!workspaceView ? <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-bold tracking-normal text-brand-700">{isSla ? "Maintenance operations · Deadline control" : "Maintenance operations · Command center"}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">{title}</h1>
           <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
         </div>
         {!isSla && viewer.permissions.includes("reports.view") ? <Link href="/validation-routing" className={buttonStyles({ variant: "secondary" })}><ClipboardList className="size-4" aria-hidden="true" /> Open Validation Queue</Link> : null}
-      </div>
+      </div> : null}
 
-      {summary ? (
+      {summary && !workspaceView ? (
         <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
           {summaryCards(summary, viewer.backendRole, isSla).map((item) => (
             <Card key={item.label} className="p-4">
@@ -168,47 +195,52 @@ export function WorkOrderList({
 
       <Card className="overflow-hidden">
         <CardHeader
-          title={isSla ? "Deadline Watch" : "Operational Work Orders"}
-          description={isSla ? "Filter the live work-order register for at-risk and overdue repairs." : "Filters are sent to the backend; the browser never loads the entire register to filter it locally."}
-          action={<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ArrowUpDown className="size-3.5" aria-hidden="true" /> Server-side sort</span>}
+          title={isSla ? "Deadline Watch" : queueTitle}
+          description={isSla ? "Filter the live work-order register for at-risk and overdue repairs." : "Track repairs, assignments, and deadlines across your authorized area."}
+          action={workspaceView ? <Link href="/work-orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><ArrowUpDown className="size-3.5" aria-hidden="true" /> Sort and Filter</span>}
         />
         <form onSubmit={(event) => { event.preventDefault(); navigate({ search: search.trim() || undefined }); }} className="border-b border-slate-200 bg-white p-4">
           <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder="Search work-order reference" aria-label="Search Work Orders" className="max-w-xl" />
         </form>
         <FilterBar>
           <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All Priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
-          <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={[{ value: "", label: "All Work States" }, { value: "pending", label: "Pending Assignment" }, { value: "accepted", label: "Accepted" }, { value: "in_progress", label: "In Progress" }, { value: "completed", label: "Completed · Provider Review" }, { value: "rework_required", label: "Corrective Work" }, { value: "provider_accepted", label: "Awaiting City Engineering" }, { value: "city_correction_required", label: "City Return · Provider Coordination" }, { value: "verified", label: "Verified and Closed" }]} />
-          <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Unassigned" }, { value: "pending", label: "Pending Acceptance" }, { value: "accepted", label: "Accepted" }, { value: "declined", label: "Declined" }]} />
-          <FilterSelect label="Repair Progress" value={optionValue(filters.progress)} onChange={(event) => navigate({ progress: event.target.value || undefined })} options={[{ value: "", label: "All Progress" }, { value: "0", label: "0%" }, { value: "25", label: "25%" }, { value: "50", label: "50%" }, { value: "75", label: "75%" }, { value: "100", label: "100% · Completion Submitted" }]} />
-          <FilterSelect label="SLA State" value={optionValue(filters.slaState)} onChange={(event) => navigate({ slaState: event.target.value || undefined })} options={[{ value: "", label: "All SLA States" }, { value: "approaching", label: "Approaching Deadline" }, { value: "overdue", label: "Overdue" }]} />
-          <FilterSelect label="Sort Work Orders" value={optionValue(filters.sortBy)} onChange={(event) => navigate({ sortBy: event.target.value || "newest" })} options={[{ value: "newest", label: "Recently Updated" }, { value: "oldest", label: "Oldest First" }, { value: "deadline", label: "Deadline First" }, { value: "-deadline", label: "Latest Deadline" }, { value: "-priority", label: "Priority" }, { value: "-progress", label: "Progress" }]} />
-          {hasFilters(filters) ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear Filters</button> : null}
+          {!workspaceView ? <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={workStateOptions} /> : null}
+          {!workspaceView ? <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Unassigned" }, { value: "pending", label: "Pending Acceptance" }, { value: "accepted", label: "Accepted" }, { value: "declined", label: "Declined" }]} /> : null}
+          {!workspaceView ? <FilterSelect label="SLA State" value={optionValue(filters.slaState)} onChange={(event) => navigate({ slaState: event.target.value || undefined })} options={[{ value: "", label: "All SLA States" }, { value: "approaching", label: "Approaching Deadline" }, { value: "overdue", label: "Overdue" }]} /> : null}
+          <FilterSelect label="Sort Work Orders" value={optionValue(filters.sortBy)} onChange={(event) => navigate({ sortBy: event.target.value || "newest" })} options={[{ value: "newest", label: "Recently Updated" }, { value: "oldest", label: "Oldest First" }, { value: "deadline", label: "Deadline First" }, { value: "-deadline", label: "Latest Deadline" }, { value: "-priority", label: "Priority" }]} />
+          {hasRefinements ? <button type="button" onClick={clearFilters} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Clear Filters</button> : null}
         </FilterBar>
 
         {queue.workOrders.length ? <>
           <DataTable
-            className="max-h-[60dvh] overflow-auto overscroll-contain [scrollbar-gutter:stable] [&_table]:min-w-360 [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-slate-50"
+            className="max-h-[60dvh] overflow-auto overscroll-contain [&_table]:min-w-300 [&_table]:table-fixed [&_td]:align-top [&_td]:py-5 [&_th]:whitespace-nowrap [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-slate-50"
             caption={isSla ? "SLA work-order monitor" : "Work-order register"}
             columns={columns}
             rows={queue.workOrders.map((workOrder) => ({
               id: workOrder.id,
               cells: {
-                workOrder: <Link href={`/work-orders/${encodeURIComponent(workOrder.id)}`} className="font-semibold text-brand-700 hover:underline">{workOrder.reference}</Link>,
-                incident: <div><p className="font-medium text-slate-900">{workOrder.incident?.reportNumber ?? "Incident unavailable"}</p><p className="mt-0.5 text-xs text-slate-500">{titleCase(workOrder.incident?.category, "Uncategorized")}</p></div>,
-                location: <span className="block max-w-52 text-xs leading-5">{formatLocation(workOrder.incident?.location)}</span>,
-                priority: <Badge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)}</Badge>,
-                organization: <span className="block max-w-40 text-xs leading-5">{workOrder.responsibleOrganization ?? "Not routed"}</span>,
-                assignee: <div><p className="font-medium text-slate-900">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p>{workOrder.assignee?.team ? <p className="mt-0.5 text-xs text-slate-500">{workOrder.assignee.team}</p> : null}</div>,
-                assignment: <StatusBadge tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</StatusBadge>,
-                repair: <StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrder.status === "completed" ? "Completed · provider review" : workOrder.status === "provider_accepted" ? "Awaiting City Engineering" : workOrder.status === "verified" ? "Verified and closed" : titleCase(workOrder.status)}</StatusBadge>,
-                progress: <ProgressBar value={workOrder.progressPercent} />,
-                sla: <SlaBadges sla={workOrder.sla} includeDeadline />,
-                updated: workOrder.updatedAt ? <span className="whitespace-nowrap text-xs text-slate-600">{formatDateTime(workOrder.updatedAt)}</span> : "—",
+                workOrder: <div className="space-y-2">
+                  <Link href={`/work-orders/${encodeURIComponent(workOrder.id)}`} className="block whitespace-nowrap text-sm font-semibold text-brand-700 hover:underline">{workOrder.reference}</Link>
+                  <p className="text-sm font-medium text-slate-800">{titleCase(workOrder.incident?.category, "Uncategorized")}</p>
+                  <p className="whitespace-nowrap text-xs text-slate-500">{workOrder.incident?.reportNumber ?? "Incident unavailable"}</p>
+                </div>,
+                location: <p className="line-clamp-3 text-sm leading-6 text-slate-600" title={formatLocation(workOrder.incident?.location)}>{formatLocation(workOrder.incident?.location)}</p>,
+                assignee: <div className="space-y-1.5">
+                  <p className="text-sm font-semibold text-slate-900">{formatPerson(workOrder.assignee?.firstName, workOrder.assignee?.lastName)}</p>
+                  <p className="text-xs leading-5 text-slate-600">{workOrder.responsibleOrganization ?? "Not routed"}{workOrder.assignee?.team ? ` · ${workOrder.assignee.team}` : ""}</p>
+                  <Badge tone={assignmentTone(workOrder.assignmentState)}>{titleCase(workOrder.assignmentState)}</Badge>
+                </div>,
+                repair: <div className="flex flex-col items-start gap-2">
+                  <StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrderStatusLabel(workOrder.status)}</StatusBadge>
+                  <Badge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)} Priority</Badge>
+                </div>,
+                sla: isClosedQueue ? <span className="text-sm text-slate-600">{workOrder.closedAt ? formatDateTime(workOrder.closedAt) : "Unavailable"}</span> : <div className="[&>div]:flex-col [&>div]:items-start [&>div]:gap-2"><SlaBadges sla={workOrder.sla} includeDeadline /></div>,
+                updated: workOrder.updatedAt ? <span className="block text-xs leading-5 text-slate-500">{formatDateTime(workOrder.updatedAt)}</span> : "—",
               },
             }))}
           />
           <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page: String(page) })} />
-        </> : <EmptyState icon={hasFilters(filters) ? "search" : "records"} title={hasFilters(filters) ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasFilters(filters) ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasFilters(filters) ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
+        </> : <EmptyState icon={hasRefinements ? "search" : "records"} title={hasRefinements ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasRefinements ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasRefinements ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
       </Card>
     </div>
   );

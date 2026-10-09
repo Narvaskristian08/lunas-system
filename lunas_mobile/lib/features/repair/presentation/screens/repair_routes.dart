@@ -9,6 +9,5 @@ abstract final class RepairRoutes {
   static String workOrder(String id) => '$workOrders/$id';
   static String start(String id) => '${workOrder(id)}/start';
   static String progress(String id) => '${workOrder(id)}/progress';
-  static String evidence(String id) => '${workOrder(id)}/evidence';
   static String location(String id) => '${workOrder(id)}/location';
 }

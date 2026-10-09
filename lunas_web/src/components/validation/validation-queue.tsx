@@ -5,6 +5,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowUpDown, CalendarDays, ChevronRight, FileImage, MapPin, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/states/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
@@ -68,18 +69,21 @@ export function ValidationQueue({
   filters,
   summary,
   summaryUnavailable = false,
+  embedded = false,
 }: {
+  embedded?: boolean;
   viewer: UserProfile;
   queue: ValidationQueueData;
   filters: ValidationQueueFilters;
   summary?: ValidationSummary;
   summaryUnavailable?: boolean;
 }) {
+  const router = useRouter();
   const isCityEngineering = viewer.backendRole === "city_engineer";
   const canFilterJurisdiction = viewer.backendRole !== "barangay_official";
   const [search, setSearch] = useState(filters.search ?? "");
   const [category, setCategory] = useState(filters.category ?? "");
-  const [jurisdiction, setJurisdiction] = useState(filters.jurisdiction ?? "");
+  const jurisdiction = "";
   const [duplicate, setDuplicate] = useState(filters.duplicate ?? "");
   const [dateFrom, setDateFrom] = useState(filters.dateFrom ?? "");
   const [dateTo, setDateTo] = useState(filters.dateTo ?? "");
@@ -91,10 +95,7 @@ export function ValidationQueue({
     ...(category ? [category] : []),
     ...queue.incidents.map((incident) => incident.category),
   ])), [category, queue.categories, queue.incidents]);
-  const jurisdictionSuggestions = useMemo(() => Array.from(new Set([
-    ...queue.jurisdictions,
-    ...queue.incidents.map((incident) => incident.jurisdiction || incident.location.address.barangay || "").filter(Boolean),
-  ])).sort((left, right) => left.localeCompare(right)), [queue.incidents, queue.jurisdictions]);
+
 
   const navigate = (next: Partial<ValidationQueueFilters> = {}) => {
     const values: ValidationQueueFilters = {
@@ -118,8 +119,10 @@ export function ValidationQueue({
     if (values.dateFrom) query.set("dateFrom", values.dateFrom);
     if (values.dateTo) query.set("dateTo", values.dateTo);
     if (values.sortBy && values.sortBy !== "createdAt_desc") query.set("sortBy", values.sortBy);
-    const href = query.size ? `/validation-routing?${query.toString()}` : "/validation-routing";
-    startTransition(() => window.history.pushState(null, "", href));
+    if (embedded) query.set("view", "review");
+    const basePath = embedded ? "/work-orders" : "/validation-routing";
+    const href = query.size ? `${basePath}?${query.toString()}` : basePath;
+    startTransition(() => router.push(href));
     // Next.js 16 treats browser history calls as router navigations, preserving
     // the server-rendered BFF boundary while making search controls responsive.
   };
@@ -132,19 +135,18 @@ export function ValidationQueue({
   const clearFilters = () => {
     setSearch("");
     setCategory("");
-    setJurisdiction("");
     setDuplicate("");
     setDateFrom("");
     setDateTo("");
     setSortBy("createdAt_desc");
-    startTransition(() => window.history.pushState(null, "", "/validation-routing"));
+    startTransition(() => router.push(embedded ? "/work-orders?view=review" : "/validation-routing"));
   };
 
   const hasFilters = Boolean(search || category || (canFilterJurisdiction && jurisdiction) || duplicate || dateFrom || dateTo || sortBy !== "createdAt_desc");
 
   return (
     <div className="mx-auto max-w-395">
-      <PageHeader
+      {!embedded ? <PageHeader
         eyebrow={`${viewer.organization} · Official Workflow`}
         title={isCityEngineering ? "City Engineering Review" : "Barangay Report Review"}
         description={isCityEngineering
@@ -152,9 +154,9 @@ export function ValidationQueue({
           : "Review citizen reports in your assigned Barangay, inspect their evidence and location, then validate or reject with a reason."}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Validation" }]}
         actions={<span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-600"><ShieldCheck className="size-4 text-brand-700" aria-hidden="true" /> Authorized Scope</span>}
-      />
+      /> : null}
 
-      {summary ? (
+      {summary && !embedded ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard label={isCityEngineering ? "Awaiting Engineering Review" : "Awaiting Review"} value={summary.pending} tone="warning" />
           <SummaryCard label={isCityEngineering ? "City Confirmed" : "Forwarded to City Engineering"} value={summary.validated} tone="information" />
@@ -174,7 +176,6 @@ export function ValidationQueue({
           description={isCityEngineering
             ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
             : "Search and filters are applied by the server; reports outside your assigned Barangay are never returned."}
-          action={<span className="text-sm font-medium text-slate-600" aria-live="polite">{pending ? "Updating queue…" : `${queue.pagination.total} report${queue.pagination.total === 1 ? "" : "s"}`}</span>}
         />
         <form onSubmit={submitFilters} noValidate>
           <div className="border-b border-slate-200 bg-slate-50/70 p-4">
@@ -203,13 +204,6 @@ export function ValidationQueue({
                 })),
               ]}
             />
-            {canFilterJurisdiction ? (
-              <label className="min-w-0">
-                <span className="sr-only">Barangay or Jurisdiction</span>
-                <input list="validation-jurisdictions" value={jurisdiction} onChange={(event) => setJurisdiction(event.target.value)} placeholder="Barangay / Jurisdiction" className="min-h-10 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" disabled={pending} />
-                <datalist id="validation-jurisdictions">{jurisdictionSuggestions.map((value) => <option key={value} value={value} />)}</datalist>
-              </label>
-            ) : null}
             <FilterSelect label="Possible Duplicate" value={duplicate} onChange={(event) => setDuplicate(event.target.value)} disabled={pending} options={[{ value: "", label: "Any Duplicate State" }, { value: "yes", label: "Possible Duplicate" }, { value: "no", label: "No Duplicate Candidates" }]} />
             <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
               <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />

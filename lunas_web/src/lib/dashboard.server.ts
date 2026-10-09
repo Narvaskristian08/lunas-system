@@ -58,6 +58,8 @@ export interface DashboardRecord {
 }
 
 export interface RealDashboardData {
+  engineeringSummary?: { total: number; unresolved: number; overdue: number };
+  barangayReports?: Array<{ barangay: string; reports: number; unresolved: number }>;
   metrics: DashboardMetric[];
   records: DashboardRecord[];
   emptyTitle: string;
@@ -157,11 +159,14 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
       emptyDescription: "New reports in your assigned Barangay will appear here.",
     };
   }
-  const [workOrderSummary, finalQueue] = await Promise.all([
+  const [workOrderSummary, finalQueue, barangayReports] = await Promise.all([
     getWorkOrderSummary(),
     getWorkOrders({ page: 1, limit: 5, status: "provider_accepted", sortBy: "newest" }),
+    backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken }).then(responseData),
   ]);
   return {
+    barangayReports,
+    engineeringSummary: { total: barangayReports.reduce((sum, row) => sum + row.reports, 0), unresolved: barangayReports.reduce((sum, row) => sum + row.unresolved, 0), overdue: workOrderSummary.overdue },
     metrics: [
       metric("Awaiting City Engineering Review", asNumber(summary.pending), "warning", "reports"),
       metric("Awaiting Final Verification", finalQueue.pagination.total, "information", "verified"),

@@ -259,6 +259,7 @@ exports.createWorkOrderValidation = [
 ];
 
 exports.updateWorkOrderValidation = [
+  body('updateType').optional().isIn(['note', 'completion']).withMessage('Repair update type is invalid'),
   body('progressPercent').isIn([0, 25, 50, 75, 100])
     .withMessage('Repair progress must be 0, 25, 50, 75, or 100').toInt(),
   body('stage').isIn(['assigned', 'site_preparation', 'main_repair', 'finishing', 'ready_for_completion'])

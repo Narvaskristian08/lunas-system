@@ -15,6 +15,16 @@ export function priorityTone(priority: string | undefined): Severity {
   return "neutral";
 }
 
+export function workOrderStatusLabel(status: string | undefined) {
+  const labels: Record<string, string> = {
+    pending: "Pending Assignment", accepted: "Accepted", in_progress: "In Progress",
+    completed: "Awaiting Provider Review", provider_accepted: "Awaiting City Verification",
+    rework_required: "Corrective Work Requested", city_correction_required: "Returned to Provider",
+    verified: "Closed",
+  };
+  return labels[status ?? ""] ?? titleCase(status);
+}
+
 export function workOrderStatusTone(status: string | undefined): Severity {
   if (status === "verified") return "success";
   if (status === "completed" || status === "city_correction_required" || status === "rework_required" || status === "pending") return "warning";

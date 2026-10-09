@@ -20,3 +20,36 @@ test('dashboard overdue counts use the current deadline and exclude terminal inc
     'sla.deadline': { $lt: now }, status: { $nin: ['verified', 'resolved', 'closed', 'rejected', 'duplicate'] } });
   jest.useRealTimers();
 });
+
+test('barangay report counts include all 31 barangays and canonicalize grouped names', async () => {
+  const { getBarangayReportCounts } = require('./statsController');
+  Incident.aggregate.mockResolvedValue([{ _id: 'Pantal', reports: 2, unresolved: 1 }, { _id: ' pantal ', reports: 1, unresolved: 1 }]);
+  const res = { json: jest.fn() };
+  const next = jest.fn();
+  await getBarangayReportCounts({ user: { role: 'city_engineer' } }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  const rows = res.json.mock.calls[0][0].data;
+  expect(rows).toHaveLength(31);
+  expect(rows.find(row => row.barangay === 'Pantal').reports).toBe(3);
+  expect(rows.find(row => row.barangay === 'Pantal').unresolved).toBe(2);
+  expect(rows.find(row => row.barangay === 'Lucao').reports).toBe(0);
+});
+
+test('barangay report register scopes and paginates a read-only overdue queue', async () => {
+  const { getBarangayReports } = require('./statsController');
+  const query = {};
+  for (const method of ['select', 'sort', 'skip', 'limit']) query[method] = jest.fn().mockReturnValue(query);
+  query.lean = jest.fn().mockResolvedValue([]);
+  Incident.find.mockReturnValue(query);
+  Incident.countDocuments.mockResolvedValue(0);
+  const res = { json: jest.fn() };
+  const next = jest.fn();
+  await getBarangayReports({ user: { role: 'city_engineer' }, query: { barangay: 'Pantal', state: 'overdue', page: '2', search: 'TEST.' } }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  expect(query.skip).toHaveBeenCalledWith(20);
+  const filter = Incident.find.mock.calls.at(-1)[0];
+  expect(filter.$and[0].$or[0]).toEqual({ 'jurisdiction.barangay': 'Pantal' });
+  expect(filter.$and[1]['sla.deadline'].$lt).toBeInstanceOf(Date);
+  expect(new RegExp(filter.$and[2].reportNumber.$regex).test('TESTx')).toBe(false);
+  expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ barangay: 'Pantal' }) }));
+});

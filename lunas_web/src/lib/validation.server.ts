@@ -509,9 +509,10 @@ async function getReportCategoryOptions(accessToken: string) {
 
 export async function getValidationQueue(filters: ValidationQueueFilters): Promise<ValidationQueueData> {
   const accessToken = await requireAccessToken();
-  const [response, categoryOptions] = await Promise.all([
+  const [response, categoryOptions, barangayResponse] = await Promise.all([
     backendRequest<unknown>(`/incidents/pending-validation?${buildQueueQuery(filters)}`, { accessToken }),
     getReportCategoryOptions(accessToken),
+    backendRequest<string[]>("/incidents/barangays", { accessToken }),
   ]);
   const rawData = responseData(response);
   const payload = queuePayload(rawData);
@@ -529,7 +530,7 @@ export async function getValidationQueue(filters: ValidationQueueFilters): Promi
     },
     categories: categoryOptions.map((option) => option.value),
     categoryOptions,
-    jurisdictions: valuesFrom(payload, "jurisdictions"),
+    jurisdictions: responseData(barangayResponse),
   };
 }
 

@@ -98,9 +98,19 @@ const isEligibleRepairPersonnel = (personnel, workOrder) => {
 
 const getStageForProgress = (progressPercent) => PROGRESS_STAGES[Number(progressPercent)];
 
-const validateProgressUpdate = ({ currentProgress, nextProgress, stage, notes }) => {
+const validateProgressUpdate = ({ currentProgress, nextProgress, stage, notes, updateType }) => {
   const current = Number(currentProgress || 0);
   const next = Number(nextProgress);
+  if (updateType === 'note') {
+    if (!String(notes || '').trim()) return { valid: false, message: 'Progress notes are required' };
+    if (next !== current || stage !== getStageForProgress(current)) {
+      return { valid: false, message: 'A field note must preserve the current repair progress' };
+    }
+    return { valid: true, progressPercent: current, stage };
+  }
+  if (updateType === 'completion' && next !== 100) {
+    return { valid: false, message: 'Completion must submit the completed repair' };
+  }
   if (!REPAIR_PROGRESS_VALUES.includes(next)) {
     return { valid: false, message: 'Repair progress must be one of 0, 25, 50, 75, or 100' };
   }
@@ -115,9 +125,6 @@ const validateProgressUpdate = ({ currentProgress, nextProgress, stage, notes })
   const expectedStage = getStageForProgress(next);
   if (stage !== expectedStage) {
     return { valid: false, message: `Repair stage must be '${expectedStage}' for ${next}% progress` };
-  }
-  if (next === 100 && (!String(notes || '').trim() || String(notes).trim().length < 2)) {
-    return { valid: false, message: 'A meaningful repair note is required before marking 100% progress' };
   }
   return { valid: true, progressPercent: next, stage: expectedStage };
 };

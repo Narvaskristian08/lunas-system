@@ -62,13 +62,22 @@ describe('work-order domain rules', () => {
       nextProgress: 100,
       stage: 'ready_for_completion',
       notes: ''
-    })).toEqual(expect.objectContaining({ valid: false }));
+    })).toEqual(expect.objectContaining({ valid: true, progressPercent: 100 }));
     expect(validateProgressUpdate({
       currentProgress: 25,
       nextProgress: 33,
       stage: 'main_repair',
       notes: 'Unsupported percentage'
     })).toEqual(expect.objectContaining({ valid: false }));
+  });
+
+  test('records field notes without changing progress and rejects empty or advancing notes', () => {
+    const update = { currentProgress: 0, nextProgress: 0, stage: 'assigned', updateType: 'note', notes: 'Repair area secured.' };
+    expect(validateProgressUpdate(update)).toEqual({ valid: true, progressPercent: 0, stage: 'assigned' });
+    expect(validateProgressUpdate({ ...update, notes: ' ' }).valid).toBe(false);
+    expect(validateProgressUpdate({ ...update, nextProgress: 25, stage: 'site_preparation' }).valid).toBe(false);
+    expect(validateProgressUpdate({ ...update, updateType: 'completion', nextProgress: 25 }).valid).toBe(false);
+    expect(validateProgressUpdate({ ...update, updateType: 'completion', nextProgress: 100, stage: 'ready_for_completion', notes: '' }).valid).toBe(true);
   });
 
   test('requires an active, available, organization-compatible repair worker', () => {

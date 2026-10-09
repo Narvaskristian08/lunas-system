@@ -97,6 +97,7 @@ class RepairService {
     required int progressPercent,
     required RepairProgressStage stage,
     required String notes,
+    String? updateType,
     EvidenceSelection? finalEvidence,
     double? latitude,
     double? longitude,
@@ -128,6 +129,7 @@ class RepairService {
     final body = <String, dynamic>{
       // The server requires an explicit Start Work transition before this
       // update; this request never asks it to verify or close a repair.
+      'updateType': ?updateType,
       'progressPercent': progressPercent,
       'stage': stage.apiValue,
       if (trimmedNotes.isNotEmpty) 'notes': trimmedNotes,
@@ -142,13 +144,16 @@ class RepairService {
       );
     }
     final payload = finalEvidence == null
-        ? await _apiClient.post('/work-orders/$workOrderId/progress', body: body)
+        ? await _apiClient.post(
+            '/work-orders/$workOrderId/progress',
+            body: body,
+          )
         : await _apiClient.multipart(
             '/work-orders/$workOrderId/progress',
-            fields: body.map((key, value) => MapEntry(
-              key,
-              value is String ? value : jsonEncode(value),
-            )),
+            fields: body.map(
+              (key, value) =>
+                  MapEntry(key, value is String ? value : jsonEncode(value)),
+            ),
             files: [
               ApiMultipartFile(
                 fieldName: 'evidence',

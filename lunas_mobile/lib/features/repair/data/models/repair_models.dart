@@ -22,11 +22,12 @@ extension RepairProgressStageValue on RepairProgressStage {
   };
 
   String get label => switch (this) {
-    RepairProgressStage.assigned => 'Assigned / accepted',
-    RepairProgressStage.sitePreparation => 'Site preparation',
-    RepairProgressStage.mainRepair => 'Main repair underway',
-    RepairProgressStage.finishing => 'Finishing work',
-    RepairProgressStage.readyForCompletion => 'Completion submitted · awaiting provider review',
+    RepairProgressStage.assigned => 'Assigned / Accepted',
+    RepairProgressStage.sitePreparation => 'Site Preparation',
+    RepairProgressStage.mainRepair => 'Main Repair Underway',
+    RepairProgressStage.finishing => 'Finishing Work',
+    RepairProgressStage.readyForCompletion =>
+      'Completion Submitted · Awaiting Provider Review',
   };
 }
 
@@ -39,21 +40,36 @@ RepairProgressStage repairStageForProgress(int progress) => switch (progress) {
   _ => RepairProgressStage.assigned,
 };
 
-RepairProgressStage repairProgressStageFromJson(Object? value, {int? progress}) {
+RepairProgressStage repairProgressStageFromJson(
+  Object? value, {
+  int? progress,
+}) {
   final normalized = value?.toString().trim().toLowerCase();
   return switch (normalized) {
     'assigned' || 'accepted' => RepairProgressStage.assigned,
-    'site_preparation' || 'site preparation' => RepairProgressStage.sitePreparation,
-    'main_repair' || 'main repair' || 'main repair underway' =>
-      RepairProgressStage.mainRepair,
-    'finishing' || 'finishing_work' || 'finishing work' => RepairProgressStage.finishing,
-    'ready_for_completion' || 'ready for completion' || 'completed' =>
-      RepairProgressStage.readyForCompletion,
+    'site_preparation' ||
+    'site preparation' => RepairProgressStage.sitePreparation,
+    'main_repair' ||
+    'main repair' ||
+    'main repair underway' => RepairProgressStage.mainRepair,
+    'finishing' ||
+    'finishing_work' ||
+    'finishing work' => RepairProgressStage.finishing,
+    'ready_for_completion' ||
+    'ready for completion' ||
+    'completed' => RepairProgressStage.readyForCompletion,
     _ => repairStageForProgress(progress ?? 0),
   };
 }
 
-enum RepairWorkOrderStatus { pending, accepted, inProgress, completed, reworkRequired, unknown }
+enum RepairWorkOrderStatus {
+  pending,
+  accepted,
+  inProgress,
+  completed,
+  reworkRequired,
+  unknown,
+}
 
 extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
   String get apiValue => switch (this) {
@@ -66,12 +82,12 @@ extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
   };
 
   String get label => switch (this) {
-    RepairWorkOrderStatus.pending => 'Pending acceptance',
+    RepairWorkOrderStatus.pending => 'Pending Acceptance',
     RepairWorkOrderStatus.accepted => 'Accepted',
-    RepairWorkOrderStatus.inProgress => 'In progress',
-    RepairWorkOrderStatus.completed => 'Completed · awaiting provider review',
-    RepairWorkOrderStatus.reworkRequired => 'Corrective work requested',
-    RepairWorkOrderStatus.unknown => 'Status unavailable',
+    RepairWorkOrderStatus.inProgress => 'In Progress',
+    RepairWorkOrderStatus.completed => 'Completed · Awaiting Provider Review',
+    RepairWorkOrderStatus.reworkRequired => 'Corrective Work Requested',
+    RepairWorkOrderStatus.unknown => 'Status Unavailable',
   };
 }
 
@@ -81,7 +97,8 @@ RepairWorkOrderStatus repairWorkOrderStatusFromJson(Object? value) {
     'accepted' => RepairWorkOrderStatus.accepted,
     'in_progress' || 'in progress' => RepairWorkOrderStatus.inProgress,
     'completed' || 'ready_for_completion' => RepairWorkOrderStatus.completed,
-    'rework_required' || 'city_correction_required' => RepairWorkOrderStatus.reworkRequired,
+    'rework_required' ||
+    'city_correction_required' => RepairWorkOrderStatus.reworkRequired,
     _ => RepairWorkOrderStatus.unknown,
   };
 }
@@ -144,11 +161,13 @@ class RepairSla {
       startedAt: _date(json['startedAt'] ?? json['slaStartedAt']),
       deadline: _date(json['deadline'] ?? json['targetDeadline']),
       state: state,
-      isApproaching:
-          json['isApproaching'] == true || state == 'approaching',
+      isApproaching: json['isApproaching'] == true || state == 'approaching',
       isOverdue: json['isOverdue'] == true || state == 'overdue',
-      timeRemaining: _text(
-            json['timeRemaining'] ?? json['remaining'] ?? json['remainingLabel'],
+      timeRemaining:
+          _text(
+            json['timeRemaining'] ??
+                json['remaining'] ??
+                json['remainingLabel'],
           ) ??
           _remainingLabel(json['remainingMilliseconds']),
     );
@@ -183,16 +202,21 @@ class RepairPerson {
     final fullName = '${firstName ?? ''} ${lastName ?? ''}'.trim();
     return RepairPerson(
       id: _id(json),
-      name: _text(json['name'] ?? json['fullName']) ??
+      name:
+          _text(json['name'] ?? json['fullName']) ??
           (fullName.isEmpty ? 'Assigned personnel' : fullName),
       role: _text(json['role']),
       organization: _organizationName(
-        json['organization'] ?? json['utilityCompany'] ?? json['responsibleOrganization'],
+        json['organization'] ??
+            json['utilityCompany'] ??
+            json['responsibleOrganization'],
       ),
       team: _organizationName(json['team']),
       availability: _text(json['availability'] ?? json['availabilityStatus']),
       activeAssignments: _int(
-        json['activeAssignments'] ?? json['activeAssignmentCount'] ?? json['workload'],
+        json['activeAssignments'] ??
+            json['activeAssignmentCount'] ??
+            json['workload'],
       ),
       isActive: json['isActive'] is bool ? json['isActive'] as bool : null,
     );
@@ -226,17 +250,22 @@ class RepairAssignment {
 
   factory RepairAssignment.fromJson(Object? value) {
     final json = _map(value);
-    final assigneeValue = json['assignee'] ?? json['assignedTo'] ?? json['personnel'];
+    final assigneeValue =
+        json['assignee'] ?? json['assignedTo'] ?? json['personnel'];
     return RepairAssignment(
       id: _id(json),
-      assignee: assigneeValue == null ? null : RepairPerson.fromJson(assigneeValue),
+      assignee: assigneeValue == null
+          ? null
+          : RepairPerson.fromJson(assigneeValue),
       status: _text(json['status'] ?? json['assignmentStatus']),
       assignedAt: _date(json['assignedAt']),
       acceptedAt: _date(json['acceptedAt']),
       declinedAt: _date(json['declinedAt']),
       declineReason: _text(json['declineReason']),
       endedAt: _date(json['endedAt']),
-      reassignmentReason: _text(json['reassignmentReason'] ?? json['endedReason']),
+      reassignmentReason: _text(
+        json['reassignmentReason'] ?? json['endedReason'],
+      ),
       active: json['active'] as bool?,
     );
   }
@@ -273,7 +302,9 @@ class RepairEvidence {
       size: _int(json['size'] ?? json['byteLength']),
       caption: _text(json['caption'] ?? json['notes']),
       uploadedAt: _date(json['uploadedAt'] ?? json['createdAt']),
-      progressUpdateId: _text(json['progressUpdateId'] ?? json['progressUpdate']),
+      progressUpdateId: _text(
+        json['progressUpdateId'] ?? json['progressUpdate'],
+      ),
     );
   }
 }
@@ -301,17 +332,19 @@ class RepairProgressUpdate {
 
   factory RepairProgressUpdate.fromJson(Object? value) {
     final json = _map(value);
-    final progress = _int(json['progressPercent'] ?? json['newPercentage']) ?? 0;
+    final progress =
+        _int(json['progressPercent'] ?? json['newPercentage']) ?? 0;
     return RepairProgressUpdate(
       id: _id(json),
-      previousPercent: _int(json['previousPercent'] ?? json['previousPercentage']) ?? 0,
+      previousPercent:
+          _int(json['previousPercent'] ?? json['previousPercentage']) ?? 0,
       progressPercent: progress,
       stage: repairProgressStageFromJson(json['stage'], progress: progress),
       notes: _text(json['notes']),
       updatedAt: _date(json['updatedAt'] ?? json['createdAt']),
-      evidence: _list(json['evidence'] ?? json['repairEvidence'])
-          .map(RepairEvidence.fromJson)
-          .toList(growable: false),
+      evidence: _list(
+        json['evidence'] ?? json['repairEvidence'],
+      ).map(RepairEvidence.fromJson).toList(growable: false),
       location: _map(json['location']).isEmpty
           ? null
           : IncidentLocation.fromJson(_map(json['location'])),
@@ -421,12 +454,16 @@ class RepairWorkOrder {
     final rawCitizenEvidence = _list(
       incident['images'] ?? incident['evidence'] ?? json['citizenEvidence'],
     );
-    final progress = _int(json['progressPercent'] ?? json['currentProgress']) ?? 0;
+    final progress =
+        _int(json['progressPercent'] ?? json['currentProgress']) ?? 0;
     final currentAssignmentValue =
-        json['currentAssignment'] ?? json['assignment'] ?? json['activeAssignment'];
+        json['currentAssignment'] ??
+        json['assignment'] ??
+        json['activeAssignment'];
     return RepairWorkOrder(
       id: _id(json),
-      orderNumber: _text(
+      orderNumber:
+          _text(
             json['orderNumber'] ?? json['reference'] ?? json['referenceNumber'],
           ) ??
           'Work order unavailable',
@@ -436,8 +473,11 @@ class RepairWorkOrder {
         json['progressStage'] ?? json['currentStage'],
         progress: progress,
       ),
-      incidentId: _id(incident).isNotEmpty ? _id(incident) : _text(json['incidentId']) ?? '',
-      incidentReference: _text(
+      incidentId: _id(incident).isNotEmpty
+          ? _id(incident)
+          : _text(json['incidentId']) ?? '',
+      incidentReference:
+          _text(
             incident['reportNumber'] ??
                 incident['referenceNumber'] ??
                 json['incidentReference'] ??
@@ -454,23 +494,25 @@ class RepairWorkOrder {
       responsibleOrganization: _organizationName(
         json['responsibleOrganization'] ?? incident['responsibleOrganization'],
       ),
-      jurisdiction: _organizationName(json['jurisdiction'] ?? incident['jurisdiction']),
+      jurisdiction: _organizationName(
+        json['jurisdiction'] ?? incident['jurisdiction'],
+      ),
       assignmentState: _text(json['assignmentState'])?.toLowerCase(),
       currentAssignment: currentAssignmentValue == null
           ? null
           : RepairAssignment.fromJson(currentAssignmentValue),
-      assignments: _list(json['assignments'] ?? json['assignmentHistory'])
-          .map(RepairAssignment.fromJson)
-          .toList(growable: false),
-      progressUpdates: _list(json['progressUpdates'] ?? json['progressHistory'])
-          .map(RepairProgressUpdate.fromJson)
-          .toList(growable: false),
-      history: _list(json['history'])
-          .map(RepairWorkOrderEvent.fromJson)
-          .toList(growable: false),
-      repairEvidence: _list(json['repairEvidence'] ?? json['evidence'])
-          .map(RepairEvidence.fromJson)
-          .toList(growable: false),
+      assignments: _list(
+        json['assignments'] ?? json['assignmentHistory'],
+      ).map(RepairAssignment.fromJson).toList(growable: false),
+      progressUpdates: _list(
+        json['progressUpdates'] ?? json['progressHistory'],
+      ).map(RepairProgressUpdate.fromJson).toList(growable: false),
+      history: _list(
+        json['history'],
+      ).map(RepairWorkOrderEvent.fromJson).toList(growable: false),
+      repairEvidence: _list(
+        json['repairEvidence'] ?? json['evidence'],
+      ).map(RepairEvidence.fromJson).toList(growable: false),
       sla: RepairSla.fromJson(json['sla']),
       acceptedAt: _date(json['acceptedAt']),
       startedAt: _date(json['startedAt'] ?? json['actualStartTime']),
@@ -507,15 +549,20 @@ class RepairWorkOrderPage {
     final data = _map(payload['data']);
     final source = data.isEmpty ? payload : data;
     final values = _list(
-      source['workOrders'] ?? source['items'] ?? source['results'] ?? payload['data'],
+      source['workOrders'] ??
+          source['items'] ??
+          source['results'] ??
+          payload['data'],
     );
     final pagination = _map(source['pagination']).isNotEmpty
         ? _map(source['pagination'])
         : _map(payload['pagination']);
     final page = _int(pagination['page']) ?? 1;
     final limit = _int(pagination['limit']) ?? values.length;
-    final total = _int(pagination['total'] ?? payload['count']) ?? values.length;
-    final pages = _int(pagination['pages']) ??
+    final total =
+        _int(pagination['total'] ?? payload['count']) ?? values.length;
+    final pages =
+        _int(pagination['pages']) ??
         (limit <= 0 ? 1 : (total / limit).ceil().clamp(1, 1 << 31).toInt());
     return RepairWorkOrderPage(
       items: values.map(RepairWorkOrder.fromJson).toList(growable: false),
@@ -546,9 +593,12 @@ class RepairDashboardSummary {
 
   factory RepairDashboardSummary.fromPayload(Map<String, dynamic> payload) {
     final data = _map(payload['data']);
-    final source = _map(data['workOrders']).isNotEmpty ? _map(data['workOrders']) : data;
+    final source = _map(data['workOrders']).isNotEmpty
+        ? _map(data['workOrders'])
+        : data;
     return RepairDashboardSummary(
-      pendingAssignments: _int(
+      pendingAssignments:
+          _int(
             source['pendingAssignments'] ??
                 source['pendingAcceptance'] ??
                 source['pending'] ??
@@ -556,14 +606,24 @@ class RepairDashboardSummary {
           ) ??
           0,
       accepted: _int(source['accepted']) ?? 0,
-      inProgress: _int(source['inProgress'] ?? source['activeRepairs'] ?? source['active']) ?? 0,
-      approachingDeadline: _int(
-            source['approachingDeadline'] ?? source['approaching'] ?? source['nearDeadline'],
+      inProgress:
+          _int(
+            source['inProgress'] ?? source['activeRepairs'] ?? source['active'],
+          ) ??
+          0,
+      approachingDeadline:
+          _int(
+            source['approachingDeadline'] ??
+                source['approaching'] ??
+                source['nearDeadline'],
           ) ??
           0,
       overdue: _int(source['overdue'] ?? source['overdueRepairs']) ?? 0,
-      readyForCompletion: _int(
-            source['readyForCompletion'] ?? source['ready'] ?? source['completed'],
+      readyForCompletion:
+          _int(
+            source['readyForCompletion'] ??
+                source['ready'] ??
+                source['completed'],
           ) ??
           0,
     );
@@ -574,7 +634,8 @@ Map<String, dynamic> _unwrapWorkOrder(Map<String, dynamic> json) {
   final data = _map(json['data']);
   final nested = _map(data['workOrder']);
   if (nested.isNotEmpty) return nested;
-  if (data.isNotEmpty && (data.containsKey('orderNumber') || data.containsKey('status'))) {
+  if (data.isNotEmpty &&
+      (data.containsKey('orderNumber') || data.containsKey('status'))) {
     return data;
   }
   final direct = _map(json['workOrder']);
@@ -584,13 +645,12 @@ Map<String, dynamic> _unwrapWorkOrder(Map<String, dynamic> json) {
 Map<String, dynamic> _map(Object? value) => value is Map<String, dynamic>
     ? value
     : value is Map
-        ? Map<String, dynamic>.from(value)
-        : <String, dynamic>{};
+    ? Map<String, dynamic>.from(value)
+    : <String, dynamic>{};
 
 List<dynamic> _list(Object? value) => value is List ? value : const <dynamic>[];
 
-String _id(Map<String, dynamic> json) =>
-    _text(json['id'] ?? json['_id']) ?? '';
+String _id(Map<String, dynamic> json) => _text(json['id'] ?? json['_id']) ?? '';
 
 String? _text(Object? value) {
   final text = value?.toString().trim();
@@ -600,8 +660,8 @@ String? _text(Object? value) {
 int? _int(Object? value) => value is int
     ? value
     : value is num
-        ? value.toInt()
-        : int.tryParse(value?.toString() ?? '');
+    ? value.toInt()
+    : int.tryParse(value?.toString() ?? '');
 
 DateTime? _date(Object? value) =>
     value == null ? null : DateTime.tryParse(value.toString())?.toLocal();
@@ -609,7 +669,9 @@ DateTime? _date(Object? value) =>
 String? _organizationName(Object? value) {
   if (value is Map) {
     final json = Map<String, dynamic>.from(value);
-    return _text(json['name'] ?? json['label'] ?? json['barangay'] ?? json['code']);
+    return _text(
+      json['name'] ?? json['label'] ?? json['barangay'] ?? json['code'],
+    );
   }
   return _text(value);
 }

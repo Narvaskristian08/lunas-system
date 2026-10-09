@@ -52,14 +52,11 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
     if (workOrder == null) return;
     setState(() => _starting = true);
     try {
-      await repairService.start(
-        workOrder.id,
-        version: workOrder.version,
-      );
+      await repairService.start(workOrder.id, version: workOrder.version);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Repair work started.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Repair work started.')));
       context.go(RepairRoutes.progress(workOrder.id));
     } on ApiException catch (error) {
       if (!mounted) return;
@@ -67,10 +64,16 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
         await _load();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This work order changed on the server. Please review it again.')),
+          const SnackBar(
+            content: Text(
+              'This work order changed on the server. Please review it again.',
+            ),
+          ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     } finally {
       if (mounted) setState(() => _starting = false);
@@ -92,7 +95,7 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
     }
     if (_error != null || _workOrder == null) {
       return Scaffold(
-        appBar: const RepairAppBar(title: 'Start repair', showBackButton: true),
+        appBar: const RepairAppBar(title: 'Start Repair', showBackButton: true),
         body: SafeArea(
           child: LunasStateView(
             state: LunasViewState.error,
@@ -106,7 +109,7 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
     }
     final workOrder = _workOrder!;
     return RepairPage(
-      appBar: const RepairAppBar(title: 'Start repair', showBackButton: true),
+      appBar: const RepairAppBar(title: 'Start Repair', showBackButton: true),
       bottomActionBar: _StartActionBar(
         starting: _starting,
         canStart: workOrder.canStart,
@@ -117,25 +120,36 @@ class _StartRepairScreenState extends State<StartRepairScreen> {
         children: [
           Text(
             workOrder.orderNumber,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.md),
           LunasCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Confirm site', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Confirm Site',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(workOrder.location.displayAddress),
                 const SizedBox(height: AppSpacing.md),
-                Text(workOrder.description.isEmpty ? 'No citizen description was returned.' : workOrder.description),
+                Text(
+                  workOrder.description.isEmpty
+                      ? 'No citizen description was returned.'
+                      : workOrder.description,
+                ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
           if (!workOrder.canStart) ...[
             const SizedBox(height: AppSpacing.lg),
-            const Text('This work order is no longer in the accepted state. Refresh the detail page before taking another action.'),
+            const Text(
+              'This work order is no longer in the accepted state. Refresh the detail page before taking another action.',
+            ),
           ],
         ],
       ),
@@ -161,14 +175,20 @@ class _StartActionBar extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        border: Border(
+          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
       ),
       child: FilledButton.icon(
         onPressed: starting || !canStart ? null : onStart,
         icon: starting
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             : const Icon(Icons.play_circle_outline_rounded),
-        label: Text(starting ? 'Starting repair…' : 'Confirm and start repair'),
+        label: Text(starting ? 'Starting repair…' : 'Confirm and Start Repair'),
       ),
     ),
   );

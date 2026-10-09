@@ -13,7 +13,6 @@ export type WorkOrderActionResult = {
 };
 
 const allowedEvidenceTypes = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
-const maxEvidenceFiles = 5;
 const maxEvidenceBytes = 10 * 1024 * 1024;
 
 const safeText = (value: string | undefined, maximum: number) => value?.trim().slice(0, maximum) || undefined;
@@ -215,7 +214,7 @@ export async function startWorkOrderAction(workOrderId: string): Promise<WorkOrd
 
 export async function updateRepairProgressAction(input: {
   workOrderId: string;
-  progressPercent: 25 | 50 | 75 | 100;
+  progressPercent: number;
   notes?: string;
   location?: { longitude: number; latitude: number };
 }): Promise<WorkOrderActionResult> {
@@ -223,11 +222,9 @@ export async function updateRepairProgressAction(input: {
     await requireAssignedRepairPersonnel();
     const workOrderId = safeId(input.workOrderId);
     const notes = safeText(input.notes, 2000);
-    const stage = repairProgressStages[input.progressPercent];
-    if (!workOrderId || !stage) return { ok: false, message: "Choose a valid repair progress stage." };
-    if (input.progressPercent === 100 && (!notes || notes.length < 2)) {
-      return { ok: false, message: "Add a meaningful repair note before marking this work order ready for completion." };
-    }
+    const stage = repairProgressStages[input.progressPercent as keyof typeof repairProgressStages];
+    if (!workOrderId || !stage) return { ok: false, message: "Refresh this work order before adding an update." };
+    if (!notes) return { ok: false, message: "Describe the work performed before saving." };
     const hasCoordinates = input.location
       && Number.isFinite(input.location.longitude)
       && Number.isFinite(input.location.latitude)
@@ -235,9 +232,11 @@ export async function updateRepairProgressAction(input: {
       && input.location.longitude <= 180
       && input.location.latitude >= -90
       && input.location.latitude <= 90;
+    if (!hasCoordinates) return { ok: false, message: "A current field location is required." };
     return mutateWorkOrder(
       `/work-orders/${encodeURIComponent(workOrderId)}/progress`,
       JSON.stringify({
+        updateType: "note",
         progressPercent: input.progressPercent,
         stage,
         notes,
@@ -249,9 +248,7 @@ export async function updateRepairProgressAction(input: {
         } : {}),
       }),
       workOrderId,
-      input.progressPercent === 100
-        ? "Repair is ready for formal completion and verification."
-        : "Repair progress updated.",
+      "Repair field update saved.",
     );
   } catch (error) {
     return failedAction(error, "LUNAS could not update repair progress. Please try again.");
@@ -262,10 +259,8 @@ export async function completeRepairWorkAction(formData: FormData): Promise<Work
   try {
     await requireAssignedRepairPersonnel();
     const workOrderId = safeId(String(formData.get("workOrderId") ?? ""));
-    const notes = safeText(String(formData.get("notes") ?? ""), 2000);
     const fileValue = formData.get("finalEvidence");
     if (!workOrderId) return { ok: false, message: "This work-order reference is invalid." };
-    if (!notes || notes.length < 2) return { ok: false, message: "Add a meaningful completion note before submitting repair completion." };
     if (!fileValue || !isFile(fileValue)) return { ok: false, message: "Final post-maintenance evidence is required." };
     const extension = fileValue.name.split(".").pop()?.toLowerCase();
     if (!allowedEvidenceTypes.has(fileValue.type) || !["jpg", "jpeg", "png", "webp"].includes(extension ?? "")) {
@@ -277,7 +272,13 @@ export async function completeRepairWorkAction(formData: FormData): Promise<Work
     const upload = new FormData();
     upload.set("progressPercent", "100");
     upload.set("stage", repairProgressStages[100]);
-    upload.set("notes", notes);
+    upload.set("updateType", "completion");
+    const longitude = Number(formData.get("longitude"));
+    const latitude = Number(formData.get("latitude"));
+    if (!formData.has("longitude") || !formData.has("latitude") || !Number.isFinite(longitude) || !Number.isFinite(latitude) || longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90) {
+      return { ok: false, message: "A current field location is required." };
+    }
+    upload.set("location", JSON.stringify({ type: "Point", coordinates: [longitude, latitude] }));
     upload.append("evidence", fileValue, fileValue.name);
     return mutateWorkOrder(
       `/work-orders/${encodeURIComponent(workOrderId)}/progress`,
@@ -287,41 +288,6 @@ export async function completeRepairWorkAction(formData: FormData): Promise<Work
     );
   } catch (error) {
     return failedAction(error, "LUNAS could not submit the final repair evidence. Please try again.");
-  }
-}
-
-export async function uploadRepairEvidenceAction(formData: FormData): Promise<WorkOrderActionResult> {
-  try {
-    await requireAssignedRepairPersonnel();
-    const workOrderId = safeId(String(formData.get("workOrderId") ?? ""));
-    const caption = safeText(String(formData.get("caption") ?? ""), 500);
-    const progressUpdateId = safeId(String(formData.get("progressUpdateId") ?? ""));
-    const files = formData.getAll("evidence").filter(isFile);
-    if (!workOrderId) return { ok: false, message: "This work-order reference is invalid." };
-    if (!files.length) return { ok: false, message: "Choose at least one image to upload." };
-    if (files.length > maxEvidenceFiles) return { ok: false, message: `Upload no more than ${maxEvidenceFiles} images at once.` };
-    for (const file of files) {
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      if (!allowedEvidenceTypes.has(file.type) || !["jpg", "jpeg", "png", "webp"].includes(extension ?? "")) {
-        return { ok: false, message: "Repair evidence must be a JPEG, PNG, or WebP image with a matching file extension." };
-      }
-      if (file.size < 1 || file.size > maxEvidenceBytes) {
-        return { ok: false, message: "Each repair evidence image must be no larger than 10 MB." };
-      }
-    }
-
-    const upload = new FormData();
-    for (const file of files) upload.append("evidence", file, file.name);
-    if (caption) upload.set("caption", caption);
-    if (progressUpdateId) upload.set("progressUpdateId", progressUpdateId);
-    return mutateWorkOrder(
-      `/work-orders/${encodeURIComponent(workOrderId)}/evidence`,
-      upload,
-      workOrderId,
-      "Repair evidence uploaded.",
-    );
-  } catch (error) {
-    return failedAction(error, "LUNAS could not upload repair evidence. Please try again.");
   }
 }
 

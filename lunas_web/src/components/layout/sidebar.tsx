@@ -49,7 +49,7 @@ export function Sidebar({
               {!collapsed ? <p className="mb-2 px-3 text-xs font-semibold leading-5 text-slate-300">{group.label}</p> : <span className="mx-auto mb-2 block h-px w-7 bg-white/15" />}
               <ul className="space-y-1">
                 {items.map((item) => {
-                  const active = item.exact ? pathname === item.href : pathname === item.href.split("?")[0] && item.href !== "/dashboard?module=reports" && !item.href.startsWith("/dashboard?");
+                  const active = item.label === "Maintenance" ? (pathname.startsWith("/work-orders") || pathname.startsWith("/validation-routing")) : item.exact ? pathname === item.href : pathname === item.href.split("?")[0] && item.href !== "/dashboard?module=reports" && !item.href.startsWith("/dashboard?");
                   const Icon = item.icon;
                   return (
                     <li key={item.label}>

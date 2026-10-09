@@ -148,6 +148,7 @@ export interface WorkOrder {
   acceptedAt?: string;
   startedAt?: string;
   readyForCompletionAt?: string;
+  closedAt?: string;
   assignee: WorkOrderPerson | null;
   assignedBy: WorkOrderPerson | null;
   currentAssignment: WorkOrderAssignment | null;
@@ -239,6 +240,7 @@ export interface WorkOrderSummary {
   awaitingFinalVerification: number;
   cityCorrections: number;
   correctiveRepairs: number;
+  closed: number;
 }
 
 const validStatuses = new Set<WorkOrderStatus>([
@@ -497,6 +499,7 @@ export function normalizeWorkOrder(value: unknown): WorkOrder | null {
     acceptedAt: asString(source.acceptedAt),
     startedAt: asString(source.startedAt),
     readyForCompletionAt: asString(source.readyForCompletionAt) ?? asString(source.completedAt),
+    closedAt: asString(source.closedAt) ?? asString(source.finalVerifiedAt) ?? asString(asRecord(source.sla).closedAt),
     assignee: normalizePerson(source.assignee ?? source.assignedTo),
     assignedBy: normalizePerson(source.assignedBy ?? source.createdBy),
     currentAssignment,
@@ -748,5 +751,6 @@ export async function getWorkOrderSummary(): Promise<WorkOrderSummary> {
     awaitingFinalVerification: count(values, "awaitingFinalVerification", "providerAccepted"),
     cityCorrections: count(values, "cityCorrections", "cityCorrectionRequired"),
     correctiveRepairs: count(values, "correctiveRepairs", "reworkRequired"),
+    closed: count(values, "closed", "verified"),
   };
 }

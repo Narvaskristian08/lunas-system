@@ -166,6 +166,7 @@ const serializeWorkOrder = async (workOrder, detail = true) => {
     acceptedAt: source.acceptedAt,
     startedAt: source.startedAt,
     readyForCompletionAt: source.readyForCompletionAt,
+    closedAt: source.closedAt ?? source.finalVerifiedAt,
     version: source.version,
     assignee: safePerson(source.assignedTo),
     assignedBy: safePerson(source.assignedBy),
@@ -904,11 +905,13 @@ exports.updateProgress = asyncHandler(async (req, res) => {
   );
   if (!assignment) return fail(res, 403, 'You do not have an active assignment for this work order');
   const notes = String(req.body.notes || '').trim();
+  const noteOnly = req.body.updateType === 'note';
   const isCorrectiveCycle = workOrder.history?.some((event) => event.type === 'provider_correction_requested' || event.type === 'city_returned');
   const progress = validateProgressUpdate({
-    currentProgress: isCorrectiveCycle && workOrder.progressPercent === 100 ? 75 : workOrder.progressPercent,
+    currentProgress: !noteOnly && isCorrectiveCycle && workOrder.progressPercent === 100 ? 75 : workOrder.progressPercent,
     nextProgress: req.body.progressPercent,
     stage: String(req.body.stage || '').trim(),
+    updateType: req.body.updateType,
     notes
   });
   if (!progress.valid) return fail(res, 400, progress.message);
@@ -925,7 +928,7 @@ exports.updateProgress = asyncHandler(async (req, res) => {
       _id: new mongoose.Types.ObjectId(),
       progressUpdate: progressUpdateId
     }));
-    const completed = progress.progressPercent === 100;
+    const completed = !noteOnly && progress.progressPercent === 100;
     if (completed && !evidence.length) {
       await cleanupEvidence(uploads);
       return fail(res, 400, 'Final post-maintenance evidence is required before submitting completion');
@@ -992,7 +995,7 @@ exports.updateProgress = asyncHandler(async (req, res) => {
       actor: req.user,
       notes: completed
         ? 'Repair Personnel submitted completion and evidence; awaiting Utility Provider review'
-        : 'Repair progress updated to ' + progress.progressPercent + '%',
+        : noteOnly ? 'Repair field update recorded' : 'Repair progress updated to ' + progress.progressPercent + '%',
       metadata: {
         workOrderId: updated._id,
         progressPercent: progress.progressPercent,
@@ -1003,7 +1006,7 @@ exports.updateProgress = asyncHandler(async (req, res) => {
       assignment.assignedBy,
       completed
         ? notificationTemplates.workOrderCompleted(updated.orderNumber)
-        : notificationTemplates.workOrderProgress(updated.orderNumber, progress.progressPercent),
+        : noteOnly ? { type: 'work_order_progress', title: 'Repair Update Added', message: `A field update was added to work order ${updated.orderNumber}.` } : notificationTemplates.workOrderProgress(updated.orderNumber, progress.progressPercent),
       updated
     );
     await createAuditLog({
@@ -1377,7 +1380,8 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
     count({ status: { $in: ACTIVE_WORK_ORDER_STATUSES }, 'sla.state': { $nin: ['met', 'breached', 'cancelled'] }, 'sla.deadline': { $lt: now } }),
     count({ status: 'provider_accepted' }),
     count({ status: 'city_correction_required' }),
-    count({ status: 'rework_required' })
+    count({ status: 'rework_required' }),
+    count({ status: 'verified' })
   ]);
   return res.status(200).json({
     success: true,
@@ -1391,7 +1395,8 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
       overdue: result[6],
       awaitingFinalVerification: result[7],
       cityCorrections: result[8],
-      correctiveRepairs: result[9]
+      correctiveRepairs: result[9],
+      closed: result[10]
     }
   });
 });
