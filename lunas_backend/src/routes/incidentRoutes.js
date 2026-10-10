@@ -43,6 +43,7 @@ const {
   validate
 } = require('../middleware/validation');
 const { OFFICIAL_VALIDATION_ROLES, VALIDATION_DECISION_ROLES } = require('../services/jurisdictionService');
+const { rejectBlockedReporting } = require('../middleware/reportingRestriction');
 
 const officialValidationRoles = OFFICIAL_VALIDATION_ROLES;
 const validationDecisionRoles = VALIDATION_DECISION_ROLES;
@@ -62,9 +63,9 @@ router.get('/barangays', protect, getBarangays);
 router.get('/location-policy', protect, (req, res) => res.json({
   success: true, data: require('../services/locationIntegrityService').getLocationPolicy()
 }));
-router.get('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer'), mongoIdValidation, validate,
+router.get('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate,
   require('../controllers/falseReportReviewController').getReview);
-router.post('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer'), mongoIdValidation, validate,
+router.post('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate,
   require('../controllers/falseReportReviewController').saveReview);
 router.get(
   '/pending-validation',
@@ -81,6 +82,7 @@ router.route('/')
   .post(
     protect,
     authorize('citizen'),
+    rejectBlockedReporting,
     uploadIncidentEvidence,
     parseIncidentPayload,
     createIncidentValidation,

@@ -1,18 +1,21 @@
 const Incident = require('../models/Incident');
 const asyncHandler = require('../middleware/asyncHandler');
 const { buildIncidentScope, combineIncidentFilters } = require('../services/jurisdictionService');
-const allowed = (user) => ['barangay_official', 'city_engineer'].includes(user?.role);
-const scope = (req, extra = {}) => combineIncidentFilters({ _id: req.params.id }, buildIncidentScope(req.user), extra);
+const { refreshReporterRestriction, countConfirmedFindings } = require('../services/reportingRestrictionService');
+const allowed = (user) => ['barangay_official', 'city_engineer', 'admin'].includes(user?.role);
+const incidentReviewScope = (req) => req.user?.role === 'admin' ? {} : buildIncidentScope(req.user);
+const scope = (req, extra = {}) => combineIncidentFilters({ _id: req.params.id }, incidentReviewScope(req), extra);
 const notFound = (res) => res.status(404).json({ success: false, message: 'Incident not found' });
 exports.getReview = asyncHandler(async (req, res) => {
   if (!allowed(req.user)) return res.status(403).json({ success: false, message: 'Review access denied' });
   const incident = await Incident.findOne(scope(req));
   if (!incident) return notFound(res);
   // Counts include only active, explicitly documented findings in caller scope.
-  const count = await Incident.countDocuments(combineIncidentFilters(buildIncidentScope(req.user), {
+  const count = await Incident.countDocuments(combineIncidentFilters(incidentReviewScope(req), {
     reporter: incident.reporter, 'falseReportReview.finding': 'confirmed_fabrication'
   }));
-  res.json({ success: true, data: { review: incident.falseReportReview || null, confirmedFindingsInScope: count } });
+  const total = await countConfirmedFindings(incident.reporter);
+  res.json({ success: true, data: { review: incident.falseReportReview || null, confirmedFindingsInScope: count, confirmedFindingsTotal: total } });
 });
 exports.saveReview = asyncHandler(async (req, res) => {
   if (!allowed(req.user)) return res.status(403).json({ success: false, message: 'Review access denied' });
@@ -25,6 +28,12 @@ exports.saveReview = asyncHandler(async (req, res) => {
   }
   const incident = await Incident.findOne(scope(req));
   if (!incident) return notFound(res);
+  if (finding === 'confirmed_fabrication' && req.user.role !== 'barangay_official') {
+    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official can record an initial finding' });
+  }
+  if (finding === 'corrected' && !['city_engineer', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Only City Engineering or Admin can correct a finding' });
+  }
   if (finding === 'confirmed_fabrication' && incident.status !== 'rejected') {
     return res.status(409).json({ success: false, message: 'A fabrication finding requires a separately rejected report' });
   }
@@ -45,5 +54,9 @@ exports.saveReview = asyncHandler(async (req, res) => {
     $push: { 'falseReportReview.history': entry }
   }, { new: true, runValidators: true });
   if (!updated) return res.status(409).json({ success: false, message: 'Review changed; reload before saving' });
+  await refreshReporterRestriction({
+    reporterId: incident.reporter,
+    assignedBarangay: incident.jurisdiction?.barangay || incident.location?.address?.barangay
+  });
   res.json({ success: true, data: { review: updated.falseReportReview } });
 });

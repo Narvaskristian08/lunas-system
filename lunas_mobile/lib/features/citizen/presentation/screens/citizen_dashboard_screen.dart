@@ -15,6 +15,7 @@ import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart'
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_status_timeline.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
+import 'package:lunas_mobile/features/reporting/data/models/reporting_restriction.dart';
 
 class CitizenDashboardScreen extends StatefulWidget {
   const CitizenDashboardScreen({this.submittedReport, super.key});
@@ -119,7 +120,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 const SizedBox(height: AppSpacing.xl),
                 _ActiveReportSummary(reports: _reports),
                 const SizedBox(height: AppSpacing.md),
-                _ReportCallout(onCreate: () => context.push('/reports/new')),
+                _ReportCallout(
+                  restriction: user?.reportingRestriction,
+                  onCreate: () => context.push(
+                    user?.reportingRestriction.isBlocked == true
+                        ? '/reports/appeal'
+                        : '/reports/new',
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
@@ -173,8 +181,14 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                       title: 'No reports yet',
                       message:
                           'When you submit a report, its status and history will appear here.',
-                      actionLabel: 'New Report',
-                      onAction: () => context.push('/reports/new'),
+                      actionLabel: user?.reportingRestriction.isBlocked == true
+                          ? 'Open Appeal'
+                          : 'New Report',
+                      onAction: () => context.push(
+                        user?.reportingRestriction.isBlocked == true
+                            ? '/reports/appeal'
+                            : '/reports/new',
+                      ),
                       compact: true,
                     )
                   else
@@ -195,58 +209,67 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
 }
 
 class _ReportCallout extends StatelessWidget {
-  const _ReportCallout({required this.onCreate});
+  const _ReportCallout({required this.onCreate, this.restriction});
   final VoidCallback onCreate;
+  final ReportingRestriction? restriction;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(AppSpacing.lg),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFF004D99), Color(0xFF087CC7)],
+  Widget build(BuildContext context) {
+    final blocked = restriction?.isBlocked == true;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF004D99), Color(0xFF087CC7)],
+        ),
+        borderRadius: AppRadius.card,
       ),
-      borderRadius: AppRadius.card,
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Report an Issue',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  blocked ? 'Report submission paused' : 'Report an Issue',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Report a local infrastructure concern.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: .9),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  blocked
+                      ? 'You can appeal the current reporting restriction.'
+                      : 'Report a local infrastructure concern.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: .9),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        IconButton.filledTonal(
-          tooltip: 'Start a report',
-          onPressed: onCreate,
-          icon: const Icon(Icons.add_rounded, size: 24),
-          style: IconButton.styleFrom(
-            fixedSize: const Size.square(48),
-            padding: EdgeInsets.zero,
-            shape: const CircleBorder(),
-            backgroundColor: Colors.white.withValues(alpha: .18),
-            foregroundColor: Colors.white,
+          const SizedBox(width: AppSpacing.md),
+          IconButton.filledTonal(
+            tooltip: 'Start a report',
+            onPressed: onCreate,
+            icon: Icon(
+              blocked ? Icons.rate_review_outlined : Icons.add_rounded,
+              size: 24,
+            ),
+            style: IconButton.styleFrom(
+              fixedSize: const Size.square(48),
+              padding: EdgeInsets.zero,
+              shape: const CircleBorder(),
+              backgroundColor: Colors.white.withValues(alpha: .18),
+              foregroundColor: Colors.white,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _ActiveReportSummary extends StatelessWidget {

@@ -90,10 +90,10 @@ exports.register = asyncHandler(async (req, res) => {
   const normalizedEmail = email.toLowerCase();
 
   const existingUser = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
-  if (existingUser && (existingUser.role !== 'citizen' || existingUser.isActive || existingUser.isVerified || existingUser.isArchived)) {
+  if (existingUser) {
     return res.status(409).json({
       success: false,
-      message: 'User with this email already exists'
+      message: 'An account with this email already exists. Sign in or use Forgot Password.'
     });
   }
 
@@ -118,21 +118,10 @@ exports.register = asyncHandler(async (req, res) => {
     });
   }
 
-  let user = existingUser;
-  if (user) {
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.phone = phone;
-    user.password = password;
-    user.address = address;
-    user.role = 'citizen';
-    user.isActive = false;
-    user.isVerified = false;
-    applyRegistrationChallenge(user, challenge);
-    await user.save();
-  } else {
-    // Public registration is deliberately citizen-only. No session is issued
-    // until the email OTP challenge has been completed.
+  // Public registration is deliberately citizen-only. No session is issued
+  // until the email OTP challenge has been completed.
+  let user;
+  try {
     user = await User.create({
       firstName,
       lastName,
@@ -149,6 +138,14 @@ exports.register = asyncHandler(async (req, res) => {
       registrationMfaAttempts: 0,
       registrationMfaSentAt: new Date()
     });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists. Sign in or use Forgot Password.'
+      });
+    }
+    throw error;
   }
 
   await createAuditLog({

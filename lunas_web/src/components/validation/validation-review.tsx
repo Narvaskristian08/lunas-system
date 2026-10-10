@@ -21,6 +21,7 @@ import {
   validateIncidentAction,
 } from "@/app/actions/validation";
 import { FalseReportReview } from "@/components/validation/false-report-review";
+import { ReportingAppealReview } from "@/components/validation/reporting-appeal-review";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -318,7 +319,8 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
           <Evidence incident={incident} />
           <AiAssistance incident={incident} />
           <Coordinates incident={incident} />
-          {(isBarangay || isCityEngineer) ? <FalseReportReview incidentId={incident.id} status={incident.status} /> : null}
+          {(isBarangay || isCityEngineer) ? <FalseReportReview incidentId={incident.id} status={incident.status} role={viewer.backendRole} /> : null}
+          {(isBarangay || isCityEngineer) && incident.reporter?.id ? <ReportingAppealReview reporterId={incident.reporter.id} role={viewer.backendRole} /> : null}
           <ValidationRoutingSummary incident={incident} />
           <Timeline incident={incident} />
         </div>

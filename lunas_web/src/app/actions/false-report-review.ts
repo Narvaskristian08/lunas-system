@@ -8,10 +8,11 @@ export interface ReviewData {
     finding: string; reason: string; evidenceReference: string; reviewedAt: string;
   }[] };
   confirmedFindingsInScope: number;
+  confirmedFindingsTotal?: number;
 }
 async function credentials() {
   const viewer = await requirePermission("reports.validate");
-  if (!["barangay_official", "city_engineer"].includes(viewer.backendRole)) throw new Error("Review access denied");
+  if (!["barangay_official", "city_engineer", "admin"].includes(viewer.backendRole)) throw new Error("Review access denied");
   return requireAccessToken();
 }
 export async function loadFalseReportReview(id: string): Promise<ReviewData> {
@@ -26,7 +27,9 @@ export async function saveFalseReportReview(id: string, input: {
     await backendRequest(`/incidents/${encodeURIComponent(id)}/false-report-review`, {
       accessToken, method: "POST", body: JSON.stringify(input),
     });
-    return { ok: true, message: "Review recorded. No account penalty is applied." };
+    return { ok: true, message: input.finding === "corrected"
+      ? "Finding corrected. The audit history remains available."
+      : "Finding recorded. Three active confirmed findings pause new report submissions." };
   } catch (error) {
     return { ok: false, message: error instanceof BackendApiError ? error.message : "Review could not be saved." };
   }

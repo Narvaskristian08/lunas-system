@@ -86,6 +86,7 @@ export interface ValidationIncident {
   priority?: ValidationPriority;
   createdAt?: string;
   updatedAt?: string;
+  reporter?: { id: string; firstName?: string; lastName?: string };
   location: ValidationLocation;
   images: ValidationEvidence[];
   evidenceThumbnail?: string | null;
@@ -318,6 +319,15 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       : undefined,
     createdAt: asString(source.createdAt),
     updatedAt: asString(source.updatedAt),
+    reporter: (() => {
+      const reporter = asRecord(source.reporter);
+      const reporterId = normalizedId(reporter);
+      return reporterId ? {
+        id: reporterId,
+        firstName: asString(reporter.firstName),
+        lastName: asString(reporter.lastName),
+      } : undefined;
+    })(),
     locationIntegrity: source.locationIntegrity ? {
       pinSource: asString(asRecord(source.locationIntegrity).pinSource),
       comparison: asString(asRecord(source.locationIntegrity).comparison),

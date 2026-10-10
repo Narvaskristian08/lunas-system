@@ -68,6 +68,43 @@ describe('citizen incident reporting', () => {
     jest.clearAllMocks();
   });
 
+  test('blocks a reporter before duplicate detection or evidence processing', async () => {
+    const req = {
+      body: {
+        category: 'road',
+        description: 'A large pothole is causing a hazard for motorists.',
+        location: {
+          coordinates: ['120.3387', '16.0433'],
+          address: { barangay: 'Pantal', city: 'Dagupan City' }
+        }
+      },
+      files: {},
+      user: {
+        _id: '507f191e810c19729de860aa',
+        role: 'citizen',
+        reportingRestriction: {
+          status: 'blocked',
+          confirmedFindings: 3,
+          threshold: 3,
+          appealStatus: 'none'
+        }
+      },
+      headers: {}
+    };
+    const response = createResponse();
+
+    await createIncident(req, response, jest.fn());
+
+    expect(response.status).toHaveBeenCalledWith(403);
+    expect(response.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'REPORTING_BLOCKED',
+      data: { reportingRestriction: expect.objectContaining({ confirmedFindings: 3, threshold: 3 }) }
+    }));
+    expect(findPossibleDuplicateCandidates).not.toHaveBeenCalled();
+    expect(evidenceService.processAndUploadEvidence).not.toHaveBeenCalled();
+    expect(Incident.create).not.toHaveBeenCalled();
+  });
+
   test('creates a submitted, owned report and ignores citizen-provided priority', async () => {
     const possibleDuplicate = {
       incident: '507f191e810c19729de860eb',

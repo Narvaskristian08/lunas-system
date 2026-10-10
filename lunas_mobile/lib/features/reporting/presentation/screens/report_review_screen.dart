@@ -12,6 +12,7 @@ import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
+import 'package:lunas_mobile/features/reporting/data/models/reporting_restriction.dart';
 
 class ReportReviewScreen extends StatefulWidget {
   const ReportReviewScreen({
@@ -86,6 +87,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   bool _acknowledgedPrivacy = false;
   bool _submitting = false;
   String? _error;
+  ReportingRestriction? _reportingRestriction;
 
   Future<void> _submit() async {
     if (_policy == null) {
@@ -145,7 +147,19 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       }
       context.go('/citizen', extra: report);
     } on ApiException catch (error) {
-      if (mounted) _updateReview(() => _error = error.message);
+      if (mounted) {
+        _updateReview(() {
+          if (error.code == 'REPORTING_BLOCKED') {
+            final raw = error.data?['reportingRestriction'];
+            _reportingRestriction = ReportingRestriction.fromJson(
+              raw is Map ? Map<String, dynamic>.from(raw) : null,
+            );
+            _error = null;
+          } else {
+            _error = error.message;
+          }
+        });
+      }
     } catch (_) {
       if (mounted) {
         _updateReview(
@@ -399,10 +413,18 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
           AppSpacing.lg,
         ),
         child: LunasButton(
-          label: 'Submit Report',
-          icon: Icons.send_rounded,
+          label: _reportingRestriction?.isBlocked == true
+              ? 'Open Appeal'
+              : 'Submit Report',
+          icon: _reportingRestriction?.isBlocked == true
+              ? Icons.rate_review_outlined
+              : Icons.send_rounded,
           isLoading: _submitting,
-          onPressed: _submitting || _loadingPolicy ? null : _openConfirmation,
+          onPressed: _submitting || _loadingPolicy
+              ? null
+              : _reportingRestriction?.isBlocked == true
+              ? () => context.push('/reports/appeal')
+              : _openConfirmation,
         ),
       ),
     ),
@@ -438,6 +460,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                if (_reportingRestriction?.isBlocked == true) ...[
+                  _ReportingBlockedCard(restriction: _reportingRestriction!),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 LunasCard(
                   child: Row(
                     children: [
@@ -568,4 +594,57 @@ class _ConfirmationRow extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _ReportingBlockedCard extends StatelessWidget {
+  const _ReportingBlockedCard({required this.restriction});
+
+  final ReportingRestriction restriction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LunasCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.pause_circle_outline, color: theme.colorScheme.error),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Report submission paused',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'You have ${restriction.confirmedFindings} confirmed invalid-report findings. You can still sign in, view your reports, and submit an appeal.',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          LinearProgressIndicator(
+            value: (restriction.confirmedFindings / restriction.threshold)
+                .clamp(0, 1)
+                .toDouble(),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${restriction.confirmedFindings} / ${restriction.threshold} confirmed findings',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          LunasButton(
+            label: 'Submit Appeal',
+            icon: Icons.rate_review_outlined,
+            onPressed: () => context.push('/reports/appeal'),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -2,11 +2,15 @@ class ApiException implements Exception {
   const ApiException({
     required this.message,
     this.statusCode,
+    this.code,
+    this.data,
     this.fieldErrors = const {},
   });
 
   final String message;
   final int? statusCode;
+  final String? code;
+  final Map<String, dynamic>? data;
   final Map<String, String> fieldErrors;
 
   bool get isUnauthorized => statusCode == 401;
@@ -15,10 +19,9 @@ class ApiException implements Exception {
   bool get isConflict => statusCode == 409;
 
   factory ApiException.network() => const ApiException(
-    message:
-        'We could not reach LUNAS. Check your connection and try again.',
+    message: 'We could not reach LUNAS. Check your connection and try again.',
   );
 
   @override
-  String toString() => 'ApiException($statusCode): $message';
+  String toString() => 'ApiException($statusCode, $code): $message';
 }

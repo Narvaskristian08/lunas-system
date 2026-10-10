@@ -6,11 +6,25 @@ const req = (body = {}, role = 'barangay_official') => ({ params: { id: 'inciden
 const res = () => { const r = {}; r.status = jest.fn().mockReturnValue(r); r.json = jest.fn().mockReturnValue(r); return r; };
 const body = { finding: 'confirmed_fabrication', reason: 'Site inspection and cited evidence confirm deliberate fabrication.', evidenceReference: 'Inspection record 123', expectedVersion: 0 };
 beforeEach(() => { jest.clearAllMocks(); Incident.findOne.mockResolvedValue({ status: 'rejected', reporter: 'citizen' }); });
-test.each(['citizen', 'utility_provider', 'repair_personnel', 'admin'])('%s cannot access or write sensitive review', async (role) => {
+test.each(['citizen', 'utility_provider', 'repair_personnel'])('%s cannot access or write sensitive review', async (role) => {
   const response = res(); await getReview(req({}, role), response, jest.fn());
   expect(response.status).toHaveBeenCalledWith(403);
   await saveReview(req(body, role), response, jest.fn());
   expect(Incident.findOne).not.toHaveBeenCalled();
+});
+test('City Engineering cannot record the initial fabrication finding', async () => {
+  const response = res();
+  await saveReview(req(body, 'city_engineer'), response, jest.fn());
+  expect(response.status).toHaveBeenCalledWith(403);
+  expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+});
+test('Admin can correct an active fabrication finding', async () => {
+  Incident.findOne.mockResolvedValue({ status: 'rejected', falseReportReview: { finding: 'confirmed_fabrication', version: 1 } });
+  Incident.findOneAndUpdate.mockResolvedValue({ falseReportReview: { finding: 'corrected', version: 2 } });
+  const response = res();
+  await saveReview(req({ ...body, finding: 'corrected', expectedVersion: 1 }, 'admin'), response, jest.fn());
+  expect(response.status).not.toHaveBeenCalledWith(403);
+  expect(response.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
 });
 test('review lookup and repeat count include canonical official jurisdiction', async () => {
   Incident.countDocuments.mockResolvedValue(2);
@@ -42,7 +56,7 @@ test('documented finding atomically appends actor and evidence without lifecycle
 test('correction keeps append-only history and removes active count eligibility', async () => {
   Incident.findOne.mockResolvedValue({ status: 'rejected', falseReportReview: { finding: 'confirmed_fabrication', version: 1 } });
   Incident.findOneAndUpdate.mockResolvedValue({ falseReportReview: { finding: 'corrected', version: 2 } });
-  await saveReview(req({ ...body, finding: 'corrected', expectedVersion: 1 }), res(), jest.fn());
+  await saveReview(req({ ...body, finding: 'corrected', expectedVersion: 1 }, 'city_engineer'), res(), jest.fn());
   expect(Incident.findOneAndUpdate.mock.calls[0][1].$set).toEqual({ 'falseReportReview.finding': 'corrected' });
   expect(Incident.findOneAndUpdate.mock.calls[0][1].$push['falseReportReview.history'].finding).toBe('corrected');
 });

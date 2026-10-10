@@ -274,6 +274,8 @@ class ApiClient {
     }
     return ApiException(
       statusCode: statusCode,
+      code: _string(payload['code']),
+      data: _map(payload['data']),
       message:
           _string(payload['message']) ??
           (statusCode >= 500

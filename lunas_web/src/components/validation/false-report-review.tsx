@@ -5,7 +5,7 @@ import { loadFalseReportReview, saveFalseReportReview, type ReviewData } from "@
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export function FalseReportReview({ incidentId, status }: { incidentId: string; status: string }) {
+export function FalseReportReview({ incidentId, status, role }: { incidentId: string; status: string; role: string }) {
   const [data, setData] = useState<ReviewData>();
   const [reason, setReason] = useState("");
   const [evidenceReference, setEvidence] = useState("");
@@ -19,6 +19,8 @@ export function FalseReportReview({ incidentId, status }: { incidentId: string; 
     return () => { active = false; };
   }, [incidentId]);
   const correcting = data?.review?.finding === "confirmed_fabrication";
+  const canRecord = role === "barangay_official";
+  const canCorrect = role === "city_engineer" || role === "admin";
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!confirming) { setConfirming(true); return; }
@@ -33,19 +35,19 @@ export function FalseReportReview({ incidentId, status }: { incidentId: string; 
       if (result.ok) { setReason(""); setEvidence(""); }
     });
   };
-  return <Card><CardHeader title="Documented False-Report Review" description="Rejections, duplicates, unverifiable locations, and GPS mismatch do not establish deliberate fabrication. Findings require evidence and human review; no automatic punishment applies." />
+  return <Card><CardHeader title="Documented False-Report Review" description="Rejections, duplicates, unverifiable locations, and GPS mismatch do not establish deliberate fabrication. A Barangay Official must document a finding with evidence; active findings pause new submissions after the third." />
     <div className="space-y-3 p-5 text-sm">
       {message ? <p role="status">{message}</p> : null}
       {!data ? <p>Loading review...</p> : <>
-        <p>Active documented findings for this reporter within your jurisdiction: {data.confirmedFindingsInScope}</p>
+        <p>Active documented findings for this reporter: {data.confirmedFindingsTotal ?? data.confirmedFindingsInScope} / 3</p>
         <p>Current Review: {correcting ? "Confirmed Fabrication Finding" : "No Active Fabrication Finding"}</p>
         {data.review?.history.map((entry, index) => <div key={index} className="rounded border p-3"><p>{entry.finding === "corrected" ? "Finding Corrected" : "Documented Finding"} - {entry.reviewedAt}</p><p>{entry.reason}</p><p>Evidence Reference: {entry.evidenceReference}</p></div>)}
-        {(status === "rejected" || correcting) ? <form onSubmit={submit} className="space-y-3">
+        {(status === "rejected" && canRecord) || (correcting && canCorrect) ? <form onSubmit={submit} className="space-y-3">
           <label className="block">{correcting ? "Correction Reason" : "Evidence Supporting Deliberate Fabrication"}<textarea className="block w-full rounded border p-2" value={reason} onChange={(event) => { setReason(event.target.value); setConfirming(false); }} required minLength={20} maxLength={2000} disabled={pending} /></label>
           <label className="block">Evidence or Documented Decision Reference<input className="block w-full rounded border p-2" value={evidenceReference} onChange={(event) => { setEvidence(event.target.value); setConfirming(false); }} required maxLength={500} disabled={pending} /></label>
-          {confirming ? <p role="alert">Confirm that you reviewed the cited evidence and documented this {correcting ? "correction" : "finding"}. This does not change the incident status or restrict the account.</p> : null}
+          {confirming ? <p role="alert">Confirm that you reviewed the cited evidence and documented this {correcting ? "correction" : "finding"}.</p> : null}
           <Button type="submit" disabled={pending}>{pending ? "Saving..." : confirming ? "Confirm Reviewed Decision" : correcting ? "Correct Erroneous Finding" : "Record Reviewed Finding"}</Button>
-        </form> : <p>A finding can only be recorded after a separate rejection decision.</p>}
+        </form> : <p>{correcting ? "Only City Engineering or Admin can correct an active finding." : status === "rejected" ? "Only the assigned Barangay Official can record the initial finding." : "A finding can only be recorded after a separate rejection decision."}</p>}
       </>}
     </div>
   </Card>;

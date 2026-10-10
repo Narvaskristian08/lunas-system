@@ -1,5 +1,6 @@
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
+import 'package:lunas_mobile/features/reporting/data/models/reporting_restriction.dart';
 
 class AuthUser {
   const AuthUser({
@@ -13,6 +14,7 @@ class AuthUser {
     this.address,
     this.barangay,
     this.profileImage,
+    this.reportingRestriction = const ReportingRestriction(),
   });
 
   final String id;
@@ -25,6 +27,7 @@ class AuthUser {
   final Map<String, dynamic>? address;
   final String? barangay;
   final String? profileImage;
+  final ReportingRestriction reportingRestriction;
 
   String get fullName => '$firstName $lastName'.trim();
   bool get isCitizen => isCitizenRole(role);
@@ -47,6 +50,11 @@ class AuthUser {
           : null,
       barangay: json['barangay']?.toString(),
       profileImage: json['profileImage']?.toString(),
+      reportingRestriction: ReportingRestriction.fromJson(
+        json['reportingRestriction'] is Map
+            ? Map<String, dynamic>.from(json['reportingRestriction'] as Map)
+            : null,
+      ),
     );
   }
 
@@ -56,6 +64,7 @@ class AuthUser {
     String? phone,
     Map<String, dynamic>? address,
     String? profileImage,
+    ReportingRestriction? reportingRestriction,
   }) {
     return AuthUser(
       id: id,
@@ -68,6 +77,7 @@ class AuthUser {
       address: address ?? this.address,
       barangay: barangay,
       profileImage: profileImage ?? this.profileImage,
+      reportingRestriction: reportingRestriction ?? this.reportingRestriction,
     );
   }
 }

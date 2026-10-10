@@ -112,6 +112,16 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  reportingRestriction: {
+    status: { type: String, enum: ['clear', 'blocked'], default: 'clear' },
+    confirmedFindings: { type: Number, min: 0, default: 0 },
+    threshold: { type: Number, min: 1, default: 3 },
+    assignedBarangay: { type: String, trim: true, maxlength: 100 },
+    blockedAt: Date,
+    blockedAtFindings: { type: Number, min: 0 },
+    appealStatus: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
+    appealId: { type: mongoose.Schema.Types.ObjectId, ref: 'ReportingAppeal' }
+  },
   archivedAt: Date,
   archivedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -216,6 +226,16 @@ userSchema.methods.toPublicJSON = function() {
     isActive: this.isActive,
     isArchived: this.isArchived,
     accountStatus: accountStatus(this),
+    reportingRestriction: {
+      status: this.reportingRestriction?.status === 'blocked' ? 'blocked' : 'clear',
+      confirmedFindings: Number(this.reportingRestriction?.confirmedFindings) || 0,
+      threshold: 3,
+      assignedBarangay: this.reportingRestriction?.assignedBarangay,
+      appealStatus: ['none', 'pending', 'approved', 'rejected'].includes(this.reportingRestriction?.appealStatus)
+        ? this.reportingRestriction.appealStatus
+        : 'none',
+      appealId: this.reportingRestriction?.appealId
+    },
     organization: this.organization,
     position: this.position,
     personnelId: this.personnelId,

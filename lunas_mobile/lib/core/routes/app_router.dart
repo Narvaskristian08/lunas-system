@@ -36,6 +36,7 @@ import 'package:lunas_mobile/features/reporting/presentation/screens/evidence_pi
 import 'package:lunas_mobile/features/reporting/presentation/screens/my_reports_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/new_citizen_report_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_review_screen.dart';
+import 'package:lunas_mobile/features/reporting/presentation/screens/reporting_appeal_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -182,6 +183,10 @@ final GoRouter appRouter = GoRouter(
                     message: 'Start a new report before reviewing it.',
                   );
           },
+        ),
+        GoRoute(
+          path: '/reports/appeal',
+          builder: (_, _) => const ReportingAppealScreen(),
         ),
         GoRoute(
           path: '/reports/drafts',

@@ -131,6 +131,31 @@ describe('public citizen registration', () => {
     expect(res.status).toHaveBeenCalledWith(409);
   });
 
+  test('returns a conflict when an email belongs to a pending unverified citizen', async () => {
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: '507f191e810c19729de860aa',
+        role: 'citizen',
+        isActive: false,
+        isVerified: false,
+        isArchived: false
+      })
+    });
+    const res = createResponse();
+
+    await register({
+      body: {
+        firstName: 'Juan', lastName: 'Dela Cruz', email: 'juan@example.com',
+        phone: '09123456789', password: 'SecurePass123'
+      },
+      headers: {}
+    }, res, jest.fn());
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(deliverRegistrationCode).not.toHaveBeenCalled();
+    expect(User.create).not.toHaveBeenCalled();
+  });
+
   test('issues a rotated session pair after valid credentials', async () => {
     const user = {
       _id: '507f191e810c19729de860aa',

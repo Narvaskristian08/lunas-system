@@ -31,6 +31,7 @@ const {
   canonicalizeBarangay,
   canonicalizeDagupanCity
 } = require('../data/dagupanBarangays');
+const { getReportingRestriction, reportingBlockedResponse } = require('../services/reportingRestrictionService');
 
 const clampUnit = (value) => {
   const numericValue = Number(value);
@@ -325,6 +326,10 @@ exports.createIncident = asyncHandler(async (req, res) => {
       success: false,
       message: 'Choose a recognized Dagupan barangay and confirm Dagupan City'
     });
+  }
+  const reportingRestriction = getReportingRestriction(req.user);
+  if (reportingRestriction.status === 'blocked') {
+    return reportingBlockedResponse(res, reportingRestriction);
   }
   const coordinates = location.coordinates.map(Number);
   const locationIntegrity = buildLocationIntegrity(req.body.locationIntegrity, coordinates);

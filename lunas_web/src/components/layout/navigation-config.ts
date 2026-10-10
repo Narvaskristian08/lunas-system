@@ -8,6 +8,7 @@ import {
   ScrollText,
   Timer,
   UserRound,
+  ShieldAlert,
 } from "lucide-react";
 import type { BackendUserRole, Permission } from "@/types";
 
@@ -44,7 +45,7 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
   },
   {
     label: "Administration",
-    items: [{ label: "Authorized Accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" }, { label: "Audit Trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
+    items: [{ label: "Authorized Accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" }, { label: "Reporting Appeals", href: "/admin/appeals", icon: ShieldAlert, permission: "users.manage" }, { label: "Audit Trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
   },
   {
     label: "Account",

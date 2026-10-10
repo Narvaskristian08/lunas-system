@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
+import 'package:lunas_mobile/features/reporting/data/models/reporting_appeal.dart';
 
 class ReportService {
   const ReportService({required ApiClient apiClient}) : _apiClient = apiClient;
@@ -113,6 +114,28 @@ class ReportService {
       ],
     );
     return IncidentReport.fromJson(_dataMap(payload));
+  }
+
+  Future<ReportingAppeal?> getMyAppeal() async {
+    final payload = await _apiClient.get('/reporting-appeals/me');
+    final data = payload['data'];
+    return data is Map
+        ? ReportingAppeal.fromJson(Map<String, dynamic>.from(data))
+        : null;
+  }
+
+  Future<ReportingAppeal> submitAppeal({
+    required String explanation,
+    required String evidenceReference,
+  }) async {
+    final payload = await _apiClient.post(
+      '/reporting-appeals',
+      body: {
+        'explanation': explanation,
+        'evidenceReference': evidenceReference,
+      },
+    );
+    return ReportingAppeal.fromJson(_dataMap(payload));
   }
 
   List<IncidentReport> _reportList(Map<String, dynamic> payload) {
