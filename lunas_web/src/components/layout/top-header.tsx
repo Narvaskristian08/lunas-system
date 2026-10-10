@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, ShieldCheck } from "lucide-react";
+import { NotificationHeaderLink } from "@/components/layout/notification-header-link";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useViewer } from "@/components/providers/viewer-provider";
 
@@ -13,6 +14,7 @@ export function TopHeader({ onOpenNavigation, menuButtonRef }: { onOpenNavigatio
         <div className="hidden items-center gap-2 xl:flex"><span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800"><ShieldCheck className="size-3.5" aria-hidden="true" /> System Healthy</span></div>
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <NotificationHeaderLink />
         <UserMenu compact={viewer.role.length > 22} />
       </div>
     </header>

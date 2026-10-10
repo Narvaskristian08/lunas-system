@@ -19,6 +19,7 @@ const DEMO_EMAIL_PATTERN = new RegExp(`^demo\\..+${DEMO_EMAIL_DOMAIN.replace('.'
 const DEMO_REPORT_PREFIX = 'DEMO-QA-';
 const DEFAULT_PASSWORD = 'LunasDemo2026!';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+const LOCAL_DOCKER_HOSTS = new Set(['mongodb']);
 
 function requireSafeEnvironment() {
   if (process.env.ALLOW_DEMO_SEED !== 'true') {
@@ -39,8 +40,10 @@ function requireSafeEnvironment() {
     throw new Error('Refusing to seed: MONGODB_URI must use a MongoDB protocol.');
   }
 
-  if (!LOCAL_HOSTS.has(parsed.hostname)) {
-    throw new Error('Refusing to seed: only localhost, 127.0.0.1, or ::1 are allowed.');
+  const dockerSeedAllowed = process.env.DEMO_SEED_DOCKER === 'true'
+    && LOCAL_DOCKER_HOSTS.has(parsed.hostname);
+  if (!LOCAL_HOSTS.has(parsed.hostname) && !dockerSeedAllowed) {
+    throw new Error('Refusing to seed: only local MongoDB hosts are allowed. Set DEMO_SEED_DOCKER=true only for the local Compose mongodb service.');
   }
 
   const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, '').split('/')[0]);
@@ -205,13 +208,17 @@ async function seed() {
     ]);
     const admin = seededUsers[0];
     const citizen = seededUsers[2];
+    const barangayOfficial = seededUsers[3];
 
     const incidents = await Incident.create([
       demoIncident({ reportNumber: 'DEMO-QA-001', reporter: citizen._id, category: 'water', subcategory: 'leak', description: 'Synthetic water leak report for the sequential workflow demonstration.', barangay: 'Poblacion Oeste', coordinates: [120.3387, 16.0433] }),
       demoIncident({ reportNumber: 'DEMO-QA-002', reporter: citizen._id, category: 'drainage', subcategory: 'blockage', description: 'Synthetic drainage report for barangay queue and scope checks.', barangay: 'Poblacion Oeste', coordinates: [120.3374, 16.0421] }),
-      demoIncident({ reportNumber: 'DEMO-QA-003', reporter: citizen._id, category: 'streetlight', subcategory: 'outage', description: 'Synthetic report outside the Demo Barangay Official assignment.', barangay: 'Bonuan Gueset', coordinates: [120.3451, 16.0522] })
+      demoIncident({ reportNumber: 'DEMO-QA-003', reporter: citizen._id, category: 'streetlight', subcategory: 'outage', description: 'Synthetic report outside the Demo Barangay Official assignment.', barangay: 'Bonuan Gueset', coordinates: [120.3451, 16.0522] }),
+      // Keep one fresh report in the official\'s scope so the Awaiting Review queue is always demonstrable.
+      demoIncident({ reportNumber: 'DEMO-QA-004', reporter: citizen._id, category: 'road', subcategory: 'pothole', description: 'Synthetic report intentionally seeded for the Barangay Awaiting Review queue.', barangay: 'Poblacion Oeste', coordinates: [120.3392, 16.0438] })
     ]);
 
+    const awaitingReviewIncident = incidents.find((incident) => incident.reportNumber === 'DEMO-QA-004');
     await Notification.insertMany(incidents.map((incident) => ({
       recipient: citizen._id,
       type: 'incident_submitted',
@@ -224,7 +231,19 @@ async function seed() {
       },
       priority: 'medium',
       sentVia: ['in_app']
-    })));
+    })).concat(awaitingReviewIncident ? [{
+      recipient: barangayOfficial._id,
+      type: 'incident_submitted',
+      title: 'Report Awaiting Barangay Review',
+      message: `Incident ${awaitingReviewIncident.reportNumber} is ready for Barangay validation.`,
+      data: {
+        incidentId: awaitingReviewIncident._id,
+        reportNumber: awaitingReviewIncident.reportNumber,
+        link: `/validation-routing/${awaitingReviewIncident._id}`
+      },
+      priority: 'high',
+      sentVia: ['in_app']
+    }] : []));
 
     await AuditLog.create({
       action: 'user_created',
@@ -237,6 +256,7 @@ async function seed() {
     });
 
     console.log(`Seeded ${seededUsers.length} synthetic demo accounts and ${incidents.length} synthetic submitted incidents in lunas_db.`);
+    console.log('DEMO-QA-004 is the fresh Barangay Awaiting Review fixture.');
     console.log('Demo records use the demo.*@lunas.test namespace; no non-demo records were changed.');
   } finally {
     await mongoose.disconnect();

@@ -3,7 +3,6 @@ import {
   CircleGauge,
   ClipboardList,
   ClipboardCheck,
-  Bell,
   HelpCircle,
   ScrollText,
   Timer,
@@ -27,7 +26,6 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
     label: "Overview",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: CircleGauge, permission: "dashboard.view", exact: true },
-      { label: "Notifications", href: "/notifications", icon: Bell, permission: "notifications.view", hiddenForRoles: ["admin"] },
     ],
   },
   {
@@ -38,10 +36,6 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
       { label: "Maintenance", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view", visibleForRoles: ["city_engineer"] },
       { label: "SLA Monitor", href: "/sla", icon: Timer, permission: "sla.view", hiddenForRoles: ["city_engineer", "utility_provider"] },
     ],
-  },
-  {
-    label: "Updates",
-    items: [{ label: "Notifications", href: "/notifications", icon: Bell, permission: "notifications.view", visibleForRoles: ["admin"] }],
   },
   {
     label: "Administration",

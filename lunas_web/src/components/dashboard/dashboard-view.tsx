@@ -1,4 +1,5 @@
 import { BarangayReportTable } from "@/components/dashboard/barangay-report-table";
+import { ReportingAppealsCard } from "@/components/dashboard/reporting-appeals-card";
 import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/states/empty-state";
@@ -66,6 +67,8 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
       {viewer.backendRole === "city_engineer" ? <BarangayReportTable rows={data.barangayReports ?? []} /> : (      <DashboardGrid className="sm:grid-cols-2 xl:grid-cols-4">
         {data.metrics.map((item) => <SummaryCard key={item.label} metric={item} />)}
       </DashboardGrid>)}
+
+      {data.reportingAppeals ? <ReportingAppealsCard initialAppeals={data.reportingAppeals} /> : null}
 
       {viewer.backendRole !== "city_engineer" ? <Card className="mt-6 overflow-hidden">
         <CardHeader title={copy.recordsTitle} description={copy.recordsDescription} />
