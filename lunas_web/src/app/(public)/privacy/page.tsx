@@ -99,8 +99,9 @@ const sections: LegalSection[] = [
     id: "third-party-services",
     title: "Third-party services",
     paragraphs: [
-      "Draft outline: identify the approved roles and privacy implications of external services used for maps, notifications, cloud storage, authentication support, analytics, or other integrations. Link to applicable notices only after vendor and contract review.",
+      "Draft outline: identify the approved roles and privacy implications of external services used for maps, notifications, cloud storage, authentication support, analytics, or other integrations. Login protection may use Cloudflare Turnstile, which processes browser and device signals to distinguish normal users from automated abuse. Link to applicable notices only after vendor and contract review.",
     ],
+    reviewNote: "If invisible Turnstile mode is enabled, include Cloudflare's Turnstile Privacy Addendum in the approved privacy notice.",
   },
   {
     id: "contact-information",

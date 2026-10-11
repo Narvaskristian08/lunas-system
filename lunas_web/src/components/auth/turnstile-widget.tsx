@@ -9,6 +9,7 @@ type TurnstileApi = {
     action: string;
     theme: "auto";
     size: "flexible";
+    appearance: "interaction-only";
     responseField: false;
     callback: (token: string) => void;
     "expired-callback": () => void;
@@ -48,6 +49,9 @@ export function TurnstileWidget({
       action: "login",
       theme: "auto",
       size: "flexible",
+      // Cloudflare Managed mode stays out of the way for normal users and
+      // only shows a simple checkbox when its risk checks need confirmation.
+      appearance: "interaction-only",
       responseField: false,
       callback: (nextToken) => {
         setToken(nextToken);
@@ -79,7 +83,10 @@ export function TurnstileWidget({
         strategy="afterInteractive"
         onReady={renderWidget}
       />
-      <div ref={containerRef} className="min-h-16" aria-label="CAPTCHA Verification" />
+      <p className="text-xs leading-5 text-slate-600">
+        Cloudflare security checks run automatically. Most people will not need to do anything.
+      </p>
+      <div ref={containerRef} className="min-h-0" aria-label="Cloudflare security verification" />
       <input type="hidden" name="captchaToken" value={token} />
     </div>
   );
