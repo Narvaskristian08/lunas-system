@@ -1,14 +1,5 @@
 ﻿# LUNAS Mobile
 
-<<<<<<< Updated upstream
-Flutter application for the two mobile roles only: **Citizen** and **Repair
-Personnel**. Cross-platform authority, role responsibilities, and workflow
-states are defined in the [current project scope](../LUNAS_PROJECT_SCOPE.md).
-
-## Run locally
-
-```bash
-=======
 The LUNAS mobile app is the Flutter client for citizen reporting and the
 repair/maintenance personnel workflow.
 It uses the LUNAS backend as the source of truth: it does not generate demo
@@ -210,7 +201,6 @@ From the repository root:
 ```bash
 cd lunas_mobile
 flutter doctor
->>>>>>> Stashed changes
 flutter pub get
 flutter run --dart-define=LUNAS_API_BASE_URL=http://10.0.2.2:5000/api/v1
 ```
@@ -256,11 +246,10 @@ flutter analyze
 flutter test
 ```
 
-<<<<<<< Updated upstream
 Run these on a Flutter-enabled machine. Full mobile-to-backend acceptance also
 requires a running API, MongoDB, configured evidence storage, and a reachable
 device URL. See the [root setup and demo guide](../README.md).
-=======
+
 Run against an Android emulator and a local backend:
 
 ```bash
@@ -460,7 +449,6 @@ release candidate:
   environment.
 - [ ] Every applicable item in the manual acceptance checklist is completed.
 - [ ] Known limitations are documented and accepted for the milestone.
->>>>>>> Stashed changes
 
 
 ## Current image privacy scope (Revision 9)
