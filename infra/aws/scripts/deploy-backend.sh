@@ -12,6 +12,27 @@ release_dir="/opt/lunas/releases/${release}"
 build_log="/tmp/lunas-backend-build-${release}.log"
 candidate_name="backend-candidate-${release}"
 previous_name="backend-previous-${release}"
+runtime_env="/tmp/lunas-backend-runtime-${release}.env"
+
+# Reuse the currently working runtime configuration when an existing backend
+# container is present. This keeps staging on the same database and storage
+# wiring until the separately tagged database host is serving MongoDB. Values
+# stay on the EC2 host and are never printed by this script.
+if docker inspect backend >/dev/null 2>&1; then
+  docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' backend >"$runtime_env"
+else
+  cp /opt/lunas/backend.env "$runtime_env"
+fi
+chmod 600 "$runtime_env"
+
+cleanup_candidate() {
+  docker rm -f "$candidate_name" >/dev/null 2>&1 || true
+}
+cleanup_runtime() {
+  cleanup_candidate
+  rm -f "$runtime_env"
+}
+trap cleanup_runtime EXIT
 
 mkdir -p "$release_dir"
 aws s3 cp "$artifact_uri" "$release_dir/lunas-backend.tar.gz"
@@ -25,7 +46,7 @@ docker run -d \
   --name "$candidate_name" \
   --restart unless-stopped \
   --network lunas \
-  --env-file /opt/lunas/backend.env \
+  --env-file "$runtime_env" \
   -e NODE_ENV=production \
   -e PORT=5000 \
   -e AI_SERVICE_ENABLED=false \
@@ -33,11 +54,6 @@ docker run -d \
   -e PRIVACY_REDACTION_ENABLED=false \
   -p 127.0.0.1:5001:5000 \
   "lunas-backend:${release}" >/tmp/lunas-backend-candidate.id
-
-cleanup_candidate() {
-  docker rm -f "$candidate_name" >/dev/null 2>&1 || true
-}
-trap cleanup_candidate EXIT
 
 healthy=0
 for _ in $(seq 1 60); do
@@ -62,7 +78,7 @@ docker run -d \
   --name backend \
   --restart unless-stopped \
   --network lunas \
-  --env-file /opt/lunas/backend.env \
+  --env-file "$runtime_env" \
   -e NODE_ENV=production \
   -e PORT=5000 \
   -e AI_SERVICE_ENABLED=false \
@@ -88,6 +104,7 @@ if [ "$final_healthy" -ne 1 ]; then
   exit 1
 fi
 curl -fsS http://127.0.0.1:5000/health >/tmp/lunas-backend-health.json
+rm -f "$runtime_env"
 
 printf 'backend_health='
 tr -d '\n' </tmp/lunas-backend-health.json
