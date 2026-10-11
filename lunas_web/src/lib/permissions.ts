@@ -3,7 +3,7 @@ import type { Permission, UserProfile, UserRole } from "@/types";
 export const rolePermissions: Record<UserRole, Permission[]> = {
   Citizen: [],
   "Repair Personnel": [],
-  Admin: ["users.manage", "audit.view", "notifications.view", "profile.manage", "support.create"],
+  Admin: ["users.manage", "audit.view", "notifications.view", "profile.manage", "support.create", "support.manage"],
   "Barangay Official": [
     "dashboard.view",
     "reports.view",

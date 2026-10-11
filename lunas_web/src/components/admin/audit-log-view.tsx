@@ -36,6 +36,8 @@ const auditEvents = [
   "user_archive_failed",
   "password_reset_requested",
   "password_reset_completed",
+  "support_ticket_created",
+  "support_ticket_updated",
   "role_changed",
   "permission_changed",
   "settings_changed",

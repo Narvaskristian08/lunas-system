@@ -32,6 +32,7 @@ const permissionLabels: Record<Permission, string> = {
   "notifications.view": "View notifications",
   "profile.manage": "Manage own profile",
   "support.create": "Contact support",
+  "support.manage": "Manage support tickets",
 };
 
 function DetailRow({ icon: Icon, label, children }: { icon: typeof Mail; label: string; children: React.ReactNode }) {

@@ -1,32 +1,31 @@
 import type { Metadata } from "next";
-import { Mail, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { requirePermission } from "@/lib/auth/dal.server";
-import { Card } from "@/components/ui/card";
+import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
+import { getMySupportTickets, type SupportTicketPage } from "@/lib/support-tickets.server";
+import { SupportTicketCenter } from "@/components/support/support-ticket-center";
+import { BackendApiError } from "@/lib/api/backend.server";
 
 export const metadata: Metadata = { title: "Help and Support" };
 
 export default async function HelpPage() {
-  const viewer = await requirePermission("support.create");
+  await requirePermission("support.create");
+  const accessToken = await requireAccessToken();
+  let data: SupportTicketPage = { records: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } };
+  let error = "";
+  try {
+    data = await getMySupportTickets(accessToken);
+  } catch (cause) {
+    error = cause instanceof BackendApiError ? cause.message : "Support tickets could not be loaded. Refresh to retry.";
+  }
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <PageHeader
         eyebrow="Account support"
         title="Help and Support"
-        description="For account-access or reporting concerns, contact the LUNAS support team through an authorized channel."
+        description="Report a bug, account problem, data issue, or other concern directly to LUNAS administrators."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Help and Support" }]}
       />
-      <Card className="p-6 sm:p-7">
-        <div className="flex gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><Mail className="size-5" aria-hidden="true" /></span>
-          <div>
-            <h2 className="font-semibold text-slate-950">Contact LUNAS Support</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Use the support contact issued by your organization. Include your account email and a short description of the issue; do not include your password or a verification code.</p>
-            <p className="mt-3 break-all text-sm font-semibold text-brand-800">Signed-in account: {viewer.email}</p>
-          </div>
-        </div>
-        <div className="mt-5 flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-700" aria-hidden="true" />LUNAS support will never ask for your password, reset link, or verification code.</div>
-      </Card>
+      <SupportTicketCenter initialData={data} initialError={error} />
     </div>
   );
 }

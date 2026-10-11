@@ -4,6 +4,7 @@ import {
   ClipboardList,
   ClipboardCheck,
   HelpCircle,
+  LifeBuoy,
   ScrollText,
   Timer,
   UserRound,
@@ -40,7 +41,11 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
   },
   {
     label: "Administration",
-    items: [{ label: "Authorized Accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" }, { label: "Audit Trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" }],
+    items: [
+      { label: "Authorized Accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" },
+      { label: "Support Tickets", href: "/admin/tickets", icon: LifeBuoy, permission: "support.manage" },
+      { label: "Audit Trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" },
+    ],
   },
   {
     label: "Account",

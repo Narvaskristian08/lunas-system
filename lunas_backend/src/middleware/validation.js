@@ -132,6 +132,24 @@ exports.updateProfileValidation = [
     .withMessage('Profile image must be a secure URL')
 ];
 
+exports.supportTicketCreateValidation = [
+  body('category').isIn(['bug', 'account_access', 'data_issue', 'feature_request', 'other']).withMessage('Choose a valid support category'),
+  body('subject').trim().isLength({ min: 5, max: 160 }).withMessage('Subject must be between 5 and 160 characters'),
+  body('description').trim().isLength({ min: 20, max: 4000 }).withMessage('Description must be between 20 and 4000 characters'),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Choose a valid priority')
+];
+
+exports.supportTicketUpdateValidation = [
+  body('status').optional().isIn(['open', 'in_progress', 'resolved', 'closed']).withMessage('Choose a valid ticket status'),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Choose a valid priority'),
+  body('adminResponse').optional().trim().isLength({ max: 4000 }).withMessage('Response must be at most 4000 characters')
+];
+
+exports.supportTicketQueryValidation = [
+  query('status').optional().isIn(['open', 'in_progress', 'resolved', 'closed']).withMessage('Invalid ticket status'),
+  query('category').optional().isIn(['bug', 'account_access', 'data_issue', 'feature_request', 'other']).withMessage('Invalid ticket category')
+];
+
 // Incident validation rules
 exports.createIncidentValidation = [
   body('locationIntegrity').custom((value, { req }) => {

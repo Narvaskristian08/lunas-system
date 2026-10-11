@@ -28,7 +28,8 @@ export type Permission =
   | "audit.view"
   | "notifications.view"
   | "profile.manage"
-  | "support.create";
+  | "support.create"
+  | "support.manage";
 
 export interface UserProfile {
   id: string;

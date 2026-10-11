@@ -11,6 +11,7 @@ const statsRoutes = require('./statsRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const auditLogRoutes = require('./auditLogRoutes');
 const reportingAppealRoutes = require('./reportingAppealRoutes');
+const supportTicketRoutes = require('./supportTicketRoutes');
 const { getWorkOrderSummary } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -24,6 +25,7 @@ router.use('/stats', statsRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/reporting-appeals', reportingAppealRoutes);
+router.use('/support-tickets', supportTicketRoutes);
 router.get(
   '/dashboard/work-orders-summary',
   protect,
@@ -47,7 +49,8 @@ router.get('/', (req, res) => {
       stats: '/api/v1/stats',
       categories: '/api/v1/categories',
       auditLogs: '/api/v1/audit-logs',
-      reportingAppeals: '/api/v1/reporting-appeals'
+      reportingAppeals: '/api/v1/reporting-appeals',
+      supportTickets: '/api/v1/support-tickets'
     }
   });
 });

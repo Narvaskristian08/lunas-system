@@ -72,7 +72,9 @@ const auditLogSchema = new mongoose.Schema({
       'password_reset_completed',
       'recovery_email_verification_requested',
       'recovery_email_verification_failed',
-      'recovery_email_verified'
+      'recovery_email_verified',
+      'support_ticket_created',
+      'support_ticket_updated'
     ]
   },
   performedBy: {
@@ -97,7 +99,7 @@ const auditLogSchema = new mongoose.Schema({
   },
   resourceType: {
     type: String,
-    enum: ['User', 'Incident', 'WorkOrder', 'Notification', 'System']
+    enum: ['User', 'Incident', 'WorkOrder', 'Notification', 'SupportTicket', 'System']
   },
   resourceId: mongoose.Schema.Types.ObjectId,
   details: {
