@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
-const { canManageAdministrators } = require('../utils/accountPolicy');
+const { accountStatus, canManageAdministrators } = require('../utils/accountPolicy');
 
 // @desc    Get all users
 // @route   GET /api/v1/users
@@ -204,21 +204,40 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
 
   const filter = {
     role: 'repair_personnel',
-    isActive: true,
-    isArchived: { $ne: true }
+    isArchived: { $ne: true },
+    repairOrganization: req.user.utilityCompany || '__unassigned__'
   };
-
-  filter.repairOrganization = req.user.utilityCompany || '__unassigned__';
   if (barangay) filter.barangay = barangay;
   if (expertise) filter.expertise = expertise;
 
   const personnel = await User.find(filter).select(
-    'firstName lastName role repairOrganization repairTeam availability barangay expertise isActive'
-  );
+    'firstName lastName email phone position personnelId role repairOrganization repairTeam availability barangay expertise isActive isArchived isVerified requiresActivation accountStatus createdAt'
+  ).sort({ createdAt: -1, _id: -1 });
 
   res.status(200).json({
     success: true,
-    data: personnel,
+    data: personnel.map(person => ({
+      id: person._id,
+      firstName: person.firstName,
+      lastName: person.lastName,
+      email: person.email,
+      phone: person.phone,
+      position: person.position,
+      personnelId: person.personnelId,
+      role: person.role,
+      organization: person.repairOrganization,
+      repairOrganization: person.repairOrganization,
+      repairTeam: person.repairTeam,
+      availability: person.availability,
+      barangay: person.barangay,
+      expertise: person.expertise,
+      isActive: person.isActive,
+      isArchived: person.isArchived,
+      isVerified: person.isVerified,
+      requiresActivation: person.requiresActivation,
+      accountStatus: accountStatus(person),
+      createdAt: person.createdAt
+    })),
     count: personnel.length
   });
 });

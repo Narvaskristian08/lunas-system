@@ -29,6 +29,7 @@ router.post('/authorized/:id/activation', protect, authorize('admin'), mongoIdVa
   accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 
 router.get('/repair-personnel', protect, authorize('utility_provider'), getRepairPersonnel);
+router.post('/repair-personnel', protect, authorize('utility_provider'), accountRules.createRepairPersonnelValidation, validate, accounts.createRepairPersonnel);
 router.get('/utility-providers', protect, authorize('city_engineer'), getUtilityProviderOrganizations);
 
 // Keep an explicit self-service profile endpoint so clients do not need to

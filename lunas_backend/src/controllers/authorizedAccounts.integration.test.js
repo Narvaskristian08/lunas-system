@@ -109,6 +109,47 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await call('get', '/users/authorized', token).expect(403);
     await call('put', `/users/${admin.id}`, token).send({ role: 'admin' }).expect(403);
   });
+  test.each(['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'admin'])('%s cannot create Repair Personnel accounts', async role => {
+    const { token } = await actor(role);
+    await call('post', '/users/repair-personnel', token).send({
+      firstName: 'Repair', lastName: 'Worker', email: `worker-${role}@example.test`, phone: approved.phone,
+      position: 'Field Technician'
+    }).expect(403);
+  });
+  test('Utility Provider creates pending personnel in its own organization and sees only its roster', async () => {
+    const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
+    await User.create({ firstName: 'Outside', lastName: 'Worker', email: 'outside-worker@example.test', phone: approved.phone,
+      password, role: 'repair_personnel', repairOrganization: 'Other Utility', position: 'Technician', isActive: true, isVerified: true });
+
+    const validPayload = {
+      firstName: 'Assigned', lastName: 'Worker', email: 'assigned-worker@example.test', phone: approved.phone,
+      position: 'Field Technician', personnelId: 'RP-001', repairTeam: 'Road Team', barangay: 'Pantal',
+    };
+    await call('post', '/users/repair-personnel', token).send({
+      ...validPayload, organization: 'Forged Organization', role: 'admin', repairOrganization: 'Forged Organization'
+    }).expect(400);
+    const result = await call('post', '/users/repair-personnel', token).send(validPayload).expect(201);
+    expect(result.body.data.account).toMatchObject({
+      email: 'assigned-worker@example.test', role: 'repair_personnel', repairOrganization: 'Dagupan Water District',
+      organization: 'Dagupan Water District', accountStatus: 'pending_activation', isActive: false,
+      requiresActivation: true
+    });
+    expect(JSON.stringify(result.body)).not.toMatch(/activationToken|password|refreshTokens/);
+    const created = await User.findOne({ email: 'assigned-worker@example.test' }).select('+activationTokenHash');
+    expect(created.repairOrganization).toBe('Dagupan Water District');
+    expect(created.activationTokenHash).toBeDefined();
+
+    const roster = await call('get', '/users/repair-personnel', token).expect(200);
+    expect(roster.body.data).toHaveLength(1);
+    expect(roster.body.data[0]).toMatchObject({ email: 'assigned-worker@example.test', accountStatus: 'pending_activation' });
+    expect(roster.body.data[0].email).not.toBe('outside-worker@example.test');
+  });
+  test('Utility Provider personnel creation rejects duplicate email addresses', async () => {
+    const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
+    const payload = { firstName: 'Assigned', lastName: 'Worker', email: 'duplicate-worker@example.test', phone: approved.phone, position: 'Field Technician' };
+    await call('post', '/users/repair-personnel', token).send(payload).expect(201);
+    await call('post', '/users/repair-personnel', token).send(payload).expect(409);
+  });
   test('6–7,14–15: administrator provisions an approved inactive account with an audited assignment and safe response', async () => {
     const { account, token, body } = await provision();
     expect(account).toMatchObject({ accountStatus: 'pending_activation', isActive: false, role: 'barangay_official', barangay: 'Pantal' });

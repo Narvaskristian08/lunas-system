@@ -27,6 +27,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "dashboard.view",
     "work_orders.view",
     "work_orders.manage",
+    "personnel.manage",
     "sla.view",
     "notifications.view",
     "profile.manage",

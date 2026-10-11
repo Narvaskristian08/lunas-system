@@ -21,6 +21,7 @@ export type Permission =
   | "reports.validate"
   | "work_orders.view"
   | "work_orders.manage"
+  | "personnel.manage"
   | "repairs.verify"
   | "sla.view"
   | "users.manage"
@@ -39,6 +40,7 @@ export interface UserProfile {
   role: UserRole;
   backendRole: BackendUserRole;
   organization: string;
+  utilityCompany?: string;
   barangay?: string;
   unit?: string;
   personnelId?: string;

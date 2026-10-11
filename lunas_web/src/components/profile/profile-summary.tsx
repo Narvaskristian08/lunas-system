@@ -24,6 +24,7 @@ const permissionLabels: Record<Permission, string> = {
   "reports.validate": "Validate reports",
   "work_orders.view": "View work orders",
   "work_orders.manage": "Manage work orders",
+  "personnel.manage": "Manage repair personnel",
   "repairs.verify": "Verify repairs",
   "sla.view": "View SLA monitoring",
   "users.manage": "Manage users",

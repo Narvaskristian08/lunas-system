@@ -42,6 +42,20 @@ exports.createAccountValidation = [
   onlyFields([...PROFILE_FIELDS, 'email']),
   body('email').isString().bail().isEmail().normalizeEmail(), ...profileRules
 ];
+exports.createRepairPersonnelValidation = [
+  onlyFields(['firstName', 'lastName', 'email', 'phone', 'personnelId', 'position', 'repairTeam', 'barangay']),
+  body('email').isString().bail().isEmail().normalizeEmail(),
+  text('firstName', 80),
+  text('lastName', 80),
+  body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  text('personnelId', 80, true),
+  text('position', 120),
+  text('repairTeam', 120, true),
+  body('barangay').optional().isString().bail().trim()
+    .customSanitizer(value => canonicalizeBarangay(value) || value)
+    .custom(value => !value || isValidBarangay(value))
+    .withMessage('Choose a recognized Dagupan barangay')
+];
 exports.updateAccountValidation = [onlyFields([...PROFILE_FIELDS, 'version']), ...profileRules,
   body('version').isInt({ min: 0 }).toInt()];
 exports.accountStatusValidation = [onlyFields(['status', 'reason', 'version']),

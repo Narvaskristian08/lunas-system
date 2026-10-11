@@ -7,6 +7,7 @@ import {
   ScrollText,
   Timer,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import type { BackendUserRole, Permission } from "@/types";
 
@@ -34,6 +35,7 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
       { label: "Work Orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view", hiddenForRoles: ["city_engineer"] },
       { label: "Maintenance", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view", visibleForRoles: ["city_engineer"] },
       { label: "SLA Monitor", href: "/sla", icon: Timer, permission: "sla.view", hiddenForRoles: ["city_engineer", "utility_provider"] },
+      { label: "Repair Personnel", href: "/repair-personnel", icon: UsersRound, permission: "personnel.manage", visibleForRoles: ["utility_provider"] },
     ],
   },
   {

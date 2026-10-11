@@ -100,6 +100,62 @@ exports.getAuthorizedAccount = asyncHandler(async (req, res) => {
   if (user) res.json({ success: true, data: serializeAccount(user) });
 });
 
+exports.createRepairPersonnel = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'utility_provider') return denied(res, 'Only Utility Providers may create Repair Personnel accounts');
+  const organization = String(req.user.utilityCompany || '').trim();
+  if (!organization) return denied(res, 'Your Utility Provider organization is not configured', 409);
+  if (await User.exists({ email: req.body.email })) return denied(res, 'An account with this email already exists', 409);
+
+  const activation = createActivation();
+  const providerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || organization;
+  const user = await User.create({
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    email: req.body.email,
+    phone: req.body.phone,
+    personnelId: req.body.personnelId || '',
+    position: req.body.position,
+    organization,
+    role: 'repair_personnel',
+    repairOrganization: organization,
+    repairTeam: req.body.repairTeam || '',
+    barangay: req.body.barangay || undefined,
+    approval: {
+      authority: providerName,
+      reference: `Created by Utility Provider: ${organization}`,
+      recordedBy: req.user._id,
+      recordedAt: new Date()
+    },
+    accountStatus: 'pending_activation',
+    requiresActivation: true,
+    isActive: false,
+    isVerified: false,
+    activationTokenHash: activation.tokenHash,
+    activationExpiresAt: activation.expiresAt,
+    activationSentAt: new Date()
+  });
+
+  await audit(req, user, 'authorized_account_created', null, {
+    role: user.role,
+    organization: user.organization,
+    repairOrganization: user.repairOrganization,
+    repairTeam: user.repairTeam,
+    barangay: user.barangay || null,
+    accountStatus: user.accountStatus,
+    approval: user.approval
+  }, { creatorRole: req.user.role, organization });
+  const delivery = await deliverActivation(user, activation);
+  await audit(req, user, 'account_activation_sent', undefined, undefined, delivery);
+
+  res.status(201).json({
+    success: true,
+    data: { account: serializeAccount(user), delivery },
+    message: delivery.delivered
+      ? 'Repair Personnel account created. Activation email sent.'
+      : 'Repair Personnel account created. Activation email was not delivered; contact an administrator.'
+  });
+});
+
 exports.createAuthorizedAccount = asyncHandler(async (req, res) => {
   if (!checkActor(req, res, null, req.body.role)) return;
   if (await User.exists({ email: req.body.email })) return denied(res, 'An account already uses this email', 409);
