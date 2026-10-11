@@ -13,6 +13,9 @@ const buildResetUrl = (token) => {
  * otherwise the existing approved webhook contract remains supported.
  */
 exports.deliverPasswordReset = async ({ user, resetToken }) => {
+  if (!user.recoveryEmail || !user.recoveryEmailVerifiedAt) {
+    return { configured: false, delivered: false };
+  }
   const resetUrl = buildResetUrl(resetToken);
 
   if (!resetUrl) {
@@ -20,15 +23,16 @@ exports.deliverPasswordReset = async ({ user, resetToken }) => {
   }
 
   const firstName = user.firstName || 'there';
+  const recipientEmail = user.recoveryEmail;
   return deliverEmail({
     type: 'password_reset',
-    recipient: { email: user.email, firstName },
+    recipient: { email: recipientEmail, firstName },
     subject: 'Reset your Luna password',
     text: `Hello ${firstName},\n\nUse this link to reset your Luna password:\n${resetUrl}\n\nThis link expires soon. If you did not request a reset, you can ignore this email.`,
     html: `<p>Hello ${escapeHtml(firstName)},</p><p>Use the link below to reset your Luna password:</p><p><a href="${escapeHtml(resetUrl)}">Reset your password</a></p><p>This link expires soon. If you did not request a reset, you can ignore this email.</p>`,
     webhookPayload: {
       type: 'password_reset',
-      recipient: { email: user.email, firstName },
+      recipient: { email: recipientEmail, firstName },
       resetUrl
     },
     deliveryUrl: process.env.PASSWORD_RESET_DELIVERY_URL,

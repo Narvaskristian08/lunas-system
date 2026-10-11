@@ -32,6 +32,10 @@ interface BackendUser {
   personnelId?: string;
   profileImage?: string;
   isVerified?: boolean;
+  recoveryEmailStatus?: {
+    configured?: boolean;
+    verified?: boolean;
+  };
   isActive?: boolean;
   lastLogin?: string;
   createdAt?: string;
@@ -70,6 +74,10 @@ export function toViewer(user: BackendUser): UserProfile | null {
   if (!id || !user.firstName || !user.lastName || !user.email) return null;
 
   const role = roleLabels[user.role];
+  // Older API deployments do not return recoveryEmailStatus yet. Treat those
+  // responses as already configured so a rolling deployment does not lock
+  // users out before the backend schema is available.
+  const recoveryStatus = user.recoveryEmailStatus;
   return {
     id: String(id),
     firstName: user.firstName,
@@ -86,6 +94,8 @@ export function toViewer(user: BackendUser): UserProfile | null {
     personnelId: user.personnelId,
     status: user.isActive === false ? "Deactivated" : "Active",
     verified: Boolean(user.isVerified),
+    recoveryEmailConfigured: recoveryStatus ? Boolean(recoveryStatus.configured) : true,
+    recoveryEmailVerified: recoveryStatus ? Boolean(recoveryStatus.verified) : true,
     lastLogin: user.lastLogin,
     joinedAt: user.createdAt ?? new Date(0).toISOString(),
     permissions: rolePermissions[role],
@@ -136,6 +146,14 @@ export async function requireWebWorkspace() {
   const viewer = await requireViewer();
   if (["citizen", "repair_personnel"].includes(viewer.backendRole)) {
     redirect("/unauthorized?platform=mobile");
+  }
+  const recoveryPath = (await headers()).get("x-lunas-request-path") ?? "";
+  const recoveryRequired = ["admin", "barangay_official", "city_engineer", "utility_provider"].includes(viewer.backendRole)
+    && !viewer.recoveryEmailVerified;
+  const recoveryBypass = recoveryPath.startsWith("/recovery-email") || recoveryPath.startsWith("/help");
+  if (recoveryRequired && !recoveryBypass) {
+    const next = recoveryPath || "/dashboard";
+    redirect(`/recovery-email?next=${encodeURIComponent(next)}`);
   }
   return viewer;
 }

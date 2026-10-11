@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
     <AuthShell
       eyebrow="Account recovery"
       title="Reset your sign-in password"
-      description="Enter your authorized email address. If it matches a registered account, we’ll send time-limited reset instructions."
+      description="Enter your authorized login email address. Reset instructions are sent to the verified recovery email connected to that account."
     >
       <ForgotPasswordForm />
     </AuthShell>

@@ -100,6 +100,14 @@ exports.forgotPasswordValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required')
 ];
 
+exports.recoveryEmailRequestValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid recovery email is required')
+];
+
+exports.recoveryEmailVerifyValidation = [
+  body('code').trim().matches(/^\d{6}$/).withMessage('Enter the 6-digit verification code')
+];
+
 exports.resetPasswordValidation = [
   body('token').isString().isLength({ min: 32, max: 256 }).withMessage('A valid reset token is required'),
   passwordValidationRule('password')

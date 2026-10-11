@@ -10,6 +10,13 @@ const {
   verifyRefreshToken
 } = require('../utils/authTokens');
 const { deliverPasswordReset } = require('../services/passwordResetDeliveryService');
+const {
+  createRecoveryEmailChallenge,
+  deliverRecoveryEmailCode,
+  hashCode,
+  maskEmail,
+  safeEqual
+} = require('../services/recoveryEmailService');
 const { verifyLoginCaptcha } = require('../services/captchaService');
 const {
   createRegistrationChallenge,
@@ -81,6 +88,19 @@ const registrationMfaFields = [
   '+refreshTokens',
   '+tokenVersion'
 ].join(' ');
+
+const recoveryEmailFields = [
+  '+recoveryEmailPending',
+  '+recoveryEmailVerificationCodeHash',
+  '+recoveryEmailVerificationExpiresAt',
+  '+recoveryEmailVerificationAttempts',
+  '+recoveryEmailVerificationSentAt'
+].join(' ');
+
+const recoveryEmailMaxAttempts = Math.max(
+  1,
+  parseInt(process.env.RECOVERY_EMAIL_MAX_ATTEMPTS, 10) || 5
+);
 
 // @desc    Register a citizen account
 // @route   POST /api/v1/auth/register
@@ -515,6 +535,183 @@ exports.getMe = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get the current user's recovery-email status
+// @route   GET /api/v1/auth/recovery-email/status
+// @access  Private
+exports.getRecoveryEmailStatus = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return unauthorized(res, 'User not found');
+  }
+
+  const verified = Boolean(user.recoveryEmail && user.recoveryEmailVerifiedAt);
+  return res.status(200).json({
+    success: true,
+    data: {
+      configured: Boolean(user.recoveryEmail),
+      verified,
+      maskedEmail: verified ? maskEmail(user.recoveryEmail) : null
+    }
+  });
+});
+
+// @desc    Send a one-time code to a new recovery email
+// @route   POST /api/v1/auth/recovery-email/request
+// @access  Private
+exports.requestRecoveryEmailVerification = asyncHandler(async (req, res) => {
+  const normalizedEmail = req.body.email.toLowerCase();
+  const user = await User.findById(req.user._id).select(recoveryEmailFields);
+
+  if (!user) {
+    return unauthorized(res, 'User not found');
+  }
+
+  if (normalizedEmail === user.email) {
+    return res.status(400).json({
+      success: false,
+      message: 'Use a separate email address that you can access for account recovery.'
+    });
+  }
+
+  const resendAfterSeconds = Math.max(
+    30,
+    parseInt(process.env.RECOVERY_EMAIL_RESEND_SECONDS, 10) || 60
+  );
+  const sentAt = user.recoveryEmailVerificationSentAt?.getTime?.() || 0;
+  const retryAfterSeconds = resendAfterSeconds - Math.floor((Date.now() - sentAt) / 1000);
+  if (sentAt && retryAfterSeconds > 0) {
+    return res.status(429).json({
+      success: false,
+      message: 'Please wait before requesting another verification code.',
+      retryAfterSeconds
+    });
+  }
+
+  const challenge = createRecoveryEmailChallenge(normalizedEmail);
+  const delivery = await deliverRecoveryEmailCode({
+    email: normalizedEmail,
+    firstName: user.firstName,
+    code: challenge.code
+  });
+
+  if (!delivery.delivered) {
+    await createAuditLog({
+      action: 'recovery_email_verification_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: {
+        reason: delivery.configured ? 'provider_failed' : 'provider_not_configured'
+      },
+      ...auditRequestContext(req, 'web')
+    });
+    return res.status(503).json({
+      success: false,
+      message: 'Recovery email delivery is temporarily unavailable. Please try again later.'
+    });
+  }
+
+  user.recoveryEmailPending = normalizedEmail;
+  user.recoveryEmailVerificationCodeHash = challenge.codeHash;
+  user.recoveryEmailVerificationExpiresAt = challenge.expiresAt;
+  user.recoveryEmailVerificationAttempts = 0;
+  user.recoveryEmailVerificationSentAt = new Date();
+  await user.save({ validateBeforeSave: false });
+
+  await createAuditLog({
+    action: 'recovery_email_verification_requested',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    details: {
+      maskedEmail: maskEmail(normalizedEmail),
+      deliveryConfigured: delivery.configured,
+      delivered: delivery.delivered
+    },
+    ...auditRequestContext(req, 'web')
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'A verification code was sent to your recovery email.',
+    data: {
+      maskedEmail: maskEmail(normalizedEmail),
+      expiresInSeconds: challenge.expiresInSeconds,
+      resendAfterSeconds: challenge.resendAfterSeconds
+    }
+  });
+});
+
+// @desc    Verify and activate a recovery email
+// @route   POST /api/v1/auth/recovery-email/verify
+// @access  Private
+exports.verifyRecoveryEmail = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(recoveryEmailFields);
+  if (!user) return unauthorized(res, 'User not found');
+
+  const failure = async (reason) => {
+    await createAuditLog({
+      action: 'recovery_email_verification_failed',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      status: 'failure',
+      details: { reason },
+      ...auditRequestContext(req, 'web')
+    });
+    return res.status(400).json({
+      success: false,
+      message: 'The recovery email verification code is invalid or expired.'
+    });
+  };
+
+  if (!user.recoveryEmailPending) return failure('challenge_not_found');
+  if (Number(user.recoveryEmailVerificationAttempts || 0) >= recoveryEmailMaxAttempts) {
+    return failure('attempt_limit');
+  }
+  if (!user.recoveryEmailVerificationExpiresAt || user.recoveryEmailVerificationExpiresAt <= new Date()) {
+    return failure('expired');
+  }
+
+  const submittedHash = hashCode({ email: user.recoveryEmailPending, code: req.body.code });
+  if (!safeEqual(user.recoveryEmailVerificationCodeHash, submittedHash)) {
+    user.recoveryEmailVerificationAttempts = Number(user.recoveryEmailVerificationAttempts || 0) + 1;
+    await user.save({ validateBeforeSave: false });
+    return failure('invalid_code');
+  }
+
+  const verifiedEmail = user.recoveryEmailPending;
+  user.recoveryEmail = verifiedEmail;
+  user.recoveryEmailVerifiedAt = new Date();
+  user.recoveryEmailPending = undefined;
+  user.recoveryEmailVerificationCodeHash = undefined;
+  user.recoveryEmailVerificationExpiresAt = undefined;
+  user.recoveryEmailVerificationAttempts = 0;
+  user.recoveryEmailVerificationSentAt = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  await createAuditLog({
+    action: 'recovery_email_verified',
+    performedBy: user._id,
+    resourceType: 'User',
+    resourceId: user._id,
+    details: { maskedEmail: maskEmail(verifiedEmail) },
+    ...auditRequestContext(req, 'web')
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'Recovery email verified successfully.',
+    data: {
+      configured: true,
+      verified: true,
+      maskedEmail: maskEmail(verifiedEmail)
+    }
+  });
+});
+
 // @desc    Update own user profile
 // @route   PUT /api/v1/auth/profile
 // @access  Private
@@ -595,9 +792,22 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
     message: 'If an active account matches that email, password reset instructions will be sent.'
   };
   const user = await User.findOne({ email: req.body.email.toLowerCase() })
-    .select('+passwordResetToken +passwordResetExpires');
+    .select('+passwordResetToken +passwordResetExpires +recoveryEmail +recoveryEmailVerifiedAt');
 
   if (!canSignIn(user)) {
+    return res.status(200).json(genericResponse);
+  }
+
+  if (!user.recoveryEmail || !user.recoveryEmailVerifiedAt) {
+    await createAuditLog({
+      action: 'password_reset_requested',
+      performedBy: user._id,
+      resourceType: 'User',
+      resourceId: user._id,
+      details: { deliveryConfigured: false, delivered: false, reason: 'recovery_email_unavailable' },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
     return res.status(200).json(genericResponse);
   }
 

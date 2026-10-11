@@ -22,6 +22,40 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
   },
+  // The authorized email remains the login identifier. Recovery delivery is
+  // intentionally separate because a provisioned login identifier may not be
+  // a mailbox the user can access.
+  recoveryEmail: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid recovery email']
+  },
+  recoveryEmailVerifiedAt: Date,
+  recoveryEmailPending: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    select: false
+  },
+  recoveryEmailVerificationCodeHash: {
+    type: String,
+    select: false
+  },
+  recoveryEmailVerificationExpiresAt: {
+    type: Date,
+    select: false
+  },
+  recoveryEmailVerificationAttempts: {
+    type: Number,
+    min: 0,
+    default: 0,
+    select: false
+  },
+  recoveryEmailVerificationSentAt: {
+    type: Date,
+    select: false
+  },
   phone: {
     type: String,
     required: [true, 'Phone number is required'],
@@ -213,6 +247,10 @@ userSchema.methods.toPublicJSON = function() {
     firstName: this.firstName,
     lastName: this.lastName,
     email: this.email,
+    recoveryEmailStatus: {
+      configured: Boolean(this.recoveryEmail),
+      verified: Boolean(this.recoveryEmail && this.recoveryEmailVerifiedAt)
+    },
     phone: this.phone,
     role: this.role,
     address: this.address,

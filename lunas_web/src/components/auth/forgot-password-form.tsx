@@ -103,7 +103,7 @@ export function ForgotPasswordForm() {
             label="Authorized Email Address"
             required
             error={error}
-            helperText="We will send instructions only if this address is registered."
+            helperText="This is your login identifier. Instructions go to your verified recovery email."
             type="email"
             value={email}
             onChange={(event) => {

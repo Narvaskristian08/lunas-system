@@ -46,6 +46,8 @@ export interface UserProfile {
   personnelId?: string;
   status: "Active" | "Suspended" | "Deactivated";
   verified: boolean;
+  recoveryEmailConfigured: boolean;
+  recoveryEmailVerified: boolean;
   lastLogin?: string;
   joinedAt: string;
   permissions: Permission[];

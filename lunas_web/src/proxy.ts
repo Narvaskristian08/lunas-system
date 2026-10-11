@@ -26,7 +26,10 @@ const protectedPrefixes = [
   "/admin",
   "/maintenance-coordination",
   "/sla",
+  "/recovery-email",
 ];
+
+const requestPathHeader = "x-lunas-request-path";
 
 interface RefreshPayload {
   success?: boolean;
@@ -94,6 +97,8 @@ export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete(SESSION_HEADER_NAME);
   requestHeaders.delete(SESSION_REFRESH_UNAVAILABLE_HEADER);
+  requestHeaders.delete(requestPathHeader);
+  requestHeaders.set(requestPathHeader, `${path}${request.nextUrl.search}`);
 
   if (shouldRefreshAccessToken(session)) {
     const refreshed = await rotateAccessToken(session.refreshToken!);
@@ -132,5 +137,6 @@ export const config = {
     "/admin/:path*",
     "/maintenance-coordination/:path*",
     "/sla/:path*",
+    "/recovery-email/:path*",
   ],
 };

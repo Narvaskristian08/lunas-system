@@ -20,6 +20,7 @@ export interface ActionResult {
   ok: boolean;
   message?: string;
   retryAfterSeconds?: number;
+  maskedEmail?: string;
   code?: "invalid" | "expired" | "unavailable";
 }
 
@@ -239,6 +240,56 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
     // Do not expose account existence or email-provider details from this
     // public action. A retryable service failure is all the browser needs.
     return { ok: false, message: "The password reset service is temporarily unavailable." };
+  }
+}
+
+export async function requestRecoveryEmailAction(email: string): Promise<ActionResult> {
+  const session = await readSession();
+  if (session.status !== "authenticated") {
+    return { ok: false, message: "Your session has ended. Sign in again before adding a recovery email." };
+  }
+
+  try {
+    const result = await backendRequest<{ maskedEmail?: string; resendAfterSeconds?: number }>("/auth/recovery-email/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+      accessToken: session.accessToken,
+    });
+    return {
+      ok: true,
+      maskedEmail: result.data?.maskedEmail,
+      retryAfterSeconds: result.data?.resendAfterSeconds ?? 60,
+    };
+  } catch (error) {
+    if (isBackendApiError(error)) {
+      if (error.status === 429) return { ok: false, message: "Too many requests. Wait a moment before requesting another code." };
+      if (error.status === 400) return { ok: false, message: error.message };
+      if (error.status === 401) return { ok: false, message: "Your session has ended. Sign in again before adding a recovery email." };
+    }
+    return { ok: false, message: "Recovery email delivery is temporarily unavailable. Please try again shortly." };
+  }
+}
+
+export async function verifyRecoveryEmailAction(code: string): Promise<ActionResult> {
+  const session = await readSession();
+  if (session.status !== "authenticated") {
+    return { ok: false, message: "Your session has ended. Sign in again before verifying your recovery email." };
+  }
+
+  try {
+    const result = await backendRequest<{ maskedEmail?: string }>("/auth/recovery-email/verify", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+      accessToken: session.accessToken,
+    });
+    return { ok: true, maskedEmail: result.data?.maskedEmail };
+  } catch (error) {
+    if (isBackendApiError(error)) {
+      if (error.status === 429) return { ok: false, message: "Too many verification attempts. Wait a moment and try again." };
+      if (error.status === 400) return { ok: false, message: "The verification code is invalid or expired." };
+      if (error.status === 401) return { ok: false, message: "Your session has ended. Sign in again before verifying your recovery email." };
+    }
+    return { ok: false, message: "The recovery email service is temporarily unavailable. Please try again shortly." };
   }
 }
 

@@ -10,6 +10,9 @@ const {
   forgotPassword,
   resetPassword,
   getMe,
+  getRecoveryEmailStatus,
+  requestRecoveryEmailVerification,
+  verifyRecoveryEmail,
   updateProfile,
   changePassword,
   logout
@@ -27,6 +30,8 @@ const {
   refreshValidation,
   registerValidation,
   resetPasswordValidation,
+  recoveryEmailRequestValidation,
+  recoveryEmailVerifyValidation,
   updateProfileValidation,
   validate
 } = require('../middleware/validation');
@@ -51,6 +56,9 @@ router.post('/refresh', authLimiter, refreshValidation, validate, refresh);
 router.post('/forgot-password', authLimiter, forgotPasswordValidation, validate, forgotPassword);
 router.post('/reset-password', authLimiter, resetPasswordValidation, validate, resetPassword);
 router.get('/me', protect, getMe);
+router.get('/recovery-email/status', protect, getRecoveryEmailStatus);
+router.post('/recovery-email/request', authLimiter, protect, recoveryEmailRequestValidation, validate, requestRecoveryEmailVerification);
+router.post('/recovery-email/verify', authLimiter, protect, recoveryEmailVerifyValidation, validate, verifyRecoveryEmail);
 router.put('/profile', protect, updateProfileValidation, validate, updateProfile);
 router.patch('/profile', protect, updateProfileValidation, validate, updateProfile);
 router.put('/change-password', protect, changePasswordValidation, validate, changePassword);

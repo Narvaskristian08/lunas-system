@@ -25,6 +25,8 @@ const SENSITIVE_KEYS = new Set([
   'captchatoken',
   'challengetoken',
   'verificationtoken',
+  'recoveryemailverificationcodehash',
+  'recoveryemailpending',
   'secret',
   'apikey',
   'authorization',

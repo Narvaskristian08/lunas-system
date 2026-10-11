@@ -69,7 +69,10 @@ const auditLogSchema = new mongoose.Schema({
       'role_changed',
       'permission_changed',
       'password_reset_requested',
-      'password_reset_completed'
+      'password_reset_completed',
+      'recovery_email_verification_requested',
+      'recovery_email_verification_failed',
+      'recovery_email_verified'
     ]
   },
   performedBy: {
