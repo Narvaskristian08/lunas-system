@@ -12,6 +12,8 @@ fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 release="ai-$(date -u +%Y%m%dT%H%M%SZ)"
+ai_bind_address="${AI_BIND_ADDRESS:-$(hostname -I | awk '{print $1}')}"
+: "${ai_bind_address:?Could not determine the AI private bind address; set AI_BIND_ADDRESS explicitly}"
 archive="$(mktemp -t lunas-ai.XXXXXX.tar.gz)"
 commands_file="$(mktemp -t lunas-ai-commands.XXXXXX)"
 parameters_file="$(mktemp -t lunas-ai-parameters.XXXXXX.json)"
@@ -46,7 +48,7 @@ mkdir -p /opt/lunas-ai/logs /opt/lunas-ai/cache
 docker build -t "lunas-ai:$release" /opt/lunas-ai/releases/"$release"/lunas_ai
 docker rm -f lunas-ai >/dev/null 2>&1 || true
 docker run -d --name lunas-ai --restart unless-stopped \
-  -p 5001:5001 \
+  -p "$ai_bind_address:5001:5001" \
   -e FLASK_ENV=production \
   -e FLASK_HOST=0.0.0.0 \
   -e FLASK_PORT=5001 \
@@ -64,7 +66,7 @@ docker run -d --name lunas-ai --restart unless-stopped \
   -v /opt/lunas-ai/cache:/app/cache \
   "lunas-ai:$release"
 for attempt in $(seq 1 30); do
-  if curl --fail --silent http://127.0.0.1:5001/api/v1/health >/dev/null; then
+  if curl --fail --silent "http://$ai_bind_address:5001/api/v1/health" >/dev/null; then
     exit 0
   fi
   sleep 10

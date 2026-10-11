@@ -19,7 +19,9 @@ services:
       LOG_LEVEL: INFO
       ALLOWED_ORIGINS: http://backend:5000
     ports:
-      - "5001:5001"
+      # Bind only to the AI host's private address. The application security
+      # group remains the network-level allow-list for the backend.
+      - "${AI_BIND_ADDRESS:?Set AI_BIND_ADDRESS to the AI host private IP}:5001:5001"
     volumes:
       - ai_logs:/app/logs
       - ai_cache:/app/cache

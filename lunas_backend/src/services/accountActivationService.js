@@ -1,6 +1,5 @@
 const crypto = require('crypto');
-const axios = require('axios');
-const logger = require('../utils/logger');
+const { deliverEmail, escapeHtml } = require('./emailDeliveryService');
 
 const hashActivationToken = token => crypto.createHash('sha256').update(token).digest('hex');
 const createActivation = () => {
@@ -9,13 +8,12 @@ const createActivation = () => {
   return { token, tokenHash: hashActivationToken(token), expiresAt: new Date(Date.now() + minutes * 60000) };
 };
 
-// Same approved email-webhook boundary as citizen OTP/reset delivery. Tokens
-// travel only to the email provider, never to an admin response or application log.
+// Tokens travel only to the transactional email provider, never to an admin
+// response or application log.
 const deliverActivation = async (user, activation) => {
-  const deliveryUrl = process.env.ACCOUNT_ACTIVATION_DELIVERY_URL || process.env.REGISTRATION_MFA_DELIVERY_URL;
   const deliveryToken = process.env.ACCOUNT_ACTIVATION_DELIVERY_TOKEN || process.env.REGISTRATION_MFA_DELIVERY_TOKEN;
   const appUrl = process.env.ACCOUNT_ACTIVATION_APP_URL;
-  if (!deliveryUrl || !appUrl) return { configured: false, delivered: false };
+  if (!appUrl) return { configured: false, delivered: false };
   try {
     const url = new URL(appUrl);
     if (url.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production'
@@ -25,18 +23,24 @@ const deliverActivation = async (user, activation) => {
     // Fragments are not sent in HTTP URLs, access logs, or Referer headers.
     url.search = '';
     url.hash = new URLSearchParams({ token: activation.token }).toString();
-    await axios.post(deliveryUrl, {
+    const firstName = user.firstName || 'there';
+    return await deliverEmail({
       type: 'account_activation',
-      recipient: { email: user.email, firstName: user.firstName },
-      activationUrl: url.toString(),
-      expiresAt: activation.expiresAt
-    }, {
-      timeout: 10000,
-      ...(deliveryToken ? { headers: { authorization: `Bearer ${deliveryToken}` } } : {})
+      recipient: { email: user.email, firstName },
+      subject: 'Activate your Luna account',
+      text: `Hello ${firstName},\n\nActivate your Luna account here:\n${url.toString()}\n\nThis link expires on ${activation.expiresAt.toISOString()}.`,
+      html: `<p>Hello ${escapeHtml(firstName)},</p><p><a href="${escapeHtml(url.toString())}">Activate your Luna account</a></p><p>This link expires on ${escapeHtml(activation.expiresAt.toISOString())}.</p>`,
+      webhookPayload: {
+        type: 'account_activation',
+        recipient: { email: user.email, firstName },
+        activationUrl: url.toString(),
+        expiresAt: activation.expiresAt
+      },
+      deliveryUrl: process.env.ACCOUNT_ACTIVATION_DELIVERY_URL || process.env.REGISTRATION_MFA_DELIVERY_URL,
+      deliveryToken,
+      timeoutMs: process.env.ACCOUNT_ACTIVATION_DELIVERY_TIMEOUT_MS || 10000
     });
-    return { configured: true, delivered: true };
   } catch (_error) {
-    logger.warn('Account activation email delivery failed');
     return { configured: true, delivered: false };
   }
 };

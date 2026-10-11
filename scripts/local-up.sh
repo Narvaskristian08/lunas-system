@@ -27,6 +27,16 @@ append_if_missing SUPABASE_SERVICE_ROLE_KEY ''
 append_if_missing GOOGLE_MAPS_API_KEY ''
 append_if_missing REGISTRATION_MFA_DELIVERY_URL ''
 append_if_missing REGISTRATION_MFA_DELIVERY_TOKEN ''
+append_if_missing EMAIL_PROVIDER webhook
+append_if_missing RESEND_API_KEY ''
+append_if_missing RESEND_API_URL https://api.resend.com
+append_if_missing EMAIL_FROM ''
+append_if_missing ACCOUNT_ACTIVATION_APP_URL http://localhost:3000/activate-account
+append_if_missing ACCOUNT_ACTIVATION_DELIVERY_URL ''
+append_if_missing ACCOUNT_ACTIVATION_DELIVERY_TOKEN ''
+append_if_missing PASSWORD_RESET_APP_URL http://localhost:3000/reset-password
+append_if_missing PASSWORD_RESET_DELIVERY_URL ''
+append_if_missing PASSWORD_RESET_DELIVERY_TOKEN ''
 
 generate_if_placeholder() {
   local key="$1"

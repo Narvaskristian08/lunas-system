@@ -1,6 +1,5 @@
 const crypto = require('crypto');
-const axios = require('axios');
-const logger = require('../utils/logger');
+const { deliverEmail, escapeHtml } = require('./emailDeliveryService');
 
 const codeSecret = () => process.env.REGISTRATION_MFA_SECRET || process.env.JWT_SECRET;
 
@@ -62,31 +61,26 @@ exports.isRegistrationChallengeTokenValid = (user, challengeToken) => (
 );
 
 exports.deliverRegistrationCode = async ({ email, firstName, code }) => {
-  const deliveryUrl = process.env.REGISTRATION_MFA_DELIVERY_URL;
-  const deliveryToken = process.env.REGISTRATION_MFA_DELIVERY_TOKEN;
-  if (!deliveryUrl) {
-    logger.warn('Registration MFA requested but no delivery provider is configured');
-    return { configured: false, delivered: false };
-  }
-
-  try {
-    await axios.post(deliveryUrl, {
+  const expiresInMinutes = Math.max(
+    5,
+    parseInt(process.env.REGISTRATION_MFA_EXPIRE_MINUTES, 10) || 10
+  );
+  return deliverEmail({
+    type: 'registration_mfa',
+    recipient: { email, firstName },
+    subject: 'Your Luna verification code',
+    text: `Hello ${firstName || 'there'},\n\nYour Luna verification code is ${code}. It expires in ${expiresInMinutes} minutes.`,
+    html: `<p>Hello ${escapeHtml(firstName || 'there')},</p><p>Your Luna verification code is <strong>${escapeHtml(code)}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`,
+    webhookPayload: {
       type: 'registration_mfa',
       recipient: { email, firstName },
       code,
-      expiresInMinutes: Math.max(
-        5,
-        parseInt(process.env.REGISTRATION_MFA_EXPIRE_MINUTES, 10) || 10
-      )
-    }, {
-      timeout: parseInt(process.env.REGISTRATION_MFA_DELIVERY_TIMEOUT_MS, 10) || 10000,
-      ...(deliveryToken ? { headers: { authorization: `Bearer ${deliveryToken}` } } : {})
-    });
-    return { configured: true, delivered: true };
-  } catch (error) {
-    logger.error('Registration MFA delivery failed');
-    return { configured: true, delivered: false };
-  }
+      expiresInMinutes
+    },
+    deliveryUrl: process.env.REGISTRATION_MFA_DELIVERY_URL,
+    deliveryToken: process.env.REGISTRATION_MFA_DELIVERY_TOKEN,
+    timeoutMs: process.env.REGISTRATION_MFA_DELIVERY_TIMEOUT_MS
+  });
 };
 
 exports.registrationChallengeResponse = ({ challenge, email }) => ({
