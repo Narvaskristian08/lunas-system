@@ -20,7 +20,7 @@ export function ReportingAppealReview({ reporterId, role }: { reporterId?: strin
   }, [reporterId]);
 
   if (!reporterId || (!appeal && !message)) return null;
-  const canReview = ["barangay_official", "city_engineer", "admin"].includes(role);
+  const canReview = role === "barangay_official";
   const submit = (decision: "approved" | "rejected") => {
     if (!appeal || pending) return;
     startTransition(async () => {

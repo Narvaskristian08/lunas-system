@@ -9,7 +9,7 @@ export default async function AdminSection({
   searchParams,
 }: {
   params: Promise<{ segments: string[] }>;
-  searchParams: Promise<{ action?: string; status?: string; source?: string; page?: string }>;
+  searchParams: Promise<{ action?: string; status?: string; source?: string; page?: string; limit?: string }>;
 }) {
   const { segments } = await params;
   if (segments[0] === "audit") {
@@ -21,6 +21,7 @@ export default async function AdminSection({
       status: ["success", "failure", "warning"].includes(rawFilters.status ?? "") ? rawFilters.status : undefined,
       source: ["web", "mobile", "api", "system"].includes(rawFilters.source ?? "") ? rawFilters.source : undefined,
       page: /^\d+$/.test(rawFilters.page ?? "") ? rawFilters.page : undefined,
+      limit: ["25", "50", "100"].includes(rawFilters.limit ?? "") ? rawFilters.limit : "25",
     };
     let auditPage;
     let errorMessage: string | undefined;
@@ -31,7 +32,7 @@ export default async function AdminSection({
         ? "Your account is not authorized to read security audit records."
         : "The backend audit service could not be reached. Try again shortly.";
     }
-    return <AuditLogView page={auditPage ?? { records: [], pagination: { page: 1, limit: 50, total: 0, pages: 0 } }} filters={filters} error={errorMessage} />;
+    return <AuditLogView page={auditPage ?? { records: [], pagination: { page: 1, limit: 25, total: 0, pages: 0 } }} filters={filters} error={errorMessage} />;
   }
   notFound();
 }

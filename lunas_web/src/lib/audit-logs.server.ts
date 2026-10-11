@@ -40,9 +40,9 @@ interface AuditLogEnvelope {
 
 export async function getAuditLogs(
   accessToken: string,
-  filters: { action?: string; status?: string; source?: string; page?: string } = {},
+  filters: { action?: string; status?: string; source?: string; page?: string; limit?: string } = {},
 ): Promise<AuditLogPage> {
-  const query = new URLSearchParams({ limit: "50" });
+  const query = new URLSearchParams({ limit: filters.limit ?? "25" });
   if (filters.action) query.set("action", filters.action);
   if (filters.status) query.set("status", filters.status);
   if (filters.source) query.set("source", filters.source);
@@ -51,6 +51,6 @@ export async function getAuditLogs(
   const response = await backendRequest<AuditLogRecord[]>(`/audit-logs?${query}`, { accessToken }) as AuditLogEnvelope;
   return {
     records: response.data ?? [],
-    pagination: response.pagination ?? { page: 1, limit: 50, total: 0, pages: 0 },
+    pagination: response.pagination ?? { page: 1, limit: Number(filters.limit ?? 25), total: 0, pages: 0 },
   };
 }

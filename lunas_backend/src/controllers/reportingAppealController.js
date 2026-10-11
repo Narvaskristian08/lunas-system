@@ -53,6 +53,16 @@ const appealQuery = (req, extra = {}) => ({
 
 const currentUser = async (id) => User.findById(id);
 
+const requireBarangayOfficial = (req, res) => {
+  if (req.user?.role === 'barangay_official') return true;
+  res.status(403).json({
+    success: false,
+    code: 'REPORTING_APPEALS_BARANGAY_ONLY',
+    message: 'Reporting appeals are handled by the assigned Barangay Official.'
+  });
+  return false;
+};
+
 exports.getMyAppeal = asyncHandler(async (req, res) => {
   const appeal = await ReportingAppeal.findOne({ reporter: req.user._id })
     .sort({ createdAt: -1 });
@@ -110,10 +120,15 @@ exports.createAppeal = asyncHandler(async (req, res) => {
 });
 
 exports.listAppeals = asyncHandler(async (req, res) => {
+  if (!requireBarangayOfficial(req, res)) return;
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const filter = appealQuery(req, {});
-  if (req.query.status && ['pending', 'approved', 'rejected'].includes(req.query.status)) filter.status = req.query.status;
+  if (req.query.status === 'completed') {
+    filter.status = { $in: ['approved', 'rejected'] };
+  } else if (req.query.status && ['pending', 'approved', 'rejected'].includes(req.query.status)) {
+    filter.status = req.query.status;
+  }
   if (req.query.reporterId && mongoose.isValidObjectId(req.query.reporterId)) filter.reporter = req.query.reporterId;
 
   const [appeals, total] = await Promise.all([
@@ -130,6 +145,7 @@ exports.listAppeals = asyncHandler(async (req, res) => {
 });
 
 exports.getAppealForReporter = asyncHandler(async (req, res) => {
+  if (!requireBarangayOfficial(req, res)) return;
   if (!mongoose.isValidObjectId(req.params.reporterId)) return res.status(404).json({ success: false, message: 'Appeal not found' });
   const appeal = await ReportingAppeal.findOne(appealQuery(req, { reporter: req.params.reporterId }))
     .populate('reporter', 'firstName lastName email')
@@ -138,6 +154,7 @@ exports.getAppealForReporter = asyncHandler(async (req, res) => {
 });
 
 exports.reviewAppeal = asyncHandler(async (req, res) => {
+  if (!requireBarangayOfficial(req, res)) return;
   const decision = normalize(req.body.decision);
   const notes = normalize(req.body.notes);
   const expectedVersion = Number(req.body.expectedVersion);
@@ -148,7 +165,7 @@ exports.reviewAppeal = asyncHandler(async (req, res) => {
 
   const appeal = await ReportingAppeal.findOne(appealQuery(req, { _id: req.params.id }));
   if (!appeal) return res.status(404).json({ success: false, message: 'Appeal not found' });
-  if (appeal.status !== 'pending' && !['city_engineer', 'admin'].includes(req.user.role)) {
+  if (appeal.status !== 'pending') {
     return res.status(409).json({ success: false, message: 'This appeal has already been decided.' });
   }
   const versionFilter = expectedVersion === 0

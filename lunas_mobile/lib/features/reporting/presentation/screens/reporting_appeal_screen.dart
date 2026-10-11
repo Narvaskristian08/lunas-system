@@ -130,7 +130,7 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
                               ? 'A Barangay Official will review your explanation and supporting reference.'
                               : appeal.status == 'approved'
                               ? 'Report submission available. Your reporting access has been restored.'
-                              : 'Your reporting access remains paused. City Engineering or Admin may review the decision.',
+                              : 'Your reporting access remains paused. The assigned Barangay Official may review a new appeal.',
                         ),
                       ],
                     ),

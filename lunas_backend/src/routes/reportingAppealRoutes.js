@@ -6,8 +6,8 @@ const controller = require('../controllers/reportingAppealController');
 
 router.get('/me', protect, authorize('citizen'), controller.getMyAppeal);
 router.post('/', protect, authorize('citizen'), controller.createAppeal);
-router.get('/reporter/:reporterId', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate, controller.getAppealForReporter);
-router.get('/', protect, authorize('barangay_official', 'city_engineer', 'admin'), controller.listAppeals);
-router.patch('/:id', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate, controller.reviewAppeal);
+router.get('/reporter/:reporterId', protect, authorize('barangay_official'), mongoIdValidation, validate, controller.getAppealForReporter);
+router.get('/', protect, authorize('barangay_official'), controller.listAppeals);
+router.patch('/:id', protect, authorize('barangay_official'), mongoIdValidation, validate, controller.reviewAppeal);
 
 module.exports = router;

@@ -68,7 +68,7 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
         {data.metrics.map((item) => <SummaryCard key={item.label} metric={item} />)}
       </DashboardGrid>)}
 
-      {data.reportingAppeals ? <ReportingAppealsCard initialAppeals={data.reportingAppeals} /> : null}
+      {viewer.backendRole === "barangay_official" && data.reportingAppeals ? <ReportingAppealsCard initialAppeals={data.reportingAppeals} /> : null}
 
       {viewer.backendRole !== "city_engineer" ? <Card className="mt-6 overflow-hidden">
         <CardHeader title={copy.recordsTitle} description={copy.recordsDescription} />

@@ -13,6 +13,7 @@ const Incident = require('../src/models/Incident');
 const AuditLog = require('../src/models/AuditLog');
 const Notification = require('../src/models/Notification');
 const WorkOrder = require('../src/models/WorkOrder');
+const ReportingAppeal = require('../src/models/ReportingAppeal');
 
 const DEMO_EMAIL_DOMAIN = '@lunas.test';
 const DEMO_EMAIL_PATTERN = new RegExp(`^demo\\..+${DEMO_EMAIL_DOMAIN.replace('.', '\\.')}$`, 'i');
@@ -138,9 +139,14 @@ async function clearPreviousDemoData() {
     ]
   }).select('_id').lean();
   const incidentIds = incidents.map((incident) => incident._id);
-  const resourceIds = [...userIds, ...incidentIds];
+  const appeals = userIds.length
+    ? await ReportingAppeal.find({ reporter: { $in: userIds } }).select('_id').lean()
+    : [];
+  const appealIds = appeals.map((appeal) => appeal._id);
+  const resourceIds = [...userIds, ...incidentIds, ...appealIds];
 
   if (incidentIds.length) await WorkOrder.deleteMany({ incident: { $in: incidentIds } });
+  if (userIds.length) await ReportingAppeal.deleteMany({ reporter: { $in: userIds } });
   if (userIds.length || incidentIds.length) {
     await Notification.deleteMany({
       $or: [
@@ -219,6 +225,43 @@ async function seed() {
     ]);
 
     const awaitingReviewIncident = incidents.find((incident) => incident.reportNumber === 'DEMO-QA-004');
+    const pendingAppeal = await ReportingAppeal.create({
+      reporter: citizen._id,
+      assignedBarangay: 'Poblacion Oeste',
+      explanation: 'The submitted reports describe infrastructure issues I personally observed in the assigned Barangay.',
+      evidenceReference: 'Synthetic local QA reference: pending appeal fixture.',
+      source: 'online',
+      status: 'pending',
+      version: 0
+    });
+    await ReportingAppeal.create({
+      reporter: citizen._id,
+      assignedBarangay: 'Poblacion Oeste',
+      explanation: 'The earlier review decision is retained as a completed history fixture for local dashboard testing.',
+      evidenceReference: 'Synthetic local QA reference: completed appeal fixture.',
+      source: 'online',
+      status: 'rejected',
+      version: 1,
+      reviewedBy: barangayOfficial._id,
+      reviewedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      reviewNotes: 'Synthetic completed appeal fixture for history testing.',
+      decisionHistory: [{
+        decision: 'rejected',
+        reviewedBy: barangayOfficial._id,
+        reviewedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        notes: 'Synthetic completed appeal fixture for history testing.'
+      }]
+    });
+    await User.findByIdAndUpdate(citizen._id, { $set: {
+      'reportingRestriction.status': 'blocked',
+      'reportingRestriction.confirmedFindings': 3,
+      'reportingRestriction.threshold': 3,
+      'reportingRestriction.assignedBarangay': 'Poblacion Oeste',
+      'reportingRestriction.blockedAt': new Date(),
+      'reportingRestriction.blockedAtFindings': 3,
+      'reportingRestriction.appealStatus': 'pending',
+      'reportingRestriction.appealId': pendingAppeal._id
+    } });
     await Notification.insertMany(incidents.map((incident) => ({
       recipient: citizen._id,
       type: 'incident_submitted',
@@ -257,6 +300,7 @@ async function seed() {
 
     console.log(`Seeded ${seededUsers.length} synthetic demo accounts and ${incidents.length} synthetic submitted incidents in lunas_db.`);
     console.log('DEMO-QA-004 is the fresh Barangay Awaiting Review fixture.');
+    console.log('Demo Barangay Reporting Appeals includes one pending and one completed history fixture.');
     console.log('Demo records use the demo.*@lunas.test namespace; no non-demo records were changed.');
   } finally {
     await mongoose.disconnect();

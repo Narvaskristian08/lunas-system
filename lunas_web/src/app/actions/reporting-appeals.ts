@@ -12,7 +12,10 @@ export interface ReportingAppeal {
   source: "online" | "offline";
   status: "pending" | "approved" | "rejected";
   version: number;
+  createdAt?: string;
+  updatedAt?: string;
   reviewedAt?: string;
+  reviewedBy?: string;
   reviewNotes?: string;
   decisionHistory?: Array<{ decision: string; reviewedAt?: string; notes?: string }>;
 }
@@ -22,9 +25,13 @@ export interface ReportingAppealPage {
   pagination: { page: number; limit: number; total: number; pages: number };
 }
 
+interface ReportingAppealApiResponse {
+  pagination?: ReportingAppealPage["pagination"];
+}
+
 async function authorizedViewer() {
   const viewer = await getViewer();
-  if (!viewer || !["barangay_official", "city_engineer", "admin"].includes(viewer.backendRole)) {
+  if (!viewer || viewer.backendRole !== "barangay_official") {
     throw new Error("Appeal review access denied");
   }
   return viewer;
@@ -36,10 +43,29 @@ export async function loadReportingAppeal(reporterId: string): Promise<Reporting
   return responseData(await backendRequest<ReportingAppeal | null>(`/reporting-appeals/reporter/${encodeURIComponent(reporterId)}`, { accessToken }));
 }
 
-export async function loadReportingAppeals(): Promise<ReportingAppealPage> {
+export async function loadReportingAppeals({
+  status = "pending",
+  page = 1,
+  limit = 50,
+}: {
+  status?: "pending" | "completed" | "approved" | "rejected";
+  page?: number;
+  limit?: number;
+} = {}): Promise<ReportingAppealPage> {
   await authorizedViewer();
   const accessToken = await requireAccessToken();
-  return responseData(await backendRequest<ReportingAppealPage>('/reporting-appeals?status=pending&limit=50', { accessToken }));
+  const params = new URLSearchParams({ status, page: String(Math.max(1, page)), limit: String(Math.min(50, Math.max(1, limit))) });
+  const response = await backendRequest<ReportingAppeal[]>(`/reporting-appeals?${params.toString()}`, { accessToken });
+  const appeals = responseData(response);
+  const pagination = (response as unknown as ReportingAppealApiResponse).pagination;
+  return {
+    appeals,
+    pagination: pagination ?? { page: 1, limit: Math.min(50, Math.max(1, limit)), total: appeals.length, pages: 1 },
+  };
+}
+
+export async function loadReportingAppealHistory(page = 1): Promise<ReportingAppealPage> {
+  return loadReportingAppeals({ status: "completed", page, limit: 5 });
 }
 
 export async function reviewReportingAppeal(input: {

@@ -64,7 +64,11 @@ export interface DashboardReportingAppeal {
   assignedBarangay: string;
   explanation: string;
   evidenceReference: string;
+  status: "pending" | "approved" | "rejected";
   version: number;
+  createdAt?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
 }
 
 export interface RealDashboardData {
@@ -150,14 +154,12 @@ function metric(label: string, value: number, tone: Severity, icon: DashboardMet
   return { label, value: new Intl.NumberFormat("en-PH").format(value), tone, icon };
 }
 
-interface ReportingAppealListPayload {
-  appeals?: DashboardReportingAppeal[];
-}
+type ReportingAppealListPayload = DashboardReportingAppeal[] | { appeals?: DashboardReportingAppeal[] };
 
 async function pendingReportingAppeals(accessToken: string) {
   try {
     const payload = responseData(await backendRequest<ReportingAppealListPayload>("/reporting-appeals?status=pending&limit=5", { accessToken }));
-    return payload.appeals ?? [];
+    return Array.isArray(payload) ? payload : payload.appeals ?? [];
   } catch {
     // Appeal visibility should not take down the operational dashboard when
     // the separate appeal endpoint is temporarily unavailable.
@@ -167,11 +169,8 @@ async function pendingReportingAppeals(accessToken: string) {
 
 async function reviewQueueDashboard(accessToken: string, role: "barangay_official" | "city_engineer"): Promise<RealDashboardData> {
   if (role === "city_engineer") {
-    const [barangayReports, reportingAppeals] = await Promise.all([
-      responseData(await backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken })),
-      pendingReportingAppeals(accessToken),
-    ]);
-    return { barangayReports, reportingAppeals, metrics: [], records: [], emptyTitle: "No reports", emptyDescription: "" };
+    const barangayReports = await responseData(await backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken }));
+    return { barangayReports, metrics: [], records: [], emptyTitle: "No reports", emptyDescription: "" };
   }
   const [summary, queue, reportingAppeals] = await Promise.all([
     responseData(await backendRequest<ValidationSummaryPayload>("/stats/validation-summary", { accessToken })),
@@ -201,7 +200,6 @@ async function providerOperationsDashboard(): Promise<RealDashboardData> {
     getWorkOrders({ page: 1, limit: 5, sortBy: "deadline" }),
   ]);
   return {
-    reportingAppeals: [],
     metrics: [
       metric("Unassigned Work", summary.unassigned, "warning", "workOrder"),
       metric("Pending Acceptance", summary.pendingAcceptance, "information", "workOrder"),
