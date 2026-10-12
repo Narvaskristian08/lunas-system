@@ -37,6 +37,12 @@ async function authorizedViewer() {
   return viewer;
 }
 
+export async function loadReportingAppeal(reporterId: string): Promise<ReportingAppeal | null> {
+  await authorizedViewer();
+  const accessToken = await requireAccessToken();
+  return responseData(await backendRequest<ReportingAppeal | null>(`/reporting-appeals/reporter/${encodeURIComponent(reporterId)}`, { accessToken }));
+}
+
 export async function loadReportingAppeals({
   status = "pending",
   page = 1,
