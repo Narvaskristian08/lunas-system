@@ -63,7 +63,7 @@ docker run -d --name lunas-ai --restart unless-stopped \
   -e CONFIDENCE_THRESHOLD=0.25 \
   -e IOU_THRESHOLD=0.45 \
   -e MAX_DETECTIONS=50 \
-  -e MAX_IMAGE_SIZE=1920 \
+  -e MAX_IMAGE_SIZE=1280 \
   -e IMAGE_QUALITY=85 \
   -e LOG_LEVEL=INFO \
   -e ALLOWED_ORIGINS=http://backend:5000 \

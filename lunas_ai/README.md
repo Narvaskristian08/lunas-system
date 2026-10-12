@@ -31,14 +31,14 @@ configuration.
 | POST | `/api/v1/detect/comprehensive` | Multipart `image` plus canonical `category`; uses the service-owned category/model mapping. |
 | POST | `/api/v1/detect/drainage`, `/api/v1/detect/electrical` | Fixed-category QA routes. |
 | POST | `/api/v1/detect/road-damage`, `/api/v1/detect/cracks` | Standalone road/crack detection routes. |
-| POST | `/api/v1/detect/privacy` | Detects face and license-plate regions using the bundled OpenCV privacy cascades; the Node backend applies the returned redactions before storage. |
+| POST | `/api/v1/detect/privacy` | Detects face and license-plate regions using bundled YuNet and an explicitly configured dedicated plate model; the Node backend applies returned redactions before storage. |
 | POST | `/api/v1/detect/all-hazards` | Disabled; returns HTTP 410 and directs callers to category-specific inference. |
 | GET | `/api/v1/ping` | Simple liveness check. |
 
 Inference output and confidence scores are model suggestions, can be wrong, and
 are not calibrated public-safety decisions. Human review is required. Privacy
 detection returns normalized face and license-plate boxes; the backend owns the
-blur operation and persists only the redacted WebP. If either privacy cascade is
+blur operation and persists only the redacted WebP. If either privacy detector is
 unavailable, the backend fails closed instead of storing an unredacted upload.
 Metadata removal remains separate from visual redaction.
 LUNAS does not claim image-based duplicate detection.

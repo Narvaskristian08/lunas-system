@@ -80,8 +80,12 @@ class PrivacyScopeTests(unittest.TestCase):
 
     def test_privacy_detector_configuration_is_present(self):
         config = yaml.safe_load((BASE / 'config.yaml').read_text(encoding='utf-8'))
-        self.assertEqual(config['privacy']['face_cascade'], 'haarcascade_frontalface_default.xml')
-        self.assertEqual(config['privacy']['plate_cascade'], 'haarcascade_russian_plate_number.xml')
+        self.assertEqual(config['privacy']['face_model_path'], 'models/privacy/face_detection_yunet_2023mar.onnx')
+        self.assertEqual(config['privacy']['face_cascade'], None)
+        self.assertEqual(config['privacy']['plate_model_path'], 'models/privacy/license-plate.pt')
+        self.assertEqual(config['privacy']['plate_cascade'], None)
+        self.assertTrue((BASE / config['privacy']['face_model_path']).is_file())
+        self.assertTrue((BASE / config['privacy']['plate_model_path']).is_file())
         expected = {'road': 'road_damage', 'drainage': 'surface_drainage',
                     'electrical': 'electrical_damage', 'water': 'water_leak',
                     'gas': 'gas_infrastructure_damage', 'streetlight': 'streetlight_damage',

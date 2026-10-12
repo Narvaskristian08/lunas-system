@@ -15,23 +15,87 @@ from PIL import Image
 from ..utils.config import config
 from ..utils.logger import logger
 
+try:
+    from ultralytics import YOLO
+except ImportError:  # pragma: no cover - runtime image includes ultralytics
+    YOLO = None
+
 
 class PrivacyService:
-    """Detect faces and license plates using bundled OpenCV cascades."""
+    """Detect faces and license plates using bundled privacy models.
+
+    YuNet is used for faces because the previous Haar cascade produced false
+    positives on traffic scenes. A dedicated YOLO model is used for plates.
+    """
 
     def __init__(self):
         privacy_config = config.config.get('privacy', {})
+        self.face_model_confidence = float(privacy_config.get('face_model_confidence', 0.75))
+        self.face_nms_threshold = float(privacy_config.get('face_nms_threshold', 0.3))
+        self.face_model = self._load_face_model(
+            privacy_config.get('face_model_path'),
+            self.face_model_confidence,
+            self.face_nms_threshold,
+        )
         self.face_cascade = self._load_cascade(
             privacy_config.get('face_cascade', 'haarcascade_frontalface_default.xml')
         )
         self.plate_cascade = self._load_cascade(
             privacy_config.get('plate_cascade', 'haarcascade_russian_plate_number.xml')
         )
+        self.plate_model = self._load_plate_model(privacy_config.get('plate_model_path'))
+        self.plate_model_confidence = float(privacy_config.get('plate_model_confidence', 0.45))
+        self.plate_tile_size = int(privacy_config.get('plate_tile_size', 640))
+        self.plate_tile_overlap = float(privacy_config.get('plate_tile_overlap', 0.2))
         self.face_min_neighbors = int(privacy_config.get('face_min_neighbors', 5))
         self.plate_min_neighbors = int(privacy_config.get('plate_min_neighbors', 4))
+        self.face_scales = tuple(float(value) for value in privacy_config.get('face_upscale_factors', [1.0, 1.5, 2.0]))
+        self.plate_scales = tuple(float(value) for value in privacy_config.get('plate_upscale_factors', [1.0, 1.5, 2.0]))
+        self.max_detection_dimension = int(privacy_config.get('max_detection_dimension', 1600))
 
     @staticmethod
-    def _load_cascade(filename: str) -> Optional[cv2.CascadeClassifier]:
+    def _load_face_model(path: Optional[str], confidence: float, nms_threshold: float):
+        """Load the explicit YuNet face detector when OpenCV supports it."""
+        if not path:
+            return None
+        model_path = Path(path)
+        if not model_path.is_file():
+            logger.warning('YuNet face model unavailable: %s', path)
+            return None
+        try:
+            if hasattr(cv2, 'FaceDetectorYN_create'):
+                return cv2.FaceDetectorYN_create(
+                    str(model_path), '', (320, 320), confidence, nms_threshold, 5000
+                )
+            if hasattr(cv2, 'FaceDetectorYN'):
+                return cv2.FaceDetectorYN.create(
+                    str(model_path), '', (320, 320), confidence, nms_threshold, 5000
+                )
+        except Exception as error:
+            logger.error('YuNet face model failed to load: %s', error)
+            return None
+        logger.error('This OpenCV build does not provide FaceDetectorYN')
+        return None
+
+    @staticmethod
+    def _load_plate_model(path: Optional[str]):
+        """Load only an explicitly supplied, approved plate model weight."""
+        if not path or YOLO is None:
+            return None
+        model_path = Path(path)
+        if not model_path.is_file():
+            logger.warning('Dedicated plate model unavailable: %s', path)
+            return None
+        try:
+            return YOLO(str(model_path))
+        except Exception as error:
+            logger.error('Dedicated plate model failed to load: %s', error)
+            return None
+
+    @staticmethod
+    def _load_cascade(filename: Optional[str]) -> Optional[cv2.CascadeClassifier]:
+        if not filename:
+            return None
         candidates = [
             Path(filename),
             Path(cv2.data.haarcascades) / filename,
@@ -80,36 +144,138 @@ class PrivacyService:
                 result.append(candidate)
         return result
 
+    @staticmethod
+    def _plate_geometry(box: Tuple[int, int, int, int]) -> bool:
+        """Reject cascade hits that cannot be a rectangular license plate."""
+        _, _, width, height = box
+        if width < 24 or height < 8:
+            return False
+        aspect_ratio = width / max(1, height)
+        return 1.2 <= aspect_ratio <= 8.0
+
+    @staticmethod
+    def _detect_scaled(
+        cascade: cv2.CascadeClassifier,
+        gray: np.ndarray,
+        scales: Tuple[float, ...],
+        scale_factor: float,
+        min_neighbors: int,
+        min_size: Tuple[int, int],
+    ) -> List[Tuple[int, int, int, int]]:
+        """Detect on upscaled copies so small distant regions remain visible."""
+        detections: List[Tuple[int, int, int, int]] = []
+        for upscale in scales:
+            if upscale <= 0:
+                continue
+            scaled = gray if upscale == 1.0 else cv2.resize(
+                gray, None, fx=upscale, fy=upscale, interpolation=cv2.INTER_CUBIC
+            )
+            boxes = cascade.detectMultiScale(
+                scaled,
+                scaleFactor=scale_factor,
+                minNeighbors=min_neighbors,
+                minSize=(max(8, int(min_size[0] * upscale)), max(8, int(min_size[1] * upscale))),
+            )
+            for x, y, width, height in boxes:
+                detections.append((
+                    int(round(x / upscale)),
+                    int(round(y / upscale)),
+                    int(round(width / upscale)),
+                    int(round(height / upscale)),
+                ))
+        return detections
+
+    def _detect_faces(
+        self,
+        rgb: np.ndarray,
+        image_width: int,
+        image_height: int,
+        detection_scale: float,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Detect faces with YuNet and map boxes back to original coordinates."""
+        if self.face_model is None:
+            return []
+        # OpenCV's FaceDetectorYN expects an OpenCV/BGR image. The public
+        # service keeps the decoded image in RGB for PIL/YOLO, so convert only
+        # this detector input to avoid coordinate/color mismatches.
+        detection_image = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        if detection_scale < 1.0:
+            detection_image = cv2.resize(
+                detection_image, None, fx=detection_scale, fy=detection_scale,
+                interpolation=cv2.INTER_AREA
+            )
+        detection_height, detection_width = detection_image.shape[:2]
+        self.face_model.setInputSize((detection_width, detection_height))
+        _, faces = self.face_model.detect(detection_image)
+        boxes: List[Tuple[int, int, int, int]] = []
+        if faces is None:
+            return boxes
+        for face in faces:
+            confidence = float(face[14])
+            if confidence < self.face_model_confidence:
+                continue
+            x, y, width, height = [int(round(value)) for value in face[:4]]
+            if detection_scale < 1.0:
+                x = int(round(x / detection_scale))
+                y = int(round(y / detection_scale))
+                width = int(round(width / detection_scale))
+                height = int(round(height / detection_scale))
+            x = max(0, min(image_width - 1, x))
+            y = max(0, min(image_height - 1, y))
+            width = min(width, image_width - x)
+            height = min(height, image_height - y)
+            if width >= 8 and height >= 8:
+                boxes.append((x, y, width, height))
+        return self._dedupe_boxes(boxes)
+
     def detect(self, image: Image.Image) -> Dict[str, Any]:
         """Return privacy regions in normalized coordinates."""
-        if self.face_cascade is None or self.plate_cascade is None:
+        if self.face_model is None or self.plate_model is None:
             return {
                 'success': False,
                 'status': 'unavailable',
                 'model_available': False,
-                'model': 'opencv-haar-privacy-v1',
+                'model': 'opencv-yunet-face+dedicated-plate-yolo-v1',
                 'detections': [],
                 'detected_regions': 0,
-                'error': 'Face and license-plate privacy detectors are unavailable',
+                'error': 'Face and dedicated license-plate privacy detectors are unavailable',
             }
 
         rgb = np.asarray(image.convert('RGB'))
         image_height, image_width = rgb.shape[:2]
-        gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
-        gray = cv2.equalizeHist(gray)
-
-        face_boxes = self.face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=self.face_min_neighbors,
-            minSize=(24, 24),
-        )
-        plate_boxes = self.plate_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.05,
-            minNeighbors=self.plate_min_neighbors,
-            minSize=(36, 12),
-        )
+        detection_scale = min(1.0, self.max_detection_dimension / max(image_width, image_height))
+        face_boxes = self._detect_faces(rgb, image_width, image_height, detection_scale)
+        plate_boxes: List[Tuple[int, int, int, int]] = []
+        try:
+            rgb_image = image.convert('RGB')
+            tile_size = max(320, self.plate_tile_size)
+            stride = max(160, int(tile_size * (1.0 - self.plate_tile_overlap)))
+            x_positions = list(range(0, max(1, image_width - tile_size + 1), stride))
+            y_positions = list(range(0, max(1, image_height - tile_size + 1), stride))
+            if not x_positions or x_positions[-1] != max(0, image_width - tile_size):
+                x_positions.append(max(0, image_width - tile_size))
+            if not y_positions or y_positions[-1] != max(0, image_height - tile_size):
+                y_positions.append(max(0, image_height - tile_size))
+            for tile_y in y_positions:
+                for tile_x in x_positions:
+                    tile = rgb_image.crop((tile_x, tile_y, min(image_width, tile_x + tile_size), min(image_height, tile_y + tile_size)))
+                    results = self.plate_model.predict(
+                        source=np.asarray(tile),
+                        imgsz=tile_size,
+                        conf=self.plate_model_confidence,
+                        device='cpu',
+                        verbose=False,
+                        max_det=20,
+                    )
+                    for result in results:
+                        for box in result.boxes.xyxy.cpu().numpy().tolist():
+                            x1, y1, x2, y2 = [int(round(value)) for value in box[:4]]
+                            candidate = (tile_x + x1, tile_y + y1, max(0, x2 - x1), max(0, y2 - y1))
+                            if self._plate_geometry(candidate):
+                                plate_boxes.append(candidate)
+            plate_boxes = self._dedupe_boxes(plate_boxes)
+        except Exception as error:
+            logger.error('Dedicated plate detection failed: %s', error)
 
         detections: List[Dict[str, Any]] = []
         for label, boxes in (
@@ -117,6 +283,11 @@ class PrivacyService:
             ('license_plate', self._dedupe_boxes(list(plate_boxes))),
         ):
             for x, y, width, height in boxes:
+                if detection_scale < 1.0:
+                    x = int(round(x / detection_scale))
+                    y = int(round(y / detection_scale))
+                    width = int(round(width / detection_scale))
+                    height = int(round(height / detection_scale))
                 detections.append({
                     'label': label,
                     'bbox': self._normalized_box(
@@ -128,7 +299,7 @@ class PrivacyService:
             'success': True,
             'status': 'completed',
             'model_available': True,
-            'model': 'opencv-haar-privacy-v1',
+            'model': 'opencv-yunet-face+dedicated-plate-yolo-v1',
             'detected': bool(detections),
             'detections': detections,
             'detected_regions': len(detections),

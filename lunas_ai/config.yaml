@@ -175,12 +175,27 @@ category_models:
   other: environmental_hazards
 
 privacy:
-  # These cascades ship with opencv-python-headless. The backend applies the
-  # visual blur after receiving these normalized detection boxes.
-  face_cascade: haarcascade_frontalface_default.xml
-  plate_cascade: haarcascade_russian_plate_number.xml
+  # YuNet is a lightweight face detector. The backend applies visual blur
+  # after receiving these normalized detection boxes.
+  face_model_path: models/privacy/face_detection_yunet_2023mar.onnx
+  face_model_confidence: 0.75
+  face_nms_threshold: 0.3
+  face_cascade: null
+  # The old Haar plate cascade is intentionally no longer used.
+  plate_model_path: models/privacy/license-plate.pt
+  # Keep a conservative threshold for plates: low-confidence candidates in
+  # this traffic scene land on bumpers/road markings rather than plates.
+  plate_model_confidence: 0.10
+  plate_tile_size: 640
+  plate_tile_overlap: 0.2
+  plate_cascade: null
   face_min_neighbors: 5
-  plate_min_neighbors: 4
+  plate_min_neighbors: 7
+  # Multiple upscaled passes improve recall for distant faces and plates.
+  # Redaction remains backend-owned; these values do not read plate text.
+  face_upscale_factors: [1.0, 1.5, 2.0]
+  plate_upscale_factors: [1.0, 1.5, 2.0]
+  max_detection_dimension: 1600
 
 severity_estimation:
   pothole:

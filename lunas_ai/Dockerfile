@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Restore only the headless implementation for this server image.
 RUN pip uninstall -y opencv-python opencv-python-headless \
     && pip install --no-cache-dir --no-deps 'opencv-python-headless>=4.8,<5' \
-    && python -c "import cv2; from ultralytics import YOLO; assert hasattr(cv2, 'CascadeClassifier'); assert hasattr(cv2.data, 'haarcascades')"
+    && python -c "import cv2; from ultralytics import YOLO; assert hasattr(cv2, 'CascadeClassifier'); assert hasattr(cv2, 'FaceDetectorYN_create'); assert hasattr(cv2.data, 'haarcascades')"
 
 # Copy application code
 COPY . .
@@ -47,4 +47,6 @@ ENV PYTHONUNBUFFERED=1
 ENV FLASK_ENV=production
 
 # Run with gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "2", "--threads", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]
+# The t3.small has 2 GiB RAM; two workers duplicate the PyTorch model and can
+# be OOM-killed during privacy processing. Keep one worker for the bounded AI host.
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]
