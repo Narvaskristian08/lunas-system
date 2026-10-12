@@ -96,41 +96,57 @@ class ProfileSection extends StatelessWidget {
     required this.title,
     required this.child,
     this.icon = Icons.person_outline_rounded,
+    this.action,
+    this.compactHeader = false,
+    this.flat = false,
     super.key,
   });
   final String title;
   final Widget child;
   final IconData icon;
+  final Widget? action;
+  final bool compactHeader;
+  final bool flat;
 
   @override
-  Widget build(BuildContext context) => LunasCard(
-    padding: const EdgeInsets.fromLTRB(
-      AppSpacing.md,
-      AppSpacing.md,
-      AppSpacing.md,
-      AppSpacing.lg,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
+  Widget build(BuildContext context) => flat
+      ? _content(context)
+      : LunasCard(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.lg,
+          ),
+          child: _content(context),
+        );
+
+  Widget _content(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          if (!compactHeader) ...[
             Icon(icon, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: AppSpacing.sm),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
           ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        const Divider(height: 1),
-        const SizedBox(height: AppSpacing.md),
-        child,
-      ],
-    ),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: compactHeader ? 16 : null,
+              ),
+            ),
+          ),
+          ?action,
+        ],
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      const Divider(height: 1),
+      const SizedBox(height: AppSpacing.md),
+      child,
+    ],
   );
 }
 

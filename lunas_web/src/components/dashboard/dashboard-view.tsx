@@ -53,6 +53,14 @@ function dashboardCopy(viewer: UserProfile) {
 
 export function DashboardView({ viewer, data }: { viewer: UserProfile; data: RealDashboardData }) {
   const copy = dashboardCopy(viewer);
+  const providerFilters: Record<string, string> = {
+    "Unassigned Work": "assignmentStatus=unassigned",
+    "Pending Acceptance": "assignmentStatus=pending",
+    "Active Repairs": "status=in_progress",
+    "Needs Correction": "status=needs_correction",
+    "Awaiting Review": "status=completed",
+    "Overdue": "slaState=overdue",
+  };
   const today = new Intl.DateTimeFormat("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" }).format(new Date());
 
   return (
@@ -64,8 +72,10 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
         actions={<span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-600"><CalendarDays className="size-4" aria-hidden="true" /> {today}</span>}
       />
 
-      {viewer.backendRole === "city_engineer" ? <BarangayReportTable rows={data.barangayReports ?? []} /> : (      <DashboardGrid className="sm:grid-cols-2 xl:grid-cols-4">
-        {data.metrics.map((item) => <SummaryCard key={item.label} metric={item} />)}
+      {viewer.backendRole === "city_engineer" ? <BarangayReportTable rows={data.barangayReports ?? []} /> : (      <DashboardGrid className={viewer.backendRole === "utility_provider" ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-4"}>
+        {data.metrics.map((item) => viewer.backendRole === "utility_provider"
+          ? <Link key={item.label} href={`/work-orders?view=orders&${providerFilters[item.label]}`} className="block rounded-2xl transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`${item.label}: ${item.value}. View work orders.`}><SummaryCard metric={item} /></Link>
+          : <SummaryCard key={item.label} metric={item} />)}
       </DashboardGrid>)}
 
       {viewer.backendRole === "barangay_official" && data.reportingAppeals ? <ReportingAppealsCard initialAppeals={data.reportingAppeals} /> : null}
@@ -89,7 +99,7 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
                   : <div><p className="font-semibold text-slate-900">{record.id}</p><p className="mt-0.5 text-xs text-slate-500">{record.category}</p></div>,
                 location: record.location,
                 priority: record.priority,
-                status: <StatusBadge tone={statusTone(record.status)}>{record.status}</StatusBadge>,
+                status: <StatusBadge tone={record.statusTone ?? statusTone(record.status)}>{record.status}</StatusBadge>,
               },
             }))}
           />

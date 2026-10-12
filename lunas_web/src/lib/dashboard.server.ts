@@ -1,3 +1,4 @@
+import { workOrderStatusLabel, workOrderStatusTone } from "@/lib/work-order-status";
 import { categoryLabel } from "@/lib/category-label";
 import "server-only";
 
@@ -56,6 +57,7 @@ export interface DashboardRecord {
   createdAt?: string;
   repairProgress?: number;
   readyForCompletion?: boolean;
+  statusTone?: Severity;
 }
 
 export interface DashboardReportingAppeal {
@@ -127,13 +129,8 @@ function recordFromWorkOrder(workOrder: WorkOrder): DashboardRecord {
     category: workOrder.incident?.category
       ? `Work order · ${categoryLabel(workOrder.incident.category, "Infrastructure repair")}`
       : "Maintenance work order",
-    status: workOrder.status === "completed"
-      ? "Repair completed · awaiting Utility Provider review"
-      : workOrder.status === "provider_accepted"
-        ? "Provider accepted · awaiting City Engineering verification"
-        : workOrder.status === "city_correction_required"
-          ? "City Engineering requested corrective work"
-          : titleCase(workOrder.status, "Pending"),
+    status: workOrderStatusLabel(workOrder.status, workOrder.assignmentState),
+    statusTone: workOrderStatusTone(workOrder.status),
     priority: titleCase(workOrder.priority, "Standard"),
     location: [
       workOrder.incident?.location.address.street,
@@ -202,14 +199,11 @@ async function providerOperationsDashboard(): Promise<RealDashboardData> {
   return {
     metrics: [
       metric("Unassigned Work", summary.unassigned, "warning", "workOrder"),
-      metric("Pending Acceptance", summary.pendingAcceptance, "information", "workOrder"),
+      metric("Pending Acceptance", summary.pendingAcceptance, "information", "users"),
       metric("Active Repairs", summary.active, "information", "workOrder"),
-      metric("Approaching Deadlines", summary.approaching, "warning", "sla"),
-      metric("Overdue Work", summary.overdue, "critical", "sla"),
-      metric("Completed · Awaiting Review", summary.readyForCompletion, "warning", "workOrder"),
-      metric("Awaiting City Verification", summary.awaitingFinalVerification, "information", "verified"),
-      metric("City Returns to Coordinate", summary.cityCorrections, "warning", "incident"),
-      metric("Corrective Repairs", summary.correctiveRepairs, "information", "workOrder"),
+      metric("Needs Correction", summary.correctiveRepairs + summary.cityCorrections, "warning", "incident"),
+      metric("Awaiting Review", summary.readyForCompletion, "warning", "verified"),
+      metric("Overdue", summary.overdue, "critical", "sla"),
     ],
     records: workOrderQueue.workOrders.map(recordFromWorkOrder),
     emptyTitle: "No provider work orders",

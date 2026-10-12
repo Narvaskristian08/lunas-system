@@ -132,6 +132,10 @@ class AuthService {
     required String firstName,
     required String lastName,
     required String phone,
+    String? middleName,
+    String? suffix,
+    bool? noMiddleName,
+    Map<String, dynamic>? currentAddress,
     String? address,
   }) async {
     final payload = await _apiClient.patch(
@@ -140,10 +144,25 @@ class AuthService {
         'firstName': firstName,
         'lastName': lastName,
         'phone': phone,
-        if (address != null) 'address': {'street': address.trim()},
+        'middleName': ?middleName,
+        'suffix': ?suffix,
+        'noMiddleName': ?noMiddleName,
+        if (address != null)
+          'address': {...?currentAddress, 'street': address.trim()},
       },
     );
     return AuthUser.fromJson(authData(payload));
+  }
+
+  Future<AuthSession> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _apiClient.put(
+      '/auth/change-password',
+      body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+    );
+    return AuthSession.fromResponse(response);
   }
 
   Future<void> requestPasswordReset(String email) async {

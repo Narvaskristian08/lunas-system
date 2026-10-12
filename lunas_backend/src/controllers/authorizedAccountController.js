@@ -21,6 +21,9 @@ const audit = (req, user, action, before, after, details = {}) => createAuditLog
 const denied = (res, message, status = 403) => res.status(status).json({ success: false, message });
 const conflict = res => denied(res, 'Account changed. Refresh and try again.', 409);
 const checkActor = (req, res, target, role = target?.role) => {
+  if (req.user?.role === 'utility_provider' && target?.role === 'repair_personnel'
+    && !target.isArchived && req.user.utilityCompany
+    && target.repairOrganization === req.user.utilityCompany && role === 'repair_personnel') return true;
   if (req.user?.role !== 'admin') {
     denied(res, 'Administrator access is required');
     return false;
@@ -114,6 +117,8 @@ exports.createRepairPersonnel = asyncHandler(async (req, res) => {
   const providerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || organization;
   const user = await User.create({
     firstName: req.body.firstName,
+    middleName: req.body.middleName || '',
+    suffix: req.body.suffix || '',
     lastName: req.body.lastName,
     email: req.body.email,
     phone: req.body.phone,
@@ -155,8 +160,22 @@ exports.createRepairPersonnel = asyncHandler(async (req, res) => {
     data: { account: serializeAccount(user), delivery },
     message: delivery.delivered
       ? 'Repair Personnel account created. Activation email sent.'
-      : 'Repair Personnel account created. Activation email was not delivered; contact an administrator.'
+      : 'Repair Personnel account created. Activation email was not delivered; use Resend Invitation after delivery is configured.'
   });
+});
+
+exports.updateRepairPersonnel = asyncHandler(async (req, res) => {
+  const before = await targetAccount(req, res);
+  if (!before || !checkActor(req, res, before)) return;
+  if ((before.__v || 0) !== req.body.version) return conflict(res);
+  const fields = Object.fromEntries(['firstName', 'middleName', 'suffix', 'lastName', 'phone', 'repairAccountType', 'repairTeam']
+    .map(key => [key, req.body[key] || '']));
+  const user = await User.findOneAndUpdate(revisionFilter(before), {
+    $set: fields, $inc: { __v: 1 }
+  }, { new: true, runValidators: true });
+  if (!user) return conflict(res);
+  await audit(req, user, 'user_updated', serializeAccount(before), serializeAccount(user), { creatorRole: req.user.role });
+  res.json({ success: true, data: serializeAccount(user), message: 'Personnel details updated.' });
 });
 
 exports.createAuthorizedAccount = asyncHandler(async (req, res) => {

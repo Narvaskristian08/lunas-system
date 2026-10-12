@@ -140,7 +140,11 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
           _SlaNotice(
             overdue: summary.overdue,
             approaching: summary.approachingDeadline,
-            onOpenTasks: () => context.go(RepairRoutes.workOrders),
+            onOpenTasks: () => context.go(
+              summary.overdue > 0
+                  ? RepairRoutes.filteredWorkOrders('overdue')
+                  : RepairRoutes.workOrders,
+            ),
           ),
         ],
         const SizedBox(height: AppSpacing.xl),
@@ -174,7 +178,7 @@ class _RepairMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final metrics = [
       (
-        label: 'Assigned',
+        label: 'Assigned Repairs',
         filter: 'assigned',
         value: summary.pendingAssignments + summary.accepted,
         icon: Icons.assignment_outlined,
@@ -292,32 +296,61 @@ class _SlaNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOverdue = overdue > 0;
     final color = isOverdue ? AppColorsLight.critical : AppColorsLight.alert;
+    final title = isOverdue
+        ? 'SLA Deadline Breached'
+        : 'SLA Deadline Approaching';
     final message = isOverdue
-        ? 'CRITICAL: SLA Breach Risk\n$overdue assigned work order${overdue == 1 ? ' is' : 's are'} overdue.'
-        : '$approaching assigned work order${approaching == 1 ? ' is' : 's are'} approaching the SLA deadline.';
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .10),
+        ? '$overdue assigned work order${overdue == 1 ? ' is' : 's are'} overdue.'
+        : '$approaching assigned work order${approaching == 1 ? ' is' : 's are'} nearing the deadline.';
+    return Material(
+      color: color.withValues(alpha: .05),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: .35)),
+        side: BorderSide(color: color.withValues(alpha: .25)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.warning_amber_rounded, color: color),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpenTasks,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Icon(
+                isOverdue
+                    ? Icons.warning_amber_rounded
+                    : Icons.schedule_rounded,
                 color: color,
-                fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w600,
+                size: 22,
               ),
-            ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      message,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Icon(Icons.chevron_right_rounded, color: color, size: 22),
+            ],
           ),
-          TextButton(onPressed: onOpenTasks, child: const Text('Open tasks')),
-        ],
+        ),
       ),
     );
   }

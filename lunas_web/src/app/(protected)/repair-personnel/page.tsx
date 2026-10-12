@@ -3,7 +3,7 @@ import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
 import { getRepairPersonnel, type RepairPersonnelRecord } from "@/lib/repair-personnel.server";
 
 export default async function RepairPersonnelPage() {
-  await requirePermission("personnel.manage");
+  const viewer = await requirePermission("personnel.manage");
   const accessToken = await requireAccessToken();
   let personnel: RepairPersonnelRecord[] = [];
   let error: string | undefined;
@@ -14,5 +14,5 @@ export default async function RepairPersonnelPage() {
     error = "The Repair Personnel roster could not be loaded. Refresh to try again.";
   }
 
-  return <RepairPersonnelConsole personnel={personnel} error={error} />;
+  return <RepairPersonnelConsole organization={viewer.utilityCompany ?? ""} personnel={personnel} error={error} />;
 }

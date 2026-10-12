@@ -2,6 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 
 void main() {
+  test('all backend work-order statuses have distinct labels and round-trip values', () {
+    const labels = {
+      'pending': 'Pending Assignment', 'accepted': 'Assigned',
+      'in_progress': 'In Progress', 'completed': 'Awaiting Provider Review',
+      'rework_required': 'Needs Correction',
+      'city_correction_required': 'Returned by City Engineering',
+      'provider_accepted': 'Awaiting City Verification', 'verified': 'Closed',
+    };
+    for (final entry in labels.entries) {
+      final status = repairWorkOrderStatusFromJson(entry.key);
+      expect(status, isNot(RepairWorkOrderStatus.unknown));
+      expect(status.apiValue, entry.key);
+      expect(status.label, entry.value);
+    }
+  });
+
   test('parses the server-safe repair work-order detail response', () {
     final workOrder = RepairWorkOrder.fromJson({
       'success': true,

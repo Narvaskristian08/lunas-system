@@ -348,3 +348,14 @@ describe('public citizen registration', () => {
     });
   });
 });
+
+
+test('repair personnel cannot change provider-managed profile details', async () => {
+  const { updateProfile } = require('./authController');
+  const res = createResponse();
+  await new Promise((resolve, reject) => {
+    res.json.mockImplementation(resolve);
+    updateProfile({ user: { role: 'repair_personnel' }, body: { firstName: 'Changed' } }, res, reject);
+  });
+  expect(res.status).toHaveBeenCalledWith(403);
+});

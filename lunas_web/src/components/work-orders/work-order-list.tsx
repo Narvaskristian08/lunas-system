@@ -50,7 +50,7 @@ function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"
     providerReview: { label: "Awaiting Review", value: summary.readyForCompletion + (role === "utility_provider" ? summary.awaitingFinalVerification : 0) },
     cityVerification: { label: "Awaiting Verification", value: summary.awaitingFinalVerification },
     cityCorrections: { label: "Returned for Correction", value: summary.cityCorrections },
-    corrective: { label: "Needs Correction", value: summary.correctiveRepairs + (role === "utility_provider" ? summary.cityCorrections : 0) },
+    corrective: { label: "Needs Correction", value: summary.correctiveRepairs + (["utility_provider", "repair_personnel"].includes(role) ? summary.cityCorrections : 0) },
   };
   if (isSla) return [cards.active, cards.approaching, cards.overdue];
   if (role === "city_engineer") {
@@ -110,11 +110,11 @@ export function WorkOrderList({
       { value: "", label: "All Work States" },
       { value: "pending", label: "Pending Assignment" },
       { value: "accepted", label: "Assigned Repairs" },
-      { value: "in_progress", label: "In Progress" },
+      { value: "in_progress", label: "Active Repairs" },
       { value: "completed", label: "Awaiting Provider Review" },
-      { value: viewer.backendRole === "utility_provider" ? "needs_correction" : "rework_required", label: "Needs Correction" },
+      { value: ["utility_provider", "repair_personnel"].includes(viewer.backendRole) ? "needs_correction" : "rework_required", label: "Needs Correction" },
       { value: "provider_accepted", label: "Awaiting City Verification" },
-      ...(viewer.backendRole !== "utility_provider" ? [{ value: "city_correction_required", label: "Returned to Provider" }] : []),
+      ...(!["utility_provider", "repair_personnel"].includes(viewer.backendRole) ? [{ value: "city_correction_required", label: "Returned to Provider" }] : []),
       { value: "verified", label: "Closed" },
     ];
 
@@ -256,7 +256,7 @@ export function WorkOrderList({
                   <Badge tone={assignmentTone(workOrder.assignmentState)}>{assignmentLabel(workOrder.assignmentState)}</Badge>
                 </div>,
                 repair: <div className="flex flex-col items-start gap-2">
-                  <StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrderStatusLabel(workOrder.status)}</StatusBadge>
+                  <StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrderStatusLabel(workOrder.status, workOrder.assignmentState)}</StatusBadge>
                   <Badge tone={priorityTone(workOrder.priority)}>{titleCase(workOrder.priority)} Priority</Badge>
                 </div>,
                 sla: isClosedQueue ? <span className="text-sm text-slate-600">{workOrder.closedAt ? formatDateTime(workOrder.closedAt) : "Unavailable"}</span> : <div className="[&>div]:flex-col [&>div]:items-start [&>div]:gap-2"><SlaBadges sla={workOrder.sla} includeDeadline /></div>,

@@ -16,6 +16,9 @@ class AuthUser {
     this.address,
     this.barangay,
     this.profileImage,
+    this.repairOrganization,
+    this.repairAccountType,
+    this.repairTeam,
     this.reportingRestriction = const ReportingRestriction(),
   });
 
@@ -31,6 +34,9 @@ class AuthUser {
   final Map<String, dynamic>? address;
   final String? barangay;
   final String? profileImage;
+  final String? repairOrganization;
+  final String? repairAccountType;
+  final String? repairTeam;
   final ReportingRestriction reportingRestriction;
 
   String get fullName => [
@@ -61,6 +67,10 @@ class AuthUser {
           : null,
       barangay: json['barangay']?.toString(),
       profileImage: json['profileImage']?.toString(),
+      repairOrganization: (json['repairOrganization'] ?? json['organization'])
+          ?.toString(),
+      repairAccountType: json['repairAccountType']?.toString(),
+      repairTeam: json['repairTeam']?.toString(),
       reportingRestriction: ReportingRestriction.fromJson(
         json['reportingRestriction'] is Map
             ? Map<String, dynamic>.from(json['reportingRestriction'] as Map)
@@ -90,6 +100,9 @@ class AuthUser {
       address: address ?? this.address,
       barangay: barangay,
       profileImage: profileImage ?? this.profileImage,
+      repairOrganization: repairOrganization,
+      repairAccountType: repairAccountType,
+      repairTeam: repairTeam,
       reportingRestriction: reportingRestriction ?? this.reportingRestriction,
     );
   }

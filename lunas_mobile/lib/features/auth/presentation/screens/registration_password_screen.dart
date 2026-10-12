@@ -107,7 +107,7 @@ class _RegistrationPasswordScreenState
                 ),
 
                 const SizedBox(height: AppSpacing.xl),
-                _PasswordRequirements(password: _passwordController.text),
+                PasswordRequirements(password: _passwordController.text),
                 const SizedBox(height: AppSpacing.xl),
                 if (auth.message != null) ...[
                   AuthMessage(message: auth.message!),
@@ -133,8 +133,8 @@ class _RegistrationPasswordScreenState
   }
 }
 
-class _PasswordRequirements extends StatelessWidget {
-  const _PasswordRequirements({required this.password});
+class PasswordRequirements extends StatelessWidget {
+  const PasswordRequirements({required this.password, super.key});
 
   final String password;
 

@@ -305,6 +305,9 @@ const listFilter = async (req) => {
   else if (query.status === 'needs_correction') filter.status = { $in: ['rework_required', 'city_correction_required'] };
   else if (query.status) filter.status = query.status;
   else if (req.user.role === 'utility_provider') filter.status = { $ne: 'verified' };
+  if (req.user.role === 'repair_personnel' && query.status === 'in_progress') {
+    filter.assignmentState = 'accepted';
+  }
   if (query.priority) filter.priority = query.priority;
   if (query.assignmentStatus) filter.assignmentState = query.assignmentStatus;
   if (req.user.role === "utility_provider" && query.assignmentStatus === "unassigned") {

@@ -413,7 +413,7 @@ export function WorkOrderDetail({
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card className="space-y-2 px-4 py-3">
           <p className="text-xs font-semibold leading-5 text-slate-500">Repair Status</p>
-          <div className="flex min-h-6 items-center"><StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrderStatusLabel(workOrder.status)}</StatusBadge></div>
+          <div className="flex min-h-6 items-center"><StatusBadge tone={workOrderStatusTone(workOrder.status)}>{workOrderStatusLabel(workOrder.status, workOrder.assignmentState)}</StatusBadge></div>
         </Card>
         <Card className="space-y-2 px-4 py-3">
           <p className="text-xs font-semibold leading-5 text-slate-500">SLA Deadline</p>

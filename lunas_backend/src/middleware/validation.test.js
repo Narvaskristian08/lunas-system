@@ -3,6 +3,7 @@ const {
   createIncidentValidation,
   updateJurisdictionValidation,
   registerValidation,
+  updateProfileValidation,
   changePasswordValidation,
   validateIncidentDecisionValidation,
   routeIncidentValidation,
@@ -23,6 +24,14 @@ const runRulesWithRequest = async (rules, body, files = {}, user = { role: 'citi
 };
 
 describe('request validation', () => {
+  test('citizen profile accepts optional empty phone and name details', async () => {
+    expect(await runRules(updateProfileValidation, { firstName: 'Juan', lastName: 'Cruz', middleName: '', noMiddleName: true, suffix: 'Jr.', phone: '', address: { street: 'Example Street' } })).toEqual([]);
+  });
+  test('profile rejects an invalid mobile number and missing declared middle name', async () => {
+    const errors = await runRules(updateProfileValidation, { phone: '123', noMiddleName: false, middleName: '' });
+    expect(errors).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'phone' }), expect.objectContaining({ path: 'middleName' })]));
+  });
+
   test('accepts eight characters without a special character', async () => {
     expect(await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password: 'Abcdef12' })).toEqual([]);
   });

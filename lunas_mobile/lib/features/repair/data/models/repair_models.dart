@@ -67,6 +67,9 @@ enum RepairWorkOrderStatus {
   inProgress,
   completed,
   reworkRequired,
+  cityCorrectionRequired,
+  providerAccepted,
+  verified,
   unknown,
 }
 
@@ -77,15 +80,22 @@ extension RepairWorkOrderStatusValue on RepairWorkOrderStatus {
     RepairWorkOrderStatus.inProgress => 'in_progress',
     RepairWorkOrderStatus.completed => 'completed',
     RepairWorkOrderStatus.reworkRequired => 'rework_required',
+    RepairWorkOrderStatus.cityCorrectionRequired => 'city_correction_required',
+    RepairWorkOrderStatus.providerAccepted => 'provider_accepted',
+    RepairWorkOrderStatus.verified => 'verified',
     RepairWorkOrderStatus.unknown => 'unknown',
   };
 
   String get label => switch (this) {
-    RepairWorkOrderStatus.pending => 'Pending',
-    RepairWorkOrderStatus.accepted => 'Pending',
+    RepairWorkOrderStatus.pending => 'Pending Assignment',
+    RepairWorkOrderStatus.accepted => 'Assigned',
     RepairWorkOrderStatus.inProgress => 'In Progress',
-    RepairWorkOrderStatus.completed => 'Awaiting Review',
+    RepairWorkOrderStatus.completed => 'Awaiting Provider Review',
     RepairWorkOrderStatus.reworkRequired => 'Needs Correction',
+    RepairWorkOrderStatus.cityCorrectionRequired =>
+      'Returned by City Engineering',
+    RepairWorkOrderStatus.providerAccepted => 'Awaiting City Verification',
+    RepairWorkOrderStatus.verified => 'Closed',
     RepairWorkOrderStatus.unknown => 'Status Unavailable',
   };
 }
@@ -96,8 +106,10 @@ RepairWorkOrderStatus repairWorkOrderStatusFromJson(Object? value) {
     'accepted' => RepairWorkOrderStatus.accepted,
     'in_progress' || 'in progress' => RepairWorkOrderStatus.inProgress,
     'completed' || 'ready_for_completion' => RepairWorkOrderStatus.completed,
-    'rework_required' ||
-    'city_correction_required' => RepairWorkOrderStatus.reworkRequired,
+    'rework_required' => RepairWorkOrderStatus.reworkRequired,
+    'city_correction_required' => RepairWorkOrderStatus.cityCorrectionRequired,
+    'provider_accepted' => RepairWorkOrderStatus.providerAccepted,
+    'verified' => RepairWorkOrderStatus.verified,
     _ => RepairWorkOrderStatus.unknown,
   };
 }

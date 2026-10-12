@@ -15,34 +15,18 @@ export function priorityTone(priority: string | undefined): Severity {
   return "neutral";
 }
 
-export function workOrderStatusLabel(status: string | undefined) {
-  const labels: Record<string, string> = {
-    pending: "Pending", accepted: "Assigned", in_progress: "In Progress",
-    completed: "Awaiting Provider Review", provider_accepted: "Awaiting City Verification",
-    rework_required: "Needs Correction", city_correction_required: "Returned to Provider",
-    verified: "Closed",
-  };
-  return labels[status ?? ""] ?? titleCase(status);
-}
-
-export function workOrderStatusTone(status: string | undefined): Severity {
-  if (status === "verified") return "success";
-  if (status === "completed" || status === "city_correction_required" || status === "rework_required" || status === "pending") return "warning";
-  if (status === "provider_accepted") return "information";
-  if (status === "in_progress") return "information";
-  if (status === "accepted") return "information";
-  if (status === "rejected") return "critical";
-  return "neutral";
-}
+export { workOrderStatusLabel, workOrderStatusTone } from "@/lib/work-order-status";
 
 export function assignmentLabel(status: string | undefined, history = false) {
   if (status === "reassigned") return history ? "Reassigned" : "Assigned";
-  if (status === "accepted" || status === "pending") return "Assigned";
-  return "Pending";
+  if (status === "accepted") return "Accepted";
+  if (status === "pending") return "Pending Acceptance";
+  if (status === "declined") return "Declined";
+  return "Unassigned";
 }
 
 export function assignmentTone(status: string | undefined): Severity {
-  if (status === "accepted" || status === "pending") return "information";
+  if (status === "accepted") return "information";
   if (status === "reassigned") return "neutral";
   return "warning";
 }

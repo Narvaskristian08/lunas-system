@@ -232,3 +232,21 @@ test('provider queue counts match pending and review list rules', async () => {
   expect(WorkOrder.countDocuments.mock.calls[0][0]).toEqual(expect.objectContaining({ status: 'pending', assignmentState: 'unassigned' }));
   expect(WorkOrder.countDocuments.mock.calls[4][0]).not.toHaveProperty('progressPercent');
 });
+
+
+test.each([
+  ['in_progress', { status: 'in_progress', assignmentState: 'accepted' }],
+  ['needs_correction', { status: { $in: ['rework_required', 'city_correction_required'] }, assignmentState: { $in: ['pending', 'accepted'] } }],
+])('web repair filter %s matches mobile results and pagination', async (status, expected) => {
+  const query = {};
+  for (const method of ['populate', 'sort', 'limit', 'skip']) query[method] = jest.fn().mockReturnValue(query);
+  query.then = resolve => Promise.resolve([]).then(resolve);
+  WorkOrder.find.mockReturnValue(query);
+  WorkOrder.countDocuments.mockResolvedValue(0);
+  const next = jest.fn();
+  await getWorkOrders({ user: { role: 'repair_personnel', repairOrganization: 'Water District', _id: 'worker' }, query: { status } }, response(), next);
+  expect(next).not.toHaveBeenCalled();
+  const filter = expect.objectContaining({ ...expected, assignedTo: 'worker', responsibleOrganization: 'Water District' });
+  expect(WorkOrder.find).toHaveBeenLastCalledWith(filter);
+  expect(WorkOrder.countDocuments).toHaveBeenLastCalledWith(filter);
+});

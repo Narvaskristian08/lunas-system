@@ -211,14 +211,17 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
   if (expertise) filter.expertise = expertise;
 
   const personnel = await User.find(filter).select(
-    'firstName lastName email phone position personnelId role repairOrganization repairTeam repairAccountType availability barangay expertise isActive isArchived isVerified requiresActivation accountStatus createdAt'
+    'firstName middleName suffix lastName email phone position personnelId role repairOrganization repairTeam repairAccountType availability barangay expertise isActive isArchived isVerified requiresActivation accountStatus createdAt __v'
   ).sort({ createdAt: -1, _id: -1 });
 
   res.status(200).json({
     success: true,
     data: personnel.map(person => ({
       id: person._id,
+      version: person.__v || 0,
       firstName: person.firstName,
+      middleName: person.middleName,
+      suffix: person.suffix,
       lastName: person.lastName,
       email: person.email,
       phone: person.phone,

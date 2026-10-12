@@ -43,6 +43,7 @@ class RepairPage extends StatelessWidget {
   const RepairPage({
     required this.child,
     this.appBar,
+    this.backgroundColor,
     this.selectedNavigationIndex,
     this.notificationUnreadCount = 0,
     this.bottomActionBar,
@@ -58,6 +59,7 @@ class RepairPage extends StatelessWidget {
   });
 
   final Widget child;
+  final Color? backgroundColor;
   final PreferredSizeWidget? appBar;
   final int? selectedNavigationIndex;
   final int notificationUnreadCount;
@@ -69,6 +71,7 @@ class RepairPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: appBar,
       body: SafeArea(
         top: false,
@@ -220,7 +223,10 @@ Color repairWorkOrderStatusColor(
   RepairWorkOrderStatus status,
 ) => switch (status) {
   RepairWorkOrderStatus.reworkRequired => AppColorsLight.alert,
-  RepairWorkOrderStatus.completed => AppColorsLight.success,
+  RepairWorkOrderStatus.completed ||
+  RepairWorkOrderStatus.cityCorrectionRequired ||
+  RepairWorkOrderStatus.pending => AppColorsLight.alert,
+  RepairWorkOrderStatus.verified => AppColorsLight.success,
   RepairWorkOrderStatus.unknown => Theme.of(
     context,
   ).colorScheme.onSurfaceVariant,
@@ -556,13 +562,8 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: RepairStatusChip(
-                    label:
-                        workOrder.status == RepairWorkOrderStatus.reworkRequired
-                        ? 'Needs Correction'
-                        : workOrder.isPendingAcceptance
-                        ? 'Pending'
-                        : workOrder.status == RepairWorkOrderStatus.accepted
-                        ? 'Pending'
+                    label: workOrder.isPendingAcceptance
+                        ? 'Pending Acceptance'
                         : workOrder.status.label,
                     color: statusColor,
                     icon: Icons.work_outline_rounded,

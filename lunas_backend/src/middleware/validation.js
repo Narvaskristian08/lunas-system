@@ -133,9 +133,17 @@ exports.changePasswordValidation = [
 ];
 
 exports.updateProfileValidation = [
+  body('middleName').optional().isString().trim().isLength({ max: 80 }),
+  body('suffix').optional().isString().trim().isLength({ max: 20 }),
+  body('noMiddleName').optional().isBoolean(),
+  body('middleName').custom((value, { req }) => {
+    if (req.body.noMiddleName === false && (!value || !String(value).trim())) throw new Error('Enter your middle name or select the checkbox.');
+    if (req.body.noMiddleName === true && value && String(value).trim()) throw new Error('Leave middle name blank when no middle name is selected.');
+    return true;
+  }),
   body('firstName').optional().trim().isLength({ min: 1, max: 80 }),
   body('lastName').optional().trim().isLength({ min: 1, max: 80 }),
-  body('phone').optional().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  body('phone').optional({ values: 'falsy' }).trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
   body('address').optional().isObject().withMessage('Address must be an object'),
   body('address.street').optional().trim().isLength({ max: 160 }),
   body('address.barangay').optional().trim().isLength({ max: 100 }),

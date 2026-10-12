@@ -47,15 +47,28 @@ exports.createAccountValidation = [
   body('email').isString().bail().isEmail().normalizeEmail(), ...profileRules
 ];
 exports.createRepairPersonnelValidation = [
-  onlyFields(['firstName', 'lastName', 'email', 'phone', 'repairTeam', 'repairAccountType']),
-  body('repairAccountType').optional().isIn(['individual', 'team']).withMessage('Choose Individual or Team'),
+  onlyFields(['firstName', 'middleName', 'suffix', 'lastName', 'email', 'phone', 'repairTeam', 'repairAccountType']),
+  body('repairAccountType').optional().isIn(['individual', 'team']).withMessage('Choose Individual or Team Leader'),
   body('email').isString().bail().isEmail().normalizeEmail(),
-  text('firstName', 80),
+  text('firstName', 80), text('middleName', 80, true), text('suffix', 20, true),
   text('lastName', 80),
   body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
   text('repairTeam', 120, true),
   body().custom(value => {
     if (value.repairAccountType === 'team' && !String(value.repairTeam || '').trim()) throw new Error('Team name is required for a team account');
+    if (value.repairAccountType !== 'team' && value.repairTeam) throw new Error('Team name applies only to team leaders');
+    return true;
+  })
+];
+exports.updateRepairPersonnelValidation = [
+  onlyFields(['firstName', 'middleName', 'suffix', 'lastName', 'phone', 'repairTeam', 'repairAccountType', 'version']),
+  text('firstName', 80), text('middleName', 80, true), text('suffix', 20, true), text('lastName', 80),
+  body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  body('repairAccountType').isIn(['individual', 'team']), text('repairTeam', 120, true),
+  body('version').isInt({ min: 0 }).toInt(),
+  body().custom(value => {
+    if (value.repairAccountType === 'team' && !value.repairTeam) throw new Error('Team name is required');
+    if (value.repairAccountType !== 'team' && value.repairTeam) throw new Error('Team name applies only to team leaders');
     return true;
   })
 ];

@@ -6,7 +6,10 @@ export type RepairPersonnelAccountStatus = "pending_activation" | "active" | "su
 
 export interface RepairPersonnelRecord {
   id: string;
+  version: number;
   firstName: string;
+  middleName?: string;
+  suffix?: string;
   lastName: string;
   email: string;
   phone?: string;

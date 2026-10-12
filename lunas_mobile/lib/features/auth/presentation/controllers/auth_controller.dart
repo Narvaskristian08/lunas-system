@@ -70,6 +70,37 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> refreshProfile() async {
+    final currentId = _user?.id;
+    if (currentId == null) return false;
+    try {
+      final updated = await _authService.getCurrentUser();
+      if (_user?.id != currentId || _status != AuthStatus.authenticated) {
+        return false;
+      }
+      _user = updated;
+      notifyListeners();
+      return true;
+    } on ApiException catch (error) {
+      if (error.isUnauthorized && _user?.id == currentId) {
+        await logout();
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => _completeAuthentication(
+    () => _authService.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    ),
+  );
+
   Future<bool> login({required String email, required String password}) {
     return _completeAuthentication(
       () => _authService.login(email: email, password: password),
@@ -215,6 +246,9 @@ class AuthController extends ChangeNotifier {
     required String firstName,
     required String lastName,
     required String phone,
+    String? middleName,
+    String? suffix,
+    bool? noMiddleName,
     String? address,
   }) async {
     _isSubmitting = true;
@@ -225,6 +259,10 @@ class AuthController extends ChangeNotifier {
         firstName: firstName,
         lastName: lastName,
         phone: phone,
+        middleName: middleName,
+        suffix: suffix,
+        noMiddleName: noMiddleName,
+        currentAddress: _user?.address,
         address: address,
       );
       return true;

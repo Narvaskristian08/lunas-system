@@ -10,6 +10,7 @@ class CitizenScaffold extends StatelessWidget {
     required this.title,
     required this.body,
     this.subtitle,
+    this.backgroundColor,
     this.titleWidget,
     this.actions,
     this.floatingActionButton,
@@ -20,6 +21,7 @@ class CitizenScaffold extends StatelessWidget {
   });
 
   final String title;
+  final Color? backgroundColor;
   final String? subtitle;
   final Widget? titleWidget;
   final Widget body;
@@ -31,6 +33,7 @@ class CitizenScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: backgroundColor,
     appBar: LunasAppBar(
       title: title,
       titleWidget: titleWidget,
