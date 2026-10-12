@@ -10,6 +10,7 @@ const logger = require('../utils/logger');
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
 const AI_SERVICE_TIMEOUT = parseInt(process.env.AI_SERVICE_TIMEOUT || '30000');
 const AI_SERVICE_ENABLED = process.env.AI_SERVICE_ENABLED !== 'false';
+const MANUAL_REVIEW_ONLY_CATEGORIES = new Set(['other']);
 
 const normalizePrivacyDetection = (payload = {}) => {
   const status = payload.status || payload.analysisStatus || payload.analysis_status;
@@ -324,7 +325,17 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
       .map((finding) => ({
         label: typeof finding.label === 'string' ? finding.label : finding.class,
         confidence: finding.confidence,
-        bbox: finding.bbox
+        bbox: finding.bbox,
+        ...(finding.confidence_status === 'production' || finding.confidence_status === 'manual_review'
+          ? { confidenceStatus: finding.confidence_status }
+          : finding.confidenceStatus === 'production' || finding.confidenceStatus === 'manual_review'
+            ? { confidenceStatus: finding.confidenceStatus }
+            : {}),
+        ...(Number.isFinite(Number(finding.production_threshold))
+          ? { productionThreshold: Number(finding.production_threshold) }
+          : Number.isFinite(Number(finding.productionThreshold))
+            ? { productionThreshold: Number(finding.productionThreshold) }
+            : {})
       }))
       .filter((finding) => finding.label && finding.bbox)
       .slice(0, 50);
@@ -369,6 +380,24 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
     const confidence = Number.isFinite(reportedConfidence)
       ? Math.max(0, Math.min(1, reportedConfidence))
       : Math.max(0, ...findings.map((finding) => Number(finding.confidence) || 0));
+    const manualReviewOnly = MANUAL_REVIEW_ONLY_CATEGORIES.has(canonicalCategory)
+      || result.manual_review_only === true
+      || result.manualReviewOnly === true;
+    const reviewFindings = manualReviewOnly
+      ? findings.map((finding) => ({ ...finding, confidenceStatus: 'manual_review' }))
+      : findings;
+    const classificationStatus = manualReviewOnly
+      ? 'manual_review'
+      : result.classification_status === 'manual_review'
+        || result.classificationStatus === 'manual_review'
+        ? 'manual_review'
+        : result.classification_status === 'no_detection'
+          || result.classificationStatus === 'no_detection'
+          ? 'no_detection'
+          : 'production';
+    const productionFindings = manualReviewOnly
+      ? []
+      : reviewFindings.filter((finding) => finding.confidenceStatus !== 'manual_review');
 
     // Extract relevant information
     const aiAnalysis = {
@@ -377,10 +406,14 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
       model,
       analysisStatus: 'completed',
       modelAvailable: true,
-      detected: findings.length > 0,
+      classificationStatus,
+      manualReviewOnly,
+      detected: !manualReviewOnly && classificationStatus !== 'no_detection' && productionFindings.length > 0,
       confidence,
-      suggestion: result.ai_suggestion || findings[0]?.label,
-      findings,
+      suggestion: manualReviewOnly ? undefined : result.ai_suggestion || (
+        classificationStatus === 'manual_review' ? undefined : productionFindings[0]?.label
+      ),
+      findings: reviewFindings,
       // Keep the manual-only invariant even if the AI service returns a
       // high-confidence result that claims review is unnecessary.
       requiresManualReview: true,
@@ -388,7 +421,7 @@ exports.analyzeIncidentImage = async (imageBuffer, category = '') => {
       aiEnabled: true,
       detections: {
         road_damage: canonicalCategory === 'road' ? findings.length : 0,
-        cracks: findings.filter((finding) => String(finding.label).toLowerCase().includes('crack')).length
+        cracks: reviewFindings.filter((finding) => String(finding.label).toLowerCase().includes('crack')).length
       },
       processing_time: result.processing_time
     };

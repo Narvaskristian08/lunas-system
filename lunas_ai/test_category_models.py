@@ -35,3 +35,8 @@ def test_gas_model_remains_manual_until_images_are_available():
     gas_path = Path(config.BASE_DIR) / gas_model["path"]
     assert not gas_path.exists()
     assert config.get_category_model("gas") == "gas_infrastructure_damage"
+
+
+def test_other_category_is_manual_review_only():
+    model = config.get_model_config("environmental_hazards")
+    assert model["manual_only"] is True

@@ -110,6 +110,78 @@ describe('category-routed AI service', () => {
     expect(result.suggestion).toBe('water_leak');
   });
 
+  test('does not promote a weak environmental candidate to the hazard suggestion', async () => {
+    axios.post.mockResolvedValue({
+      data: {
+        success: true,
+        analysis_status: 'completed',
+        model_available: true,
+        model: 'environmental_hazards',
+        confidence_score: 0.361,
+        classification_status: 'manual_review',
+        ai_suggestion: null,
+        detections: [{
+          class: 'fallen_tree',
+          confidence: 0.361,
+          confidence_status: 'manual_review',
+          production_threshold: 0.5,
+          bbox: { x1: 0.01, y1: 0.27, x2: 0.9, y2: 0.99 }
+        }]
+      }
+    });
+
+    const result = await aiService.analyzeIncidentImage(Buffer.from('webp'), 'other');
+
+    expect(result).toEqual(expect.objectContaining({
+      classificationStatus: 'manual_review',
+      detected: false,
+      suggestion: undefined,
+      requiresManualReview: true
+    }));
+    expect(result.findings[0]).toEqual(expect.objectContaining({
+      label: 'fallen_tree',
+      confidenceStatus: 'manual_review',
+      productionThreshold: 0.5
+    }));
+  });
+
+  test('keeps every Other result manual-review-only even if the model claims production confidence', async () => {
+    axios.post.mockResolvedValue({
+      data: {
+        success: true,
+        analysis_status: 'completed',
+        model_available: true,
+        model: 'environmental_hazards',
+        category: 'other',
+        manual_review_only: true,
+        confidence_score: 0.91,
+        classification_status: 'production',
+        ai_suggestion: 'garbage_pileup',
+        detections: [{
+          class: 'garbage_pileup',
+          confidence: 0.91,
+          confidence_status: 'production',
+          bbox: { x1: 0.1, y1: 0.2, x2: 0.7, y2: 0.8 }
+        }]
+      }
+    });
+
+    const result = await aiService.analyzeIncidentImage(Buffer.from('webp'), 'other');
+
+    expect(result).toEqual(expect.objectContaining({
+      category: 'other',
+      classificationStatus: 'manual_review',
+      manualReviewOnly: true,
+      detected: false,
+      suggestion: undefined,
+      requiresManualReview: true
+    }));
+    expect(result.findings[0]).toEqual(expect.objectContaining({
+      label: 'garbage_pileup',
+      confidenceStatus: 'manual_review'
+    }));
+  });
+
   test('does not substitute a model for an unsupported canonical category', async () => {
     axios.post.mockResolvedValue({
       data: {

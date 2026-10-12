@@ -60,6 +60,8 @@ function AiAssistance({ incident }: { incident: ValidationIncident }) {
   const statusLabel = status === "completed" ? "Analysis Completed" : status === "failed" ? "Analysis Failed" : "Analysis Unavailable";
   const statusTone: Severity = status === "completed" ? "information" : "warning";
   const findingsCount = analysis?.findingsCount ?? incident.images.reduce((total, image) => total + image.aiFindings.length, 0);
+  const manualReviewCandidate = status === "completed" && analysis?.classificationStatus === "manual_review";
+  const manualReviewOnly = analysis?.manualReviewOnly === true || incident.category.toLowerCase() === "other";
 
   return (
     <Card className="overflow-hidden border-brand-200">
@@ -68,13 +70,15 @@ function AiAssistance({ incident }: { incident: ValidationIncident }) {
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tone="warning" className="min-h-8 px-3 py-1">Manual Review Required</StatusBadge>
           <Badge tone={statusTone} className="min-h-8 px-3 py-1"><Sparkles className="size-3.5 shrink-0" aria-hidden="true" />{statusLabel}</Badge>
+          {manualReviewOnly ? <Badge tone="warning" className="min-h-8 px-3 py-1">Manual review only</Badge> : manualReviewCandidate ? <Badge tone="warning" className="min-h-8 px-3 py-1">Low-confidence candidate</Badge> : null}
         </div>
         {status === "completed" ? (
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt className="text-slate-600">Advisory Hazard</dt><dd className="font-semibold text-slate-950">{analysis?.hazardType ? titleCase(analysis.hazardType) : "No Hazard Suggested"}</dd></div>
+            <div><dt className="text-slate-600">Advisory Hazard</dt><dd className="font-semibold text-slate-950">{manualReviewOnly ? "No automatic hazard classification" : analysis?.hazardType ? titleCase(analysis.hazardType) : manualReviewCandidate ? "No production hazard suggested" : "No Hazard Suggested"}</dd></div>
             <div><dt className="text-slate-600">Confidence</dt><dd className="font-semibold text-slate-950">{confidence !== undefined ? `${confidence}%` : "Not available"}</dd></div>
             <div><dt className="text-slate-600">Image Highlights</dt><dd className="font-semibold text-slate-950">{findingsCount}</dd></div>
             <div><dt className="text-slate-600">Category Model</dt><dd className="font-semibold text-slate-950">{analysis?.model ? titleCase(analysis.model) : "Available"}</dd></div>
+            {manualReviewOnly ? <div className="sm:col-span-2"><dt className="text-slate-600">Reviewer guidance</dt><dd className="font-normal leading-6 text-amber-900">Other-category AI output is advisory only. Review the original image and choose the correct issue manually; candidate labels are not confirmed hazards.</dd></div> : manualReviewCandidate ? <div className="sm:col-span-2"><dt className="text-slate-600">Reviewer guidance</dt><dd className="font-normal leading-6 text-amber-900">The model found a weak candidate. Review the image manually; do not treat the candidate label as a confirmed hazard.</dd></div> : null}
           </dl>
         ) : (
           <div className="space-y-1 text-sm leading-6 text-slate-600">

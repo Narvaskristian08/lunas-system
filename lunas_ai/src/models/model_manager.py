@@ -160,9 +160,17 @@ class ModelManager:
             'type': model_config.get('type', 'unknown'),
             'classes': model_config.get('classes', []),
             'damage_only': bool(model_config.get('damage_only', False)),
+            'manual_only': bool(model_config.get('manual_only', False)),
             'loaded': model_name in self.models,
             'device': self.device,
             'confidence_threshold': model_config.get('confidence_threshold', 0.25),
+            'class_confidence_thresholds': model_config.get(
+                'class_confidence_thresholds', {}
+            ),
+            'candidate_threshold': model_config.get(
+                'candidate_threshold',
+                model_config.get('confidence_threshold', 0.25),
+            ),
             'input_size': model_config.get('input_size', 640)
         }
         

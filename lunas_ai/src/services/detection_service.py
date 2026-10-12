@@ -40,7 +40,10 @@ class DetectionService:
             
             # Get model config
             model_config = config.get_model_config('road_damage')
-            conf_threshold = confidence or model_config.get('confidence_threshold', 0.25)
+            production_threshold = model_config.get('confidence_threshold', 0.25)
+            conf_threshold = confidence if confidence is not None else model_config.get(
+                'candidate_threshold', production_threshold
+            )
             iou_threshold = model_config.get('iou_threshold', 0.45)
             
             # Run inference
@@ -55,7 +58,10 @@ class DetectionService:
             )
             
             # Parse results
-            detections = self._parse_detection_results(results[0], model_config, image)
+            detections = self._parse_detection_results(
+                results[0], model_config, image,
+                production_threshold=production_threshold,
+            )
             
             # Calculate severity
             detections = self._estimate_severity(detections, image)
@@ -150,7 +156,10 @@ class DetectionService:
             
             # Get model config
             model_config = config.get_model_config('environmental_hazards')
-            conf_threshold = confidence or model_config.get('confidence_threshold', 0.25)
+            production_threshold = model_config.get('confidence_threshold', 0.25)
+            conf_threshold = confidence if confidence is not None else model_config.get(
+                'candidate_threshold', production_threshold
+            )
             iou_threshold = model_config.get('iou_threshold', 0.45)
             
             # Run inference
@@ -165,7 +174,10 @@ class DetectionService:
             )
             
             # Parse results
-            detections = self._parse_detection_results(results[0], model_config, image)
+            detections = self._parse_detection_results(
+                results[0], model_config, image,
+                production_threshold=production_threshold,
+            )
             
             # Assign severity based on hazard type
             for detection in detections:
@@ -302,10 +314,19 @@ class DetectionService:
             'category': category,
             'model_available': model_file_available,
             'model': assigned_model,
+            'manual_review_only': bool(model_config.get('manual_only', False)),
             'damage_only': bool(model_config.get('damage_only', False)),
             'detections': [],
             'ai_suggestion': None,
             'confidence_score': 0.0,
+            'confidence_threshold': model_config.get('confidence_threshold', 0.25),
+            'class_confidence_thresholds': model_config.get(
+                'class_confidence_thresholds', {}
+            ),
+            'candidate_threshold': model_config.get(
+                'candidate_threshold',
+                model_config.get('confidence_threshold', 0.25),
+            ),
             'requires_manual_review': True,
             'advisory_only': True,
             'analysis_status': 'completed' if model_file_available else 'unavailable'
@@ -332,8 +353,28 @@ class DetectionService:
             return results
 
         results['detections'] = model_result.get('detections', [])
-        results['ai_suggestion'] = results['detections'][0].get('class') if results['detections'] else None
+        production_detections = [
+            detection for detection in results['detections']
+            if detection.get('confidence_status') == 'production'
+        ]
+        if results['manual_review_only']:
+            # Keep candidate boxes for the reviewer, but never let a broad or
+            # unreliable category become an automatic AI suggestion.
+            for detection in results['detections']:
+                detection['confidence_status'] = 'manual_review'
+            production_detections = []
+        results['ai_suggestion'] = (
+            production_detections[0].get('class')
+            if production_detections else None
+        )
         results['confidence_score'] = self._calculate_confidence(model_result)
+        results['production_detections'] = len(production_detections)
+        results['manual_review_detections'] = len(results['detections']) - len(production_detections)
+        results['classification_status'] = (
+            'production' if production_detections else
+            'manual_review' if results['detections'] else
+            'no_detection'
+        )
         return results
 
     def detect_category_model(
@@ -354,10 +395,11 @@ class DetectionService:
                 raise ValueError(f"Category model '{model_name}' is not a detection model")
 
             model = self.model_manager.load_model(model_name)
+            production_threshold = model_config.get('confidence_threshold', 0.25)
             conf_threshold = (
                 confidence
                 if confidence is not None
-                else model_config.get('confidence_threshold', 0.25)
+                else model_config.get('candidate_threshold', production_threshold)
             )
             iou_threshold = model_config.get('iou_threshold', 0.45)
 
@@ -371,7 +413,8 @@ class DetectionService:
                 verbose=False
             )
             detections = self._parse_detection_results(
-                inference_results[0], model_config, image
+                inference_results[0], model_config, image,
+                production_threshold=production_threshold,
             )
 
             return {
@@ -394,7 +437,8 @@ class DetectionService:
         self,
         result,
         model_config: Dict[str, Any],
-        image: Image.Image
+        image: Image.Image,
+        production_threshold: Optional[float] = None,
     ) -> List[Dict[str, Any]]:
         """Parse YOLO detection results"""
         detections = []
@@ -423,15 +467,43 @@ class DetectionService:
             if model_config.get('damage_only') and class_name not in class_names:
                 continue
             
+            threshold = self._class_production_threshold(
+                model_config,
+                class_name,
+                production_threshold,
+            )
             detections.append({
                 'class': class_name,
                 'class_id': class_id,
                 'confidence': round(confidence, 3),
+                'production_threshold': round(threshold, 3),
+                'confidence_status': 'production' if confidence >= threshold else 'manual_review',
                 'bbox': self._normalized_bbox(bbox, image),
                 'area': round((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]), 2)
             })
         
         return detections
+
+    @staticmethod
+    def _class_production_threshold(
+        model_config: Dict[str, Any],
+        class_name: str,
+        fallback: Optional[float] = None,
+    ) -> float:
+        """Return the calibrated production gate for a detected class.
+
+        A class-specific gate is intentionally separate from the candidate
+        floor used for inference. Weak candidates can still be shown to a
+        reviewer, but they cannot be surfaced as the primary AI suggestion.
+        """
+        default_threshold = (
+            fallback
+            if fallback is not None
+            else model_config.get('confidence_threshold', 0.25)
+        )
+        overrides = model_config.get('class_confidence_thresholds', {})
+        threshold = overrides.get(class_name, default_threshold)
+        return max(0.0, min(1.0, float(threshold)))
     
     def _parse_segmentation_results(
         self,

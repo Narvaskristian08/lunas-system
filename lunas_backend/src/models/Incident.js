@@ -99,7 +99,12 @@ const incidentSchema = new mongoose.Schema({
         y1: { type: Number, min: 0, max: 1 },
         x2: { type: Number, min: 0, max: 1 },
         y2: { type: Number, min: 0, max: 1 }
-      }
+      },
+      confidenceStatus: {
+        type: String,
+        enum: ['production', 'manual_review']
+      },
+      productionThreshold: { type: Number, min: 0, max: 1 }
     }]
   }],
   aiAnalysis: {
@@ -110,6 +115,10 @@ const incidentSchema = new mongoose.Schema({
     category: String,
     model: { type: String, maxlength: 80 },
     modelAvailable: { type: Boolean, default: false },
+    classificationStatus: {
+      type: String,
+      enum: ['production', 'manual_review', 'no_detection']
+    },
     detected: { type: Boolean, default: false },
     hazardType: String,
     confidence: Number,

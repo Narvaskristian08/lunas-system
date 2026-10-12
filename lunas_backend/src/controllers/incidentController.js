@@ -55,7 +55,15 @@ const safeAiFinding = (finding) => {
   return {
     label,
     confidence: clampUnit(finding.confidence) ?? 0,
-    bbox: normalizedBox
+    bbox: normalizedBox,
+    ...(finding.confidenceStatus === 'production' || finding.confidence_status === 'production'
+      ? { confidenceStatus: 'production' }
+      : finding.confidenceStatus === 'manual_review' || finding.confidence_status === 'manual_review'
+        ? { confidenceStatus: 'manual_review' }
+        : {}),
+    ...(clampUnit(finding.productionThreshold ?? finding.production_threshold) !== null
+      ? { productionThreshold: clampUnit(finding.productionThreshold ?? finding.production_threshold) }
+      : {})
   };
 };
 
@@ -82,6 +90,9 @@ const safeAiAnalysis = (analysis, evidenceFindings = []) => {
       ? { model: analysis.model.trim().slice(0, 80) }
       : {}),
     modelAvailable: status === 'completed' && analysis.modelAvailable !== false,
+    classificationStatus: ['production', 'manual_review', 'no_detection'].includes(analysis.classificationStatus)
+      ? analysis.classificationStatus
+      : undefined,
     detected: status === 'completed' && analysis.detected === true,
     hazardType: status === 'completed' && typeof analysis.hazardType === 'string'
       ? analysis.hazardType.slice(0, 100)
@@ -243,6 +254,9 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
     aiAnalysis: aiAnalysis ? {
       analysisStatus,
       detected: Boolean(aiAnalysis.detected),
+      classificationStatus: ['production', 'manual_review', 'no_detection'].includes(aiAnalysis.classificationStatus)
+        ? aiAnalysis.classificationStatus
+        : undefined,
       hazardType: aiAnalysis.hazardType || null,
       confidence: hasConfidence ? aiAnalysis.confidence : 0,
       category: typeof aiAnalysis.category === 'string' ? aiAnalysis.category : undefined,

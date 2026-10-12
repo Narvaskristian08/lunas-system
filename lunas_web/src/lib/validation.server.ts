@@ -62,6 +62,8 @@ export interface ValidationAiFinding {
   label: string;
   confidence: number;
   bbox: { x1: number; y1: number; x2: number; y2: number };
+  confidenceStatus?: "production" | "manual_review";
+  productionThreshold?: number;
 }
 
 export interface DuplicateCandidate {
@@ -92,9 +94,11 @@ export interface ValidationIncident {
   evidenceThumbnail?: string | null;
   aiAnalysis?: {
     analysisStatus?: ValidationAiAnalysisStatus;
+    classificationStatus?: "production" | "manual_review" | "no_detection";
     category?: string;
     model?: string;
     modelAvailable?: boolean;
+    manualReviewOnly?: boolean;
     detected?: boolean;
     hazardType?: string;
     confidence?: number;
@@ -197,6 +201,16 @@ function normalizeFinding(value: unknown): ValidationAiFinding | null {
     label: label.slice(0, 100),
     confidence: clamp(asNumber(source.confidence) ?? 0),
     bbox: normalized,
+    ...(source.confidenceStatus === "production" || source.confidence_status === "production"
+      ? { confidenceStatus: "production" as const }
+      : source.confidenceStatus === "manual_review" || source.confidence_status === "manual_review"
+        ? { confidenceStatus: "manual_review" as const }
+        : {}),
+    ...(asNumber(source.productionThreshold) !== undefined
+      ? { productionThreshold: clamp(asNumber(source.productionThreshold) ?? 0) }
+      : asNumber(source.production_threshold) !== undefined
+        ? { productionThreshold: clamp(asNumber(source.production_threshold) ?? 0) }
+        : {}),
   };
 }
 
@@ -347,11 +361,17 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       analysisStatus: aiStatus === "completed" || aiStatus === "unavailable" || aiStatus === "failed"
         ? aiStatus
         : undefined,
+      classificationStatus: aiAnalysis.classificationStatus === "production"
+        || aiAnalysis.classificationStatus === "manual_review"
+        || aiAnalysis.classificationStatus === "no_detection"
+        ? aiAnalysis.classificationStatus
+        : undefined,
       category: asString(aiAnalysis.category),
       model: asString(aiAnalysis.model),
       modelAvailable: aiStatus === "completed"
         ? aiAnalysis.modelAvailable !== false
         : aiAnalysis.modelAvailable === true,
+      manualReviewOnly: aiAnalysis.manualReviewOnly === true,
       detected: aiAnalysis.detected === true,
       hazardType: asString(aiAnalysis.hazardType),
       confidence: asNumber(aiAnalysis.confidence),

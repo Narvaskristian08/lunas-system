@@ -13,6 +13,9 @@ models:
       - longitudinal_crack
       - transverse_crack
     confidence_threshold: 0.25
+    # Candidate floor for advisory/manual review. Candidates below the
+    # production threshold are never automatic decisions.
+    candidate_threshold: 0.05
     iou_threshold: 0.45
     input_size: 640
     preprocessing:
@@ -25,12 +28,26 @@ models:
     name: "YOLOv8n Environmental Hazards Detection"
     path: "models/other/environmentalhazard/yolov8n-env-hazards-best.pt"
     type: "detection"
+    # This broad category is not safe for automatic classification while its
+    # per-hazard datasets are still being improved. Candidates may be shown
+    # to an official, but this model can never produce an AI suggestion.
+    manual_only: true
     classes:
       - fallen_tree
       - fire_source
       - garbage_pileup
       - open_manhole
     confidence_threshold: 0.25
+    # Keep this model conservative; it remains advisory/manual review only.
+    # These temporary per-class gates prevent a weak class match from being
+    # presented as the leading hazard while the dataset is being improved.
+    # Candidates below a class gate remain visible to reviewers.
+    class_confidence_thresholds:
+      fallen_tree: 0.50
+      fire_source: 0.40
+      garbage_pileup: 0.30
+      open_manhole: 0.45
+    candidate_threshold: 0.25
     iou_threshold: 0.45
     input_size: 640
     preprocessing:
@@ -92,6 +109,9 @@ models:
       - standing_water
       - blocked_surface_drain
     confidence_threshold: 0.35
+    # Surface-water candidates are surfaced for manual review instead of
+    # being silently discarded by the production threshold.
+    candidate_threshold: 0.05
     iou_threshold: 0.45
     input_size: 640
     preprocessing:

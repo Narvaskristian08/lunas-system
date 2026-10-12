@@ -66,10 +66,22 @@ const normalizeFinding = (finding) => {
     normalizedBox[key] = value;
   }
   if (normalizedBox.x2 < normalizedBox.x1 || normalizedBox.y2 < normalizedBox.y1) return null;
+  const confidenceStatus = finding.confidenceStatus === 'manual_review'
+    || finding.confidence_status === 'manual_review'
+    ? 'manual_review'
+    : finding.confidenceStatus === 'production'
+      || finding.confidence_status === 'production'
+      ? 'production'
+      : undefined;
+  const productionThreshold = clampUnit(
+    finding.productionThreshold ?? finding.production_threshold
+  );
   return {
     label: label.trim().slice(0, 100),
     confidence: clampUnit(finding.confidence) ?? 0,
-    bbox: normalizedBox
+    bbox: normalizedBox,
+    ...(confidenceStatus ? { confidenceStatus } : {}),
+    ...(productionThreshold !== null ? { productionThreshold } : {})
   };
 };
 
@@ -81,6 +93,12 @@ const normalizeAiAnalysis = (analysis) => {
     || analysis?.modelAvailable === false;
   const explicitlyFailed = analysis?.analysisStatus === 'failed'
     || analysis?.analysis_status === 'failed';
+  const category = typeof analysis?.category === 'string'
+    ? analysis.category.trim().toLowerCase()
+    : '';
+  const manualReviewOnly = category === 'other'
+    || analysis?.manualReviewOnly === true
+    || analysis?.manual_review_only === true;
   const completed = analysis?.aiEnabled === true
     && analysis?.success !== false
     && !failed
@@ -88,9 +106,23 @@ const normalizeAiAnalysis = (analysis) => {
     && !explicitlyFailed
     && typeof analysis.confidence === 'number'
     && Number.isFinite(analysis.confidence);
-  const suggestedHazard = analysis?.suggestion ?? analysis?.hazardType;
+  const classificationStatus = manualReviewOnly
+    ? 'manual_review'
+    : analysis?.classificationStatus === 'manual_review'
+    || analysis?.classification_status === 'manual_review'
+    ? 'manual_review'
+    : analysis?.classificationStatus === 'no_detection'
+      || analysis?.classification_status === 'no_detection'
+      ? 'no_detection'
+      : 'production';
+  const suggestedHazard = !manualReviewOnly && classificationStatus === 'production'
+    ? analysis?.suggestion ?? analysis?.hazardType
+    : null;
   const findings = (Array.isArray(analysis?.findings) ? analysis.findings : [])
     .map(normalizeFinding)
+    .map((finding) => manualReviewOnly && finding
+      ? { ...finding, confidenceStatus: 'manual_review' }
+      : finding)
     .filter(Boolean)
     .slice(0, 50);
   const analysisStatus = completed ? 'completed' : (failed || explicitlyFailed ? 'failed' : 'unavailable');
@@ -98,13 +130,15 @@ const normalizeAiAnalysis = (analysis) => {
   return {
     analysisStatus,
     category: typeof analysis?.category === 'string' ? analysis.category.slice(0, 40) : undefined,
+    manualReviewOnly,
     model: typeof analysis?.model === 'string' ? analysis.model.trim().slice(0, 80) : undefined,
     modelAvailable: completed,
-    detected: completed && analysis?.detected === true,
+    classificationStatus,
+    detected: completed && !manualReviewOnly && analysis?.detected === true,
     hazardType: completed
       ? (typeof suggestedHazard === 'string'
         ? suggestedHazard.slice(0, 100)
-        : findings[0]?.label || null)
+        : null)
       : null,
     confidence: completed ? Math.max(0, Math.min(1, analysis.confidence)) : 0,
     findings,
@@ -194,8 +228,11 @@ const mergeAiAnalyses = (analyses = []) => {
     category: first.category,
     model: first.model,
     modelAvailable: completed.length > 0,
+    classificationStatus: completed.some((analysis) => analysis?.classificationStatus === 'production')
+      ? 'production'
+      : findings.length ? 'manual_review' : 'no_detection',
     detected: completed.some((analysis) => analysis.detected),
-    hazardType: completed.find((analysis) => analysis.hazardType)?.hazardType || null,
+    hazardType: completed.find((analysis) => analysis.classificationStatus === 'production' && analysis.hazardType)?.hazardType || null,
     confidence: completed.length
       ? Math.max(...completed.map((analysis) => Number(analysis.confidence) || 0))
       : 0,
