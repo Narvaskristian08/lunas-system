@@ -760,6 +760,13 @@ exports.changePassword = asyncHandler(async (req, res) => {
     });
   }
 
+  if (await user.comparePassword(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Choose a new password that is different from your current password.'
+    });
+  }
+
   user.password = newPassword;
   user.tokenVersion += 1;
   user.refreshTokens = [];

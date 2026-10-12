@@ -3,12 +3,13 @@
 import { useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 
-export function Modal({ open, title, action, children, busy = false, onClose }: {
+export function Modal({ open, title, action, children, busy = false, size = "wide", onClose }: {
   open: boolean;
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;
   busy?: boolean;
+  size?: "wide" | "compact";
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -31,7 +32,7 @@ export function Modal({ open, title, action, children, busy = false, onClose }: 
   return <dialog ref={ref} aria-labelledby={titleId}
     onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}
     onClick={event => { if (event.target === event.currentTarget && !busy) onClose(); }}
-    className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/50 backdrop:backdrop-blur-[1px]">
+    className={`fixed inset-0 z-50 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] ${size === "compact" ? "max-w-xl" : "max-w-4xl"} overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/50 backdrop:backdrop-blur-[1px]`}>
     <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
         <h2 id={titleId} className="min-w-0 text-lg font-semibold text-slate-950">{title}</h2>

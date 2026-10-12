@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, HelpCircle, KeyRound, LogOut, UserRound } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { Modal } from "@/components/ui/modal";
+import { PermissionGate } from "@/components/auth/permission-gate";
+import { ProfileSummary } from "@/components/profile/profile-summary";
+import { ChangePasswordForm } from "@/components/profile/change-password-form";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { logoutAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
@@ -14,10 +18,42 @@ import { cn } from "@/lib/utils";
 export function UserMenu({ compact = false }: { compact?: boolean }) {
   const viewer = useViewer();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const profileFromUrl = searchParams.get("profile") === "1";
+  const passwordFromUrl = searchParams.get("profile") === "password";
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [returnToProfile, setReturnToProfile] = useState(false);
+  const showingPassword = passwordOpen || passwordFromUrl;
   const [open, setOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const closeProfile = () => {
+    setProfileOpen(false);
+    if (profileFromUrl || passwordFromUrl) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("profile");
+      const query = params.toString();
+      router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    }
+  };
+
+  const openPassword = (fromProfile: boolean) => {
+    wrapperRef.current?.querySelector("button")?.focus();
+    setOpen(false);
+    setReturnToProfile(fromProfile);
+    setPasswordOpen(true);
+  };
+
+  const closePassword = () => {
+    if (passwordBusy) return;
+    setPasswordOpen(false);
+    if (!returnToProfile) closeProfile();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -59,9 +95,9 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
               <div className="mt-2"><RoleBadge role={viewer.role} /></div>
             </div>
             <div className="p-2">
-              <MenuLink href="/profile" icon={UserRound} onClick={() => setOpen(false)}>View profile</MenuLink>
-              <MenuLink href="/profile/change-password" icon={KeyRound} onClick={() => setOpen(false)}>Change password</MenuLink>
-              <MenuLink href="/help" icon={HelpCircle} onClick={() => setOpen(false)}>Help & support</MenuLink>
+              <button type="button" onClick={() => { wrapperRef.current?.querySelector("button")?.focus(); setOpen(false); setProfileOpen(true); }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-950" role="menuitem"><UserRound className="size-4.5 text-slate-500" aria-hidden="true" /><span className="font-semibold">View Profile</span></button>
+              <button type="button" onClick={() => openPassword(false)} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-950" role="menuitem"><KeyRound className="size-4.5 text-slate-500" aria-hidden="true" /><span className="font-semibold">Change Password</span></button>
+              <MenuLink href="/help" icon={HelpCircle} onClick={() => setOpen(false)}>Help & Support</MenuLink>
             </div>
             <div className="p-2">
               <button type="button" onClick={() => { setOpen(false); setLogoutOpen(true); }} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50" role="menuitem"><LogOut className="size-4.5" aria-hidden="true" /> Sign Out</button>
@@ -69,6 +105,14 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
           </div>
         ) : null}
       </div>
+      <Modal open={profileOpen || profileFromUrl || showingPassword} title={showingPassword ? "Change Password" : "My Profile"} size={showingPassword ? "compact" : "wide"} busy={passwordBusy} onClose={showingPassword ? closePassword : closeProfile}>
+        {showingPassword ? <ChangePasswordForm onClose={closePassword} onBusyChange={setPasswordBusy} /> : (
+        <PermissionGate permission="profile.manage" mode="denied">
+          <p className="mb-4 text-sm text-slate-600">Review your account details, assigned access, and security status.</p>
+          <ProfileSummary viewer={viewer} onNavigate={() => setProfileOpen(false)} />
+        </PermissionGate>
+        )}
+      </Modal>
       <ConfirmationDialog open={logoutOpen} title="Sign out of LUNAS?" description="Your secure command-center session will end. Any unsaved changes on this page will be lost." confirmLabel="Confirm Sign Out" destructive loading={loggingOut} onClose={() => setLogoutOpen(false)} onConfirm={logout} />
     </>
   );

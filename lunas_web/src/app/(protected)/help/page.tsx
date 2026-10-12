@@ -20,9 +20,9 @@ export default async function HelpPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        eyebrow="Account support"
+        eyebrow="Account Support"
         title="Help and Support"
-        description="Report a bug, account problem, data issue, or other concern directly to LUNAS administrators."
+        description="Get help with LUNAS technical problems, account access, or data issues. Use the incident reporting workflow for infrastructure concerns."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Help and Support" }]}
       />
       <SupportTicketCenter initialData={data} initialError={error} />

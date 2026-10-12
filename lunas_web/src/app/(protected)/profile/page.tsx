@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ProfileView } from "@/components/profile/profile-view";
+import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth/dal.server";
 
 export const metadata: Metadata = {
@@ -8,6 +8,6 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  await requirePermission("profile.manage");
-  return <ProfileView />;
+  const viewer = await requirePermission("profile.manage");
+  redirect(`${viewer.backendRole === "admin" ? "/admin/users" : "/dashboard"}?profile=1`);
 }

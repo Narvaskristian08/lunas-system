@@ -115,7 +115,12 @@ exports.resetPasswordValidation = [
 
 exports.changePasswordValidation = [
   body('currentPassword').isLength({ min: 1, max: 128 }).withMessage('Current password is required'),
-  passwordValidationRule('newPassword')
+  passwordValidationRule('newPassword').custom((value, { req }) => {
+    if (value === req.body.currentPassword) {
+      throw new Error('Choose a new password that is different from your current password.');
+    }
+    return true;
+  })
 ];
 
 exports.updateProfileValidation = [

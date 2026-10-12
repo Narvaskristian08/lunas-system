@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChangePasswordForm } from "@/components/profile/change-password-form";
+import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth/dal.server";
 
 export const metadata: Metadata = {
@@ -7,6 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default async function ChangePasswordPage() {
-  await requirePermission("profile.manage");
-  return <ChangePasswordForm />;
+  const viewer = await requirePermission("profile.manage");
+  redirect(`${viewer.backendRole === "admin" ? "/admin/users" : "/dashboard"}?profile=password`);
 }

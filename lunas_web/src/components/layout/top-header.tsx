@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, ShieldCheck } from "lucide-react";
+import { Suspense } from "react";
 import { NotificationHeaderLink } from "@/components/layout/notification-header-link";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useViewer } from "@/components/providers/viewer-provider";
@@ -15,7 +16,9 @@ export function TopHeader({ onOpenNavigation, menuButtonRef }: { onOpenNavigatio
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <NotificationHeaderLink />
-        <UserMenu compact={viewer.role.length > 22} />
+        <Suspense fallback={<div className="size-11" />}>
+          <UserMenu compact={viewer.role.length > 22} />
+        </Suspense>
       </div>
     </header>
   );

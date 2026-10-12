@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendRequest, isBackendApiError, responseData } from "@/lib/api/backend.server";
 import { clearSession, createSession, readSession } from "@/lib/auth/session.server";
+import { requireViewer } from "@/lib/auth/dal.server";
 import { isValidEmail, safeReturnPath } from "@/lib/utils";
 import type { AuthFailureCode } from "@/types";
 
@@ -167,6 +168,10 @@ export async function updateProfileAction(input: {
   });
 
   try {
+    const viewer = await requireViewer();
+    if (!["citizen", "repair_personnel"].includes(viewer.backendRole)) {
+      return { ok: false, message: "Your account details are managed by an authorized administrator." };
+    }
     try {
       await backendRequest("/users/me", {
         method: "PATCH",
@@ -198,6 +203,9 @@ export async function changePasswordAction(input: {
   currentPassword: string;
   newPassword: string;
 }): Promise<ActionResult> {
+  if (input.newPassword === input.currentPassword) {
+    return { ok: false, message: "Choose a new password that is different from your current password." };
+  }
   const session = await readSession();
   if (session.status !== "authenticated") {
     return { ok: false, message: "Your session has ended. Sign in again before changing your password." };
@@ -224,6 +232,9 @@ export async function changePasswordAction(input: {
   } catch (error) {
     if (isBackendApiError(error) && error.status === 401) {
       return { ok: false, message: "Your current password is incorrect." };
+    }
+    if (isBackendApiError(error) && error.status === 400) {
+      return { ok: false, message: error.message };
     }
     return { ok: false, message: "We couldn’t change your password. Try again in a moment." };
   }

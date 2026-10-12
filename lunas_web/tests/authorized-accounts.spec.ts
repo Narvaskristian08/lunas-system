@@ -42,6 +42,47 @@ test.describe("authorized account screens", () => {
   test.afterAll(async () => { if (server) await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); });
   test.beforeEach(() => { accounts = []; });
 
+  test("profile opens over the workspace from the menu and the legacy URL", async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
+    await page.goto("/admin/users");
+    const menu = page.getByRole("button", { name: /Test Administrator/ });
+    await menu.click();
+    await page.getByRole("menuitem", { name: "View Profile", exact: true }).click();
+    const profile = page.getByRole("dialog", { name: "My Profile", exact: true });
+    await expect(profile).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await expect(profile.getByRole("link", { name: "Edit Profile", exact: true })).toHaveCount(0);
+    await expect(profile.getByRole("button", { name: "Change Password", exact: true })).toHaveCount(0);
+    const password = page.getByRole("dialog", { name: "Change Password", exact: true });
+    const desktopBounds = await profile.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(Math.abs(desktopBounds!.x + desktopBounds!.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(1);
+    expect(Math.abs(desktopBounds!.y + desktopBounds!.height / 2 - viewport.height / 2)).toBeLessThanOrEqual(1);
+    await expect(profile).toHaveCSS("position", "fixed");
+    await page.keyboard.press("Escape");
+    await expect(profile).not.toBeVisible();
+    await expect(menu).toBeFocused();
+
+    await page.goto("/profile/edit");
+    await expect(page).toHaveURL(/\/admin\/users\?profile=1$/);
+    await expect(profile).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 700 });
+    const bounds = await profile.boundingBox();
+    expect(bounds?.width).toBeLessThanOrEqual(390);
+    expect(bounds?.height).toBeLessThanOrEqual(700);
+    expect(Math.abs(bounds!.x + bounds!.width / 2 - 195)).toBeLessThanOrEqual(1);
+    expect(Math.abs(bounds!.y + bounds!.height / 2 - 350)).toBeLessThanOrEqual(1);
+    await profile.getByRole("button", { name: "Close account dialog" }).click();
+    await expect(profile).not.toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await page.goto("/profile/change-password");
+    await expect(password).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/users\?profile=password$/);
+    await password.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(password).not.toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/users$/);
+  });
+
   test("administrator creates an approved account, views Pending Activation, and confirms deactivation", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
     await page.goto("/admin/users");

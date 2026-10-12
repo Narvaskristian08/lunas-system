@@ -3,6 +3,7 @@ const {
   createIncidentValidation,
   updateJurisdictionValidation,
   registerValidation,
+  changePasswordValidation,
   validateIncidentDecisionValidation,
   routeIncidentValidation,
   rejectIncidentDecisionValidation,
@@ -22,6 +23,20 @@ const runRulesWithRequest = async (rules, body, files = {}, user = { role: 'citi
 };
 
 describe('request validation', () => {
+  test('password changes reject reuse of the current password', async () => {
+    const errors = await runRules(changePasswordValidation, {
+      currentPassword: 'UniqueCurrentPass42!', newPassword: 'UniqueCurrentPass42!'
+    });
+    expect(errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'newPassword', msg: 'Choose a new password that is different from your current password.' })
+    ]));
+  });
+
+  test('password changes accept a distinct strong password', async () => {
+    expect(await runRules(changePasswordValidation, {
+      currentPassword: 'UniqueCurrentPass42!', newPassword: 'DistinctNextPass73!'
+    })).toEqual([]);
+  });
   test('public registration rejects a privileged requested role', async () => {
     const errors = await runRules(registerValidation, {
       firstName: 'Juan',

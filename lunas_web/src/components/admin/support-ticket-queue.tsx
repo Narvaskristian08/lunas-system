@@ -14,7 +14,7 @@ import { formatDateTime } from "@/lib/utils";
 const inputClass = "mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm";
 const statuses = ["open", "in_progress", "resolved", "closed"] as const;
 const categories = ["bug", "account_access", "data_issue", "feature_request", "other"] as const;
-const categoryLabels: Record<SupportTicketCategory, string> = { bug: "Bug or error", account_access: "Account access", data_issue: "Data issue", feature_request: "Feature request", other: "Other issue" };
+const categoryLabels: Record<SupportTicketCategory, string> = { bug: "Technical Problem", account_access: "Account or Access Problem", data_issue: "Incorrect or Missing Data", feature_request: "Feature Request", other: "Other Concern" };
 
 function label(value: string) { return value.replaceAll("_", " ").replace(/\b\w/g, character => character.toUpperCase()); }
 function statusTone(status: SupportTicketStatus) { return status === "resolved" ? "success" as const : status === "closed" ? "neutral" as const : status === "in_progress" ? "information" as const : "warning" as const; }

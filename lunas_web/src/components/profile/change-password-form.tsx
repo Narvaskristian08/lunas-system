@@ -1,19 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, CircleAlert, KeyRound, LogIn, ShieldCheck } from "lucide-react";
+import { CheckCircle2, CircleAlert, KeyRound, LogIn } from "lucide-react";
 import { changePasswordAction } from "@/app/actions/auth";
 import { PermissionGate } from "@/components/auth/permission-gate";
 import { PasswordField } from "@/components/forms/password-field";
 import { PasswordStrength } from "@/components/forms/password-strength";
-import { PageHeader } from "@/components/layout/page-header";
 import { useToast } from "@/components/providers/toast-provider";
 import { Button, buttonStyles } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
 import { passwordChecks } from "@/lib/utils";
 
-function ChangePasswordWorkspace() {
+function ChangePasswordWorkspace({ onClose, onBusyChange }: { onClose: () => void; onBusyChange: (busy: boolean) => void }) {
   const { notify } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -22,6 +20,8 @@ function ChangePasswordWorkspace() {
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string>();
   const [sessionsRevoked, setSessionsRevoked] = useState<boolean | null>(null);
+
+  useEffect(() => { onBusyChange(submitting); }, [submitting, onBusyChange]);
 
   const checks = useMemo(() => passwordChecks(newPassword), [newPassword]);
   const strongEnough = Object.values(checks).every(Boolean);
@@ -59,7 +59,7 @@ function ChangePasswordWorkspace() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      notify({ title: "Password changed", message: "Your account security settings were updated.", tone: "success" });
+      notify({ title: "Password Changed", message: "Your account security settings were updated.", tone: "success" });
     } catch {
       setServerError("We couldn’t change your password. Confirm your current password and try again.");
     } finally {
@@ -70,16 +70,7 @@ function ChangePasswordWorkspace() {
   if (sessionsRevoked !== null) {
     return (
       <>
-        <PageHeader
-          title="Change Password"
-          eyebrow="Account security"
-          breadcrumbs={[
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "My Profile", href: "/profile" },
-            { label: "Change Password" },
-          ]}
-        />
-        <Card className="mx-auto max-w-2xl p-6 text-center sm:p-8">
+                <div className="py-4 text-center">
           <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
             <CheckCircle2 className="size-8" aria-hidden="true" />
           </span>
@@ -90,40 +81,22 @@ function ChangePasswordWorkspace() {
               : "Your current signed-in session remains active under the current security policy."}
           </p>
           <div className="mt-6 flex flex-col-reverse justify-center gap-3 sm:flex-row">
-            <Link href="/profile" className={buttonStyles({ variant: "secondary", size: "lg" })}>Return to Profile</Link>
+            <Button type="button" variant="secondary" onClick={onClose}><span className="font-semibold">Done</span></Button>
             {sessionsRevoked ? (
               <Link href="/login" className={buttonStyles({ variant: "primary", size: "lg" })}>
-                <LogIn className="size-4" aria-hidden="true" /> Sign in Again
+                <LogIn className="size-4" aria-hidden="true" /> Sign In Again
               </Link>
             ) : null}
           </div>
-        </Card>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
-        title="Change Password"
-        eyebrow="Account security"
-        description="Use a unique password that you do not use for another government or personal account."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "My Profile", href: "/profile" },
-          { label: "Change Password" },
-        ]}
-        actions={
-          <Link href="/profile" className={buttonStyles({ variant: "secondary" })}>
-            <ArrowLeft className="size-4" aria-hidden="true" /> Back to Profile
-          </Link>
-        }
-      />
-
-      <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Card>
-          <CardHeader title="Set a New Password" description="All three fields are required." />
-          <form onSubmit={submit} noValidate className="space-y-5 p-5 sm:p-6">
+      <p className="mb-5 text-sm leading-5 text-slate-600">Use a unique password that you do not use for another account. All three fields are required.</p>
+          <form onSubmit={submit} noValidate className="space-y-4">
             <PasswordField
               label="Current Password"
               required
@@ -165,39 +138,21 @@ function ChangePasswordWorkspace() {
             ) : null}
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
-              <Link href="/profile" className={buttonStyles({ variant: "secondary" })}>Cancel</Link>
+              <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}><span className="font-semibold">Cancel</span></Button>
               <Button type="submit" disabled={!valid} loading={submitting} loadingLabel="Changing Password…">
                 <KeyRound className="size-4" aria-hidden="true" /> Change Password
               </Button>
             </div>
           </form>
-        </Card>
 
-        <Card className="self-start p-5 lg:sticky lg:top-28">
-          <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-              <ShieldCheck className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="font-semibold text-slate-950">Security Reminder</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                LUNAS staff will never ask for your password. Passwords are sent only to the account service and are never stored in browser persistence.
-              </p>
-            </div>
-          </div>
-          <Link href="/help" className="mt-4 inline-flex min-h-10 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
-            Report an Account Security Concern
-          </Link>
-        </Card>
-      </div>
     </>
   );
 }
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ onClose, onBusyChange }: { onClose: () => void; onBusyChange: (busy: boolean) => void }) {
   return (
     <PermissionGate permission="profile.manage" mode="denied">
-      <ChangePasswordWorkspace />
+      <ChangePasswordWorkspace onClose={onClose} onBusyChange={onBusyChange} />
     </PermissionGate>
   );
 }

@@ -3,7 +3,7 @@
 import { Check, Circle } from "lucide-react";
 import { cn, passwordChecks, passwordScore } from "@/lib/utils";
 
-const labels = ["Not entered", "Weak", "Fair", "Good", "Strong"];
+const labels = ["Not Entered", "Weak", "Fair", "Good", "Strong"];
 const segmentColors = ["bg-slate-200", "bg-red-600", "bg-amber-500", "bg-sky-600", "bg-emerald-600"];
 
 export function PasswordStrength({ password, compact = false }: { password: string; compact?: boolean }) {
