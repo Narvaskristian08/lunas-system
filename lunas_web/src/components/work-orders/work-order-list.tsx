@@ -265,7 +265,7 @@ export function WorkOrderList({
             }))}
           />
           <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page: String(page) })} />
-        </> : <EmptyState icon={hasRefinements ? "search" : "records"} title={hasRefinements ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasRefinements ? "Try removing a filter or search term. Server-side access controls still apply to every result." : isSla ? "Approaching and overdue work will appear here when operational records enter your authorized scope." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasRefinements && viewer.backendRole !== "utility_provider" ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
+        </> : <EmptyState icon={hasRefinements ? "search" : "records"} title={hasRefinements ? "No work orders match these filters" : isSla ? "No SLA-tracked work orders" : "No work orders available"} description={hasRefinements ? "Try another filter or search term." : isSla ? "Work orders approaching or past their deadlines will appear here." : "City Engineering-routed incidents become work orders in the responsible Utility Provider organization."} action={hasRefinements && viewer.backendRole !== "utility_provider" ? { label: "Clear Filters", onClick: clearFilters } : undefined} />}
       </Card>
     </div>
   );

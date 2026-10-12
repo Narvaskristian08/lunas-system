@@ -309,38 +309,6 @@ export async function resetPasswordAction(token: string, newPassword: string): P
   }
 }
 
-export async function verifyAccountAction(code: string): Promise<ActionResult> {
-  try {
-    await backendRequest("/auth/verify", {
-      method: "POST",
-      body: JSON.stringify({ code }),
-    });
-    return { ok: true };
-  } catch (error) {
-    if (isBackendApiError(error) && error.status === 404) {
-      return { ok: false, code: "unavailable", message: "Online account verification is not configured yet." };
-    }
-    if (isBackendApiError(error) && error.status === 400) {
-      return { ok: false, code: error.message.toLowerCase().includes("expire") ? "expired" : "invalid" };
-    }
-    return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
-  }
-}
-
-export async function resendVerificationAction(email?: string): Promise<ActionResult> {
-  try {
-    const result = responseData<{ retryAfterSeconds?: number }>(
-      await backendRequest("/auth/verification/resend", {
-        method: "POST",
-        body: JSON.stringify(email ? { email } : {}),
-      }),
-    );
-    return { ok: true, retryAfterSeconds: result.retryAfterSeconds ?? 30 };
-  } catch {
-    return { ok: false, code: "unavailable", message: "The verification service is temporarily unavailable." };
-  }
-}
-
 export async function activateAccountAction(token: string, password: string): Promise<ActionResult> {
   try {
     await backendRequest("/auth/activate-account", { method: "POST", body: JSON.stringify({ token, password }) });

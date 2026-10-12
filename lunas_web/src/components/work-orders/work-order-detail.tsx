@@ -74,7 +74,8 @@ function ActionNotice({ message, kind }: { message?: string; kind?: "success" | 
 }
 
 function personName(person: EligibleRepairPersonnel) {
-  return formatPerson(person.firstName, person.lastName, "Eligible repair personnel");
+  const name = formatPerson(person.firstName, person.lastName, "Eligible repair personnel");
+  return person.repairAccountType === "team" ? `${person.team || "Team"} · ${name} (Team)` : `${name} (Individual)`;
 }
 
 function AssignmentPanel({
@@ -140,7 +141,7 @@ function AssignmentPanel({
           <label className="block text-sm font-semibold text-slate-800">{isReassignment ? "Reassign To" : "Assign repair personnel"}
             <select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)} required className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
               <option value="">Select Organization Personnel</option>
-              {eligiblePersonnel.map((person) => <option key={person.id} value={person.id}>{personName(person)}{person.team ? ` · ${person.team}` : ""}{person.availability ? ` · ${titleCase(person.availability)}` : ""}</option>)}
+              {eligiblePersonnel.map((person) => <option key={person.id} value={person.id}>{personName(person)}{person.availability ? ` · ${titleCase(person.availability)}` : ""}</option>)}
             </select>
           </label>
           {!isReassignment ? <label className="block text-sm font-semibold text-slate-800">Instructions (Optional)<textarea value={assignmentInstructions} onChange={event => setAssignmentInstructions(event.target.value)} maxLength={4000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 p-3 text-sm" placeholder="Add repair, access, or safety instructions" /></label> : null}
@@ -340,7 +341,7 @@ function WorkOrderTimeline({ workOrder }: { workOrder: WorkOrder }) {
   ), [workOrder.history]);
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Operational Timeline" description="Append-oriented work-order events returned by the backend." />
+      <CardHeader title="Operational Timeline" />
       {events.length ? <ol className="space-y-6 p-5">{events.map((entry, index) => <li key={entry.id} className="flex gap-4"><TimelineMarker latest={index === 0} last={index === events.length - 1} /><div className="min-w-0 flex-1 wrap-break-word"><div className="flex flex-col gap-0.5"><p className="text-sm font-semibold leading-6 text-slate-900">{entry.type === "ready_for_completion" ? "Completion Submitted" : (timelineEventLabel(entry.type ?? entry.status ?? "Work Order Update"))}</p>{entry.createdAt ? <time dateTime={entry.createdAt} className="text-xs leading-5 text-slate-500">{formatDateTime(entry.createdAt)}</time> : null}</div>{entry.notes ? <p className="mt-1 text-sm leading-6 text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}{workOrder.reviews.filter((review) => review.createdAt === entry.createdAt && review.stage === entry.actorRole && review.instructions && review.instructions !== entry.notes).map((review) => <p key={review.id} className="mt-1 text-sm leading-6 text-slate-600">Instructions: {review.instructions}</p>)}</div></li>)}</ol> : <p className="p-5 text-sm text-slate-600">No work-order events are available yet.</p>}
     </Card>
   );
@@ -418,7 +419,7 @@ export function WorkOrderDetail({
           <p className="text-xs font-semibold leading-5 text-slate-500">SLA Deadline</p>
           {workOrder.sla.deadline ? <div className="space-y-1">
             <p className="text-sm font-semibold leading-6 text-slate-900">{formatDateTime(workOrder.sla.deadline)}</p>
-            <p className="text-xs leading-5 text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Deadline supplied by backend"}</p>
+            <p className="text-xs leading-5 text-slate-600">{formatRemaining(workOrder.sla.remainingMilliseconds) ?? "Remaining time unavailable"}</p>
           </div> : <p className="text-sm leading-6 text-slate-600">No deadline returned</p>}
         </Card>
         <Card className="space-y-2 px-4 py-3">

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/layout/page-header";
-import type { UserProfile } from "@/types";
 import type { RepairPersonnelAccountStatus, RepairPersonnelRecord } from "@/lib/repair-personnel.server";
 
 const inputClass = "mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm";
@@ -28,11 +27,9 @@ function statusTone(status: RepairPersonnelAccountStatus) {
 }
 
 export function RepairPersonnelConsole({
-  viewer,
   personnel,
   error,
 }: {
-  viewer: UserProfile;
   personnel: RepairPersonnelRecord[];
   error?: string;
 }) {
@@ -40,6 +37,7 @@ export function RepairPersonnelConsole({
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [formError, setFormError] = useState("");
+  const [accountType, setAccountType] = useState<"individual" | "team">("individual");
 
   function submit(form: FormData) {
     setMessage("");
@@ -49,6 +47,7 @@ export function RepairPersonnelConsole({
       if (result.ok) {
         setMessage(result.message);
         formRef.current?.reset();
+        setAccountType("individual");
       } else {
         setFormError(result.message);
       }
@@ -67,29 +66,35 @@ export function RepairPersonnelConsole({
       {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{error}</p> : null}
 
       <Card className="p-5">
-        <CardHeader className="-mx-5 -mt-5" title="Add Repair Personnel" description="The new account will be assigned to your organization automatically." />
-        <form ref={formRef} action={submit} className="mt-5 space-y-5">
-          <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
-            <p className="font-semibold">Assigned organization</p>
-            <p className="mt-1">{viewer.utilityCompany || viewer.organization}</p>
-            <p className="mt-1 text-xs text-sky-800">Organization and system role are controlled by the server and cannot be changed in this form.</p>
-          </div>
+        <CardHeader className="-mx-5 -mt-5" title="Add Repair Personnel" />
+        <form ref={formRef} action={submit} className="mt-5 space-y-6">
+          <fieldset disabled={pending}>
+            <legend className="mb-3 text-sm font-semibold text-slate-900">Account type</legend>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm font-medium text-slate-700">Represents
+                <select name="repairAccountType" value={accountType} onChange={(event) => setAccountType(event.target.value as "individual" | "team")} className={inputClass}>
+                  <option value="individual">Individual</option>
+                  <option value="team">Team</option>
+                </select>
+              </label>
+              {accountType === "team" ? <label className="block text-sm font-medium text-slate-700">Team name *<input name="repairTeam" className={inputClass} required maxLength={120} placeholder="e.g. Water Crew A" /></label> : <input type="hidden" name="repairTeam" value="" />}
+            </div>
+          </fieldset>
 
-          <fieldset disabled={pending} className="grid gap-5 md:grid-cols-2">
-            <label className="text-sm font-medium">First name *<input name="firstName" className={inputClass} required maxLength={80} /></label>
-            <label className="text-sm font-medium">Last name *<input name="lastName" className={inputClass} required maxLength={80} /></label>
-            <label className="text-sm font-medium">Email *<input name="email" type="email" className={inputClass} required maxLength={254} /></label>
-            <label className="text-sm font-medium">Contact number *<input name="phone" type="tel" inputMode="tel" pattern="^(\\+639|09)\\d{9}$" placeholder="09XXXXXXXXX" className={inputClass} required maxLength={13} /></label>
-            <label className="text-sm font-medium">Position / designation *<input name="position" className={inputClass} required maxLength={120} /></label>
-            <label className="text-sm font-medium">Personnel ID <span className="font-normal text-slate-500">(optional)</span><input name="personnelId" className={inputClass} maxLength={80} /></label>
-            <label className="text-sm font-medium">Repair team <span className="font-normal text-slate-500">(optional)</span><input name="repairTeam" className={inputClass} maxLength={120} /></label>
-            <label className="text-sm font-medium">Assigned Barangay <span className="font-normal text-slate-500">(optional)</span><input name="barangay" className={inputClass} maxLength={100} placeholder="Official Dagupan barangay name" /></label>
+          <fieldset disabled={pending} className="border-t border-slate-200 pt-4">
+            <legend className="pr-3 text-sm font-semibold text-slate-900">{accountType === "team" ? "Team leader details" : "Personnel details"}</legend>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm font-medium text-slate-700">First name *<input name="firstName" autoComplete="given-name" className={inputClass} required maxLength={80} /></label>
+              <label className="block text-sm font-medium text-slate-700">Last name *<input name="lastName" autoComplete="family-name" className={inputClass} required maxLength={80} /></label>
+              <label className="block text-sm font-medium text-slate-700">Email *<input name="email" type="email" autoComplete="email" className={inputClass} required maxLength={254} /></label>
+              <label className="block text-sm font-medium text-slate-700">Contact number *<input name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="^(\\+639|09)\\d{9}$" placeholder="09XXXXXXXXX" className={inputClass} required maxLength={13} /></label>
+            </div>
           </fieldset>
 
           {formError ? <p role="alert" className="text-sm text-red-700">{formError}</p> : null}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col items-start gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center">
             <Button type="submit" loading={pending} loadingLabel="Creating account…"><UserPlus className="size-4" aria-hidden="true" />Create and Send Activation</Button>
-            <p className="text-xs text-slate-500">The repair person chooses their password from the activation email.</p>
+            <p className="max-w-md text-xs leading-5 text-slate-500">{accountType === "team" ? "The team leader" : "The repair person"} chooses their password from the activation email.</p>
           </div>
         </form>
       </Card>
@@ -100,18 +105,16 @@ export function RepairPersonnelConsole({
           <DataTable
             caption="Repair Personnel roster"
             columns={[
-              { key: "name", label: "Name", className: "w-[22%]" },
-              { key: "position", label: "Position", className: "w-[18%]" },
-              { key: "team", label: "Team / Barangay", className: "w-[22%]" },
-              { key: "contact", label: "Contact", className: "w-[23%]" },
+              { key: "name", label: "Name", className: "w-[25%]" },
+              { key: "team", label: "Represents", className: "w-[25%]" },
+              { key: "contact", label: "Contact", className: "w-[35%]" },
               { key: "status", label: "Status", className: "w-[15%]" },
             ]}
             rows={personnel.map((person) => ({
               id: person.id,
               cells: {
-                name: <div><p className="font-semibold text-slate-900">{person.firstName} {person.lastName}</p>{person.personnelId ? <p className="text-xs text-slate-500">ID: {person.personnelId}</p> : null}</div>,
-                position: person.position || "—",
-                team: <div><p>{person.repairTeam || "No team assigned"}</p><p className="text-xs text-slate-500">{person.barangay || "Citywide"}</p></div>,
+                name: <p className="font-semibold text-slate-900">{person.firstName} {person.lastName}</p>,
+                team: <div><p>{person.repairAccountType === "team" ? "Team" : "Individual"}</p>{person.repairAccountType === "team" && person.repairTeam ? <p className="text-xs text-slate-500">{person.repairTeam}</p> : null}</div>,
                 contact: <div><p className="break-words">{person.email}</p><p className="text-xs text-slate-500">{person.phone || "No phone number"}</p></div>,
                 status: <StatusBadge tone={statusTone(person.accountStatus)}>{statusLabel[person.accountStatus]}</StatusBadge>,
               },

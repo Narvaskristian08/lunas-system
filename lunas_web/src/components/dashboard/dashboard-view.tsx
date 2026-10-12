@@ -27,7 +27,7 @@ function dashboardCopy(viewer: UserProfile) {
       title: "Provider Work Orders",
       description: "Live maintenance activity routed to your responsible organization.",
       recordsTitle: "Recent Work Orders",
-      recordsDescription: "Only records in the provider scope returned by the backend are shown.",
+      recordsDescription: "Recent repairs assigned to your organization.",
     };
   }
   if (viewer.backendRole === "barangay_official") {

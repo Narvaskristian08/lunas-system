@@ -113,13 +113,11 @@ exports.createRepairPersonnel = asyncHandler(async (req, res) => {
     lastName: req.body.lastName,
     email: req.body.email,
     phone: req.body.phone,
-    personnelId: req.body.personnelId || '',
-    position: req.body.position,
     organization,
     role: 'repair_personnel',
     repairOrganization: organization,
+    repairAccountType: req.body.repairAccountType || 'individual',
     repairTeam: req.body.repairTeam || '',
-    barangay: req.body.barangay || undefined,
     approval: {
       authority: providerName,
       reference: `Created by Utility Provider: ${organization}`,
@@ -140,6 +138,7 @@ exports.createRepairPersonnel = asyncHandler(async (req, res) => {
     organization: user.organization,
     repairOrganization: user.repairOrganization,
     repairTeam: user.repairTeam,
+    repairAccountType: user.repairAccountType,
     barangay: user.barangay || null,
     accountStatus: user.accountStatus,
     approval: user.approval

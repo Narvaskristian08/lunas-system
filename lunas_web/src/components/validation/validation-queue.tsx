@@ -253,7 +253,7 @@ export function ValidationQueue({
             <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page })} />
           </>
         ) : (
-          <EmptyState icon="records" title={hasFilters ? "No reports match these filters" : "No reports awaiting your review"} description={hasFilters ? "Try removing a filter or search term. Scope controls still apply to every result." : isCityEngineering ? "Barangay-validated reports will appear here for City Engineering review." : "Submitted citizen reports in your assigned Barangay will appear here for initial review."} action={hasFilters ? { label: "Clear Filters", onClick: clearFilters } : undefined} />
+          <EmptyState icon="records" title={hasFilters ? "No reports match these filters" : "No reports awaiting your review"} description={hasFilters ? "Try another filter or search term." : isCityEngineering ? "Barangay-validated reports will appear here for City Engineering review." : "Submitted citizen reports in your assigned Barangay will appear here for initial review."} action={hasFilters ? { label: "Clear Filters", onClick: clearFilters } : undefined} />
         )}
       </Card>
     </div>

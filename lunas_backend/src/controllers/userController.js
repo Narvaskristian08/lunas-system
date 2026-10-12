@@ -211,7 +211,7 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
   if (expertise) filter.expertise = expertise;
 
   const personnel = await User.find(filter).select(
-    'firstName lastName email phone position personnelId role repairOrganization repairTeam availability barangay expertise isActive isArchived isVerified requiresActivation accountStatus createdAt'
+    'firstName lastName email phone position personnelId role repairOrganization repairTeam repairAccountType availability barangay expertise isActive isArchived isVerified requiresActivation accountStatus createdAt'
   ).sort({ createdAt: -1, _id: -1 });
 
   res.status(200).json({
@@ -228,6 +228,7 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
       organization: person.repairOrganization,
       repairOrganization: person.repairOrganization,
       repairTeam: person.repairTeam,
+      repairAccountType: person.repairAccountType || 'individual',
       availability: person.availability,
       barangay: person.barangay,
       expertise: person.expertise,

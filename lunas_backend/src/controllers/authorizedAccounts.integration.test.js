@@ -76,7 +76,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     return request(app).post('/auth/activate-account').send({ token, password }).expect(200);
   }
   async function actor(role, overrides = {}) {
-    const user = await User.create({ firstName: 'Test', lastName: 'Actor', email: `${role}@example.test`,
+    const user = await User.create({ firstName: 'Test', lastName: 'Actor', email: `${role}-actor@example.test`,
       phone: '09123456789', password, role, isActive: true, isVerified: true,
       barangay: role === 'barangay_official' ? 'Pantal' : undefined,
       repairOrganization: role === 'repair_personnel' ? 'Dagupan Water District' : undefined,
@@ -123,7 +123,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
 
     const validPayload = {
       firstName: 'Assigned', lastName: 'Worker', email: 'assigned-worker@example.test', phone: approved.phone,
-      position: 'Field Technician', personnelId: 'RP-001', repairTeam: 'Road Team', barangay: 'Pantal',
+      repairTeam: 'Road Team',
     };
     await call('post', '/users/repair-personnel', token).send({
       ...validPayload, organization: 'Forged Organization', role: 'admin', repairOrganization: 'Forged Organization'
@@ -146,9 +146,21 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
   });
   test('Utility Provider personnel creation rejects duplicate email addresses', async () => {
     const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
-    const payload = { firstName: 'Assigned', lastName: 'Worker', email: 'duplicate-worker@example.test', phone: approved.phone, position: 'Field Technician' };
+    const payload = { firstName: 'Assigned', lastName: 'Worker', email: 'duplicate-worker@example.test', phone: approved.phone };
     await call('post', '/users/repair-personnel', token).send(payload).expect(201);
     await call('post', '/users/repair-personnel', token).send(payload).expect(409);
+  });
+  test('Utility Provider can create a named team represented by its leader', async () => {
+    const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
+    const payload = { firstName: 'Team', lastName: 'Leader', email: 'crew-leader@example.test', phone: approved.phone,
+      repairAccountType: 'team', repairTeam: 'Water Crew A' };
+    await call('post', '/users/repair-personnel', token).send({ ...payload, repairTeam: '   ' }).expect(400);
+    await call('post', '/users/repair-personnel', token).send({ ...payload, repairAccountType: 'invalid' }).expect(400);
+    const result = await call('post', '/users/repair-personnel', token).send(payload).expect(201);
+    expect(result.body.data.account).toMatchObject({ repairAccountType: 'team', repairTeam: 'Water Crew A',
+      firstName: 'Team', lastName: 'Leader', role: 'repair_personnel', repairOrganization: 'Dagupan Water District' });
+    const roster = await call('get', '/users/repair-personnel', token).expect(200);
+    expect(roster.body.data.find(person => person.email === payload.email)).toMatchObject({ repairAccountType: 'team', repairTeam: 'Water Crew A' });
   });
   test('6–7,14–15: administrator provisions an approved inactive account with an audited assignment and safe response', async () => {
     const { account, token, body } = await provision();

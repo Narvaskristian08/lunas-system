@@ -4,6 +4,9 @@ FROM node:22-alpine
 # Set working directory
 WORKDIR /app
 
+# Render readable labels on synthetic local QA evidence images.
+RUN apk add --no-cache font-dejavu
+
 # Copy package files
 COPY --chown=node:node package*.json ./
 

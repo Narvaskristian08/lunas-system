@@ -43,18 +43,17 @@ exports.createAccountValidation = [
   body('email').isString().bail().isEmail().normalizeEmail(), ...profileRules
 ];
 exports.createRepairPersonnelValidation = [
-  onlyFields(['firstName', 'lastName', 'email', 'phone', 'personnelId', 'position', 'repairTeam', 'barangay']),
+  onlyFields(['firstName', 'lastName', 'email', 'phone', 'repairTeam', 'repairAccountType']),
+  body('repairAccountType').optional().isIn(['individual', 'team']).withMessage('Choose Individual or Team'),
   body('email').isString().bail().isEmail().normalizeEmail(),
   text('firstName', 80),
   text('lastName', 80),
   body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
-  text('personnelId', 80, true),
-  text('position', 120),
   text('repairTeam', 120, true),
-  body('barangay').optional().isString().bail().trim()
-    .customSanitizer(value => canonicalizeBarangay(value) || value)
-    .custom(value => !value || isValidBarangay(value))
-    .withMessage('Choose a recognized Dagupan barangay')
+  body().custom(value => {
+    if (value.repairAccountType === 'team' && !String(value.repairTeam || '').trim()) throw new Error('Team name is required for a team account');
+    return true;
+  })
 ];
 exports.updateAccountValidation = [onlyFields([...PROFILE_FIELDS, 'version']), ...profileRules,
   body('version').isInt({ min: 0 }).toInt()];

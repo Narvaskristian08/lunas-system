@@ -70,27 +70,3 @@ export function FullPageLoading({ label = "Preparing LUNAS…" }: { label?: stri
 export function AuthenticationLoading() {
   return <FullPageLoading label="Checking Your Secure Session…" />;
 }
-
-export function RouteLoading({ label = "Loading page…" }: { label?: string }) {
-  return (
-    <div className="flex min-h-[420px] items-center justify-center" role="status">
-      <div className="text-center"><LoadingSpinner label={label} size="lg" /><p className="mt-3 text-sm text-slate-500">You can continue using navigation while this page loads.</p></div>
-    </div>
-  );
-}
-
-export function InlineFieldLoading({ label = "Checking…" }: { label?: string }) {
-  return (
-    <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-500" role="status">
-      <LoaderCircle className="size-3.5 animate-spin text-brand-700" aria-hidden="true" />{label}
-    </span>
-  );
-}
-
-export function MapSkeleton() {
-  return <div className="skeleton flex min-h-64 items-center justify-center rounded-xl" role="status"><span className="relative z-10 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-slate-600">Loading Map Layers…</span></div>;
-}
-
-export function ImageSkeleton({ label = "Loading image" }: { label?: string }) {
-  return <div className="skeleton aspect-video rounded-xl" role="status"><span className="sr-only">{label}</span></div>;
-}

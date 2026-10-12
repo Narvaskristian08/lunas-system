@@ -28,10 +28,6 @@ export function formatRelativeDate(value: string) {
   );
 }
 
-export function sleep(ms = 650) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function safeReturnPath(value: string | null | undefined) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
   if (value.startsWith("/login") || value.startsWith("/session-expired")) return "/dashboard";

@@ -6,7 +6,7 @@ import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
 
 export type RepairPersonnelActionResult = { ok: boolean; message: string };
 
-const fields = ["firstName", "lastName", "email", "phone", "personnelId", "position", "repairTeam", "barangay"] as const;
+const fields = ["firstName", "lastName", "email", "phone", "repairTeam", "repairAccountType"] as const;
 
 export async function createRepairPersonnelAction(form: FormData): Promise<RepairPersonnelActionResult> {
   const viewer = await requirePermission("personnel.manage");

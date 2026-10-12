@@ -30,6 +30,7 @@ export interface WorkOrderPerson {
   role?: string;
   organization?: string;
   team?: string;
+  repairAccountType?: "individual" | "team";
   availability?: string;
   activeAssignments?: number;
   expertise: string[];
@@ -327,6 +328,7 @@ function normalizePerson(value: unknown): WorkOrderPerson | null {
     role: asString(source.role),
     organization: asString(source.organization) ?? asString(source.repairOrganization) ?? asString(source.utilityCompany),
     team: asString(source.team) ?? asString(source.repairTeam),
+    repairAccountType: source.repairAccountType === "team" ? "team" : "individual",
     availability: asString(source.availability),
     activeAssignments: asNumber(source.activeAssignments) ?? asNumber(source.activeAssignmentCount),
     expertise: asArray(source.expertise).map(asString).filter((item): item is string => Boolean(item)),

@@ -109,7 +109,13 @@ const userSchema = new mongoose.Schema({
   repairTeam: {
     type: String,
     trim: true,
-    maxlength: 120
+    maxlength: 120,
+    required: function() { return this.role === 'repair_personnel' && this.repairAccountType === 'team'; }
+  },
+  repairAccountType: {
+    type: String,
+    enum: ['individual', 'team'],
+    default: function() { return this.role === 'repair_personnel' ? 'individual' : undefined; }
   },
   availability: {
     type: String,
@@ -258,6 +264,7 @@ userSchema.methods.toPublicJSON = function() {
     utilityCompany: this.utilityCompany,
     repairOrganization: this.repairOrganization,
     repairTeam: this.repairTeam,
+    repairAccountType: this.repairAccountType || 'individual',
     availability: this.availability,
     profileImage: this.profileImage,
     isVerified: this.isVerified,

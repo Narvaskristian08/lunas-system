@@ -41,10 +41,3 @@ export function hasPermission(
 ) {
   return Boolean(user?.permissions.includes(permission));
 }
-
-export function hasAnyPermission(
-  user: Pick<UserProfile, "permissions"> | null,
-  permissions: Permission[],
-) {
-  return permissions.some((permission) => hasPermission(user, permission));
-}

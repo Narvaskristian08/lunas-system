@@ -10,11 +10,10 @@ export interface RepairPersonnelRecord {
   lastName: string;
   email: string;
   phone?: string;
-  position?: string;
-  personnelId?: string;
   organization?: string;
   repairOrganization?: string;
   repairTeam?: string;
+  repairAccountType?: "individual" | "team";
   availability?: "available" | "assigned" | "unavailable" | "off_duty";
   barangay?: string;
   accountStatus: RepairPersonnelAccountStatus;

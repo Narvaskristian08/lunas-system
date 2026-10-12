@@ -29,7 +29,7 @@ const { normalizeText } = require('../services/jurisdictionService');
 const { canTransitionIncident } = require('../services/incidentTransitionService');
 
 const MAX_PAGE_SIZE = 100;
-const SAFE_USER_FIELDS = 'firstName lastName role repairTeam availability';
+const SAFE_USER_FIELDS = 'firstName lastName role repairTeam repairAccountType availability';
 const SAFE_INCIDENT_FIELDS = [
   'reportNumber',
   'category',
@@ -73,6 +73,7 @@ const safePerson = (person) => {
     lastName: source.lastName,
     role: source.role,
     team: source.repairTeam,
+    repairAccountType: source.repairAccountType || 'individual',
     availability: source.availability
   };
 };
@@ -513,7 +514,7 @@ exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
   if (!workOrder || !canManageWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
   const organization = normalizeText(workOrder.responsibleOrganization);
   const personnel = await User.find({ role: REPAIR_PERSONNEL_ROLE })
-    .select('firstName lastName role isActive isArchived repairOrganization repairTeam availability barangay expertise');
+    .select('firstName lastName role isActive isArchived repairOrganization repairTeam repairAccountType availability barangay expertise');
   return res.status(200).json({
     success: true,
     data: personnel.filter((person) => organization && isEligibleRepairPersonnel(person, workOrder)).map((person) => ({
@@ -523,6 +524,7 @@ exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
       role: person.role,
       organization: person.repairOrganization,
       team: person.repairTeam,
+      repairAccountType: person.repairAccountType || 'individual',
       availability: person.availability,
       expertise: person.expertise || []
     }))

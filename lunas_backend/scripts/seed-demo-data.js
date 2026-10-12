@@ -3,7 +3,7 @@
  *
  * This is intentionally the target of the existing `npm run seed:demo`
  * command. It refuses every database except a local `lunas_db` database and
- * only removes records that carry the demo account/report identifiers below.
+ * preserves existing accounts and reports. Appeal fixtures are opt-in.
  */
 require('dotenv').config();
 
@@ -12,12 +12,9 @@ const User = require('../src/models/User');
 const Incident = require('../src/models/Incident');
 const AuditLog = require('../src/models/AuditLog');
 const Notification = require('../src/models/Notification');
-const WorkOrder = require('../src/models/WorkOrder');
 const ReportingAppeal = require('../src/models/ReportingAppeal');
+const { testEvidence } = require('./seed-fixture-evidence');
 
-const DEMO_EMAIL_DOMAIN = '@lunas.test';
-const DEMO_EMAIL_PATTERN = new RegExp(`^demo\\..+${DEMO_EMAIL_DOMAIN.replace('.', '\\.')}$`, 'i');
-const DEMO_REPORT_PREFIX = 'DEMO-QA-';
 const DEFAULT_PASSWORD = 'LunasDemo2026!';
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 const LOCAL_DOCKER_HOSTS = new Set(['mongodb']);
@@ -129,43 +126,13 @@ function demoIncident({ reportNumber, reporter, category, subcategory, descripti
   return result;
 }
 
-async function clearPreviousDemoData() {
-  const users = await User.find({ email: DEMO_EMAIL_PATTERN }).select('_id').lean();
-  const userIds = users.map((user) => user._id);
-  const incidents = await Incident.find({
-    $or: [
-      { reportNumber: new RegExp(`^${DEMO_REPORT_PREFIX}`) },
-      ...(userIds.length ? [{ reporter: { $in: userIds } }] : [])
-    ]
-  }).select('_id').lean();
-  const incidentIds = incidents.map((incident) => incident._id);
-  const appeals = userIds.length
-    ? await ReportingAppeal.find({ reporter: { $in: userIds } }).select('_id').lean()
-    : [];
-  const appealIds = appeals.map((appeal) => appeal._id);
-  const resourceIds = [...userIds, ...incidentIds, ...appealIds];
-
-  if (incidentIds.length) await WorkOrder.deleteMany({ incident: { $in: incidentIds } });
-  if (userIds.length) await ReportingAppeal.deleteMany({ reporter: { $in: userIds } });
-  if (userIds.length || incidentIds.length) {
-    await Notification.deleteMany({
-      $or: [
-        ...(userIds.length ? [{ recipient: { $in: userIds } }] : []),
-        ...(incidentIds.length ? [{ 'data.incidentId': { $in: incidentIds } }] : [])
-      ]
-    });
+async function createMissing(Model, entries, identity) {
+  const results = [];
+  for (const entry of entries) {
+    const existing = await Model.findOne({ [identity]: entry[identity] });
+    results.push(existing || await Model.create(entry));
   }
-
-  if (userIds.length || resourceIds.length) {
-    await AuditLog.deleteMany({
-      $or: [
-        ...(userIds.length ? [{ performedBy: { $in: userIds } }, { affectedUser: { $in: userIds } }] : []),
-        ...(resourceIds.length ? [{ resourceId: { $in: resourceIds } }] : [])
-      ]
-    });
-  }
-  if (incidentIds.length) await Incident.deleteMany({ _id: { $in: incidentIds } });
-  if (userIds.length) await User.deleteMany({ _id: { $in: userIds } });
+  return results;
 }
 
 async function seed() {
@@ -173,7 +140,7 @@ async function seed() {
   await mongoose.connect(uri);
 
   try {
-    await clearPreviousDemoData();
+
 
     const commonAddress = {
       street: 'Synthetic QA evidence only',
@@ -182,7 +149,7 @@ async function seed() {
       province: 'Pangasinan',
       zipCode: '2400'
     };
-    const seededUsers = await User.create([
+    const seededUsers = await createMissing(User, [
       demoUser({
         firstName: 'Demo', lastName: 'Administrator', email: 'demo.admin@lunas.test',
         role: 'admin', phone: '09990000001', address: commonAddress
@@ -209,23 +176,34 @@ async function seed() {
         firstName: 'Demo', lastName: 'Repair Personnel', email: 'demo.repair@lunas.test',
         role: 'repair_personnel', phone: '09990000006', address: commonAddress,
         barangay: 'Poblacion Oeste', repairOrganization: 'Dagupan Water District',
-        repairTeam: 'Road Maintenance Team A', availability: 'available', expertise: ['road', 'drainage']
+        repairTeam: 'Water Maintenance Team A', availability: 'available', expertise: ['water', 'drainage']
       })
-    ]);
+    ], 'email');
     const admin = seededUsers[0];
     const citizen = seededUsers[2];
     const barangayOfficial = seededUsers[3];
 
-    const incidents = await Incident.create([
+    const incidents = await createMissing(Incident, [
       demoIncident({ reportNumber: 'DEMO-QA-001', reporter: citizen._id, category: 'water', subcategory: 'leak', description: 'Synthetic water leak report for the sequential workflow demonstration.', barangay: 'Poblacion Oeste', coordinates: [120.3387, 16.0433] }),
       demoIncident({ reportNumber: 'DEMO-QA-002', reporter: citizen._id, category: 'drainage', subcategory: 'blockage', description: 'Synthetic drainage report for barangay queue and scope checks.', barangay: 'Poblacion Oeste', coordinates: [120.3374, 16.0421] }),
       demoIncident({ reportNumber: 'DEMO-QA-003', reporter: citizen._id, category: 'streetlight', subcategory: 'outage', description: 'Synthetic report outside the Demo Barangay Official assignment.', barangay: 'Bonuan Gueset', coordinates: [120.3451, 16.0522] }),
       // Keep one fresh report in the official\'s scope so the Awaiting Review queue is always demonstrable.
       demoIncident({ reportNumber: 'DEMO-QA-004', reporter: citizen._id, category: 'road', subcategory: 'pothole', description: 'Synthetic report intentionally seeded for the Barangay Awaiting Review queue.', barangay: 'Poblacion Oeste', coordinates: [120.3392, 16.0438] })
-    ]);
+    ], 'reportNumber');
+
+    // Evidence is optional for standalone seeding, and only uploaded locally.
+    if (process.env.S3_ENDPOINT && new URL(process.env.S3_ENDPOINT).hostname === 'minio') {
+      for (const incident of incidents) {
+        if (incident.images.length === 0) {
+          incident.images = [await testEvidence(`${incident.reportNumber} - citizen report`, 'mock-web/demo')];
+          await incident.save();
+        }
+      }
+    }
 
     const awaitingReviewIncident = incidents.find((incident) => incident.reportNumber === 'DEMO-QA-004');
-    const pendingAppeal = await ReportingAppeal.create({
+    if (process.env.SEED_REPORTING_APPEALS === 'true') {
+    const pendingAppeal = await ReportingAppeal.findOne({ reporter: citizen._id, evidenceReference: 'Synthetic local QA reference: pending appeal fixture.' }) || await ReportingAppeal.create({
       reporter: citizen._id,
       assignedBarangay: 'Poblacion Oeste',
       explanation: 'The submitted reports describe infrastructure issues I personally observed in the assigned Barangay.',
@@ -234,7 +212,7 @@ async function seed() {
       status: 'pending',
       version: 0
     });
-    await ReportingAppeal.create({
+    if (!await ReportingAppeal.exists({ reporter: citizen._id, evidenceReference: 'Synthetic local QA reference: completed appeal fixture.' })) await ReportingAppeal.create({
       reporter: citizen._id,
       assignedBarangay: 'Poblacion Oeste',
       explanation: 'The earlier review decision is retained as a completed history fixture for local dashboard testing.',
@@ -262,7 +240,8 @@ async function seed() {
       'reportingRestriction.appealStatus': 'pending',
       'reportingRestriction.appealId': pendingAppeal._id
     } });
-    await Notification.insertMany(incidents.map((incident) => ({
+    }
+    const notifications = incidents.map((incident) => ({
       recipient: citizen._id,
       type: 'incident_submitted',
       title: 'Report Submitted',
@@ -286,9 +265,16 @@ async function seed() {
       },
       priority: 'high',
       sentVia: ['in_app']
-    }] : []));
+    }] : []);
+    for (const notification of notifications) {
+      await Notification.updateOne({ recipient: notification.recipient, type: notification.type,
+        'data.incidentId': notification.data.incidentId }, { $setOnInsert: notification }, { upsert: true });
+      const duplicates = await Notification.find({ recipient: notification.recipient, type: notification.type,
+        'data.incidentId': notification.data.incidentId }).sort({ createdAt: 1 }).select('_id').lean();
+      if (duplicates.length > 1) await Notification.deleteMany({ _id: { $in: duplicates.slice(1).map(item => item._id) } });
+    }
 
-    await AuditLog.create({
+    await AuditLog.updateOne({ action: 'user_created', resourceId: citizen._id, 'details.source': 'local-demo-seed' }, { $setOnInsert: {
       action: 'user_created',
       performedBy: admin._id,
       affectedUser: citizen._id,
@@ -296,11 +282,11 @@ async function seed() {
       resourceId: citizen._id,
       details: { source: 'local-demo-seed', synthetic: true },
       status: 'success'
-    });
+    } }, { upsert: true });
 
-    console.log(`Seeded ${seededUsers.length} synthetic demo accounts and ${incidents.length} synthetic submitted incidents in lunas_db.`);
-    console.log('DEMO-QA-004 is the fresh Barangay Awaiting Review fixture.');
-    console.log('Demo Barangay Reporting Appeals includes one pending and one completed history fixture.');
+    console.log(`Seeded ${seededUsers.length} synthetic demo accounts and ${incidents.length} demo reports available in lunas_db (existing records preserved).`);
+    console.log('DEMO-QA-004 starts in Barangay Awaiting Review on first seed.');
+    console.log('Appeal fixtures are opt-in via SEED_REPORTING_APPEALS=true; the main citizen is unrestricted by default.');
     console.log('Demo records use the demo.*@lunas.test namespace; no non-demo records were changed.');
   } finally {
     await mongoose.disconnect();

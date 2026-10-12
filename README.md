@@ -69,7 +69,7 @@ ALLOW_DEMO_SEED=true npm run seed:demo
 ```
 
 The seed refuses non-local MongoDB hosts and any database other than
-`lunas_db`. It creates six synthetic role accounts and three synthetic
+`lunas_db`. It creates six synthetic role accounts and four synthetic
 `submitted` reports; it does not create fake repair outcomes or pre-approve an
 incident. The shared demo password is `LunasDemo2026!` unless
 `DEMO_SEED_PASSWORD` is configured. Emails:
@@ -86,13 +86,30 @@ incident. The shared demo password is `LunasDemo2026!` unless
 Run the API and web app, then use report `DEMO-QA-001` (a synthetic water-leak
 report in Poblacion Oeste) to demonstrate, in order: Barangay validation → City
 Engineering confirmation → manual priority/SLA → provider routing → provider
-work-order creation and Repair Personnel assignment → mobile acceptance/start,
-progress and completion evidence → Utility Provider review → City Engineering
+automatic work-order creation → provider Repair Personnel assignment → mobile
+Start Repair, field notes and completion evidence → Utility Provider review → City Engineering
 final verification → Citizen's resolved status. Sign in separately as each
 role; each server enforces its own scope. Use the web Admin account only for
 account/audit administration. Full runtime acceptance still depends on working
 database, evidence storage, login/registration config, and device/browser
 accessibility to the backend.
+
+Existing demo accounts and reports are preserved when the seed runs again.
+Reporting-appeal fixtures are optional (`SEED_REPORTING_APPEALS=true`) and block
+the demo citizen for appeal testing; leave this unset for the normal repair flow.
+
+To populate all web queues in local Docker, run:
+
+```powershell
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true backend npm run seed:web
+```
+
+This adds 24 `MOCK-WEB-*` reports and 10 linked work orders, including readable
+synthetic evidence, assignment/review history, and active/approaching/overdue SLAs.
+Repair progress is 0% until completion is submitted at 100%. These are synthetic
+workflow snapshots, not real approvals. Re-running preserves existing fixtures;
+use `npm run seed:web -- --refresh` with the same local environment to replace
+only these mock reports and their linked work orders/evidence with fresh states.
 
 `DEMO-QA-001` is a workflow-only shortcut whose Citizen is seeded. To exercise
 the full account-creation acceptance path, use **Create Account** in the mobile
