@@ -7,6 +7,8 @@ class AuthUser {
     required this.id,
     required this.firstName,
     required this.lastName,
+    this.middleName,
+    this.suffix,
     required this.email,
     required this.phone,
     required this.role,
@@ -20,6 +22,8 @@ class AuthUser {
   final String id;
   final String firstName;
   final String lastName;
+  final String? middleName;
+  final String? suffix;
   final String email;
   final String phone;
   final String role;
@@ -29,7 +33,12 @@ class AuthUser {
   final String? profileImage;
   final ReportingRestriction reportingRestriction;
 
-  String get fullName => '$firstName $lastName'.trim();
+  String get fullName => [
+    firstName,
+    middleName,
+    lastName,
+    suffix,
+  ].whereType<String>().where((value) => value.trim().isNotEmpty).join(' ');
   bool get isCitizen => isCitizenRole(role);
   bool get hasSupportedMobileWorkspace => isSupportedMobileRole(role);
 
@@ -38,6 +47,8 @@ class AuthUser {
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       firstName: (json['firstName'] ?? '').toString(),
       lastName: (json['lastName'] ?? '').toString(),
+      middleName: json['middleName']?.toString(),
+      suffix: json['suffix']?.toString(),
       email: (json['email'] ?? '').toString(),
       phone: (json['phone'] ?? '').toString(),
       // Do not treat a malformed or incomplete account response as a citizen
@@ -70,6 +81,8 @@ class AuthUser {
       id: id,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      middleName: middleName,
+      suffix: suffix,
       email: email,
       phone: phone ?? this.phone,
       role: role,

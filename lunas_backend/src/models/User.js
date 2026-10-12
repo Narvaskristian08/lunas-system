@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     required: [true, 'First name is required'],
     trim: true
   },
+  middleName: { type: String, trim: true, maxlength: 80 },
+  suffix: { type: String, trim: true, maxlength: 20 },
   lastName: {
     type: String,
     required: [true, 'Last name is required'],
@@ -58,7 +60,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: function() { return ['citizen', 'repair_personnel'].includes(this.role); },
+    required: function() { return this.role === 'repair_personnel'; },
     trim: true
   },
   password: {
@@ -251,6 +253,8 @@ userSchema.methods.toPublicJSON = function() {
   return {
     id: this._id,
     firstName: this.firstName,
+    middleName: this.middleName,
+    suffix: this.suffix,
     lastName: this.lastName,
     email: this.email,
     recoveryEmailStatus: {

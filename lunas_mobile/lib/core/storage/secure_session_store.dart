@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Stores only authentication tokens in platform-backed secure storage.
+/// Stores authentication tokens and pending verification challenges in platform-backed secure storage.
 /// User profile data is always refreshed from the API after app launch.
 class SecureSessionStore {
   SecureSessionStore({FlutterSecureStorage? storage})
@@ -10,6 +10,13 @@ class SecureSessionStore {
   static const _refreshTokenKey = 'lunas.refresh_token';
 
   final FlutterSecureStorage _storage;
+
+  Future<String?> readPendingRegistration() =>
+      _storage.read(key: 'lunas.pending_registration');
+  Future<void> savePendingRegistration(String value) =>
+      _storage.write(key: 'lunas.pending_registration', value: value);
+  Future<void> clearPendingRegistration() =>
+      _storage.delete(key: 'lunas.pending_registration');
 
   Future<String?> readAccessToken() => _storage.read(key: _accessTokenKey);
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
-import 'package:lunas_mobile/core/widgets/lunas_text_field.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
@@ -45,6 +44,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
     final auth = AuthScope.of(context);
     return AuthLayout(
       showBrand: false,
+      centerContent: true,
       footer: Text(
         '© 2024 LUNAS Urban Infrastructure Management',
         textAlign: TextAlign.center,
@@ -59,59 +59,76 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
             showSubtitle: false,
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(
-            'Welcome Back',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              color: const Color(0xFF111C2D),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Sign in with your citizen or repair personnel account.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF424752),
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
           AuthPanel(
+            padding: EdgeInsets.zero,
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  LunasTextField(
+                  Text(
+                    'Welcome Back',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Log in to your LUNAS account.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  TextFormField(
                     controller: _emailController,
-                    label: 'Email',
-                    hint: 'name@example.com',
-                    prefixIcon: Icons.person_outline_rounded,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      labelText: 'Email Address',
+                      hintText: 'you@example.com',
+                    ),
+                    autofillHints: const [AutofillHints.email],
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     validator: validateEmail,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  LunasTextField(
+                  TextFormField(
                     controller: _passwordController,
-                    label: 'Password',
-                    hint: 'Enter your password',
-                    prefixIcon: Icons.lock_outline_rounded,
+                    autofillHints: const [AutofillHints.password],
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _submit(),
-                    suffixIcon: IconButton(
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                    onFieldSubmitted: (_) {
+                      if (!auth.isSubmitting) _submit();
+                    },
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
                       ),
-                      tooltip: _obscurePassword
-                          ? 'Show password'
-                          : 'Hide password',
+                      labelText: 'Password',
+                      hintText: 'Enter your password',
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        tooltip: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                      ),
                     ),
                     validator: (value) => (value?.isEmpty ?? true)
                         ? 'Enter your password.'
@@ -130,8 +147,9 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                     AuthMessage(message: auth.message!),
                     const SizedBox(height: AppSpacing.md),
                   ],
+                  const SizedBox(height: AppSpacing.xs),
                   LunasButton(
-                    label: 'Log In',
+                    label: 'Login',
                     isLoading: auth.isSubmitting,
                     onPressed: auth.isSubmitting ? null : _submit,
                   ),
@@ -139,7 +157,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -151,7 +169,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                 onPressed: auth.isSubmitting
                     ? null
                     : () => context.push('/register'),
-                child: const Text('Create Account'),
+                child: const Text('Sign Up'),
               ),
             ],
           ),

@@ -12,6 +12,96 @@ class CitizenProfileScreen extends StatefulWidget {
 }
 
 class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
+  Future<void> _editPhone() async {
+    final auth = AuthScope.of(context);
+    final user = auth.user;
+    if (user == null) return;
+    final controller = TextEditingController(text: user.phone);
+    final key = GlobalKey<FormState>();
+    bool saving = false;
+    String? error;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => PopScope(
+          canPop: !saving,
+          child: AlertDialog(
+            title: const Text('Mobile Number'),
+            content: Form(
+              key: key,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: controller,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile Number',
+                      hintText: '09171234567',
+                    ),
+                    validator: (value) =>
+                        RegExp(
+                          r'^(\+639|09)\d{9}$',
+                        ).hasMatch((value ?? '').replaceAll(RegExp(r'\s+'), ''))
+                        ? null
+                        : 'Enter a valid Philippine mobile number.',
+                  ),
+                  if (error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (!key.currentState!.validate()) return;
+                        update(() {
+                          saving = true;
+                          error = null;
+                        });
+                        final success = await auth.updateProfile(
+                          firstName: user.firstName,
+                          lastName: user.lastName,
+                          phone: controller.text.replaceAll(RegExp(r'\s+'), ''),
+                        );
+                        if (!dialogContext.mounted) return;
+                        if (success) {
+                          Navigator.pop(dialogContext);
+                        } else {
+                          update(() {
+                            saving = false;
+                            error =
+                                auth.message ?? 'Could not save mobile number.';
+                          });
+                        }
+                      },
+                child: Text(saving ? 'Saving…' : 'Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    // Dispose after the dialog's closing animation releases the input.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    controller.dispose();
+  }
+
   Future<void> _confirmLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -72,6 +162,17 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 ProfileReadOnlyField(
                   label: 'Mobile Number',
                   value: user?.phone ?? '',
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: auth.isSubmitting ? null : _editPhone,
+                    child: Text(
+                      (user?.phone.isEmpty ?? true)
+                          ? 'Add Mobile Number'
+                          : 'Update Mobile Number',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProfileReadOnlyField(

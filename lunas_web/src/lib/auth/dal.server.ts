@@ -14,6 +14,7 @@ interface BackendUser {
   _id?: string;
   firstName?: string;
   middleName?: string;
+  suffix?: string;
   lastName?: string;
   email?: string;
   phone?: string;
@@ -82,6 +83,7 @@ export function toViewer(user: BackendUser): UserProfile | null {
     id: String(id),
     firstName: user.firstName,
     middleName: user.middleName,
+    suffix: user.suffix,
     lastName: user.lastName,
     email: user.email,
     phone: user.phone,

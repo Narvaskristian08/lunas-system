@@ -106,10 +106,28 @@ const recoveryEmailMaxAttempts = Math.max(
 // @route   POST /api/v1/auth/register
 // @access  Public
 exports.register = asyncHandler(async (req, res) => {
-  const { firstName, lastName, email, phone, password, address } = req.body;
+  const { firstName, middleName, suffix, lastName, email, phone, password, address } = req.body;
   const normalizedEmail = email.toLowerCase();
 
-  const existingUser = await User.findOne({ email: normalizedEmail }).select(registrationMfaFields);
+  const existingUser = await User.findOne({ email: normalizedEmail }).select(`${registrationMfaFields} +password`);
+  if (existingUser && existingUser.role === 'citizen' && existingUser.isActive === false
+    && existingUser.isVerified === false && !existingUser.isArchived && !existingUser.requiresActivation
+    && await existingUser.comparePassword(password)) {
+    const resendSeconds = Math.max(30, parseInt(process.env.REGISTRATION_MFA_RESEND_SECONDS, 10) || 60);
+    const elapsed = Date.now() - new Date(existingUser.registrationMfaSentAt || 0).getTime();
+    if (elapsed < resendSeconds * 1000) return res.status(429).json({ success: false, message: 'Wait before requesting another verification code.' });
+    const challenge = createRegistrationChallenge(normalizedEmail);
+    const delivery = await deliverRegistrationCode({ email: normalizedEmail, firstName: existingUser.firstName, code: challenge.code });
+    if (!delivery.delivered) return res.status(503).json({ success: false, message: 'Registration verification is temporarily unavailable. Please try again later.' });
+    existingUser.registrationChallengeHash = challenge.challengeTokenHash;
+    existingUser.registrationMfaCodeHash = challenge.codeHash;
+    existingUser.registrationMfaExpires = challenge.expiresAt;
+    existingUser.registrationMfaAttempts = 0;
+    existingUser.registrationMfaSentAt = new Date();
+    await existingUser.save();
+    return res.status(200).json({ success: true, message: 'Enter the verification code sent to your email to finish registration.', data: registrationChallengeResponse({ challenge, email: normalizedEmail }) });
+  }
+
   if (existingUser) {
     return res.status(409).json({
       success: false,
@@ -144,6 +162,8 @@ exports.register = asyncHandler(async (req, res) => {
   try {
     user = await User.create({
       firstName,
+      middleName,
+      suffix,
       lastName,
       email: normalizedEmail,
       phone,
@@ -310,6 +330,8 @@ exports.resendRegistrationMfa = asyncHandler(async (req, res) => {
   const delivery = await deliverRegistrationCode({
     email: normalizedEmail,
     firstName: user.firstName,
+    middleName: user.middleName,
+    suffix: user.suffix,
     code: challenge.code
   });
   if (!delivery.delivered) {
@@ -592,6 +614,8 @@ exports.requestRecoveryEmailVerification = asyncHandler(async (req, res) => {
   const delivery = await deliverRecoveryEmailCode({
     email: normalizedEmail,
     firstName: user.firstName,
+    middleName: user.middleName,
+    suffix: user.suffix,
     code: challenge.code
   });
 

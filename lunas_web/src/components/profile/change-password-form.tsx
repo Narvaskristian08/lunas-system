@@ -95,8 +95,8 @@ function ChangePasswordWorkspace({ onClose, onBusyChange }: { onClose: () => voi
 
   return (
     <>
-      <p className="mb-5 text-sm leading-5 text-slate-600">Use a unique password that you do not use for another account. All three fields are required.</p>
-          <form onSubmit={submit} noValidate className="space-y-4">
+      <p className="mb-6 text-sm leading-6 text-slate-600">Use a unique password that you do not use for another account. All three fields are required.</p>
+          <form onSubmit={submit} noValidate className="space-y-6">
             <PasswordField
               label="Current Password"
               required
@@ -107,7 +107,7 @@ function ChangePasswordWorkspace({ onClose, onBusyChange }: { onClose: () => voi
               autoComplete="current-password"
             />
 
-            <div className="border-t border-slate-200 pt-5">
+            <div>
               <PasswordField
                 label="New Password"
                 required
@@ -117,7 +117,6 @@ function ChangePasswordWorkspace({ onClose, onBusyChange }: { onClose: () => voi
                 error={touched.next ? errors.next : undefined}
                 autoComplete="new-password"
               />
-              <PasswordStrength password={newPassword} />
             </div>
 
             <PasswordField
@@ -130,6 +129,10 @@ function ChangePasswordWorkspace({ onClose, onBusyChange }: { onClose: () => voi
               autoComplete="new-password"
             />
 
+            <div className="pt-1">
+              <PasswordStrength password={newPassword} />
+            </div>
+
             {serverError ? (
               <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
                 <CircleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
@@ -137,7 +140,7 @@ function ChangePasswordWorkspace({ onClose, onBusyChange }: { onClose: () => voi
               </div>
             ) : null}
 
-            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
               <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}><span className="font-semibold">Cancel</span></Button>
               <Button type="submit" disabled={!valid} loading={submitting} loadingLabel="Changing Password…">
                 <KeyRound className="size-4" aria-hidden="true" /> Change Password

@@ -81,10 +81,12 @@ describe('public citizen registration', () => {
     const req = {
       body: {
         firstName: 'Juan',
+        middleName: 'Santos',
+        suffix: 'Jr.',
         lastName: 'Dela Cruz',
         email: 'JUAN@EXAMPLE.COM',
         phone: '09123456789',
-        password: 'SecurePass123',
+        password: 'SecurePass123!',
         role: 'admin'
       },
       ip: '127.0.0.1',
@@ -96,6 +98,8 @@ describe('public citizen registration', () => {
 
     expect(User.create).toHaveBeenCalledWith(expect.objectContaining({
       email: 'juan@example.com',
+      middleName: 'Santos',
+      suffix: 'Jr.',
       role: 'citizen',
       isActive: false,
       isVerified: false,
@@ -122,7 +126,7 @@ describe('public citizen registration', () => {
     await register({
       body: {
         firstName: 'Juan', lastName: 'Dela Cruz', email: 'juan@example.com',
-        phone: '09123456789', password: 'SecurePass123'
+        phone: '09123456789', password: 'SecurePass123!'
       },
       headers: {}
     }, res, jest.fn());
@@ -138,7 +142,8 @@ describe('public citizen registration', () => {
         role: 'citizen',
         isActive: false,
         isVerified: false,
-        isArchived: false
+        isArchived: false,
+        comparePassword: jest.fn().mockResolvedValue(false)
       })
     });
     const res = createResponse();
@@ -146,13 +151,25 @@ describe('public citizen registration', () => {
     await register({
       body: {
         firstName: 'Juan', lastName: 'Dela Cruz', email: 'juan@example.com',
-        phone: '09123456789', password: 'SecurePass123'
+        phone: '09123456789', password: 'SecurePass123!'
       },
       headers: {}
     }, res, jest.fn());
 
     expect(res.status).toHaveBeenCalledWith(409);
     expect(deliverRegistrationCode).not.toHaveBeenCalled();
+    expect(User.create).not.toHaveBeenCalled();
+  });
+
+  test('resumes a pending registration only after verifying its password', async () => {
+    const user = { _id: '507f191e810c19729de860aa', firstName: 'Juan', role: 'citizen', isActive: false, isVerified: false, comparePassword: jest.fn().mockResolvedValue(true), save: jest.fn().mockResolvedValue() };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    const res = createResponse();
+    await register({ body: { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.com', password: 'SecurePass123!' }, headers: {} }, res, jest.fn());
+    expect(user.comparePassword).toHaveBeenCalledWith('SecurePass123!');
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(user.save).toHaveBeenCalled();
+    expect(user.registrationMfaAttempts).toBe(0);
     expect(User.create).not.toHaveBeenCalled();
   });
 
@@ -174,7 +191,7 @@ describe('public citizen registration', () => {
     await login({
       body: {
         email: 'juan@example.com',
-        password: 'SecurePass123',
+        password: 'SecurePass123!',
         platform: 'web',
         captchaToken: 'turnstile-token'
       },
@@ -182,7 +199,7 @@ describe('public citizen registration', () => {
       headers: {}
     }, res, jest.fn());
 
-    expect(user.comparePassword).toHaveBeenCalledWith('SecurePass123');
+    expect(user.comparePassword).toHaveBeenCalledWith('SecurePass123!');
     expect(verifyLoginCaptcha).toHaveBeenCalledWith({
       token: 'turnstile-token',
       remoteIp: '127.0.0.1'
@@ -201,7 +218,7 @@ describe('public citizen registration', () => {
     await login({
       body: {
         email: 'juan@example.com',
-        password: 'SecurePass123',
+        password: 'SecurePass123!',
         platform: 'web',
         captchaToken: 'invalid-token'
       },
@@ -228,7 +245,7 @@ describe('public citizen registration', () => {
     await register({
       body: {
         firstName: 'Juan', lastName: 'Dela Cruz', email: 'juan@example.com',
-        phone: '09123456789', password: 'SecurePass123'
+        phone: '09123456789', password: 'SecurePass123!'
       },
       ip: '127.0.0.1',
       headers: {}
@@ -307,7 +324,7 @@ describe('public citizen registration', () => {
     const inactiveResponse = createResponse();
 
     await login({
-      body: { email: 'juan@example.com', password: 'SecurePass123' },
+      body: { email: 'juan@example.com', password: 'SecurePass123!' },
       ip: '127.0.0.1', headers: {}
     }, inactiveResponse, jest.fn());
 

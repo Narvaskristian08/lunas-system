@@ -23,6 +23,46 @@ const runRulesWithRequest = async (rules, body, files = {}, user = { role: 'citi
 };
 
 describe('request validation', () => {
+  test('accepts eight characters without a special character', async () => {
+    expect(await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password: 'Abcdef12' })).toEqual([]);
+  });
+
+  test.each(['Aa1!', 'longpassword123', 'LONGPASSWORD123', 'LongPasswordOnly', 'password'])('rejects password that fails web policy: %s', async (password) => {
+    const errors = await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password });
+    expect(errors.some(error => error.path === 'password')).toBe(true);
+  });
+
+  test.each([
+    [{ noMiddleName: false }, true],
+    [{ noMiddleName: false, middleName: 'Santos' }, false],
+    [{ noMiddleName: true }, false],
+    [{ noMiddleName: true, middleName: 'Santos' }, true]
+  ])('validates middle name declaration %j', async (fields, invalid) => {
+    const errors = await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password: 'UniqueCurrentPass42!', ...fields });
+    expect(errors.some(error => error.path === 'middleName')).toBe(invalid);
+  });
+
+  test('citizen registration does not require a phone number', async () => {
+    expect(await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password: 'UniqueCurrentPass42!' })).toEqual([]);
+  });
+
+  test.each([{}, { middleName: '', suffix: '' }, { middleName: 'Santos', suffix: 'Jr.' }])('registration accepts optional name fields: %j', async (optional) => {
+    const errors = await runRules(registerValidation, {
+      firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test',
+      phone: '09123456789', password: 'UniqueCurrentPass42!', ...optional
+    });
+    expect(errors).toEqual([]);
+  });
+
+  test('registration rejects oversized optional name fields', async () => {
+    const errors = await runRules(registerValidation, {
+      firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test',
+      phone: '09123456789', password: 'UniqueCurrentPass42!', middleName: 'a'.repeat(81), suffix: 'a'.repeat(21)
+    });
+    expect(errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'middleName' }), expect.objectContaining({ path: 'suffix' })
+    ]));
+  });
   test('password changes reject reuse of the current password', async () => {
     const errors = await runRules(changePasswordValidation, {
       currentPassword: 'UniqueCurrentPass42!', newPassword: 'UniqueCurrentPass42!'
@@ -43,7 +83,7 @@ describe('request validation', () => {
       lastName: 'Dela Cruz',
       email: 'juan@example.com',
       phone: '09123456789',
-      password: 'SecurePass123',
+      password: 'SecurePass123!',
       role: 'admin'
     });
 

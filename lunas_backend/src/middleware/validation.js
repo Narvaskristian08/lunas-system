@@ -31,6 +31,7 @@ const passwordValidationRule = (field) => body(field)
   .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
   .withMessage('Password must contain uppercase, lowercase, and number');
 
+
 // Middleware to check validation results
 exports.validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -49,10 +50,18 @@ exports.validate = (req, res, next) => {
 
 // User validation rules
 exports.registerValidation = [
+  body('noMiddleName').optional().isBoolean().withMessage('Choose whether you have a middle name'),
+  body('middleName').custom((value, { req }) => {
+    if (req.body.noMiddleName === false && (!value || !String(value).trim())) throw new Error('Enter your middle name or select the checkbox.');
+    if (req.body.noMiddleName === true && value && String(value).trim()) throw new Error('Leave middle name blank when no middle name is selected.');
+    return true;
+  }),
+  body('middleName').optional().isString().trim().isLength({ max: 80 }).withMessage('Middle name must be at most 80 characters'),
+  body('suffix').optional().isString().trim().isLength({ max: 20 }).withMessage('Suffix must be at most 20 characters'),
   body('firstName').trim().isLength({ min: 1, max: 80 }).withMessage('First name is required and must be at most 80 characters'),
   body('lastName').trim().isLength({ min: 1, max: 80 }).withMessage('Last name is required and must be at most 80 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('phone').trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  body('phone').optional({ values: 'falsy' }).trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
   passwordValidationRule('password'),
   // Privileged accounts must be provisioned through protected administration,
   // never through the public registration endpoint.

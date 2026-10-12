@@ -40,20 +40,18 @@ export function isValidEmail(value: string) {
 
 export function passwordChecks(password: string) {
   return {
-    length: password.length >= 12,
+    length: password.length >= 8,
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /\d/.test(password),
-    special: /[^A-Za-z0-9]/.test(password),
-    notCommon: !/^(password|password123|qwerty|admin|lunas)$/i.test(password),
   };
 }
 
 export function passwordScore(password: string) {
   const checks = Object.values(passwordChecks(password)).filter(Boolean).length;
   if (!password) return 0;
-  if (checks <= 2) return 1;
-  if (checks <= 4) return 2;
-  if (checks === 5) return 3;
+  if (checks <= 1) return 1;
+  if (checks === 2) return 2;
+  if (checks === 3) return 3;
   return 4;
 }

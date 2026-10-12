@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:lunas_mobile/features/auth/presentation/widgets/otp_code_field.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -20,7 +20,9 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _codeController = TextEditingController();
+  final _codeControllers = List.generate(6, (_) => TextEditingController());
+  final _focusNodes = List.generate(6, (_) => FocusNode());
+  String get _code => _codeControllers.map((item) => item.text).join();
   Timer? _timer;
   int _secondsRemaining = 0;
 
@@ -36,7 +38,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    _codeController.dispose();
+    for (final controller in _codeControllers) {
+      controller.dispose();
+    }
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -57,7 +64,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Future<void> _verify() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = AuthScope.of(context);
-    final success = await auth.verifyRegistrationMfa(_codeController.text);
+    final success = await auth.verifyRegistrationMfa(_code);
     if (success && mounted) {
       context.go(auth.workspaceHomePath ?? '/citizen');
     }
@@ -67,7 +74,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final auth = AuthScope.of(context);
     final sent = await auth.resendRegistrationMfa();
     if (!mounted || !sent) return;
-    _codeController.clear();
+    for (final controller in _codeControllers) {
+      controller.clear();
+    }
+    _focusNodes.first.requestFocus();
     _startTimer(auth.pendingRegistration?.resendAfterSeconds ?? 60);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('A new verification code was sent.')),
@@ -82,49 +92,86 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     return AuthLayout(
       showBrand: false,
       showBackButton: true,
+      headerSpacing: AppSpacing.sm,
       child: Column(
         children: [
-          const LunasBrand(centered: true, showSubtitle: false),
-          const SizedBox(height: AppSpacing.xl),
           AuthPanel(
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthHeading(
-                    eyebrow: 'Registration security',
-                    title: 'Verify Your Email',
+                  AuthHeading(
+                    title: 'Verify OTP',
                     description:
-                        'Enter the one-time code before your citizen account is activated.',
+                        'Enter the 6-digit code sent to $email. Check your inbox or spam folder.',
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Code sent to $email',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  TextFormField(
-                    controller: _codeController,
-                    autofocus: true,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const [AutofillHints.oneTimeCode],
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: '6-digit verification code',
-                      prefixIcon: Icon(Icons.shield_outlined),
+                  if (challenge != null && challenge.expiresInSeconds <= 0) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Your code has expired. Request a new code below.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
-                    validator: (value) =>
-                        RegExp(r'^\d{6}$').hasMatch(value ?? '')
+                  ],
+                  const SizedBox(height: AppSpacing.xl),
+                  FormField<String>(
+                    validator: (_) => RegExp(r'^\d{6}$').hasMatch(_code)
                         ? null
                         : 'Enter the complete 6-digit code.',
-                    onFieldSubmitted: (_) {
-                      if (!auth.isSubmitting) _verify();
-                    },
+                    builder: (field) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        OtpCodeField(
+                          controllers: _codeControllers,
+                          focusNodes: _focusNodes,
+                          enabled: !auth.isSubmitting,
+                          onChanged: () {
+                            field.didChange(_code);
+                          },
+                        ),
+                        if (field.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              field.errorText!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _secondsRemaining > 0
+                              ? 'New code in ${_secondsRemaining}s'
+                              : 'You can request a new code.',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed:
+                            challenge != null &&
+                                _secondsRemaining == 0 &&
+                                !auth.isSubmitting
+                            ? _resend
+                            : null,
+                        child: const Text('Resend Code'),
+                      ),
+                    ],
                   ),
                   if (challenge?.developmentCode != null) ...[
                     const SizedBox(height: AppSpacing.sm),
@@ -137,34 +184,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     const SizedBox(height: AppSpacing.md),
                     AuthMessage(message: auth.message!),
                   ],
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.md),
                   LunasButton(
-                    label: 'Verify and Create Account',
-                    icon: Icons.verified_user_outlined,
+                    label: 'Verify OTP',
                     isLoading: auth.isSubmitting,
                     onPressed: challenge == null || auth.isSubmitting
                         ? null
                         : _verify,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  TextButton(
-                    onPressed:
-                        challenge != null &&
-                            _secondsRemaining == 0 &&
-                            !auth.isSubmitting
-                        ? _resend
-                        : null,
-                    child: Text(
-                      _secondsRemaining > 0
-                          ? 'Resend code in ${_secondsRemaining}s'
-                          : 'Resend verification code',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: auth.isSubmitting
-                        ? null
-                        : () => context.go('/register'),
-                    child: const Text('Start registration again'),
                   ),
                 ],
               ),

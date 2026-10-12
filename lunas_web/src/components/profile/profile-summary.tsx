@@ -28,7 +28,7 @@ function DetailRow({ icon: Icon, label, children }: { icon: typeof Mail; label: 
 }
 
 export function ProfileSummary({ viewer, onNavigate }: { viewer: UserProfile; onNavigate?: () => void }) {
-  const fullName = [viewer.firstName, viewer.middleName, viewer.lastName].filter(Boolean).join(" ");
+  const fullName = [viewer.firstName, viewer.middleName, viewer.lastName, viewer.suffix].filter(Boolean).join(" ");
 
   return (
     <div className="space-y-4">

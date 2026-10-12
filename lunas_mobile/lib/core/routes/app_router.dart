@@ -66,6 +66,10 @@ final GoRouter appRouter = GoRouter(
       case AuthStatus.restoreFailed:
         return location == '/splash' || isPublic ? null : '/splash';
       case AuthStatus.unauthenticated:
+        if ((location == '/splash' || location == '/onboarding') &&
+            authController.pendingRegistration != null) {
+          return '/register/verify';
+        }
         if (location == '/register/verify' &&
             authController.pendingRegistration == null) {
           return '/register';

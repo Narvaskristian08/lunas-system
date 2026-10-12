@@ -40,6 +40,7 @@ class AuthController extends ChangeNotifier {
     _message = null;
     notifyListeners();
     try {
+      _pendingRegistration = await _authService.restorePendingRegistration();
       if (!await _authService.hasStoredSession()) {
         _status = AuthStatus.unauthenticated;
         notifyListeners();
@@ -77,9 +78,12 @@ class AuthController extends ChangeNotifier {
 
   Future<RegistrationMfaChallenge?> register({
     required String firstName,
+    String? middleName,
+    bool noMiddleName = false,
+    String? suffix,
     required String lastName,
     required String email,
-    required String phone,
+    String? phone,
     required String password,
   }) async {
     _isSubmitting = true;
@@ -88,11 +92,15 @@ class AuthController extends ChangeNotifier {
     try {
       _pendingRegistration = await _authService.register(
         firstName: firstName,
+        middleName: middleName,
+        noMiddleName: noMiddleName,
+        suffix: suffix,
         lastName: lastName,
         email: email,
         phone: phone,
         password: password,
       );
+      await _authService.savePendingRegistration(_pendingRegistration!);
       return _pendingRegistration;
     } on ApiException catch (error) {
       _message = error.message;
@@ -121,7 +129,10 @@ class AuthController extends ChangeNotifier {
       () =>
           _authService.verifyRegistrationMfa(challenge: challenge, code: code),
     );
-    if (success) _pendingRegistration = null;
+    if (success) {
+      _pendingRegistration = null;
+      await _authService.clearPendingRegistration();
+    }
     return success;
   }
 
@@ -135,6 +146,7 @@ class AuthController extends ChangeNotifier {
       _pendingRegistration = await _authService.resendRegistrationMfa(
         challenge,
       );
+      await _authService.savePendingRegistration(_pendingRegistration!);
       return true;
     } on ApiException catch (error) {
       _message = error.message;
@@ -170,6 +182,8 @@ class AuthController extends ChangeNotifier {
         return false;
       }
       await _authService.persist(session);
+      await _authService.clearPendingRegistration();
+      _pendingRegistration = null;
       _user = session.user;
       _status = AuthStatus.authenticated;
       return true;

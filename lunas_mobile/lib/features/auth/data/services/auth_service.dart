@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/core/storage/secure_session_store.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_session.dart';
@@ -14,6 +15,42 @@ class AuthService {
   final ApiClient _apiClient;
   final SecureSessionStore _sessionStore;
 
+  Future<void> savePendingRegistration(RegistrationMfaChallenge challenge) =>
+      _sessionStore.savePendingRegistration(
+        jsonEncode({
+          'challengeToken': challenge.challengeToken,
+          'email': challenge.email,
+          'expiresAt': DateTime.now()
+              .add(Duration(seconds: challenge.expiresInSeconds))
+              .millisecondsSinceEpoch,
+          'resendAt': DateTime.now()
+              .add(Duration(seconds: challenge.resendAfterSeconds))
+              .millisecondsSinceEpoch,
+        }),
+      );
+  Future<void> clearPendingRegistration() =>
+      _sessionStore.clearPendingRegistration();
+  Future<RegistrationMfaChallenge?> restorePendingRegistration() async {
+    final raw = await _sessionStore.readPendingRegistration();
+    if (raw == null) return null;
+    try {
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      return RegistrationMfaChallenge.fromResponse({
+        'data': {
+          'challengeToken': data['challengeToken'],
+          'email': data['email'],
+          'expiresInSeconds': ((data['expiresAt'] as int) - now) ~/ 1000,
+          'resendAfterSeconds': (((data['resendAt'] as int) - now) ~/ 1000)
+              .clamp(0, 3600),
+        },
+      });
+    } catch (_) {
+      await clearPendingRegistration();
+      return null;
+    }
+  }
+
   Future<AuthSession> login({
     required String email,
     required String password,
@@ -28,9 +65,12 @@ class AuthService {
 
   Future<RegistrationMfaChallenge> register({
     required String firstName,
+    String? middleName,
+    bool noMiddleName = false,
+    String? suffix,
     required String lastName,
     required String email,
-    required String phone,
+    String? phone,
     required String password,
   }) async {
     final payload = await _apiClient.post(
@@ -38,9 +78,13 @@ class AuthService {
       authenticated: false,
       body: {
         'firstName': firstName,
+        'noMiddleName': noMiddleName,
+        if (middleName != null && middleName.trim().isNotEmpty)
+          'middleName': middleName.trim(),
+        if (suffix != null && suffix.trim().isNotEmpty) 'suffix': suffix.trim(),
         'lastName': lastName,
         'email': email,
-        'phone': phone,
+        if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
         'password': password,
         // Public mobile registration must never self-assign a privileged role.
         'role': 'citizen',

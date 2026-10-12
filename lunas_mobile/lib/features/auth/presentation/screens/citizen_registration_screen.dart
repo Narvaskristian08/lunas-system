@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/registration_password_screen.dart';
+export 'package:lunas_mobile/features/auth/presentation/screens/registration_password_screen.dart'
+    show validatePassword;
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
@@ -16,38 +18,34 @@ class CitizenRegistrationScreen extends StatefulWidget {
 }
 
 class _CitizenRegistrationScreenState extends State<CitizenRegistrationScreen> {
+  bool _noMiddleName = false;
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
+  final _suffixController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-
-  String get _normalizedPhone =>
-      _phoneController.text.replaceAll(RegExp(r'\s+'), '');
 
   @override
   void dispose() {
     _firstNameController.dispose();
+    _middleNameController.dispose();
+    _suffixController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _submit(String password) async {
     final auth = AuthScope.of(context);
     final challenge = await auth.register(
       firstName: _firstNameController.text.trim(),
+      noMiddleName: _noMiddleName,
+      middleName: _noMiddleName ? '' : _middleNameController.text.trim(),
+      suffix: _suffixController.text.trim(),
       lastName: _lastNameController.text.trim(),
       email: _emailController.text.trim(),
-      phone: _normalizedPhone,
-      password: _passwordController.text,
+      password: password,
     );
     if (challenge != null && mounted) {
       context.go('/register/verify');
@@ -66,249 +64,118 @@ class _CitizenRegistrationScreenState extends State<CitizenRegistrationScreen> {
     return AuthLayout(
       showBrand: false,
       showBackButton: true,
+      headerSpacing: AppSpacing.sm,
       child: Column(
         children: [
           AuthPanel(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: EdgeInsets.zero,
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const _RegistrationStepHeader(
-                    step: 1,
-                    title: 'Create Citizen Account',
+                  const AuthHeading(
+                    title: 'Create Account',
                     description:
-                        'Provide your personal information to begin registration.',
+                        'Enter your name and email. Create a password next.',
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _firstNameController,
-                          textCapitalization: TextCapitalization.words,
-                          autofillHints: const [AutofillHints.givenName],
-                          decoration: const InputDecoration(
-                            labelText: 'First name',
-                          ),
-                          validator: _required('Enter your first name.'),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _lastNameController,
-                          textCapitalization: TextCapitalization.words,
-                          autofillHints: const [AutofillHints.familyName],
-                          decoration: const InputDecoration(
-                            labelText: 'Last name',
-                          ),
-                          validator: _required('Enter your last name.'),
-                        ),
-                      ),
-                    ],
+                  _NameField(
+                    label: 'First Name',
+                    controller: _firstNameController,
+                    autofillHint: AutofillHints.givenName,
+                    validator: _required('Enter your first name.'),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    autofillHints: const [AutofillHints.telephoneNumber],
-                    decoration: const InputDecoration(
-                      labelText: 'Mobile number',
-                      hintText: 'e.g. 09171234567',
-                      prefixIcon: Icon(Icons.phone_outlined),
+                  _NameField(
+                    label: 'Middle Name',
+                    optional: true,
+                    enabled: !_noMiddleName,
+                    validator: (value) => _noMiddleName
+                        ? null
+                        : _required(
+                            'Enter your middle name or select the checkbox.',
+                          )(value),
+                    controller: _middleNameController,
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: CheckboxListTile(
+                      value: _noMiddleName,
+                      onChanged: (value) =>
+                          setState(() => _noMiddleName = value ?? false),
+                      title: Text(
+                        "I don't have a middle name",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
                     ),
-                    validator: (value) {
-                      final phone = value?.replaceAll(RegExp(r'\s+'), '') ?? '';
-                      if (!RegExp(r'^(\+639|09)\d{9}$').hasMatch(phone)) {
-                        return 'Enter a valid Philippine mobile number.';
-                      }
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  const Divider(),
-                  const SizedBox(height: AppSpacing.xl),
-                  const _RegistrationStepHeader(
-                    step: 2,
-                    title: 'Account Security',
-                    description:
-                        'Add your contact email and create a secure password.',
+                  const SizedBox(height: AppSpacing.sm),
+                  _NameField(
+                    label: 'Last Name',
+                    controller: _lastNameController,
+                    autofillHint: AutofillHints.familyName,
+                    validator: _required('Enter your last name.'),
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.md),
+                  _NameField(
+                    label: 'Suffix',
+                    optional: true,
+                    controller: _suffixController,
+                    maxLength: 20,
+                    hint: 'Jr., Sr., III',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
                     decoration: const InputDecoration(
-                      labelText: 'Email address',
-                      prefixIcon: Icon(Icons.email_outlined),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      labelText: 'Email Address',
+                      hintText: 'you@example.com',
                     ),
                     validator: validateEmail,
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      helperText:
-                          'At least 8 characters with uppercase, lowercase, and a number.',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                        ),
-                      ),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    validator: validatePassword,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _PasswordRequirements(password: _passwordController.text),
-                  const SizedBox(height: AppSpacing.md),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscurePassword,
-                    autofillHints: const [AutofillHints.newPassword],
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm password',
-                      prefixIcon: Icon(Icons.lock_outline_rounded),
-                    ),
-                    validator: (value) => value != _passwordController.text
-                        ? 'Passwords do not match.'
-                        : null,
-                  ),
                   const SizedBox(height: AppSpacing.xl),
-                  if (auth.message != null) ...[
-                    AuthMessage(message: auth.message!),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
                   LunasButton(
-                    label: 'Create Citizen Account',
-                    isLoading: auth.isSubmitting,
-                    onPressed: auth.isSubmitting ? null : _submit,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Already have an account?'),
-                      TextButton(
-                        onPressed: auth.isSubmitting
-                            ? null
-                            : () => context.go('/login'),
-                        child: const Text('Sign in'),
-                      ),
-                    ],
+                    label: 'Continue',
+                    onPressed: () {
+                      if (!_formKey.currentState!.validate()) return;
+                      FocusScope.of(context).unfocus();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              RegistrationPasswordScreen(onSubmit: _submit),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RegistrationStepHeader extends StatelessWidget {
-  const _RegistrationStepHeader({
-    required this.step,
-    required this.title,
-    required this.description,
-  });
-
-  final int step;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'STEP $step OF 2',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColorsLight.brandBase,
-                  letterSpacing: .8,
-                ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Already have an account?'),
+              TextButton(
+                onPressed: auth.isSubmitting
+                    ? null
+                    : () => context.go('/login'),
+                child: const Text('Login'),
               ),
-            ),
-            Text('${step * 50}% Complete'),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: step / 2,
-            minHeight: 7,
-            color: AppColorsLight.brandBase,
-            backgroundColor: const Color(0xFFD8E3FB),
+            ],
           ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AuthHeading(title: title, description: description),
-      ],
-    );
-  }
-}
-
-class _PasswordRequirements extends StatelessWidget {
-  const _PasswordRequirements({required this.password});
-
-  final String password;
-
-  @override
-  Widget build(BuildContext context) {
-    final rules = <(bool, String)>[
-      (password.length >= 8, 'At least 8 characters'),
-      (
-        RegExp(r'[A-Z]').hasMatch(password) &&
-            RegExp(r'[a-z]').hasMatch(password),
-        'Uppercase and lowercase letters',
-      ),
-      (RegExp(r'\d').hasMatch(password), 'At least one number'),
-    ];
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF3FF),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          for (var index = 0; index < rules.length; index++) ...[
-            Row(
-              children: [
-                Icon(
-                  rules[index].$1
-                      ? Icons.check_circle_outline_rounded
-                      : Icons.circle_outlined,
-                  size: 18,
-                  color: rules[index].$1
-                      ? AppColorsLight.success
-                      : Theme.of(context).colorScheme.outline,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(child: Text(rules[index].$2)),
-              ],
-            ),
-            if (index != rules.length - 1)
-              const SizedBox(height: AppSpacing.xs),
-          ],
         ],
       ),
     );
@@ -318,13 +185,41 @@ class _PasswordRequirements extends StatelessWidget {
 FormFieldValidator<String> _required(String message) =>
     (value) => value == null || value.trim().isEmpty ? message : null;
 
-String? validatePassword(String? value) {
-  final password = value ?? '';
-  if (password.length < 8 ||
-      !RegExp(r'[A-Z]').hasMatch(password) ||
-      !RegExp(r'[a-z]').hasMatch(password) ||
-      !RegExp(r'\d').hasMatch(password)) {
-    return 'Use 8+ characters with uppercase, lowercase, and a number.';
-  }
-  return null;
+class _NameField extends StatelessWidget {
+  const _NameField({
+    required this.label,
+    required this.controller,
+    this.optional = false,
+    this.enabled = true,
+    this.autofillHint,
+    this.validator,
+    this.maxLength = 80,
+    this.hint,
+  });
+  final String label;
+  final TextEditingController controller;
+  final bool optional;
+  final bool enabled;
+  final String? autofillHint;
+  final FormFieldValidator<String>? validator;
+  final int maxLength;
+  final String? hint;
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    enabled: enabled,
+    controller: controller,
+    textCapitalization: TextCapitalization.words,
+    autofillHints: autofillHint == null ? null : [autofillHint!],
+    maxLength: maxLength,
+    decoration: InputDecoration(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      labelText: label == 'Middle Name'
+          ? label
+          : (optional ? '$label (Optional)' : label),
+      hintText: hint,
+      counterText: '',
+    ),
+    validator: validator,
+  );
 }

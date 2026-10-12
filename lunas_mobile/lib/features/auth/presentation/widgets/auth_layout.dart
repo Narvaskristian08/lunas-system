@@ -10,7 +10,11 @@ class AuthLayout extends StatelessWidget {
     required this.child,
     this.showBrand = true,
     this.showBackButton = false,
+    this.headerSpacing = AppSpacing.xxl,
     this.scrollable = true,
+    this.centerContent = false,
+    this.centerTopFlex = 2,
+    this.centerBottomFlex = 3,
     this.maxWidth = 440,
     this.footer,
     super.key,
@@ -19,7 +23,11 @@ class AuthLayout extends StatelessWidget {
   final Widget child;
   final bool showBrand;
   final bool showBackButton;
+  final double headerSpacing;
   final bool scrollable;
+  final bool centerContent;
+  final int centerTopFlex;
+  final int centerBottomFlex;
   final double maxWidth;
   final Widget? footer;
 
@@ -62,11 +70,15 @@ class AuthLayout extends StatelessWidget {
                     child: LunasBrand(),
                   ),
                 if (showBrand || showBackButton)
-                  const SizedBox(height: AppSpacing.xxl),
+                  SizedBox(height: headerSpacing),
+                if (centerContent && scrollable) Spacer(flex: centerTopFlex),
                 if (scrollable) child else Expanded(child: child),
+                if (centerContent && scrollable && footer == null)
+                  Spacer(flex: centerBottomFlex),
                 if (footer != null) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  if (scrollable) const Spacer(),
+                  if (scrollable)
+                    Spacer(flex: centerContent ? centerBottomFlex : 1),
                   footer!,
                 ],
               ],
@@ -81,7 +93,7 @@ class AuthLayout extends StatelessWidget {
             ),
             child: Align(
               alignment: Alignment.topCenter,
-              child: footer != null && scrollable
+              child: (footer != null || centerContent) && scrollable
                   ? IntrinsicHeight(child: content)
                   : content,
             ),
@@ -91,19 +103,7 @@ class AuthLayout extends StatelessWidget {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(-.55, -.75),
-            radius: 1.35,
-            colors: [Color(0xFFE9F0FF), Color(0xFFF9F9FF)],
-          ),
-        ),
-        child: body,
-      ),
-    );
+    return Scaffold(backgroundColor: Colors.white, body: body);
   }
 }
 
@@ -151,7 +151,7 @@ class LunasBrand extends StatelessWidget {
       ],
     );
     final mark = SizedBox.square(
-      dimension: large ? 72 : 42,
+      dimension: large ? 84 : 42,
       child: Image.asset('assets/icons/lunas_logo.png', fit: BoxFit.contain),
     );
     if (centered) {
@@ -183,19 +183,7 @@ class AuthPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: padding ?? const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE4E8F0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14001B3D),
-            blurRadius: 20,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
+      padding: padding ?? EdgeInsets.zero,
       child: child,
     );
   }
