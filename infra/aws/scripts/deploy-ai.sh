@@ -12,7 +12,11 @@ fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 release="ai-$(date -u +%Y%m%dT%H%M%SZ)"
-ai_bind_address="${AI_BIND_ADDRESS:-$(hostname -I | awk '{print $1}')}"
+if [[ -n "${AI_BIND_ADDRESS:-}" ]]; then
+  ai_bind_address="$AI_BIND_ADDRESS"
+else
+  ai_bind_address="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+fi
 : "${ai_bind_address:?Could not determine the AI private bind address; set AI_BIND_ADDRESS explicitly}"
 archive="$(mktemp -t lunas-ai.XXXXXX.tar.gz)"
 commands_file="$(mktemp -t lunas-ai-commands.XXXXXX)"
@@ -40,6 +44,7 @@ cat >"$commands_file" <<EOF
 set -euo pipefail
 export AWS_DEFAULT_REGION="$AWS_REGION"
 release="$release"
+ai_bind_address="$ai_bind_address"
 mkdir -p /opt/lunas-ai/releases/"$release"
 aws s3 cp "s3://$ARTIFACT_BUCKET/ai/$release/lunas-ai.tar.gz" /opt/lunas-ai/releases/"$release"/lunas-ai.tar.gz
 tar -xzf /opt/lunas-ai/releases/"$release"/lunas-ai.tar.gz -C /opt/lunas-ai/releases/"$release"
