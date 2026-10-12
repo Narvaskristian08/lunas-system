@@ -50,6 +50,11 @@ class PrivacyService:
         self.face_min_neighbors = int(privacy_config.get('face_min_neighbors', 5))
         self.plate_min_neighbors = int(privacy_config.get('plate_min_neighbors', 4))
         self.face_scales = tuple(float(value) for value in privacy_config.get('face_upscale_factors', [1.0, 1.5, 2.0]))
+        self.face_tile_size = int(privacy_config.get('face_tile_size', 960))
+        self.face_tile_overlap = float(privacy_config.get('face_tile_overlap', 0.35))
+        self.face_tile_scales = tuple(
+            float(value) for value in privacy_config.get('face_tile_upscale_factors', [1.5, 2.0])
+        )
         self.plate_scales = tuple(float(value) for value in privacy_config.get('plate_upscale_factors', [1.0, 1.5, 2.0]))
         self.max_detection_dimension = int(privacy_config.get('max_detection_dimension', 1600))
 
@@ -147,11 +152,34 @@ class PrivacyService:
     @staticmethod
     def _plate_geometry(box: Tuple[int, int, int, int]) -> bool:
         """Reject cascade hits that cannot be a rectangular license plate."""
-        _, _, width, height = box
+        x, y, width, height = box
+        if x < 0 or y < 0 or width <= 0 or height <= 0:
+            return False
         if width < 24 or height < 8:
             return False
         aspect_ratio = width / max(1, height)
         return 1.2 <= aspect_ratio <= 8.0
+
+    @staticmethod
+    def _clip_plate_box(
+        box: Tuple[int, int, int, int],
+        image_width: int,
+        image_height: int,
+    ) -> Optional[Tuple[int, int, int, int]]:
+        """Clip a tile detection and reject boxes with no visible area.
+
+        Tiled inference can return a box that extends beyond the source image.
+        Letting that box reach normalized coordinates produces zero-area boxes
+        at x/y == 1.0 and makes the privacy count misleading. A clipped box is
+        kept only when a real, geometrically plausible region remains.
+        """
+        x, y, width, height = box
+        left = max(0, min(image_width, int(x)))
+        top = max(0, min(image_height, int(y)))
+        right = max(left, min(image_width, int(x + width)))
+        bottom = max(top, min(image_height, int(y + height)))
+        clipped = (left, top, right - left, bottom - top)
+        return clipped if PrivacyService._plate_geometry(clipped) else None
 
     @staticmethod
     def _detect_scaled(
@@ -192,40 +220,80 @@ class PrivacyService:
         image_height: int,
         detection_scale: float,
     ) -> List[Tuple[int, int, int, int]]:
-        """Detect faces with YuNet and map boxes back to original coordinates."""
+        """Detect faces with YuNet, including tiled passes for small faces."""
         if self.face_model is None:
             return []
         # OpenCV's FaceDetectorYN expects an OpenCV/BGR image. The public
         # service keeps the decoded image in RGB for PIL/YOLO, so convert only
         # this detector input to avoid coordinate/color mismatches.
-        detection_image = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        boxes: List[Tuple[int, int, int, int]] = []
+
+        def detect_pass(
+            detection_image: np.ndarray,
+            offset_x: int = 0,
+            offset_y: int = 0,
+            image_scale: float = 1.0,
+        ) -> None:
+            detection_height, detection_width = detection_image.shape[:2]
+            if detection_width < 8 or detection_height < 8:
+                return
+            self.face_model.setInputSize((detection_width, detection_height))
+            _, faces = self.face_model.detect(detection_image)
+            if faces is None:
+                return
+            for face in faces:
+                confidence = float(face[14])
+                if confidence < self.face_model_confidence:
+                    continue
+                x, y, width, height = [int(round(value)) for value in face[:4]]
+                x = int(round(offset_x + x / image_scale))
+                y = int(round(offset_y + y / image_scale))
+                width = int(round(width / image_scale))
+                height = int(round(height / image_scale))
+                x = max(0, min(image_width - 1, x))
+                y = max(0, min(image_height - 1, y))
+                width = min(width, image_width - x)
+                height = min(height, image_height - y)
+                if width >= 8 and height >= 8:
+                    boxes.append((x, y, width, height))
+
+        source_image = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        full_image = source_image
         if detection_scale < 1.0:
-            detection_image = cv2.resize(
-                detection_image, None, fx=detection_scale, fy=detection_scale,
+            full_image = cv2.resize(
+                source_image, None, fx=detection_scale, fy=detection_scale,
                 interpolation=cv2.INTER_AREA
             )
-        detection_height, detection_width = detection_image.shape[:2]
-        self.face_model.setInputSize((detection_width, detection_height))
-        _, faces = self.face_model.detect(detection_image)
-        boxes: List[Tuple[int, int, int, int]] = []
-        if faces is None:
-            return boxes
-        for face in faces:
-            confidence = float(face[14])
-            if confidence < self.face_model_confidence:
-                continue
-            x, y, width, height = [int(round(value)) for value in face[:4]]
-            if detection_scale < 1.0:
-                x = int(round(x / detection_scale))
-                y = int(round(y / detection_scale))
-                width = int(round(width / detection_scale))
-                height = int(round(height / detection_scale))
-            x = max(0, min(image_width - 1, x))
-            y = max(0, min(image_height - 1, y))
-            width = min(width, image_width - x)
-            height = min(height, image_height - y)
-            if width >= 8 and height >= 8:
-                boxes.append((x, y, width, height))
+        detect_pass(full_image, image_scale=detection_scale)
+
+        # A full-frame detector has too few pixels for distant faces. Run
+        # overlapping crops at a larger scale so small faces are represented
+        # by enough pixels for YuNet. Extra privacy blur is safer than leaving
+        # a face exposed, so this pass intentionally favors recall.
+        tile_size = max(640, self.face_tile_size)
+        overlap = max(0.0, min(0.8, self.face_tile_overlap))
+        stride = max(320, int(tile_size * (1.0 - overlap)))
+        x_positions = list(range(0, max(1, image_width - tile_size + 1), stride))
+        y_positions = list(range(0, max(1, image_height - tile_size + 1), stride))
+        if not x_positions or x_positions[-1] != max(0, image_width - tile_size):
+            x_positions.append(max(0, image_width - tile_size))
+        if not y_positions or y_positions[-1] != max(0, image_height - tile_size):
+            y_positions.append(max(0, image_height - tile_size))
+
+        for tile_y in y_positions:
+            for tile_x in x_positions:
+                tile = source_image[
+                    tile_y:min(image_height, tile_y + tile_size),
+                    tile_x:min(image_width, tile_x + tile_size),
+                ]
+                for upscale in self.face_tile_scales:
+                    if upscale <= 0:
+                        continue
+                    scaled_tile = cv2.resize(
+                        tile, None, fx=upscale, fy=upscale, interpolation=cv2.INTER_CUBIC
+                    )
+                    detect_pass(scaled_tile, tile_x, tile_y, upscale)
+
         return self._dedupe_boxes(boxes)
 
     def detect(self, image: Image.Image) -> Dict[str, Any]:
@@ -270,8 +338,12 @@ class PrivacyService:
                     for result in results:
                         for box in result.boxes.xyxy.cpu().numpy().tolist():
                             x1, y1, x2, y2 = [int(round(value)) for value in box[:4]]
-                            candidate = (tile_x + x1, tile_y + y1, max(0, x2 - x1), max(0, y2 - y1))
-                            if self._plate_geometry(candidate):
+                            candidate = self._clip_plate_box(
+                                (tile_x + x1, tile_y + y1, max(0, x2 - x1), max(0, y2 - y1)),
+                                image_width,
+                                image_height,
+                            )
+                            if candidate is not None:
                                 plate_boxes.append(candidate)
             plate_boxes = self._dedupe_boxes(plate_boxes)
         except Exception as error:
@@ -283,11 +355,11 @@ class PrivacyService:
             ('license_plate', self._dedupe_boxes(list(plate_boxes))),
         ):
             for x, y, width, height in boxes:
-                if detection_scale < 1.0:
-                    x = int(round(x / detection_scale))
-                    y = int(round(y / detection_scale))
-                    width = int(round(width / detection_scale))
-                    height = int(round(height / detection_scale))
+                # _detect_faces already maps YuNet boxes back to the original
+                # image coordinates. Plate boxes come from tiled images at
+                # the original resolution. Do not scale either result again;
+                # a second face conversion shifts blur regions away from the
+                # actual faces when the source exceeds the detection limit.
                 detections.append({
                     'label': label,
                     'bbox': self._normalized_box(

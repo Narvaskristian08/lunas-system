@@ -11,7 +11,7 @@ def test_category_model_routes_are_explicit_and_category_scoped():
         "water": "water_leak",
         "gas": "gas_infrastructure_damage",
         "streetlight": "streetlight_damage",
-        "other": "environmental_hazards",
+        "other": None,
     }
     assert {
         category: config.get_category_model(category)
@@ -20,9 +20,21 @@ def test_category_model_routes_are_explicit_and_category_scoped():
 
 
 def test_available_category_checkpoints_exist():
-    for category in ("road", "drainage", "electrical", "water", "streetlight", "other"):
+    for category in ("road", "drainage", "electrical", "water", "streetlight"):
         model = config.get_model_config(config.get_category_model(category))
         assert (Path(config.BASE_DIR) / model["path"]).is_file(), category
+
+
+def test_rdd_checkpoint_class_order_matches_configured_labels():
+    road_model = config.get_model_config("road_damage")
+    assert road_model["path"] == "models/road/rdd/yolov8s-rdd2022-mit.pt"
+    assert road_model["classes"] == [
+        "longitudinal_crack",
+        "transverse_crack",
+        "alligator_crack",
+        "pothole",
+    ]
+    assert road_model["confidence_threshold"] == 0.65
 
 
 def test_water_and_streetlight_checkpoints_exist():
@@ -38,5 +50,4 @@ def test_gas_model_remains_manual_until_images_are_available():
 
 
 def test_other_category_is_manual_review_only():
-    model = config.get_model_config("environmental_hazards")
-    assert model["manual_only"] is True
+    assert config.get_category_model("other") is None

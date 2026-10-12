@@ -89,9 +89,11 @@ class PrivacyScopeTests(unittest.TestCase):
         expected = {'road': 'road_damage', 'drainage': 'surface_drainage',
                     'electrical': 'electrical_damage', 'water': 'water_leak',
                     'gas': 'gas_infrastructure_damage', 'streetlight': 'streetlight_damage',
-                    'other': 'environmental_hazards'}
+                    'other': None}
         self.assertEqual(config['category_models'], expected)
         for category, model in expected.items():
+            if model is None:
+                continue
             self.assertIn(model, config['models'])
             if category != 'gas':
                 self.assertTrue((BASE / config['models'][model]['path']).is_file(), category)

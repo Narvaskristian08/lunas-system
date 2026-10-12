@@ -314,7 +314,9 @@ class DetectionService:
             'category': category,
             'model_available': model_file_available,
             'model': assigned_model,
-            'manual_review_only': bool(model_config.get('manual_only', False)),
+            'manual_review_only': bool(model_config.get('manual_only', False))
+            or not assigned_model
+            or not model_file_available,
             'damage_only': bool(model_config.get('damage_only', False)),
             'detections': [],
             'ai_suggestion': None,

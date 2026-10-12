@@ -65,13 +65,13 @@ describe('category-routed AI service', () => {
     ['water', 'water_leak'],
     ['gas', 'gas_infrastructure_damage'],
     ['streetlight', 'streetlight_damage'],
-    ['other', 'environmental_hazards']
+    ['other', undefined]
   ])('forwards %s and preserves its assigned model identity', async (category, model) => {
     axios.post.mockResolvedValue({
       data: {
         success: true,
-        analysis_status: category === 'gas' ? 'unavailable' : 'completed',
-        model_available: category !== 'gas',
+        analysis_status: ['gas', 'other'].includes(category) ? 'unavailable' : 'completed',
+        model_available: !['gas', 'other'].includes(category),
         model,
         detections: []
       }
@@ -83,10 +83,15 @@ describe('category-routed AI service', () => {
       .toEqual(['category', category]);
     expect(result).toEqual(expect.objectContaining({
       category,
-      model,
-      analysisStatus: category === 'gas' ? 'unavailable' : 'completed',
+      analysisStatus: ['gas', 'other'].includes(category) ? 'unavailable' : 'completed',
       requiresManualReview: true
     }));
+    if (model) {
+      expect(result.model).toBe(model);
+    } else {
+      expect(result.model).toBeUndefined();
+      expect(result.modelAvailable).toBe(false);
+    }
   });
 
   test('uses the strongest finding confidence when the AI response omits a summary score', async () => {

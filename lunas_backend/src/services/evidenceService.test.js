@@ -206,6 +206,40 @@ describe('secure incident evidence processing', () => {
       privacyProcessing: { status: 'applied', applied: true } });
   });
 
+  test.each(['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'])
+    ('runs the privacy detector for every incident scanner category: %s', async (category) => {
+      const sourceImage = await sharp({
+        create: { width: 400, height: 300, channels: 3, background: '#9c1d36' }
+      }).png().toBuffer();
+      process.env.AI_EVIDENCE_ANALYSIS_ENABLED = 'true';
+      aiService.analyzeIncidentImage.mockResolvedValue({
+        category,
+        aiEnabled: true,
+        analysisStatus: 'unavailable',
+        confidence: 0,
+        findings: []
+      });
+      storageService.uploadToStorage.mockResolvedValue({
+        key: `incidents/citizen/${category}.webp`,
+        url: undefined
+      });
+
+      await processAndUploadEvidence([{
+        buffer: sourceImage,
+        originalname: 'evidence.png',
+        mimetype: 'image/png'
+      }], { reporterId: 'citizen', category });
+
+      expect(aiService.analyzeIncidentImage).toHaveBeenCalledWith(expect.any(Buffer), category);
+      expect(aiService.detectPrivacy).toHaveBeenCalledWith(expect.any(Buffer));
+      expect(storageService.uploadToStorage).toHaveBeenCalledWith(
+        expect.any(Buffer),
+        'evidence.webp',
+        'image/webp',
+        'incidents/citizen'
+      );
+    });
+
   test('strips real EXIF/GPS metadata while retaining valid evidence without a privacy detector', async () => {
     const source = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#9c1d36' } })
       .withMetadata({ exif: { IFD0: { Artist: 'Metadata test' },

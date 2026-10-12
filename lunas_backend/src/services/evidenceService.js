@@ -162,18 +162,17 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
     throw clientError(`Evidence image failed quality validation: ${quality.issues.join('; ')}`);
   }
 
-  // Re-encode first so the detector sees the same orientation and dimensions
-  // that will be used by the stored evidence.
+  // Re-encode first so both the category scanner and privacy detector see the
+  // same orientation and dimensions that will be used by the stored evidence.
   const preparedBuffer = await prepareEvidenceImage(file.buffer);
-  const privacy = await redactEvidence(preparedBuffer);
-  const storedBuffer = privacy.buffer;
-  const preparedMetadata = await getImageMetadata(storedBuffer);
-  const checksum = crypto.createHash('sha256').update(storedBuffer).digest('hex');
 
   let aiAnalysis;
   if (shouldRunAiAnalysis()) {
     try {
-      aiAnalysis = normalizeAiAnalysis(await aiService.analyzeIncidentImage(storedBuffer, category));
+      // Classification runs before privacy overlays so faces and plates do not
+      // hide issue evidence from the category model. The prepared source stays
+      // in memory only; the redacted buffer below is the only buffer persisted.
+      aiAnalysis = normalizeAiAnalysis(await aiService.analyzeIncidentImage(preparedBuffer, category));
     } catch (error) {
       // AI is advisory. A service failure must never prevent evidence storage.
       aiAnalysis = normalizeAiAnalysis({ error: error?.message || 'AI analysis failed' });
@@ -181,6 +180,11 @@ const processOne = async (file, { reporterId, category, privacyAcknowledged }) =
   } else {
     aiAnalysis = normalizeAiAnalysis();
   }
+
+  const privacy = await redactEvidence(preparedBuffer);
+  const storedBuffer = privacy.buffer;
+  const preparedMetadata = await getImageMetadata(storedBuffer);
+  const checksum = crypto.createHash('sha256').update(storedBuffer).digest('hex');
 
   const uploaded = await storageService.uploadToStorage(
     storedBuffer,

@@ -2,17 +2,21 @@
 # ML Engineering: Centralized configuration for all models
 
 models:
-  # Primary: YOLOv8n trained on RDD2022 (Custom trained model)
+  # Primary: MIT-licensed YOLOv8s trained on RDD2022.
+  # The class order must match the checkpoint's class IDs exactly.
   road_damage:
-    name: "YOLOv8n Road Damage Detection (RDD2022 Trained)"
-    path: "models/road/rdd/yolov8n-rdd2022-best.pt"
+    name: "YOLOv8s Road Damage Detection (RDD2022)"
+    path: "models/road/rdd/yolov8s-rdd2022-mit.pt"
     type: "detection"
     classes:
-      - pothole
-      - alligator_crack
       - longitudinal_crack
       - transverse_crack
-    confidence_threshold: 0.25
+      - alligator_crack
+      - pothole
+    # The larger checkpoint is substantially more confident on the validated
+    # crack image, while this higher production gate keeps weaker road-scene
+    # candidates in manual review instead of auto-suggesting them.
+    confidence_threshold: 0.65
     # Candidate floor for advisory/manual review. Candidates below the
     # production threshold are never automatic decisions.
     candidate_threshold: 0.05
@@ -21,7 +25,7 @@ models:
     preprocessing:
       normalize: true
       resize: true
-    notes: "Trained on RDD2022 dataset - optimized for Philippine roads"
+    notes: "YOLOv8s checkpoint from the MIT-licensed ProjectRoadDamageDetection RDD2022 Space; production threshold calibrated locally"
   
   # Environmental Hazards: Urban safety hazards
   environmental_hazards:
@@ -192,7 +196,11 @@ category_models:
   water: water_leak
   gas: gas_infrastructure_damage
   streetlight: streetlight_damage
-  other: environmental_hazards
+  # Do not route the catch-all user category into the broad environmental
+  # model. It previously confused garbage with fallen trees. Keep the report
+  # category available, but require an official to classify it manually until
+  # a dedicated public-obstruction checkpoint is trained and validated.
+  other: null
 
 privacy:
   # YuNet is a lightweight face detector. The backend applies visual blur
@@ -214,6 +222,9 @@ privacy:
   # Multiple upscaled passes improve recall for distant faces and plates.
   # Redaction remains backend-owned; these values do not read plate text.
   face_upscale_factors: [1.0, 1.5, 2.0]
+  face_tile_size: 960
+  face_tile_overlap: 0.35
+  face_tile_upscale_factors: [1.5, 2.0]
   plate_upscale_factors: [1.0, 1.5, 2.0]
   max_detection_dimension: 1600
 
