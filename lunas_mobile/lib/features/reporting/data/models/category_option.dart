@@ -54,11 +54,6 @@ const supportedReportCategories = <CategoryOption>[
     description: 'Visible water leaks or damaged water infrastructure.',
   ),
   CategoryOption(
-    code: 'gas',
-    label: 'Gas',
-    description: 'Possible gas leak or damaged gas infrastructure.',
-  ),
-  CategoryOption(
     code: 'streetlight',
     label: 'Streetlight',
     description: 'Broken, missing, or unlit public streetlights.',

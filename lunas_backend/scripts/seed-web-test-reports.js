@@ -49,7 +49,7 @@ async function seed() {
     }
     const fixtures = [
       ['submitted', 'road'], ['submitted', 'drainage'], ['submitted', 'electrical'],
-      ['submitted', 'water'], ['submitted', 'gas'], ['submitted', 'streetlight'], ['submitted', 'other'],
+      ['submitted', 'water'], ['submitted', 'other'], ['submitted', 'streetlight'], ['submitted', 'other'],
       ['barangay_validated', 'water'], ['barangay_validated', 'road'],
       ['city_confirmed', 'drainage'], ['prioritized', 'water'],
       ['clarification_required', 'road'], ['rejected', 'other'],
@@ -106,7 +106,7 @@ async function seed() {
         return new Date(submittedAt.getTime() + (now - submittedAt) * Math.max(0, offset) / Math.max(1, lifecycle.length - 1));
       };
       const incident = await Incident.create({ reportNumber, reporter: users.citizen._id, category,
-        subcategory: category === 'road' ? 'pothole' : category === 'drainage' ? 'blockage' : category === 'water' || category === 'gas' ? 'leak' : 'damage',
+        subcategory: category === 'road' ? 'pothole' : category === 'drainage' ? 'blockage' : category === 'water' ? 'leak' : 'damage',
         description: `[SYNTHETIC TEST] ${category} report for the ${status} queue. No actual infrastructure incident is represented.`,
         location: { type: 'Point', coordinates: [120.3387 + index * 0.00003, 16.0433],
           address: { street: `Mock test location ${index + 1}`, barangay: 'Poblacion Oeste', city: 'Dagupan City', landmark: 'Synthetic web QA fixture' } },

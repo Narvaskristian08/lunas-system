@@ -3,7 +3,6 @@ import {
   CircleGauge,
   ClipboardList,
   ClipboardCheck,
-  HelpCircle,
   LifeBuoy,
   ScrollText,
   Timer,
@@ -45,13 +44,6 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
       { label: "Authorized Accounts", href: "/admin/users", icon: UserRound, permission: "users.manage" },
       { label: "Support Tickets", href: "/admin/tickets", icon: LifeBuoy, permission: "support.manage" },
       { label: "Audit Trail", href: "/admin/audit", icon: ScrollText, permission: "audit.view" },
-    ],
-  },
-  {
-    label: "Account",
-    items: [
-      { label: "My Profile", href: "/profile", icon: UserRound, permission: "profile.manage" },
-      { label: "Help & Support", href: "/help", icon: HelpCircle, permission: "support.create" },
     ],
   },
 ];

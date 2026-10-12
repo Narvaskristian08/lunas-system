@@ -25,6 +25,7 @@ export interface AuthorizedAccountPage {
   pagination: { page: number; limit: number; total: number; pages: number };
   roles: AuthorizedAccount["role"][];
   barangays: string[];
+  organizations?: string[];
   canManageAdministrators: boolean;
 }
 export const accountRoleLabels: Record<AuthorizedAccount["role"], string> = {

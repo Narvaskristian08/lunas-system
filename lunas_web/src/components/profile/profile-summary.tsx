@@ -2,38 +2,17 @@ import Link from "next/link";
 import {
   BadgeCheck,
   Building2,
-  CalendarDays,
-  Clock3,
   KeyRound,
   LockKeyhole,
   Mail,
   Phone,
-  ShieldCheck,
   UserRoundCog,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge, StatusBadge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { formatDateTime } from "@/lib/utils";
-import type { Permission, UserProfile } from "@/types";
-
-const permissionLabels: Record<Permission, string> = {
-  "dashboard.view": "View dashboard",
-  "reports.view": "View reports",
-  "reports.validate": "Validate reports",
-  "work_orders.view": "View work orders",
-  "work_orders.manage": "Manage work orders",
-  "personnel.manage": "Manage repair personnel",
-  "repairs.verify": "Verify repairs",
-  "sla.view": "View SLA monitoring",
-  "users.manage": "Manage users",
-  "audit.view": "View security audit trail",
-  "notifications.view": "View notifications",
-  "profile.manage": "Manage own profile",
-  "support.create": "Contact support",
-  "support.manage": "Manage support tickets",
-};
+import type { UserProfile } from "@/types";
 
 function DetailRow({ icon: Icon, label, children }: { icon: typeof Mail; label: string; children: React.ReactNode }) {
   return (
@@ -88,13 +67,10 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
           <CardHeader title="Profile Information" description="Your verified contact and organizational details." />
           <dl className="grid px-5 sm:grid-cols-2 sm:gap-x-6">
             <DetailRow icon={Building2} label="Organization">{viewer.organization}</DetailRow>
-            <DetailRow icon={ShieldCheck} label="Department or Unit">{viewer.unit ?? "Not Assigned"}</DetailRow>
             <DetailRow icon={Mail} label="Verified Email">
               <span className="break-all">{viewer.email}</span>
             </DetailRow>
-            <DetailRow icon={Phone} label="Contact Number">{viewer.phone ?? "Not provided"}</DetailRow>
-            <DetailRow icon={Clock3} label="Last Login">{viewer.lastLogin ? formatDateTime(viewer.lastLogin) : "Not available"}</DetailRow>
-            <DetailRow icon={CalendarDays} label="Date Joined">{formatDateTime(viewer.joinedAt)}</DetailRow>
+            {["citizen", "repair_personnel"].includes(viewer.backendRole) ? <DetailRow icon={Phone} label="Contact Number">{viewer.phone ?? "Not provided"}</DetailRow> : null}
           </dl>
         </Card>
 
@@ -120,17 +96,7 @@ export function ProfileSummary({ viewer }: { viewer: UserProfile }) {
             </Link>
           </Card>
 
-          <Card>
-            <CardHeader title="Assigned Permissions" description={`${viewer.permissions.length} capabilities from your current role.`} />
-            <ul className="grid gap-2 p-5 text-sm text-slate-700 sm:grid-cols-2 xl:grid-cols-1">
-              {viewer.permissions.map((permission) => (
-                <li key={permission} className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 shrink-0 text-brand-700" aria-hidden="true" />
-                  {permissionLabels[permission]}
-                </li>
-              ))}
-            </ul>
-          </Card>
+
         </div>
       </div>
     </div>

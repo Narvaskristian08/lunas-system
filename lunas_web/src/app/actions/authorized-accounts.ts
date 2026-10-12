@@ -17,6 +17,7 @@ export async function manageAccountAction(operation: "create" | "edit" | "status
       "utilityCompany", "repairOrganization", "repairTeam", "approvalAuthority", "approvalReference",
       ...(operation === "create" ? ["email"] : ["version"])];
   const body = Object.fromEntries(fields.map(field => [field, String(form.get(field) ?? "")]));
+  if (body.role !== "repair_personnel") delete body.phone;
   const path = operation === "create" ? "/users/authorized" : `/users/authorized/${id}${operation === "edit" ? "" : `/${operation}`}`;
   try {
     const response = await backendRequest(path, {

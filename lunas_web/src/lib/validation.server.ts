@@ -489,7 +489,6 @@ const fallbackReportCategories = [
   { value: "drainage", label: "Drainage" },
   { value: "electrical", label: "Electrical" },
   { value: "water", label: "Water" },
-  { value: "gas", label: "Gas" },
   { value: "streetlight", label: "Streetlight" },
   { value: "other", label: "Other Infrastructure Concern" },
 ];

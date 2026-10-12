@@ -716,7 +716,8 @@ exports.verifyRecoveryEmail = asyncHandler(async (req, res) => {
 // @route   PUT /api/v1/auth/profile
 // @access  Private
 exports.updateProfile = asyncHandler(async (req, res) => {
-  const allowedFields = ['firstName', 'lastName', 'phone', 'address', 'profileImage'];
+  const allowedFields = ['firstName', 'lastName', 'address', 'profileImage',
+    ...(['citizen', 'repair_personnel'].includes(req.user.role) ? ['phone'] : [])];
   const fieldsToUpdate = Object.fromEntries(
     allowedFields
       .filter((field) => req.body[field] !== undefined)

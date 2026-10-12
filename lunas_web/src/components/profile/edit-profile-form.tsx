@@ -98,7 +98,7 @@ function EditProfileWorkspace() {
       const result = await updateProfileAction({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        phone: phone.trim() || undefined,
+        phone: ["citizen", "repair_personnel"].includes(viewer.backendRole) ? phone.trim() || undefined : undefined,
       });
       if (!result.ok) {
         setFormError(result.message ?? "We couldn’t save your profile. Your changes are still here; try again in a moment.");
@@ -158,7 +158,7 @@ function EditProfileWorkspace() {
                   autoComplete="family-name"
                   maxLength={60}
                 />
-                <FormField
+                {["citizen", "repair_personnel"].includes(viewer.backendRole) ? <FormField
                   label="Contact Number"
                   optional
                   value={phone}
@@ -168,7 +168,7 @@ function EditProfileWorkspace() {
                   autoComplete="tel"
                   inputMode="tel"
                   maxLength={24}
-                />
+                /> : null}
               </div>
             </Card>
 

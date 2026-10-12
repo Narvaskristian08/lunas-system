@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, 'Phone number is required'],
+    required: function() { return ['citizen', 'repair_personnel'].includes(this.role); },
     trim: true
   },
   password: {
@@ -257,7 +257,7 @@ userSchema.methods.toPublicJSON = function() {
       configured: Boolean(this.recoveryEmail),
       verified: Boolean(this.recoveryEmail && this.recoveryEmailVerifiedAt)
     },
-    phone: this.phone,
+    phone: ['citizen', 'repair_personnel'].includes(this.role) ? this.phone : undefined,
     role: this.role,
     address: this.address,
     barangay: this.barangay,

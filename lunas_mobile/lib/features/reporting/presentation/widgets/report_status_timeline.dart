@@ -23,7 +23,6 @@ IconData categoryIcon(String category) => switch (category) {
   'drainage' => Icons.water_damage_outlined,
   'electrical' => Icons.electric_bolt_outlined,
   'water' => Icons.water_drop_outlined,
-  'gas' => Icons.local_fire_department_outlined,
   'streetlight' => Icons.lightbulb_outline_rounded,
   _ => Icons.report_problem_outlined,
 };

@@ -44,7 +44,8 @@ const targetAccount = async (req, res) => {
   return user;
 };
 const approvedFields = (input, actor) => ({
-  firstName: input.firstName, lastName: input.lastName, phone: input.phone,
+  firstName: input.firstName, lastName: input.lastName,
+  ...(input.role === 'repair_personnel' ? { phone: input.phone } : {}),
   personnelId: input.personnelId || '', position: input.position, organization: input.organization,
   role: input.role,
   barangay: ['barangay_official', 'repair_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
@@ -73,25 +74,28 @@ exports.getAuthorizedAccounts = asyncHandler(async (req, res) => {
   const page = Number(req.query.page || 1);
   const limit = Number(req.query.limit || 20);
   const filter = { role: req.query.role || { $in: AUTHORIZED_ROLES } };
+  if (req.query.organization) filter.$and = [{ $or: ['organization', 'utilityCompany', 'repairOrganization'].map(field => ({ [field]: req.query.organization })) }];
   if (req.query.search) {
     const search = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     filter.$or = ['firstName', 'lastName', 'email', 'organization'].map(field => ({ [field]: { $regex: search, $options: 'i' } }));
   }
   if (req.query.status) {
     const status = req.query.status;
-    filter.$and = [{ $or: [
+    filter.$and = [...(filter.$and || []), { $or: [
       { accountStatus: status, ...(status !== 'deactivated' ? { isArchived: { $ne: true } } : {}) },
       ...(status === 'active' ? [{ accountStatus: { $exists: false }, isActive: true, isArchived: { $ne: true } }] : []),
       ...(status === 'deactivated' ? [{ isArchived: true }, { accountStatus: { $exists: false }, isActive: false }] : [])
     ] }];
   }
-  const [users, total] = await Promise.all([
+  const [users, total, organizationNames, utilityNames, repairNames] = await Promise.all([
     User.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit),
-    User.countDocuments(filter)
+    User.countDocuments(filter),
+    ...['organization', 'utilityCompany', 'repairOrganization'].map(field => User.distinct(field, { role: { $in: AUTHORIZED_ROLES } }))
   ]);
   res.json({ success: true, data: {
     accounts: users.map(serializeAccount), pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    roles: AUTHORIZED_ROLES, barangays: BARANGAYS, canManageAdministrators: canManageAdministrators(req.user)
+    roles: AUTHORIZED_ROLES, barangays: BARANGAYS, canManageAdministrators: canManageAdministrators(req.user),
+    organizations: [...new Set([...organizationNames, ...utilityNames, ...repairNames].filter(value => typeof value === 'string' && value.trim()))].sort()
   } });
 });
 

@@ -6,7 +6,6 @@ const categories = [
   { code: 'drainage', name: 'Drainage', description: 'Flooding, blockages, and drainage damage.' },
   { code: 'electrical', name: 'Electrical', description: 'Electrical infrastructure hazards and outages.' },
   { code: 'water', name: 'Water', description: 'Water leaks and water-supply infrastructure issues.' },
-  { code: 'gas', name: 'Gas', description: 'Visible gas-related utility hazards.' },
   { code: 'streetlight', name: 'Streetlight', description: 'Damaged, missing, or malfunctioning streetlights.' },
   { code: 'other', name: 'Other urban hazard', description: 'A supported infrastructure concern not listed above.' }
 ];

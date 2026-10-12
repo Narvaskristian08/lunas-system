@@ -18,7 +18,11 @@ const text = (key, max, optional = false) => {
 };
 const profileRules = [
   text('firstName', 80), text('lastName', 80),
-  body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required'),
+  body('phone').custom((value, { req }) => {
+    if (req.body.role !== 'repair_personnel') return true;
+    if (typeof value !== 'string' || !/^(\+639|09)\d{9}$/.test(value.trim())) throw new Error('Valid Philippine phone number is required');
+    return true;
+  }),
   text('personnelId', 80, true), text('position', 120), text('organization', 160),
   body('role').isIn(AUTHORIZED_ROLES).withMessage('Choose a supported personnel role'),
   body('barangay').optional().isString().bail().trim()
@@ -67,6 +71,7 @@ exports.activateAccountValidation = [onlyFields(['token', 'password']),
     .custom(value => Buffer.byteLength(value, 'utf8') <= 72)
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Use 8–72 bytes with uppercase, lowercase, and a number')];
 exports.accountQueryValidation = [
+  query('organization').optional().isString().bail().trim().isLength({ max: 160 }),
   query('role').optional().isIn(AUTHORIZED_ROLES),
   query('status').optional().isIn(ACCOUNT_STATUSES),
   query('search').optional().isString().bail().trim().isLength({ max: 100 })

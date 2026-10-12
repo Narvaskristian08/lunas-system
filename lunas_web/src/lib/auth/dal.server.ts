@@ -147,14 +147,6 @@ export async function requireWebWorkspace() {
   if (["citizen", "repair_personnel"].includes(viewer.backendRole)) {
     redirect("/unauthorized?platform=mobile");
   }
-  const recoveryPath = (await headers()).get("x-lunas-request-path") ?? "";
-  const recoveryRequired = ["admin", "barangay_official", "city_engineer", "utility_provider"].includes(viewer.backendRole)
-    && !viewer.recoveryEmailVerified;
-  const recoveryBypass = recoveryPath.startsWith("/recovery-email") || recoveryPath.startsWith("/help");
-  if (recoveryRequired && !recoveryBypass) {
-    const next = recoveryPath || "/dashboard";
-    redirect(`/recovery-email?next=${encodeURIComponent(next)}`);
-  }
   return viewer;
 }
 

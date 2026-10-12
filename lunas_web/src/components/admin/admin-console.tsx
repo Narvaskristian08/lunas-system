@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DataTable } from "@/components/ui/data-table";
+import { Modal } from "@/components/ui/modal";
 import { manageAccountAction } from "@/app/actions/authorized-accounts";
 import { accountRoleLabels, accountStatusLabels, type AuthorizedAccount, type AuthorizedAccountPage } from "@/lib/authorized-accounts";
 
@@ -17,16 +18,18 @@ const inputClass = "mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-w
 type AccessAction = "active" | "suspended" | "deactivated" | "activation";
 const actionLabels: Record<AccessAction, string> = { active: "Reactivate", suspended: "Suspend", deactivated: "Deactivate", activation: "Send activation email" };
 
-export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccountPage; viewerId: string; search: string }) {
+export function AdminConsole({ data, viewerId, search, filters }: { data: AuthorizedAccountPage; viewerId: string; search: string; filters: { role: string; status: string; organization: string } }) {
   const router = useRouter();
   const [selected, setSelected] = useState<AuthorizedAccount | "new" | null>(null);
   const [editing, setEditing] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<{ account: AuthorizedAccount; action: AccessAction } | null>(null);
   const [reason, setReason] = useState("");
   const [dialogError, setDialogError] = useState("");
   const canManage = (account: AuthorizedAccount) => account.id !== viewerId && (account.role !== "admin" || data.canManageAdministrators);
+  const pageHref = (page: number) => `/admin/users?${new URLSearchParams({ search, ...filters, page: String(page) })}`;
 
   function confirmAccess() {
     if (!dialog || pending) return;
@@ -54,9 +57,14 @@ export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccou
     {message && <p role="status" className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm">{message}</p>}
     <Card className="overflow-hidden">
       <CardHeader title="Personnel Accounts" description="Role, jurisdiction, and account status are enforced by the server." />
-      <form action="/admin/users" className="flex gap-3 border-y bg-slate-50 p-4">
+      <form action="/admin/users" className="flex flex-wrap items-end gap-3 border-y bg-slate-50 p-4">
         <label className="flex-1 text-sm">Search accounts<input name="search" defaultValue={search} maxLength={100} placeholder="Name, Email, or Organization" className={inputClass} /></label>
         <Button type="submit" variant="secondary" className="self-end">Search</Button>
+        <div className="flex w-full flex-wrap gap-3">
+          <label className="text-sm">Role<select name="role" defaultValue={filters.role} onChange={event => event.currentTarget.form?.requestSubmit()} className={inputClass}><option value="">All Roles</option>{data.roles.map(role => <option key={role} value={role}>{accountRoleLabels[role]}</option>)}</select></label>
+          <label className="text-sm">Organization<select name="organization" defaultValue={filters.organization} onChange={event => event.currentTarget.form?.requestSubmit()} className={inputClass}><option value="">All Organizations</option>{[...new Set([...(data.organizations || []), ...(filters.organization ? [filters.organization] : [])])].map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+          <label className="text-sm">Status<select name="status" defaultValue={filters.status} onChange={event => event.currentTarget.form?.requestSubmit()} className={inputClass}><option value="">All Statuses</option>{Object.entries(accountStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        </div>
       </form>
       <DataTable caption="Authorized personnel" columns={[{ key: "name", label: "Name" }, { key: "role", label: "Role" }, { key: "scope", label: "Organization / Jurisdiction" }, { key: "status", label: "Status" }, { key: "actions", label: "Actions" }]}
         rows={data.accounts.map(account => ({ id: account.id, cells: {
@@ -70,17 +78,16 @@ export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccou
       <div className="flex items-center justify-between border-t p-4 text-sm">
         <span>{data.pagination.total} accounts · Page {data.pagination.page} of {Math.max(1, data.pagination.pages)}</span>
         <div className="flex gap-4">
-          {data.pagination.page > 1 && <Link href={`/admin/users?${new URLSearchParams({ search, page: String(data.pagination.page - 1) })}`} className="text-brand-700">Previous</Link>}
-          {data.pagination.page < data.pagination.pages && <Link href={`/admin/users?${new URLSearchParams({ search, page: String(data.pagination.page + 1) })}`} className="text-brand-700">Next</Link>}
+          {data.pagination.page > 1 && <Link href={pageHref(data.pagination.page - 1)} className="text-brand-700">Previous</Link>}
+          {data.pagination.page < data.pagination.pages && <Link href={pageHref(data.pagination.page + 1)} className="text-brand-700">Next</Link>}
         </div>
       </div>
     </Card>
-    {selected && <Card className="p-6">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">{selected === "new" ? "Create Authorized Account" : `${selected.firstName} ${selected.lastName}`}</h2>
-        <div className="flex gap-2">{selected !== "new" && !editing && canManage(selected) && <Button variant="secondary" onClick={() => setEditing(true)}>Edit Approved Details</Button>}<Button variant="ghost" onClick={() => setSelected(null)}>Close</Button></div>
-      </div>
+    {selected && <Modal open={!dialog} busy={savingAccount} onClose={() => setSelected(null)}
+      title={selected === "new" ? "Create Authorized Account" : `${selected.firstName} ${selected.lastName}`}
+      action={selected !== "new" && !editing && canManage(selected) ? <Button variant="secondary" onClick={() => setEditing(true)}>Edit Approved Details</Button> : undefined}>
       <AccountForm key={`${selected === "new" ? "new" : `${selected.id}-${selected.version}`}-${editing}`} account={selected === "new" ? undefined : selected} data={data} readOnly={!editing}
+        onBusyChange={setSavingAccount}
         onSaved={text => { setMessage(text); setSelected(null); router.refresh(); }} />
       {selected !== "new" && !editing && canManage(selected) && <div className="mt-6 flex flex-wrap gap-3 border-t pt-5">
         {(selected.accountStatus === "active" ? ["suspended", "deactivated"]
@@ -90,7 +97,7 @@ export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccou
           return <Button key={action} variant={action === "deactivated" ? "danger" : "secondary"} onClick={() => { setDialog({ account: selected, action }); setReason(""); setDialogError(""); }}>{actionLabels[action]}</Button>;
         })}
       </div>}
-    </Card>}
+    </Modal>}
     <ConfirmationDialog open={!!dialog} icon="none" title={`${dialog ? actionLabels[dialog.action] : "Update"} account?`}
       description={dialog?.action === "activation" ? "A new expiring link will be emailed to this person. Previous links will stop working."
         : "This changes the person's access immediately and revokes existing sessions. Historical actions and records will be retained."}
@@ -102,7 +109,7 @@ export function AdminConsole({ data, viewerId, search }: { data: AuthorizedAccou
   </div>;
 }
 
-function AccountForm({ account, data, readOnly, onSaved }: { account?: AuthorizedAccount; data: AuthorizedAccountPage; readOnly: boolean; onSaved: (message: string) => void }) {
+function AccountForm({ account, data, readOnly, onSaved, onBusyChange }: { account?: AuthorizedAccount; data: AuthorizedAccountPage; readOnly: boolean; onSaved: (message: string) => void; onBusyChange: (busy: boolean) => void }) {
   const [role, setRole] = useState<AuthorizedAccount["role"]>(account?.role || "barangay_official");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -114,11 +121,13 @@ function AccountForm({ account, data, readOnly, onSaved }: { account?: Authorize
     event.preventDefault();
     if (pending || readOnly) return;
     const form = new FormData(event.currentTarget);
+    onBusyChange(true);
     startTransition(async () => {
       try {
         const result = await manageAccountAction(account ? "edit" : "create", account?.id || "", form);
         if (result.ok) onSaved(result.message); else setError(result.message);
       } catch { setError("The service could not be reached. Refresh before retrying."); }
+      finally { onBusyChange(false); }
     });
   }}>
     <p className="mb-5 text-sm text-slate-600">{account ? `Status: ${accountStatusLabels[account.accountStatus]}.` : "Status: Pending Activation. The person will receive an email link to choose their own password."} Approval below records a decision already made by the responsible organization.</p>
@@ -127,7 +136,7 @@ function AccountForm({ account, data, readOnly, onSaved }: { account?: Authorize
       {field("firstName", "First name", account?.firstName, true, 80)}
       {field("lastName", "Last name", account?.lastName, true, 80)}
       {account ? <div className="text-sm"><p className="font-medium">Email</p><p className="mt-3">{account.email}</p></div> : field("email", "Email", "", true, 254, "email")}
-      {field("phone", "Contact number", account?.phone, true, 13, "tel")}
+      {role === "repair_personnel" && field("phone", "Contact number", account?.phone, true, 13, "tel")}
       {field("personnelId", "Employee / personnel ID (if applicable)", account?.personnelId, false, 80)}
       {field("position", "Position / designation", account?.position, true, 120)}
       {field("organization", "Office / organization", account?.organization)}
