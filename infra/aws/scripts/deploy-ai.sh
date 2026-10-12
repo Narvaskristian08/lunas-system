@@ -65,8 +65,8 @@ docker run -d --name lunas-ai --restart unless-stopped \
   -v /opt/lunas-ai/logs:/app/logs \
   -v /opt/lunas-ai/cache:/app/cache \
   "lunas-ai:$release"
-for attempt in $(seq 1 30); do
-  if curl --fail --silent "http://$ai_bind_address:5001/api/v1/health" >/dev/null; then
+for attempt in \$(seq 1 30); do
+  if curl --fail --silent "http://\$ai_bind_address:5001/api/v1/health" >/dev/null; then
     exit 0
   fi
   sleep 10
