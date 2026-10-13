@@ -13,6 +13,7 @@ const SENSITIVE_KEYS = new Set([
   'activationtokenhash',
   'activationurl',
   'passwordresettoken',
+  'passwordresetcodehash',
   'registrationmfacodehash',
   'registrationchallengehash',
   'refreshtokens',

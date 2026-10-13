@@ -1,7 +1,7 @@
 const { escapeHtml } = require('./emailDeliveryService');
 
 const BRAND = 'LUNAS';
-const PRODUCT = 'Local Urban Network Assistance System';
+const PRODUCT = 'Account security';
 
 const asText = value => String(value ?? '').trim();
 
@@ -108,7 +108,7 @@ const renderBrandedEmail = ({
             <tr>
               <td style="background:#f8fafc;border-top:1px solid #e7edf4;padding:20px 36px;">
                 <p style="color:#718096;font-size:12px;line-height:1.6;margin:0;">This is an automated message from ${BRAND}. Please do not reply to this email.</p>
-                <p style="color:#9aa8b8;font-size:12px;line-height:1.6;margin:8px 0 0;">Local Urban Network Assistance System</p>
+                <p style="color:#9aa8b8;font-size:12px;line-height:1.6;margin:8px 0 0;">LUNAS account security</p>
               </td>
             </tr>
           </table>

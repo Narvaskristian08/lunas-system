@@ -123,6 +123,11 @@ exports.resetPasswordValidation = [
   passwordValidationRule('password')
 ];
 
+exports.passwordResetCodeValidation = [
+  body('email').isEmail().withMessage('Enter your account email').trim(),
+  body('code').isString().matches(/^\d{6}$/).withMessage('Enter the six-digit verification code')
+];
+
 exports.changePasswordValidation = [
   body('currentPassword').isLength({ min: 1, max: 128 }).withMessage('Current password is required'),
   passwordValidationRule('newPassword').custom((value, { req }) => {

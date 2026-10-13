@@ -1,5 +1,7 @@
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/registration_password_screen.dart';
@@ -7,8 +9,13 @@ import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
 class ResetPasswordWithTokenScreen extends StatefulWidget {
-  const ResetPasswordWithTokenScreen({this.initialToken, super.key});
+  const ResetPasswordWithTokenScreen({
+    this.initialToken,
+    this.email,
+    super.key,
+  });
   final String? initialToken;
+  final String? email;
 
   @override
   State<ResetPasswordWithTokenScreen> createState() =>
@@ -23,6 +30,10 @@ class _ResetPasswordWithTokenScreenState
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
+  final _codeController = TextEditingController();
+  bool _verifying = false;
+  String? _verificationError;
+  DateTime _resendAt = DateTime.now().add(const Duration(seconds: 60));
 
   @override
   void initState() {
@@ -33,9 +44,102 @@ class _ResetPasswordWithTokenScreenState
   @override
   void dispose() {
     _tokenController.dispose();
+    _codeController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _verifyCode() async {
+    if (_verifying) return;
+    setState(() {
+      _verifying = true;
+      _verificationError = null;
+    });
+    try {
+      final token = await authService.verifyPasswordResetCode(
+        widget.email ?? '',
+        _codeController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() => _tokenController.text = token);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _verificationError =
+              'Code invalid or expired. Check the code or request a new one.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  Future<void> _resendCode() async {
+    if (_verifying) return;
+    if (DateTime.now().isBefore(_resendAt)) {
+      setState(
+        () => _verificationError = 'Wait 60 seconds between code requests.',
+      );
+      return;
+    }
+    setState(() => _verifying = true);
+    try {
+      await authService.requestPasswordReset(widget.email ?? '');
+      if (mounted) {
+        setState(() {
+          _resendAt = DateTime.now().add(const Duration(seconds: 60));
+          _verificationError =
+              'If the account matches, a new code will arrive shortly.';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _verificationError = 'Unable to resend. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  Widget _buildCodeForm() {
+    return AuthLayout(
+      showBrand: false,
+      showBackButton: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AuthHeading(
+            title: 'Verify Reset Code',
+            description:
+                'Enter the six-digit code sent to your email. The code expires in 10 minutes.',
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          TextFormField(
+            controller: _codeController,
+            keyboardType: TextInputType.number,
+            autofillHints: const [AutofillHints.oneTimeCode],
+            maxLength: 6,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(labelText: 'Verification Code'),
+            enabled: !_verifying,
+          ),
+          if (_verificationError != null)
+            AuthMessage(message: _verificationError!),
+          LunasButton(
+            label: 'Verify Code',
+            isLoading: _verifying,
+            onPressed: _verifying ? null : _verifyCode,
+          ),
+          TextButton(
+            onPressed: _verifying ? null : _resendCode,
+            child: const Text('Resend code'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _submit() async {
@@ -55,6 +159,7 @@ class _ResetPasswordWithTokenScreenState
   @override
   Widget build(BuildContext context) {
     final auth = AuthScope.of(context);
+    if (_tokenController.text.isEmpty) return _buildCodeForm();
     return AuthLayout(
       showBrand: false,
       showBackButton: !auth.isSubmitting,
@@ -94,7 +199,7 @@ class _ResetPasswordWithTokenScreenState
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
-                      'Secure reset link received from Gmail. Your token is already attached.',
+                      'Email verified. Choose your new password.',
                     ),
                   ),
                 const SizedBox(height: AppSpacing.md),

@@ -1,5 +1,7 @@
 jest.mock('../models/User', () => ({
   findOne: jest.fn(),
+  findOneAndUpdate: jest.fn(),
+  updateOne: jest.fn(),
   findById: jest.fn(),
   create: jest.fn()
 }));
@@ -40,6 +42,7 @@ const {
   login,
   register,
   forgotPassword,
+  verifyPasswordResetCode,
   verifyRegistrationMfa
 } = require('./authController');
 
@@ -53,6 +56,7 @@ const createResponse = () => {
 describe('public citizen registration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.JWT_SECRET = 'test-password-reset-secret';
     issueTokenPair.mockReturnValue({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
@@ -328,8 +332,8 @@ describe('public citizen registration', () => {
 
     expect(user.isVerified).toBe(true);
     expect(user.isActive).toBe(true);
-    expect(user.recoveryEmail).toBe('juan@example.com');
-    expect(user.recoveryEmailVerifiedAt).toBeInstanceOf(Date);
+    expect(user.recoveryEmail).toBeUndefined();
+    expect(user.recoveryEmailVerifiedAt).toBeUndefined();
     expect(user.refreshTokens).toEqual(expect.arrayContaining([
       expect.objectContaining({ tokenHash: 'refresh-token-hash' })
     ]));
@@ -365,9 +369,32 @@ describe('public citizen registration', () => {
 
     expect(deliverPasswordReset).toHaveBeenCalledWith(expect.objectContaining({
       user,
-      resetToken: expect.any(String)
+      code: expect.stringMatching(/^\d{6}$/)
     }));
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('consumes a valid reset code atomically and returns a password-change token', async () => {
+    process.env.JWT_SECRET = 'test-password-reset-secret';
+    User.findOneAndUpdate.mockResolvedValue({ _id: 'user-id' });
+    const res = createResponse();
+    await verifyPasswordResetCode({ body: { email: 'juan@example.com', code: '123456' }, headers: {}, ip: '127.0.0.1' }, res, jest.fn());
+    expect(User.findOneAndUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      email: 'juan@example.com', passwordResetCodeAttempts: { $lt: 5 },
+      passwordResetCodeExpires: { $gt: expect.any(Date) }
+    }), expect.objectContaining({ $unset: { passwordResetCodeHash: 1, passwordResetCodeExpires: 1 } }), { new: true });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: { resetToken: expect.stringMatching(/^[a-f0-9]{64}$/) } }));
+  });
+
+  test('invalid, expired, reused or locked reset codes return no password-change token', async () => {
+    process.env.JWT_SECRET = 'test-password-reset-secret';
+    User.findOneAndUpdate.mockResolvedValue(null);
+    User.updateOne.mockResolvedValue({ modifiedCount: 1 });
+    const res = createResponse();
+    await verifyPasswordResetCode({ body: { email: 'juan@example.com', code: '000000' }, headers: {}, ip: '127.0.0.1' }, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(User.updateOne).toHaveBeenCalledWith(expect.objectContaining({ passwordResetCodeAttempts: { $lt: 5 } }), { $inc: { passwordResetCodeAttempts: 1 } });
+    expect(res.json.mock.calls[0][0].data).toBeUndefined();
   });
 
   test('rejects invalid credentials and inactive accounts without issuing tokens', async () => {

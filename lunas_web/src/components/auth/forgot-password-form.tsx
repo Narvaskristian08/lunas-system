@@ -8,6 +8,7 @@ import { useConnectivity } from "@/components/providers/connectivity-provider";
 import { AuthAlert, AuthCard, BackToLogin, SecurityNotice } from "@/components/auth/auth-ui";
 import { FormField } from "@/components/forms/form-field";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -69,7 +70,8 @@ export function ForgotPasswordForm() {
           <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
             If an authorized LUNAS account matches <span className="break-all font-semibold text-slate-800">{email.trim()}</span>, LUNAS has accepted the recovery request.
           </p>
-          <p className="mt-3 text-xs leading-5 text-slate-500">When reset-email delivery is configured for your organization, instructions will be sent shortly. For security, we cannot confirm whether an account exists.</p>
+          <p className="mt-3 text-xs leading-5 text-slate-500">If the account is eligible, a six-digit verification code will arrive shortly. Check Spam too. For security, we cannot confirm whether an account exists.</p>
+          <Link className="mt-4 inline-block font-semibold text-brand-700" href={`/reset-password?email=${encodeURIComponent(email.trim())}`}>Enter verification code</Link>
 
           {requestError ? (
             <AuthAlert className="mt-5 text-left" tone={requestError === "offline" ? "warning" : "error"} title={requestError === "offline" ? "Connection lost" : "Message not sent"} assertive>
@@ -118,7 +120,7 @@ export function ForgotPasswordForm() {
           />
 
           <Button className="w-full" size="lg" type="submit" loading={pending} loadingLabel="Sending Instructions…" disabled={!email.trim() || (checked && !online)}>
-            Send Reset Instructions
+            Send Verification Code
           </Button>
           <BackToLogin />
         </form>

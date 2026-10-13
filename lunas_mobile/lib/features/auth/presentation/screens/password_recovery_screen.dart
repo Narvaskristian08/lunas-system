@@ -40,8 +40,11 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       setState(() {
         _sent = true;
         _message =
-            'If an account exists for this email, you will receive password reset instructions. Check your inbox and spam folder.';
+            'If an active account matches, a six-digit code will be sent. Check your inbox and spam folder.';
       });
+      context.push(
+        '/reset-password?email=${Uri.encodeComponent(_emailController.text.trim())}',
+      );
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _message = error.message);
@@ -65,7 +68,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               const AuthHeading(
                 title: 'Reset Password',
                 description:
-                    'Enter the email address linked to your account to request a password reset link.',
+                    'Enter your account email to receive a six-digit password reset code.',
               ),
               const SizedBox(height: AppSpacing.xl),
               TextFormField(
@@ -96,7 +99,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 const SizedBox(height: AppSpacing.md),
               ],
               LunasButton(
-                label: 'Send Reset Link',
+                label: 'Send Verification Code',
                 isLoading: _sending,
                 onPressed: _sending ? null : _submit,
               ),

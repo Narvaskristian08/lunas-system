@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
@@ -42,6 +43,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   static const _dagupan = LatLng(16.0433, 120.3333);
 
   GoogleMapController? _mapController;
+  StreamSubscription<Position>? _positionSubscription;
   SelectedLocation? _selectedLocation;
   LatLng _cameraTarget = _dagupan;
   GpsFix? _gpsFix;
@@ -63,13 +65,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         initialLocation.longitude,
       );
     }
-    _moveToCurrentLocation(
-      userInitiated: widget.showLocationConfirmation && initialLocation == null,
-    );
+    _moveToCurrentLocation(userInitiated: initialLocation == null);
   }
 
   @override
   void dispose() {
+    _positionSubscription?.cancel();
     _mapController?.dispose();
     super.dispose();
   }
@@ -91,6 +92,27 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           capturedAt: position.timestamp,
         );
       });
+      _positionSubscription ??= widget.locationService.watchPosition().listen(
+        (position) {
+          if (!mounted) return;
+          setState(() {
+            _gpsFix = GpsFix(
+              longitude: position.longitude,
+              latitude: position.latitude,
+              accuracyMeters: position.accuracy,
+              capturedAt: position.timestamp,
+            );
+          });
+        },
+        onError: (Object error) {
+          if (!mounted) return;
+          _showLocationFeedback(
+            'Live location is unavailable. Tap My location to retry.',
+          );
+          _positionSubscription?.cancel();
+          _positionSubscription = null;
+        },
+      );
       final target = LatLng(position.latitude, position.longitude);
       if (userInitiated || _selectedLocation == null) {
         await _selectPoint(target, source: 'gps');
@@ -107,6 +129,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           _messageFor(error.failure),
           onSettings: error.failure == LocationFailure.permissionDeniedForever
               ? _openAppSettings
+              : error.failure == LocationFailure.servicesDisabled
+              ? () {
+                  unawaited(widget.locationService.openLocationSettings());
+                }
               : null,
         );
       }
@@ -219,11 +245,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         showBackButton: widget.showLocationConfirmation,
         actions: [
           IconButton(
-            tooltip: 'Refresh map',
+            tooltip: 'My location',
             onPressed: _isLocating
                 ? null
                 : () => _moveToCurrentLocation(userInitiated: true),
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.my_location_rounded),
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -241,6 +267,22 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             myLocationButtonEnabled: false,
             compassEnabled: true,
             zoomControlsEnabled: false,
+            circles: _gpsFix == null
+                ? const {}
+                : {
+                    Circle(
+                      circleId: const CircleId('gps-accuracy'),
+                      center: LatLng(_gpsFix!.latitude, _gpsFix!.longitude),
+                      radius: _gpsFix!.accuracyMeters,
+                      fillColor: theme.colorScheme.primary.withValues(
+                        alpha: .12,
+                      ),
+                      strokeColor: theme.colorScheme.primary.withValues(
+                        alpha: .45,
+                      ),
+                      strokeWidth: 1,
+                    ),
+                  },
             markers: selected == null
                 ? const {}
                 : {
@@ -250,6 +292,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     ),
                   },
           ),
+          if (!widget.showLocationConfirmation &&
+              !_isLocating &&
+              _gpsFix != null)
+            Positioned(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              top: AppSpacing.md,
+              child: LunasCard(
+                child: Text(
+                  'Your current location · GPS accuracy ±${_gpsFix!.accuracyMeters.round()} m',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ),
           if (_isLocating)
             ColoredBox(
               color: theme.colorScheme.surface.withValues(alpha: .78),

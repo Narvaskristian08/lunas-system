@@ -63,7 +63,7 @@ try {
   await waitUntilReady();
   const playwright = spawn(
     process.execPath,
-    [join(root, "node_modules", "@playwright", "test", "cli.js"), "test"],
+    [join(root, "node_modules", "@playwright", "test", "cli.js"), "test", ...process.argv.slice(2)],
     { cwd: root, env: environment, stdio: "inherit" },
   );
   exitCode = await new Promise((resolve, reject) => {

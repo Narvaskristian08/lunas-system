@@ -121,6 +121,7 @@ final GoRouter appRouter = GoRouter(
       path: '/reset-password',
       builder: (_, state) => ResetPasswordWithTokenScreen(
         initialToken: state.uri.queryParameters['token'],
+        email: state.uri.queryParameters['email'],
       ),
     ),
     GoRoute(

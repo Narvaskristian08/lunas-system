@@ -12,7 +12,7 @@ describe('LUNAS transactional email template', () => {
     });
 
     expect(message.html).toContain('LUNAS');
-    expect(message.html).toContain('Local Urban Network Assistance System');
+    expect(message.html).toContain('LUNAS account security');
     expect(message.html).toContain('role="presentation"');
     expect(message.html).toContain('123456');
     expect(message.html).toContain('Hello &lt;Juan&gt;,');

@@ -46,9 +46,12 @@ test("protected web routes redirect an anonymous visitor to real sign-in", async
   await expect(page).toHaveURL(/\/login\?next=%2Fwork-orders%2Fintake|\/login\?next=\/work-orders\/intake/);
 });
 
-test("password reset requires a real token and public legal states render", async ({ page }) => {
+test("password reset requires email code verification before showing passwords and public legal states render", async ({ page }) => {
   await page.goto("/reset-password");
-  await expect(page.getByRole("heading", { name: "Reset link is invalid" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verify your reset code" })).toBeVisible();
+  await expect(page.getByLabel("Verification code")).toBeVisible();
+  await expect(page.getByLabel("New Password", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Verify Code", exact: true })).toBeDisabled();
 
   await page.goto("/privacy");
   await expect(page.getByText(/New evidence images are checked by the backend privacy detector/)).toBeVisible();

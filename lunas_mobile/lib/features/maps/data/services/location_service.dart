@@ -50,6 +50,15 @@ class LocationService {
 
   Future<bool> openAppSettings() => Geolocator.openAppSettings();
 
+  Future<bool> openLocationSettings() => Geolocator.openLocationSettings();
+
+  Stream<Position> watchPosition() => Geolocator.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    ),
+  );
+
   Future<SelectedLocation> resolveLocation({
     required double latitude,
     required double longitude,

@@ -426,6 +426,18 @@ export async function resetPasswordAction(token: string, newPassword: string): P
   }
 }
 
+export async function verifyPasswordResetCodeAction(email: string, code: string): Promise<{ ok: boolean; token?: string; message?: string }> {
+  if (!/^\d{6}$/.test(code)) return { ok: false, message: "Enter the six-digit code." };
+  try {
+    const result = await backendRequest<{ resetToken: string }>("/auth/forgot-password/verify", {
+      method: "POST", body: JSON.stringify({ email, code }),
+    });
+    return { ok: true, token: result.data?.resetToken };
+  } catch {
+    return { ok: false, message: "Code invalid, expired, or attempts exceeded. Request a new code." };
+  }
+}
+
 export async function activateAccountAction(token: string, password: string): Promise<ActionResult> {
   try {
     await backendRequest("/auth/activate-account", { method: "POST", body: JSON.stringify({ token, password }) });

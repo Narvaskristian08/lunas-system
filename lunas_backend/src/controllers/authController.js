@@ -10,6 +10,7 @@ const {
   verifyRefreshToken
 } = require('../utils/authTokens');
 const { deliverPasswordReset } = require('../services/passwordResetDeliveryService');
+const { createResetCode, hashResetCode } = require('../services/passwordResetCodeService');
 const {
   createRecoveryEmailChallenge,
   deliverRecoveryEmailCode,
@@ -828,16 +829,19 @@ exports.changePassword = asyncHandler(async (req, res) => {
 exports.forgotPassword = asyncHandler(async (req, res) => {
   const genericResponse = {
     success: true,
-    message: 'If an active account matches that email, password reset instructions will be sent.'
+    message: 'If an active account matches that email, a password reset code will be sent.',
+    data: { retryAfterSeconds: 60 }
   };
   const user = await User.findOne({ email: req.body.email.toLowerCase() })
-    .select('+passwordResetToken +passwordResetExpires +recoveryEmail +recoveryEmailVerifiedAt');
+    .select('+passwordResetToken +passwordResetExpires +recoveryEmail +recoveryEmailVerifiedAt +passwordResetCodeSentAt +passwordResetCodeHash +passwordResetCodeExpires +passwordResetCodeAttempts');
 
   if (!canSignIn(user)) {
     return res.status(200).json(genericResponse);
   }
 
-  if (!user.recoveryEmail || !user.recoveryEmailVerifiedAt) {
+  const hasVerifiedRecoveryEmail = Boolean(user.recoveryEmail && user.recoveryEmailVerifiedAt);
+  const hasVerifiedCitizenEmail = user.role === 'citizen' && user.isVerified;
+  if (!hasVerifiedRecoveryEmail && !hasVerifiedCitizenEmail) {
     await createAuditLog({
       action: 'password_reset_requested',
       performedBy: user._id,
@@ -850,10 +854,19 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
     return res.status(200).json(genericResponse);
   }
 
-  const resetToken = user.createPasswordResetToken();
+  if (user.passwordResetCodeSentAt && Date.now() - user.passwordResetCodeSentAt.getTime() < 60000) {
+    return res.status(200).json(genericResponse);
+  }
+  const challenge = createResetCode(user.email);
+  user.passwordResetCodeHash = challenge.hash;
+  user.passwordResetCodeExpires = challenge.expires;
+  user.passwordResetCodeAttempts = 0;
+  user.passwordResetCodeSentAt = new Date();
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
   await user.save({ validateBeforeSave: false });
 
-  const delivery = await deliverPasswordReset({ user, resetToken });
+  const delivery = await deliverPasswordReset({ user, code: challenge.code });
   await createAuditLog({
     action: 'password_reset_requested',
     performedBy: user._id,
@@ -865,6 +878,40 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   });
 
   return res.status(200).json(genericResponse);
+});
+
+// Exchange a one-time email code for a short-lived password-change token.
+exports.verifyPasswordResetCode = asyncHandler(async (req, res) => {
+  const email = req.body.email.trim().toLowerCase();
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const scope = {
+    email, isActive: true, isArchived: { $ne: true },
+    requiresActivation: { $ne: true },
+    $or: [{ accountStatus: 'active' }, { accountStatus: { $exists: false } }],
+    passwordResetCodeExpires: { $gt: new Date() },
+    passwordResetCodeAttempts: { $lt: 5 }
+  };
+  const user = await User.findOneAndUpdate({
+    ...scope, passwordResetCodeHash: hashResetCode(email, req.body.code)
+  }, {
+    $set: {
+      passwordResetToken: crypto.createHash('sha256').update(resetToken).digest('hex'),
+      passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000)
+    },
+    $unset: { passwordResetCodeHash: 1, passwordResetCodeExpires: 1 }
+  }, { new: true });
+  if (!user) {
+    await User.updateOne({ ...scope, passwordResetCodeHash: { $exists: true } }, {
+      $inc: { passwordResetCodeAttempts: 1 }
+    });
+    return res.status(400).json({ success: false, message: 'The code is invalid, expired, or has reached the attempt limit. Request a new code.' });
+  }
+  await createAuditLog({
+    action: 'password_reset_code_verified', performedBy: user._id,
+    resourceType: 'User', resourceId: user._id,
+    ipAddress: req.ip, userAgent: req.headers['user-agent']
+  });
+  return res.status(200).json({ success: true, data: { resetToken } });
 });
 
 // @desc    Complete a password reset

@@ -173,6 +173,15 @@ class AuthService {
     );
   }
 
+  Future<String> verifyPasswordResetCode(String email, String code) async {
+    final payload = await _apiClient.post(
+      '/auth/forgot-password/verify',
+      authenticated: false,
+      body: {'email': email, 'code': code},
+    );
+    return (payload['data'] as Map<String, dynamic>)['resetToken'] as String;
+  }
+
   Future<AuthSession> resetPassword({
     required String token,
     required String password,

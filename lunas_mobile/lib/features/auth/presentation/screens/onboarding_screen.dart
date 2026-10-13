@@ -65,19 +65,8 @@ class OnboardingScreen extends StatelessWidget {
               child: const Text('Sign Up'),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          TextButton(
-            onPressed: () => _showUnavailable(context, 'About LUNAS'),
-            child: const Text('Learn About LUNAS'),
-          ),
         ],
       ),
-    );
-  }
-
-  void _showUnavailable(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature is not available in this build.')),
     );
   }
 }

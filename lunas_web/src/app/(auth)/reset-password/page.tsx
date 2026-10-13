@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { ResetCodeForm } from "@/components/auth/reset-code-form";
 
 export const metadata: Metadata = {
   title: "Reset Password",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string | string[]; openApp?: string | string[] }>;
+  searchParams: Promise<{ token?: string | string[]; openApp?: string | string[]; email?: string | string[] }>;
 }) {
   const query = await searchParams;
   const tokenParam = Array.isArray(query.token) ? query.token[0] : query.token;
@@ -23,7 +24,7 @@ export default async function ResetPasswordPage({
       title="Create a new password"
       description="Use a strong, unique password for your authorized LUNAS account. Every requirement must be met before you can continue."
     >
-      <ResetPasswordForm token={tokenParam ?? ""} initialTokenStatus={initialTokenStatus} openInMobile={openAppParam === "1"} />
+      {tokenParam ? <ResetPasswordForm token={tokenParam} initialTokenStatus={initialTokenStatus} openInMobile={openAppParam === "1"} /> : <ResetCodeForm initialEmail={Array.isArray(query.email) ? query.email[0] : query.email} />}
     </AuthShell>
   );
 }

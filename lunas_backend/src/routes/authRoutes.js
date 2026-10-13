@@ -8,6 +8,7 @@ const {
   login,
   refresh,
   forgotPassword,
+  verifyPasswordResetCode,
   resetPassword,
   getMe,
   getRecoveryEmailStatus,
@@ -30,6 +31,7 @@ const {
   refreshValidation,
   registerValidation,
   resetPasswordValidation,
+  passwordResetCodeValidation,
   recoveryEmailRequestValidation,
   recoveryEmailVerifyValidation,
   updateProfileValidation,
@@ -54,6 +56,7 @@ router.post('/register/resend', authLimiter, registrationMfaResendValidation, va
 router.post('/login', loginIpLimiter, loginAccountLimiter, loginValidation, validate, login);
 router.post('/refresh', authLimiter, refreshValidation, validate, refresh);
 router.post('/forgot-password', authLimiter, forgotPasswordValidation, validate, forgotPassword);
+router.post('/forgot-password/verify', authLimiter, passwordResetCodeValidation, validate, verifyPasswordResetCode);
 router.post('/reset-password', authLimiter, resetPasswordValidation, validate, resetPassword);
 router.get('/me', protect, getMe);
 router.get('/recovery-email/status', protect, getRecoveryEmailStatus);

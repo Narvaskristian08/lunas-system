@@ -27,7 +27,7 @@ describe('password reset delivery', () => {
         recoveryEmailVerifiedAt: new Date(),
         firstName: 'Test'
       },
-      resetToken: 'reset-token'
+      code: '123456'
     })).resolves.toEqual({ configured: true, delivered: true });
 
     expect(deliverEmail).toHaveBeenCalledWith(expect.objectContaining({
@@ -38,7 +38,7 @@ describe('password reset delivery', () => {
   test('fails closed when recovery email is missing or unverified', async () => {
     await expect(deliverPasswordReset({
       user: { email: 'login-identifier@example.test', recoveryEmail: 'unverified@example.test' },
-      resetToken: 'reset-token'
+      code: '123456'
     })).resolves.toEqual({ configured: false, delivered: false });
 
     expect(deliverEmail).not.toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe('password reset delivery', () => {
         isVerified: true,
         firstName: 'Citizen'
       },
-      resetToken: 'reset-token'
+      code: '123456'
     })).resolves.toEqual({ configured: true, delivered: true });
 
     expect(deliverEmail).toHaveBeenCalledWith(expect.objectContaining({
@@ -60,7 +60,7 @@ describe('password reset delivery', () => {
     }));
   });
 
-  test('uses the mobile deep link first and keeps a browser fallback', async () => {
+  test('sends a one-time code without an app or web reset link', async () => {
     process.env.PASSWORD_RESET_MOBILE_URL = 'lunas://app/reset-password';
 
     await deliverPasswordReset({
@@ -70,15 +70,16 @@ describe('password reset delivery', () => {
         isVerified: true,
         firstName: 'Citizen'
       },
-      resetToken: 'reset-token'
+      code: '123456'
     });
 
     expect(deliverEmail).toHaveBeenCalledWith(expect.objectContaining({
-      html: expect.stringContaining('href="https://app.example.test/reset-password?token=reset-token&openApp=1"'),
-      text: expect.stringContaining('Open in LUNAS Mobile: https://app.example.test/reset-password?token=reset-token&openApp=1'),
+      html: expect.stringContaining('123456'),
+      text: expect.stringContaining('Verification code: 123456'),
       webhookPayload: expect.objectContaining({
-        resetUrl: 'https://app.example.test/reset-password?token=reset-token&openApp=1'
+        code: '123456', expiresInMinutes: 10
       })
     }));
+    expect(deliverEmail.mock.calls[0][0].html).not.toContain('href=');
   });
 });
