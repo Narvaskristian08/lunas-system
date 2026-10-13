@@ -263,11 +263,6 @@ class RepairStatusFilters extends StatelessWidget {
               ),
             ),
           ],
-          if (selected != null || overdueOnly)
-            TextButton(
-              onPressed: () => onSelected(null),
-              child: const Text('Clear Filters'),
-            ),
         ],
       ),
     );

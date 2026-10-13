@@ -3,6 +3,7 @@ import { NotificationsCenter } from "@/components/notifications/notifications-ce
 
 export const metadata: Metadata = { title: "Notifications" };
 
-export default function NotificationsPage() {
-  return <NotificationsCenter />;
+export default async function NotificationsPage({ searchParams }: { searchParams: Promise<{ notification?: string }> }) {
+  const { notification } = await searchParams;
+  return <NotificationsCenter initialNotificationId={notification} />;
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowUpRight,
   Bell,
   ClipboardList,
+  Eye,
   FileWarning,
   Megaphone,
   ShieldAlert,
@@ -37,10 +36,12 @@ export function NotificationItem({
   notification,
   selected,
   onSelectedChange,
+  onOpen,
 }: {
   notification: LunasNotification;
   selected: boolean;
   onSelectedChange: (selected: boolean) => void;
+  onOpen: () => void;
 }) {
   const Icon = categoryIcons[notification.category] ?? Bell;
 
@@ -95,13 +96,13 @@ export function NotificationItem({
           </StatusBadge>
         </div>
 
-        <Link
-          href={`/notifications/${notification.id}`}
-          className="mt-1.5 inline-flex max-w-full items-start gap-2 rounded-md font-semibold leading-5 text-slate-950 hover:text-brand-700"
+        <button
+          type="button"
+          onClick={onOpen}
+          className="mt-1.5 block max-w-full rounded-md text-left font-semibold leading-5 text-slate-950 hover:text-brand-700"
         >
           <span>{notification.title}</span>
-          <ArrowUpRight className="mt-0.5 size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
-        </Link>
+        </button>
         <p className="mt-1 line-clamp-2 max-w-3xl text-sm leading-5 text-slate-600">
           {notification.message}
         </p>
@@ -118,14 +119,15 @@ export function NotificationItem({
         </div>
       </div>
 
-      <Link
-        href={`/notifications/${notification.id}`}
+      <button
+        type="button"
+        onClick={onOpen}
         className="col-start-2 row-start-2 inline-flex min-h-10 items-center justify-center gap-1.5 self-center rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:border-brand-300 hover:text-brand-800 sm:col-start-4 sm:row-start-1 sm:mt-1"
         aria-label={`Open notification: ${notification.title}`}
       >
         View details
-        <ArrowUpRight className="size-3.5" aria-hidden="true" />
-      </Link>
+        <Eye className="size-3.5" aria-hidden="true" />
+      </button>
     </article>
   );
 }

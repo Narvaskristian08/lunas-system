@@ -253,7 +253,7 @@ class _MyReportsScreenState extends State<MyReportsScreen>
                   message: _filter == 'all' && _query.trim().isEmpty
                       ? 'Start a report when you see an infrastructure concern.'
                       : _query.trim().isNotEmpty
-                      ? 'Try another search or clear the search and filters.'
+                      ? 'Clear the search or choose another status.'
                       : 'Choose another status to see other reports.',
                   actionLabel: _filter == 'all' && _query.trim().isEmpty
                       ? 'Create report'

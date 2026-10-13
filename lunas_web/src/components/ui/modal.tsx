@@ -38,7 +38,7 @@ export function Modal({ open, title, action, children, busy = false, size = "wid
         <h2 id={titleId} className="min-w-0 text-lg font-semibold text-slate-950">{title}</h2>
         <div className="flex shrink-0 items-center gap-2">
           {action}
-          <button type="button" disabled={busy} onClick={onClose} aria-label="Close account dialog" className="flex size-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-50"><X className="size-5" aria-hidden="true" /></button>
+          <button type="button" disabled={busy} onClick={onClose} aria-label={`Close ${title}`} className="flex size-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-50"><X className="size-5" aria-hidden="true" /></button>
         </div>
       </div>
       <div className="min-h-0 overflow-y-auto p-5 sm:p-6">{children}</div>
