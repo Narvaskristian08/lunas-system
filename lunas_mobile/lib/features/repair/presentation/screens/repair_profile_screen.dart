@@ -184,7 +184,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                         'Your account details are managed by your utility provider. Contact them to request corrections.',
                       ),
                       actions: [
-                        TextButton(
+                        FilledButton(
                           onPressed: () => Navigator.pop(dialogContext),
                           child: const Text('Got It'),
                         ),

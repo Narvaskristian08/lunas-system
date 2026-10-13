@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/theme/text_styles.dart';
@@ -10,12 +11,9 @@ class ReportSubmittedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: false,
-    child: Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      constraints: const BoxConstraints(maxWidth: 400),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    child: LunasDialogSurface(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(28, 32, 28, 20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -88,19 +86,22 @@ class ReportSubmittedDialog extends StatelessWidget {
                 ],
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            LunasButton(
-              label: 'View Report Details',
-              onPressed: report.id.isEmpty
-                  ? null
-                  : () => Navigator.of(
-                      context,
-                    ).pop('/reports/${Uri.encodeComponent(report.id)}'),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop('/citizen'),
-              child: const Text('Close'),
+            const SizedBox(height: 24),
+            LunasDialogActions(
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop('/citizen'),
+                  child: const Text('Close'),
+                ),
+                LunasButton(
+                  label: 'View Report Details',
+                  onPressed: report.id.isEmpty
+                      ? null
+                      : () => Navigator.of(
+                          context,
+                        ).pop('/reports/${Uri.encodeComponent(report.id)}'),
+                ),
+              ],
             ),
           ],
         ),

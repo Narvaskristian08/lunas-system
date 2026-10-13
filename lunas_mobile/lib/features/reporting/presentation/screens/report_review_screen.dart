@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/new_citizen_report_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'dart:async';
@@ -192,15 +193,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
           _sheetState = sheetState;
           return PopScope(
             canPop: !_submitting,
-            child: Dialog(
-              alignment: Alignment.center,
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xl,
-                vertical: AppSpacing.lg,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+            child: LunasDialogSurface(
               child: Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xl),
                 child: ConstrainedBox(
@@ -230,13 +223,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       children: [
                         Text(
                           'Final Check',
-                          style: Theme.of(context).textTheme.titleMedium
+                          style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           'Review both items to continue.',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(height: 1.5),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Padding(
@@ -263,6 +258,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                                   ),
                                 if (_comparison == 'discrepancy') ...[
                                   DropdownButtonFormField<String>(
+                                    isExpanded: true,
                                     initialValue: _explanationReason,
                                     decoration: const InputDecoration(
                                       labelText:
@@ -371,19 +367,23 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: AppSpacing.lg),
-                        LunasButton(
-                          label: 'Submit Report',
-                          isLoading: _submitting,
-                          onPressed: _submitting || _loadingPolicy
-                              ? null
-                              : _submit,
-                        ),
-                        TextButton(
-                          onPressed: _submitting
-                              ? null
-                              : () => Navigator.of(sheetContext).pop(),
-                          child: const Text('Back to Review'),
+                        const SizedBox(height: 24),
+                        LunasDialogActions(
+                          actions: [
+                            TextButton(
+                              onPressed: _submitting
+                                  ? null
+                                  : () => Navigator.of(sheetContext).pop(),
+                              child: const Text('Back to Review'),
+                            ),
+                            LunasButton(
+                              label: 'Submit Report',
+                              isLoading: _submitting,
+                              onPressed: _submitting || _loadingPolicy
+                                  ? null
+                                  : _submit,
+                            ),
+                          ],
                         ),
                       ],
                     ),

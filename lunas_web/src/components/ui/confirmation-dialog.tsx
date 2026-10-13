@@ -64,14 +64,14 @@ export function ConfirmationDialog({
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div className="flex items-start gap-3">
           {icon === "logout" ? <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-700"><LogOut className="size-5" aria-hidden="true" /></span> : null}
-          <h2 id={titleId} className="min-w-0 flex-1 pt-2 text-xl font-bold leading-7 text-slate-950">{title}</h2>
-          <button type="button" onClick={onClose} disabled={loading} className="ml-auto flex size-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100" aria-label="Close Dialog"><X className="size-5" aria-hidden="true" /></button>
+          <h2 id={titleId} className="min-w-0 flex-1 py-2 text-xl font-bold leading-7 text-slate-950">{title}</h2>
+          <button type="button" onClick={onClose} disabled={loading} className="ml-auto flex size-12 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 disabled:opacity-50" aria-label="Close Dialog"><X className="size-5" aria-hidden="true" /></button>
         </div>
         <p id={descriptionId} className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
         {children ? <div className="mt-4">{children}</div> : null}
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button ref={cancelRef} type="button" variant="secondary" onClick={onClose} disabled={loading} className="min-h-12 sm:min-w-28">{cancelLabel}</Button>
-          <Button type="button" variant={destructive ? "danger" : "primary"} onClick={onConfirm} loading={loading} loadingLabel="Please Wait…" className="min-h-12 sm:min-w-36">{confirmLabel}</Button>
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-stretch">
+          <Button ref={cancelRef} type="button" variant="secondary" onClick={onClose} disabled={loading} className="min-h-12 min-w-0 w-full px-4 py-3 sm:flex-1">{cancelLabel}</Button>
+          <Button type="button" variant={destructive ? "danger" : "primary"} onClick={onConfirm} loading={loading} loadingLabel="Please Wait…" className="min-h-12 min-w-0 w-full px-4 py-3 sm:flex-1">{confirmLabel}</Button>
         </div>
       </div>
     </div>

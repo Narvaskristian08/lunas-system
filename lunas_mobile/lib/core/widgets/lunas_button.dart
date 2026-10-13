@@ -29,7 +29,7 @@ class LunasButton extends StatelessWidget {
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(label),
+              Flexible(child: Text(label, textAlign: TextAlign.center)),
               if (icon != null) ...[
                 const SizedBox(width: 8),
                 Icon(icon, size: 18),
