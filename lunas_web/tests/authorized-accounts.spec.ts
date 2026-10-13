@@ -83,6 +83,31 @@ test.describe("authorized account screens", () => {
     await expect(page).toHaveURL(/\/admin\/users$/);
   });
 
+  test("confirmation layout has equal actions on desktop and mobile", async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
+    await page.goto("/admin/users");
+    await page.getByRole("button", { name: /Test Administrator/ }).click();
+    await page.getByRole("menuitem", { name: /Sign Out/i }).click();
+    const dialog = page.getByRole("dialog", { name: "Sign out of LUNAS?" });
+    const confirm = dialog.getByRole("button", { name: "Confirm Sign Out" });
+    const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(cancel).toBeFocused();
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 700 });
+      const first = (await confirm.boundingBox())!;
+      const second = (await cancel.boundingBox())!;
+      expect(first.height).toBeGreaterThanOrEqual(48);
+      expect(second.height).toBeGreaterThanOrEqual(48);
+      expect(Math.abs(first.width - second.width)).toBeLessThanOrEqual(1);
+      if (width < 640) expect(first.y).toBeLessThan(second.y);
+      else expect(first.y).toBe(second.y);
+      expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+  });
+
   test("administrator creates an approved account, views Pending Activation, and confirms deactivation", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
     await page.goto("/admin/users");

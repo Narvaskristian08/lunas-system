@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { loadFalseReportReview, saveFalseReportReview, type ReviewData } from "@/app/actions/false-report-review";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -19,9 +19,7 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
   const [pending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const restoreRef = useRef<HTMLElement | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -30,31 +28,7 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
     return () => { active = false; };
   }, [incidentId]);
 
-  useEffect(() => {
-    if (!modalOpen) return;
-    restoreRef.current = document.activeElement as HTMLElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    requestAnimationFrame(() => closeRef.current?.focus());
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !pending) {
-        setModalOpen(false);
-        setConfirming(false);
-      }
-      if (event.key !== "Tab" || !dialogRef.current) return;
-      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"));
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
-      restoreRef.current?.focus();
-    };
-  }, [modalOpen, pending]);
+
 
   const correcting = data?.review?.finding === "confirmed_fabrication";
   const canRecord = role === "barangay_official";
@@ -130,31 +104,27 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
         </div>
       </Card>
 
-      {modalOpen && data ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[1px] sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
-        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="false-report-review-title" aria-describedby="false-report-review-description" className="max-h-[min(820px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-brand-700">{correcting ? "Correct an Existing Finding" : "Barangay Review Action"}</p>
-              <h2 id="false-report-review-title" className="mt-1 text-xl font-bold text-slate-950">{correcting ? "Correct False-Report Finding" : "Document False-Report Finding"}</h2>
-            </div>
-            <button ref={closeRef} type="button" onClick={closeModal} disabled={pending} className="flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100" aria-label="Close false-report review dialog"><X className="size-5" aria-hidden="true" /></button>
-          </div>
-          <p id="false-report-review-description" className="mt-3 text-sm leading-6 text-slate-600">{correcting ? "Record why the existing finding is being corrected. The audit history remains available." : "Only document deliberate fabrication when the rejection decision and cited evidence support it. A rejection, duplicate, or GPS mismatch alone is not a fabrication finding."}</p>
-          <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-950">
+      {data ? <ConfirmationDialog
+        open={modalOpen}
+        icon="none"
+        title={correcting ? "Correct False-Report Finding" : "Document False-Report Finding"}
+        description={correcting ? "Record why the existing finding is being corrected. The audit history remains available." : "Only document deliberate fabrication when the rejection decision and cited evidence support it. A rejection, duplicate, or GPS mismatch alone is not a fabrication finding."}
+        confirmLabel={confirming ? "Confirm Reviewed Decision" : correcting ? "Continue to Correction" : "Continue to Record Finding"}
+        loading={pending}
+        onClose={closeModal}
+        onConfirm={() => formRef.current?.requestSubmit()}
+      >
+          <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-950">
             <p><span className="font-semibold">Reporter findings:</span> {data.confirmedFindingsTotal ?? data.confirmedFindingsInScope} / 3</p>
             <p className="mt-1"><span className="font-semibold">Assigned Barangay:</span> This review uses the incident’s assigned Barangay and cannot be changed here.</p>
           </div>
-          <form onSubmit={submit} className="mt-5 space-y-4">
+          <form ref={formRef} onSubmit={submit} className="mt-4 space-y-4">
             <label className="block text-sm font-semibold text-slate-800">{correcting ? "Correction Reason" : "Evidence Supporting Deliberate Fabrication"}<textarea className={`${fieldClass()} min-h-32`} value={reason} onChange={(event) => { setReason(event.target.value); setConfirming(false); }} required minLength={20} maxLength={2000} disabled={pending} /></label>
             <label className="block text-sm font-semibold text-slate-800">Evidence or Documented Decision Reference<input className={fieldClass()} value={evidenceReference} onChange={(event) => { setEvidence(event.target.value); setConfirming(false); }} required maxLength={500} disabled={pending} /></label>
             {confirming ? <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">Confirm that you reviewed the cited evidence and documented this {correcting ? "correction" : "finding"}.</p> : null}
-            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-              <Button className="min-h-12" type="button" variant="secondary" onClick={closeModal} disabled={pending}>Cancel</Button>
-              <Button className="min-h-12" type="submit" loading={pending} loadingLabel="Saving…">{confirming ? "Confirm Reviewed Decision" : correcting ? "Continue to Correction" : "Continue to Record Finding"}</Button>
-            </div>
+
           </form>
-        </div>
-      </div> : null}
+      </ConfirmationDialog> : null}
     </>
   );
 }

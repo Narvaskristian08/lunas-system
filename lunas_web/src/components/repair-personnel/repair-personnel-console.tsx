@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Modal } from "@/components/ui/modal";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/layout/page-header";
 import type { RepairPersonnelAccountStatus, RepairPersonnelRecord } from "@/lib/repair-personnel.server";
@@ -37,6 +37,7 @@ export function RepairPersonnelConsole({
   error?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const statusFormRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [warning, setWarning] = useState(false);
@@ -153,15 +154,23 @@ export function RepairPersonnelConsole({
           <EmptyState icon="records" title="No Repair Personnel yet" description="Add a repair person to make them available for matching work orders after activation." />
         )}
       </Card>
-      <Modal open={!!statusTarget} title={statusTarget?.accountStatus === "deactivated" || statusTarget?.accountStatus === "suspended" ? "Reactivate Personnel" : "Deactivate Personnel"} busy={pending} size="compact" onClose={() => setStatusTarget(null)}>
-        {statusTarget ? <form action={form => manage(statusTarget, "status", form)} className="space-y-5">
+      <ConfirmationDialog
+        open={!!statusTarget}
+        icon="none"
+        title={statusTarget?.accountStatus === "deactivated" || statusTarget?.accountStatus === "suspended" ? "Reactivate Personnel" : "Deactivate Personnel"}
+        description={`Update access for ${statusTarget?.firstName ?? ""} ${statusTarget?.lastName ?? ""}. Deactivation prevents sign-in and revokes existing sessions. Their account and work history are retained.`}
+        confirmLabel={statusTarget?.accountStatus === "deactivated" || statusTarget?.accountStatus === "suspended" ? "Reactivate Personnel" : "Deactivate Personnel"}
+        destructive={statusTarget?.accountStatus !== "deactivated" && statusTarget?.accountStatus !== "suspended"}
+        loading={pending}
+        onClose={() => { if (!pending) setStatusTarget(null); }}
+        onConfirm={() => statusFormRef.current?.requestSubmit()}
+      >
+        {statusTarget ? <form ref={statusFormRef} action={form => manage(statusTarget, "status", form)} className="space-y-4">
           <input type="hidden" name="status" value={statusTarget.accountStatus === "deactivated" || statusTarget.accountStatus === "suspended" ? "active" : "deactivated"} />
-          <p className="text-sm leading-6 text-slate-600">Update access for {statusTarget.firstName} {statusTarget.lastName}. Deactivation prevents sign-in and revokes existing sessions. Their account and work history are retained.</p>
-          <label className="block text-sm font-medium">Reason *<textarea name="reason" required maxLength={500} className={inputClass} rows={3} /></label>
+          <label className="block text-sm font-medium">Reason *<textarea name="reason" required maxLength={500} disabled={pending} className={inputClass} rows={3} /></label>
           {formError ? <p role="alert" className="text-sm text-red-700">{formError}</p> : null}
-          <div className="flex justify-end gap-3"><Button type="button" variant="secondary" disabled={pending} onClick={() => setStatusTarget(null)}>Cancel</Button><Button type="submit" variant={statusTarget.accountStatus === "deactivated" || statusTarget.accountStatus === "suspended" ? "primary" : "danger"} loading={pending}>{statusTarget.accountStatus === "deactivated" || statusTarget.accountStatus === "suspended" ? "Reactivate Personnel" : "Deactivate Personnel"}</Button></div>
         </form> : null}
-      </Modal>
+      </ConfirmationDialog>
     </div>
   );
 }
