@@ -54,7 +54,7 @@ class BarangayPickerScreenState extends State<BarangayPickerScreen> {
                   suffixIcon: query.isEmpty
                       ? null
                       : IconButton(
-                          tooltip: 'Clear Search',
+                          tooltip: 'Clear search',
                           icon: const Icon(Icons.clear_rounded),
                           onPressed: () => setState(_search.clear),
                         ),

@@ -46,7 +46,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
       showBrand: false,
       centerContent: true,
       footer: Text(
-        '© 2024 LUNAS Urban Infrastructure Management',
+        '© ${DateTime.now().year} LUNAS Urban Infrastructure Management',
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.labelSmall,
       ),
@@ -152,7 +152,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                   ],
                   const SizedBox(height: AppSpacing.xs),
                   LunasButton(
-                    label: 'Login',
+                    label: 'Log In',
                     isLoading: auth.isSubmitting,
                     onPressed: auth.isSubmitting ? null : _submit,
                   ),

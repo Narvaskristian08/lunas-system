@@ -2,21 +2,9 @@ import 'package:lunas_mobile/core/widgets/timeline_marker.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
+import 'package:lunas_mobile/core/utils/display_labels.dart';
 
-String humanStatus(String status) => status
-    .trim()
-    .toLowerCase()
-    .replaceAll(RegExp(r'[_-]+'), ' ')
-    .split(' ')
-    .where((part) => part.isNotEmpty)
-    .map(
-      (part) => ['ai', 'gps', 'sla', 'id'].contains(part)
-          ? part.toUpperCase()
-          : ['in', 'for', 'by', 'to', 'of', 'and'].contains(part)
-          ? part
-          : '${part[0].toUpperCase()}${part.substring(1)}',
-    )
-    .join(' ');
+String humanStatus(String status) => humanizeCodeLabel(status);
 
 IconData categoryIcon(String category) => switch (category) {
   'road' => Icons.add_road_rounded,

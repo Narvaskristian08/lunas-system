@@ -70,7 +70,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       if (mounted) {
         _updateReview(
           () => _error =
-              'Location review unavailable. Tap Retry location review.',
+              'Location review unavailable. Tap Retry Location Review.',
         );
       }
     } finally {
@@ -94,7 +94,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     if (_policy == null) {
       _updateReview(
         () =>
-            _error = 'Location review unavailable. Tap Retry location review.',
+            _error = 'Location review unavailable. Tap Retry Location Review.',
       );
       return;
     }
@@ -259,7 +259,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                                 if (_policy == null && !_loadingPolicy)
                                   TextButton(
                                     onPressed: _loadPolicy,
-                                    child: const Text('Retry location review'),
+                                    child: const Text('Retry Location Review'),
                                   ),
                                 if (_comparison == 'discrepancy') ...[
                                   DropdownButtonFormField<String>(
@@ -374,7 +374,6 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                         const SizedBox(height: AppSpacing.lg),
                         LunasButton(
                           label: 'Submit Report',
-                          icon: Icons.send_rounded,
                           isLoading: _submitting,
                           onPressed: _submitting || _loadingPolicy
                               ? null
@@ -421,7 +420,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               : 'Submit Report',
           icon: _reportingRestriction?.isBlocked == true
               ? Icons.rate_review_outlined
-              : Icons.send_rounded,
+              : null,
           isLoading: _submitting,
           onPressed: _submitting || _loadingPolicy
               ? null

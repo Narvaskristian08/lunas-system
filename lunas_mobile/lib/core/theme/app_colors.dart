@@ -16,7 +16,8 @@ class AppColorsLight {
 
   // Functions / Status
   static const Color critical = Color(0xFFBA1A1A); // Hazard Red
-  static const Color alert = Color(0xFFF59E0B); // Signal Amber
+  // Accessible foreground for amber status text and icons on light surfaces.
+  static const Color alert = Color(0xFF8A4B00);
   static const Color success = Color(0xFF1B6D24); // Resolution Green
   static const Color info = Color(0xFF0284C7); // System Blue
 }

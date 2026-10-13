@@ -143,7 +143,7 @@ class _RepairDashboardScreenState extends State<RepairDashboardScreen>
             onOpenTasks: () => context.go(
               summary.overdue > 0
                   ? RepairRoutes.filteredWorkOrders('overdue')
-                  : RepairRoutes.workOrders,
+                  : RepairRoutes.filteredWorkOrders('approaching'),
             ),
           ),
         ],

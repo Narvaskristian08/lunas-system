@@ -1,5 +1,5 @@
-jest.mock('../models/WorkOrder', () => ({ create: jest.fn(), find: jest.fn(), findOne: jest.fn(), findOneAndUpdate: jest.fn(), countDocuments: jest.fn() }));
-jest.mock('../models/Incident', () => ({ findById: jest.fn(), find: jest.fn().mockImplementation(() => ({ select: jest.fn().mockResolvedValue([{ _id: 'matched-incident' }]) })) }));
+jest.mock('../models/WorkOrder', () => ({ aggregate: jest.fn(), create: jest.fn(), find: jest.fn(), findOne: jest.fn(), findOneAndUpdate: jest.fn(), countDocuments: jest.fn() }));
+jest.mock('../models/Incident', () => ({ collection: { name: 'incidents' }, findById: jest.fn(), find: jest.fn().mockImplementation(() => ({ select: jest.fn().mockResolvedValue([{ _id: 'matched-incident' }]) })) }));
 jest.mock('../models/User', () => ({ findById: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn() }));
 jest.mock('../services/evidenceService', () => ({ processAndUploadRepairEvidence: jest.fn(), cleanupEvidence: jest.fn() }));
@@ -135,7 +135,7 @@ test.each(['pending', 'rework_required', 'in_progress'])('start directly authori
 });
 
 test.each([
-  ['awaiting_acceptance', { status: { $in: ['pending', 'in_progress', 'rework_required'] }, assignmentState: 'pending' }],
+  ['awaiting_acceptance', { status: { $ne: 'verified' }, assignmentState: 'pending' }],
   ['assigned', { status: { $in: ['pending', 'accepted'] }, assignmentState: { $in: ['pending', 'accepted'] } }],
   ['active', { status: 'in_progress', assignmentState: 'accepted' }],
   ['review', { status: { $in: ['completed', 'provider_accepted'] } }],
@@ -257,4 +257,65 @@ test('dashboard pending acceptance and assigned repairs use destination queue ru
   await require('./workOrderController').getWorkOrderSummary({ user: { role: 'repair_personnel', repairOrganization: 'Water District', _id: 'worker' } }, response(), jest.fn());
   expect(WorkOrder.countDocuments.mock.calls[1][0]).toMatchObject({ assignmentState: 'pending', status: { $ne: 'verified' } });
   expect(WorkOrder.countDocuments.mock.calls[11][0]).toMatchObject({ assignedTo: 'worker', assignmentState: { $in: ['pending', 'accepted'] }, status: { $in: ['pending', 'accepted'] } });
+});
+
+
+test('pending acceptance list uses the same nonverified grouping as its summary', async () => {
+  const query = { populate: jest.fn().mockReturnThis(), sort: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(), skip: jest.fn().mockResolvedValue([]) };
+  WorkOrder.find.mockReturnValue(query);
+  WorkOrder.countDocuments.mockResolvedValue(0);
+  const res = response();
+  await getWorkOrders({ user: { _id: 'worker', role: 'repair_personnel', repairOrganization: 'Water District' },
+    query: { repairView: 'awaiting_acceptance' } }, res, jest.fn());
+  expect(WorkOrder.countDocuments).toHaveBeenLastCalledWith(expect.objectContaining({
+    assignedTo: 'worker', responsibleOrganization: 'Water District',
+    assignmentState: 'pending', status: { $ne: 'verified' }
+  }));
+});
+
+test.each([{}, { slaState: 'overdue' }, { personnel: 'worker' }])('combined queue paginates in MongoDB and keeps organization scope: %j', async (refinements) => {
+  WorkOrder.aggregate.mockResolvedValue([{ rows: [], totals: [{ total: 37 }] }]);
+  const res = response();
+  const next = jest.fn();
+  await require('./workOrderController').getAwaitingAssignmentQueue({
+    user: { role: 'utility_provider', utilityCompany: 'Water District' },
+    query: { assignmentStatus: 'unassigned', page: '2', limit: '10', ...refinements }
+  }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  const pipeline = WorkOrder.aggregate.mock.calls.at(-1)[0];
+  expect(pipeline[0].$match).toEqual(expect.objectContaining({ responsibleOrganization: 'Water District' }));
+  const union = pipeline.find(stage => stage.$unionWith);
+  if (Object.keys(refinements).length) expect(union).toBeUndefined();
+  else expect(union.$unionWith.pipeline[0].$match).toEqual(expect.objectContaining({
+    'routing.responsibleOrganization': 'Water District', status: 'provider_assigned', workOrder: null
+  }));
+  expect(pipeline.at(-1).$facet.rows).toEqual(expect.arrayContaining([{ $skip: 10 }, { $limit: 10 }]));
+  expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ pagination: { page: 2, limit: 10, total: 37, pages: 4 } }));
+});
+
+
+test('combined queue preserves ordering and distinguishes intake links from work-order links', async () => {
+  WorkOrder.aggregate.mockResolvedValue([{ rows: [
+    { _id: 'report', source: 'incident', updatedAt: new Date() },
+    { _id: 'order', source: 'order' }
+  ], totals: [{ total: 2 }] }]);
+  const orders = { populate: jest.fn().mockReturnThis(), then: resolve => Promise.resolve([
+    { _id: 'order', orderNumber: 'WO-1', status: 'pending', assignmentState: 'unassigned' }
+  ]).then(resolve) };
+  WorkOrder.find.mockReturnValue(orders);
+  Incident.find.mockReturnValue({ select: jest.fn().mockResolvedValue([
+    { _id: 'report', reportNumber: 'REPORT-1', category: 'road', images: [], createdAt: new Date() }
+  ]) });
+  const res = response();
+  const next = jest.fn();
+  await require('./workOrderController').getAwaitingAssignmentQueue({
+    user: { role: 'utility_provider', utilityCompany: 'Water District' },
+    query: { assignmentStatus: 'unassigned' }
+  }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  const { data } = res.json.mock.calls[0][0];
+  expect(data.map(row => row.id)).toEqual(['report', 'order']);
+  expect(data[0]).toEqual(expect.objectContaining({ intakeIncidentId: 'report', reference: 'REPORT-1' }));
+  expect(data[1]).not.toHaveProperty('intakeIncidentId');
 });

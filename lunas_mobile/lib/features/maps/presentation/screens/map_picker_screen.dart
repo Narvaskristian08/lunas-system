@@ -219,7 +219,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         showBackButton: widget.showLocationConfirmation,
         actions: [
           IconButton(
-            tooltip: 'Refresh Map',
+            tooltip: 'Refresh map',
             onPressed: _isLocating
                 ? null
                 : () => _moveToCurrentLocation(userInitiated: true),

@@ -25,6 +25,7 @@ class AssignedWorkOrdersScreen extends StatefulWidget {
 class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     with WidgetsBindingObserver, QuietDataRefresh<AssignedWorkOrdersScreen> {
   static const _pageSize = 20;
+  int _requestSequence = 0;
   bool _loading = true;
   String? _error;
   RepairWorkOrderPage? _page;
@@ -53,10 +54,29 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   Future<void> refreshVisibleData() =>
       _load(quiet: true, page: _page?.page ?? 1);
 
-  Future<void> _load({int page = 1, bool quiet = false}) =>
-      loadScreenData(() => _loadData(page: page), quiet: quiet);
+  Future<void> _load({int page = 1, bool quiet = false}) {
+    if (quiet && dataRequestInFlight) return Future.value();
+    final sequence = ++_requestSequence;
+    final status = _status;
+    final overdue = _overdueOnly;
+    return loadScreenData(
+      () => _loadData(
+        page: page,
+        sequence: sequence,
+        status: status,
+        overdue: overdue,
+      ),
+      quiet: quiet,
+    );
+  }
 
-  Future<void> _loadData({int page = 1}) async {
+  Future<void> _loadData({
+    required int page,
+    required int sequence,
+    required String? status,
+    required bool overdue,
+  }) async {
+    if (!mounted || sequence != _requestSequence) return;
     if (!isQuietRefresh) {
       setState(() {
         _loading = true;
@@ -67,21 +87,21 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
       final result = await repairService.getMyWorkOrders(
         page: page,
         limit: _pageSize,
-        repairView: _status,
-        overdueOnly: _overdueOnly,
+        repairView: status,
+        overdueOnly: overdue,
       );
-      if (mounted) {
+      if (mounted && sequence == _requestSequence) {
         setState(() {
           _page = result;
           _error = null;
         });
       }
     } on ApiException catch (error) {
-      if (mounted && !isQuietRefresh) {
+      if (mounted && sequence == _requestSequence && !isQuietRefresh) {
         setState(() => _error = error.message);
       }
     } finally {
-      if (mounted) {
+      if (mounted && sequence == _requestSequence) {
         setState(() => _loading = false);
       }
     }
@@ -89,11 +109,14 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
 
   void _selectStatus(String? status) {
     if (status == 'overdue') {
-      setState(() => _overdueOnly = !_overdueOnly);
+      setState(() {
+        _overdueOnly = !_overdueOnly;
+        if (_status == 'approaching') _status = null;
+      });
     } else {
       setState(() {
         _status = status;
-        if (status == null) _overdueOnly = false;
+        if (status == null || status == 'approaching') _overdueOnly = false;
       });
     }
     _load();
@@ -119,14 +142,17 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _StatusFilters(
+        RepairStatusFilters(
           selected: _status,
           overdueOnly: _overdueOnly,
           onSelected: _selectStatus,
         ),
         if (!_loading && _error == null) ...[
           const SizedBox(height: AppSpacing.sm),
-          Text('${_page?.total ?? 0} matching work orders', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            '${_page?.total ?? 0} matching work orders',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
         const SizedBox(height: AppSpacing.lg),
         if (_loading || _error != null || (_page?.items.isEmpty ?? true))
@@ -164,7 +190,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
           'assigned' => 'No assigned repairs',
           'active' => 'No active repairs',
           'correction' => 'No repairs need correction',
-          'overdue' => 'No overdue repairs',
+          'approaching' => 'No repairs approaching their deadline',
           'review' => 'No repairs awaiting review',
           _ => 'No work orders',
         },
@@ -196,11 +222,12 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   }
 }
 
-class _StatusFilters extends StatelessWidget {
-  const _StatusFilters({
+class RepairStatusFilters extends StatelessWidget {
+  const RepairStatusFilters({
     required this.selected,
     required this.onSelected,
     this.overdueOnly = false,
+    super.key,
   });
 
   final String? selected;
@@ -215,6 +242,7 @@ class _StatusFilters extends StatelessWidget {
       ('active', 'Active Repairs'),
       ('correction', 'Needs Correction'),
       ('overdue', 'Overdue'),
+      ('approaching', 'Approaching Deadline'),
       ('review', 'Awaiting Review'),
     ];
     return SingleChildScrollView(
@@ -223,12 +251,8 @@ class _StatusFilters extends StatelessWidget {
         children: [
           for (var index = 0; index < statuses.length; index++) ...[
             if (index > 0) const SizedBox(width: AppSpacing.xs),
-            SizedBox(
-              width: statuses[index].$2.length > 16
-                  ? 164
-                  : statuses[index].$2.length > 10
-                  ? 144
-                  : 72,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 72),
               child: LunasFilterButton(
                 label: statuses[index].$2,
                 selected: statuses[index].$1 == 'overdue'
@@ -239,11 +263,6 @@ class _StatusFilters extends StatelessWidget {
               ),
             ),
           ],
-          if (selected != null || overdueOnly)
-            TextButton(
-              onPressed: () => onSelected(null),
-              child: const Text('Clear Filters'),
-            ),
         ],
       ),
     );

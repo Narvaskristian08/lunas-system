@@ -259,7 +259,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         !_items.any((item) => _filter == null || item.kind == _filter);
     final body = _body(context, fillEmpty: fillEmpty);
     final refreshAction = IconButton(
-      tooltip: 'Refresh Notifications',
+      tooltip: 'Refresh notifications',
       onPressed: _loading ? null : _load,
       icon: const Icon(Icons.refresh_rounded),
     );
@@ -270,7 +270,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           title: 'Notifications',
           subtitle: _unreadCount == 0
               ? 'Stay updated on your work orders.'
-              : '$_unreadCount Unread Update${_unreadCount == 1 ? '' : 's'}',
+              : '$_unreadCount unread update${_unreadCount == 1 ? '' : 's'}',
           actions: [
             refreshAction,
             const SizedBox(width: AppSpacing.sm),
@@ -286,7 +286,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       fillAvailableHeight: _loading || _error != null || fillEmpty,
       subtitle: _unreadCount == 0
           ? 'Stay updated on your reports.'
-          : '$_unreadCount Unread Update${_unreadCount == 1 ? '' : 's'}',
+          : '$_unreadCount unread update${_unreadCount == 1 ? '' : 's'}',
       selectedIndex: null,
       showBackButton: false,
       actions: [
@@ -364,7 +364,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
               ),
               child: Text(
-                _filter == null ? 'Mark All As Read' : 'Mark Visible As Read',
+                _filter == null ? 'Mark All as Read' : 'Mark Visible as Read',
               ),
             ),
           ],

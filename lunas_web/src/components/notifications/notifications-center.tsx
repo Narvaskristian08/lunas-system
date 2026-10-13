@@ -5,6 +5,7 @@ import { Bell, CheckCheck, CircleAlert, RefreshCw, X } from "lucide-react";
 import { PermissionGate } from "@/components/auth/permission-gate";
 import { PageHeader } from "@/components/layout/page-header";
 import { NotificationItem } from "@/components/notifications/notification-item";
+import { NotificationDetailModal } from "@/components/notifications/notification-detail-modal";
 import { useToast } from "@/components/providers/toast-provider";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorState, OfflineState } from "@/components/states/system-state";
@@ -40,7 +41,7 @@ function NotificationListSkeleton() {
   );
 }
 
-function NotificationsWorkspace() {
+function NotificationsWorkspace({ initialNotificationId }: { initialNotificationId?: string }) {
   const { notify } = useToast();
   const requestId = useRef(0);
   const [total, setTotal] = useState(0);
@@ -56,6 +57,7 @@ function NotificationsWorkspace() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [openNotificationId, setOpenNotificationId] = useState(initialNotificationId ?? null);
   useEffect(() => { const timer = setTimeout(() => setDelayedQuery(query), 300); return () => clearTimeout(timer); }, [query]);
 
 
@@ -99,6 +101,20 @@ function NotificationsWorkspace() {
     setDateRange("all");
     setSort("newest");
     setPage(1);
+  };
+
+  const handleMarkedRead = useCallback((id: string) => {
+    setItems((current) => current.map((item) => item.id === id ? { ...item, read: true } : item));
+    setUnread((current) => Math.max(0, current - 1));
+  }, []);
+
+  const closeNotification = () => {
+    setOpenNotificationId(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("notification")) {
+      url.searchParams.delete("notification");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
   };
 
   const markRead = async (ids: string[], all = false) => {
@@ -273,6 +289,7 @@ function NotificationsWorkspace() {
                           return next;
                         });
                       }}
+                      onOpen={() => setOpenNotificationId(notification.id)}
                     />
                   ))}
                 </div>
@@ -297,14 +314,23 @@ function NotificationsWorkspace() {
           <RefreshCw className="size-3.5" aria-hidden="true" /> Refresh
         </Button>
       </div>
+
+      {openNotificationId ? (
+        <NotificationDetailModal
+          key={openNotificationId}
+          notificationId={openNotificationId}
+          onClose={closeNotification}
+          onMarkedRead={handleMarkedRead}
+        />
+      ) : null}
     </>
   );
 }
 
-export function NotificationsCenter() {
+export function NotificationsCenter({ initialNotificationId }: { initialNotificationId?: string }) {
   return (
     <PermissionGate permission="notifications.view" mode="denied">
-      <NotificationsWorkspace />
+      <NotificationsWorkspace initialNotificationId={initialNotificationId} />
     </PermissionGate>
   );
 }

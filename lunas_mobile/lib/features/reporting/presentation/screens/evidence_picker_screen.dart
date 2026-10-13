@@ -133,7 +133,7 @@ class _EvidencePickerScreenState extends State<EvidencePickerScreen> {
                         ? null
                         : () => _pick(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('Choose a different image'),
+                    label: const Text('Choose a Different Image'),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   LunasButton(
@@ -208,7 +208,7 @@ class _EmptyEvidenceState extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
-                label: const Text('Photo library'),
+                label: const Text('Photo Library'),
                 icon: const Icon(Icons.photo_library_outlined, size: 18),
                 onPressed: selecting ? null : () => onPick(ImageSource.gallery),
               ),

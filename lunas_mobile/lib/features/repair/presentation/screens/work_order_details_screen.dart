@@ -9,6 +9,7 @@ import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/theme/text_styles.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
@@ -611,7 +612,7 @@ class _SlaCard extends StatelessWidget {
               if (sla.timeRemaining != null) ...[
                 Text(
                   '${sla.timeRemaining}${sla.isOverdue ? "" : " remaining"}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: AppTextStyles.technicalTimer.copyWith(
                     fontWeight: FontWeight.w700,
                     color: sla.isOverdue || sla.isApproaching
                         ? color

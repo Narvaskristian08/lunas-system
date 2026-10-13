@@ -316,7 +316,7 @@ const listFilter = async (req) => {
   if (req.user.role === 'repair_personnel' && query.repairView) {
     const repairViews = {
       assigned: { status: { $in: ['pending', 'accepted'] } },
-      awaiting_acceptance: { status: { $in: ['pending', 'in_progress', 'rework_required'] }, assignmentState: 'pending' },
+      awaiting_acceptance: { status: { $ne: 'verified' }, assignmentState: 'pending' },
       active: { status: 'in_progress', assignmentState: 'accepted' },
       review: { status: { $in: ['completed', 'provider_accepted'] } },
       correction: { status: { $in: ['rework_required', 'city_correction_required'] } }
@@ -496,6 +496,71 @@ exports.getWorkOrders = asyncHandler(async (req, res) => {
     data: await Promise.all(workOrders.map((workOrder) => serializeWorkOrder(workOrder, false))),
     pagination: { page, limit, total, pages: Math.ceil(total / limit) }
   });
+});
+
+// Paginate both sources in MongoDB; only hydrate records on the requested page.
+exports.getAwaitingAssignmentQueue = asyncHandler(async (req, res) => {
+  const page = pageNumber(req.query.page);
+  const limit = pageSize(req.query.limit);
+  const filter = await listFilter(req);
+  const incidentFilter = {
+    'routing.responsibleOrganization': normalizeText(req.user.utilityCompany) || '__unassigned__',
+    status: 'provider_assigned', workOrder: null
+  };
+  if (req.query.priority) incidentFilter.priority = req.query.priority;
+  if (req.query.category) incidentFilter.category = req.query.category;
+  if (req.query.search) {
+    const text = String(req.query.search).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = { $regex: text, $options: 'i' };
+    incidentFilter.$or = ['reportNumber', 'description', 'location.address.formattedAddress',
+      'location.address.street', 'location.address.barangay'].map(field => ({ [field]: regex }));
+  }
+  const includeIntake = !req.query.status && !req.query.slaState && !req.query.personnel
+    && req.query.progress === undefined && (!req.query.assignmentStatus || req.query.assignmentStatus === 'unassigned');
+  const projection = { _id: 1, priority: 1, createdAt: 1, updatedAt: 1, 'sla.deadline': 1,
+    progressPercent: 1, source: { $literal: 'order' } };
+  const pipeline = [{ $match: filter }, { $project: projection }];
+  if (includeIntake) pipeline.push({ $unionWith: {
+    coll: Incident.collection.name,
+    pipeline: [{ $match: incidentFilter }, { $project: {
+      ...projection, updatedAt: { $ifNull: ['$routing.routedAt', '$createdAt'] },
+      progressPercent: { $literal: 0 }, source: { $literal: 'incident' }
+    } }]
+  } });
+  pipeline.push({ $addFields: { priorityRank: { $indexOfArray: [['low', 'medium', 'high', 'critical'], '$priority'] } } });
+  const sorts = { newest: { updatedAt: -1 }, oldest: { createdAt: 1 },
+    deadline: { 'sla.deadline': 1 }, '-deadline': { 'sla.deadline': -1 },
+    priority: { priorityRank: 1, updatedAt: -1 }, '-priority': { priorityRank: -1, updatedAt: -1 },
+    progress: { progressPercent: 1 }, '-progress': { progressPercent: -1 } };
+  pipeline.push({ $facet: {
+    rows: [{ $sort: { ...(sorts[req.query.sortBy] || sorts.newest), _id: 1, source: 1 } },
+      { $skip: (page - 1) * limit }, { $limit: limit }],
+    totals: [{ $count: 'total' }]
+  } });
+  const [result] = await WorkOrder.aggregate(pipeline);
+  const rows = result.rows;
+  const orderIds = rows.filter(row => row.source === 'order').map(row => row._id);
+  const incidentIds = rows.filter(row => row.source === 'incident').map(row => row._id);
+  const [orders, incidents] = await Promise.all([
+    orderIds.length ? populateWorkOrder(WorkOrder.find({ ...buildWorkOrderScope(req.user), _id: { $in: orderIds } }), true) : [],
+    incidentIds.length ? Incident.find({ ...incidentFilter, _id: { $in: incidentIds } }).select(`${SAFE_INCIDENT_FIELDS} createdAt updatedAt`) : []
+  ]);
+  const data = await Promise.all(rows.map(async row => {
+    if (row.source === 'order') {
+      const order = orders.find(item => sameId(item._id, row._id));
+      return order ? serializeWorkOrder(order, false) : null;
+    }
+    const incident = incidents.find(item => sameId(item._id, row._id));
+    if (!incident) return null;
+    return { ...await serializeWorkOrder({ _id: incident._id, orderNumber: incident.reportNumber,
+      status: 'pending', assignmentState: 'unassigned', incident, priority: incident.priority,
+      responsibleOrganization: req.user.utilityCompany, responsibleRole: 'utility_provider',
+      createdAt: incident.createdAt, updatedAt: row.updatedAt, sla: incident.sla }, false),
+      intakeIncidentId: getId(incident) };
+  }));
+  const total = result.totals[0]?.total || 0;
+  return res.status(200).json({ success: true, data: data.filter(Boolean),
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
 });
 
 exports.getMyWorkOrders = exports.getWorkOrders;

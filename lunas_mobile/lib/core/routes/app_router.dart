@@ -14,7 +14,6 @@ import 'package:lunas_mobile/features/auth/presentation/screens/reset_password_w
 import 'package:lunas_mobile/features/auth/presentation/screens/role_unavailable_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashboard_screen.dart';
-import 'package:lunas_mobile/features/reporting/presentation/screens/my_drafts_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_timeline_screen.dart';
 import 'package:lunas_mobile/features/maps/domain/models/selected_location.dart';
 import 'package:lunas_mobile/features/maps/presentation/screens/map_picker_screen.dart';
@@ -140,7 +139,21 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       builder: (context, state, child) => Scaffold(
         body: child,
-        bottomNavigationBar: const CitizenBottomNavigation(),
+        bottomNavigationBar:
+            {
+                  '/reports/new',
+                  '/reports/evidence',
+                  '/reports/barangays',
+                  '/reports/categories',
+                  '/reports/review',
+                  '/reports/appeal',
+                }.contains(state.uri.path) ||
+                state.fullPath == '/reports/:id' ||
+                state.fullPath == '/reports/:id/timeline' ||
+                (state.uri.path == '/reports/location' &&
+                    state.uri.queryParameters['mode'] == 'picker')
+            ? null
+            : const CitizenBottomNavigation(),
       ),
       routes: [
         GoRoute(
@@ -211,11 +224,9 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/reports/appeal',
+          onExit: (_, _) async =>
+              await ReportingAppealNavigation.confirmExit?.call() ?? true,
           builder: (_, _) => const ReportingAppealScreen(),
-        ),
-        GoRoute(
-          path: '/reports/drafts',
-          builder: (_, _) => const MyDraftsScreen(),
         ),
         GoRoute(
           path: '/reports/:id/timeline',
@@ -322,7 +333,7 @@ class _MissingRouteDataScreen extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => context.go('/reports/new'),
-              child: const Text('Start a report'),
+              child: const Text('Start a Report'),
             ),
           ],
         ),

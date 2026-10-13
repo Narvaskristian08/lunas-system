@@ -6,6 +6,7 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/repair/presentation/widgets/repair_widgets.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
+import 'package:lunas_mobile/features/profile/presentation/utils/phone_number_formatter.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 
 class RepairProfileScreen extends StatefulWidget {
@@ -105,130 +106,119 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Theme(
-                data: Theme.of(
-                  context,
-                ).copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  key: const PageStorageKey('repair-personal-details'),
-                  initiallyExpanded: false,
-                  collapsedBackgroundColor: Colors.white,
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  collapsedShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  tilePadding: const EdgeInsets.symmetric(
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
                   ),
-                  childrenPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                  ),
-                  title: Text(
-                    'Account Details',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  children: [
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
-                    _ProfileDetail(
-                      label: 'Utility Provider',
-                      value: user?.repairOrganization ?? '',
-                    ),
-                    _ProfileDetail(
-                      label: 'Account Type',
-                      value: user?.repairAccountType == 'team'
-                          ? 'Team Leader'
-                          : 'Individual',
-                    ),
-                    if (user?.repairAccountType == 'team')
-                      _ProfileDetail(
-                        label: 'Team Name',
-                        value: user?.repairTeam ?? '',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'Account Details',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                       ),
-                    _ProfileDetail(
-                      label: 'First Name',
-                      value: user?.firstName ?? '',
-                    ),
-                    if (user?.middleName?.trim().isNotEmpty ?? false)
+                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
                       _ProfileDetail(
-                        label: 'Middle Name',
-                        value: user!.middleName!,
+                        label: 'Utility Provider',
+                        value: user?.repairOrganization ?? '',
                       ),
-                    _ProfileDetail(
-                      label: 'Last Name',
-                      value: user?.lastName ?? '',
-                    ),
-                    if (user?.suffix?.trim().isNotEmpty ?? false)
-                      _ProfileDetail(label: 'Suffix', value: user!.suffix!),
-                    _ProfileDetail(
-                      label: 'Email Address',
-                      value: user?.email ?? '',
-                    ),
-                    _ProfileDetail(
-                      label: 'Contact Number',
-                      value: user?.phone ?? '',
-                      last: true,
-                    ),
-                  ],
+                      _ProfileDetail(
+                        label: 'Account Type',
+                        value: switch (user?.repairAccountType) {
+                          'team' => 'Team Leader',
+                          'individual' => 'Individual',
+                          _ => '',
+                        },
+                      ),
+                      if (user?.repairAccountType == 'team')
+                        _ProfileDetail(
+                          label: 'Team Name',
+                          value: user?.repairTeam ?? '',
+                        ),
+                      _ProfileDetail(
+                        label: 'First Name',
+                        value: user?.firstName ?? '',
+                      ),
+                      if (user?.middleName?.trim().isNotEmpty ?? false)
+                        _ProfileDetail(
+                          label: 'Middle Name',
+                          value: user!.middleName!,
+                        ),
+                      _ProfileDetail(
+                        label: 'Last Name',
+                        value: user?.lastName ?? '',
+                      ),
+                      if (user?.suffix?.trim().isNotEmpty ?? false)
+                        _ProfileDetail(label: 'Suffix', value: user!.suffix!),
+                      _ProfileDetail(
+                        label: 'Mobile Number',
+                        value: formatPhilippineMobileNumber(user?.phone ?? ''),
+                        last: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              SizedBox(
-                width: double.infinity,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F8FA),
-                    borderRadius: BorderRadius.circular(24),
+              Material(
+                color: const Color(0xFFF7F8FA),
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (dialogContext) => LunasConfirmationDialog(
+                      title: const Text('Provider-Managed Account'),
+                      content: const Text(
+                        'Your account details are managed by your utility provider. Contact them to request corrections.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Got It'),
+                        ),
+                      ],
+                    ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 16),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        IconButton(
-                          tooltip:
-                              'Contact your utility provider to request corrections.',
-                          icon: const Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                          ),
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (dialogContext) => LunasConfirmationDialog(
-                              title: const Text('Provider-Managed Account'),
-                              content: const Text(
-                                'Your account details are managed by your utility provider. Contact them to request corrections.',
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Provider-Managed Account',
+                                style: Theme.of(context).textTheme.titleSmall,
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(dialogContext),
-                                  child: const Text('Got It'),
-                                ),
-                              ],
-                            ),
+                              const SizedBox(height: AppSpacing.xxs),
+                              Text(
+                                'Contact your utility provider to request corrections.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
                           ),
                         ),
-                        Flexible(
-                          child: Text(
-                            'Managed by your utility provider',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        const Icon(Icons.chevron_right_rounded, size: 20),
                       ],
                     ),
                   ),
@@ -290,33 +280,48 @@ class _ProfileDetail extends StatelessWidget {
     children: [
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final stack =
+                constraints.maxWidth < 320 ||
+                MediaQuery.textScalerOf(context).scale(14) >= 19;
+            final labelText = Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 3,
-              child: Text(
-                value.trim().isEmpty ? 'Not provided' : value,
-                textAlign: TextAlign.right,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: value.trim().isEmpty
-                      ? FontWeight.normal
-                      : FontWeight.w500,
-                  height: 1.4,
-                ),
+            );
+            final displayValue = value.trim().isEmpty ? 'Not provided' : value;
+            final valueText = Text(
+              displayValue,
+              textAlign: stack ? TextAlign.left : TextAlign.right,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: value.trim().isEmpty
+                    ? FontWeight.normal
+                    : FontWeight.w500,
+                height: 1.4,
               ),
-            ),
-          ],
+            );
+            if (stack) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  labelText,
+                  const SizedBox(height: AppSpacing.xxs),
+                  valueText,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 2, child: labelText),
+                const SizedBox(width: 12),
+                Expanded(flex: 3, child: valueText),
+              ],
+            );
+          },
         ),
       ),
       if (!last) const Divider(height: 1, color: Color(0xFFF1F5F9)),

@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createWorkOrder,
   getWorkOrders,
+  getAwaitingAssignmentQueue,
   getMyWorkOrders,
   getWorkOrder,
   getAssignments,
@@ -44,6 +45,7 @@ const providerRole = ['utility_provider'];
 const workOrderRoles = ['city_engineer', 'utility_provider', 'repair_personnel'];
 
 // Static paths must come before /:id.
+router.get('/awaiting-assignment', protect, authorize('utility_provider'), paginationValidation, workOrderQueryValidation, validate, getAwaitingAssignmentQueue);
 router.get('/my', protect, authorize('repair_personnel'), paginationValidation, workOrderQueryValidation, validate, getMyWorkOrders);
 router.get('/approaching-deadline', protect, authorize(...workOrderRoles), paginationValidation, workOrderQueryValidation, validate, getApproachingDeadlineWorkOrders);
 router.get('/overdue', protect, authorize(...workOrderRoles), paginationValidation, workOrderQueryValidation, validate, getOverdueWorkOrders);

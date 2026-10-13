@@ -172,7 +172,7 @@ class _CitizenRegistrationScreenState extends State<CitizenRegistrationScreen> {
                 onPressed: auth.isSubmitting
                     ? null
                     : () => context.go('/login'),
-                child: const Text('Login'),
+                child: const Text('Log In'),
               ),
             ],
           ),

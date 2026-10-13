@@ -1,4 +1,5 @@
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
+import 'package:lunas_mobile/core/utils/display_labels.dart';
 
 class IncidentReport {
   const IncidentReport({
@@ -226,6 +227,25 @@ class IncidentLocation {
       return '${latitude!.toStringAsFixed(5)}, ${longitude!.toStringAsFixed(5)}';
     }
     return 'Location details unavailable';
+  }
+
+  bool get needsReview {
+    final normalizedCity = city?.trim().toLowerCase();
+    if (normalizedCity != null &&
+        normalizedCity.isNotEmpty &&
+        normalizedCity != 'dagupan' &&
+        normalizedCity != 'dagupan city') {
+      return true;
+    }
+
+    final normalizedAddress = address?.toLowerCase() ?? '';
+    const knownOutsideDagupanMarkers = <String>[
+      'mountain view',
+      'california',
+      'united states',
+      ' usa',
+    ];
+    return knownOutsideDagupanMarkers.any(normalizedAddress.contains);
   }
 
   factory IncidentLocation.fromJson(Map<String, dynamic> json) {
@@ -467,20 +487,7 @@ int? _int(Object? value) =>
 DateTime? _date(Object? value) =>
     value == null ? null : DateTime.tryParse(value.toString())?.toLocal();
 
-String _statusLabel(String value) => value
-    .trim()
-    .toLowerCase()
-    .replaceAll(RegExp(r'[_-]+'), ' ')
-    .split(' ')
-    .where((part) => part.isNotEmpty)
-    .map(
-      (part) => ['ai', 'gps', 'sla', 'id'].contains(part)
-          ? part.toUpperCase()
-          : ['in', 'for', 'by', 'to', 'of', 'and'].contains(part)
-          ? part
-          : '${part[0].toUpperCase()}${part.substring(1)}',
-    )
-    .join(' ');
+String _statusLabel(String value) => humanizeCodeLabel(value);
 
 /// Collapses repeated display milestones without changing backend history.
 List<ReportStatusEvent> visibleReportHistory(List<ReportStatusEvent> events) {

@@ -1,3 +1,5 @@
+import 'package:lunas_mobile/core/utils/display_labels.dart';
+
 class CategoryOption {
   const CategoryOption({
     required this.code,
@@ -70,12 +72,7 @@ CategoryOption categoryFromCode(String code) {
     (category) => category.code == code,
     orElse: () => CategoryOption(
       code: code,
-      label: code
-          .replaceAll('_', ' ')
-          .split(' ')
-          .where((part) => part.isNotEmpty)
-          .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-          .join(' '),
+      label: humanizeCodeLabel(code, fallback: 'Other Infrastructure Concern'),
       description: 'Infrastructure concern',
     ),
   );

@@ -78,7 +78,7 @@ abstract final class AppTheme {
         sizeConstraints: const BoxConstraints.tightFor(width: 56, height: 56),
         extendedSizeConstraints: const BoxConstraints.tightFor(height: 56),
       ),
-      fontFamily: 'Inter',
+      fontFamily: AppTextStyles.uiFontFamily,
       textTheme: TextTheme(
         displayLarge: AppTextStyles.displayLarge.copyWith(
           fontSize: 48,

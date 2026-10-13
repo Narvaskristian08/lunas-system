@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/theme/text_styles.dart';
 import 'package:lunas_mobile/features/citizen/presentation/widgets/citizen_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
@@ -217,57 +218,60 @@ class _ReportCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blocked = restriction?.isBlocked == true;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF004D99), Color(0xFF087CC7)],
+    return GestureDetector(
+      onTap: onCreate,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF004D99), Color(0xFF087CC7)],
+          ),
+          borderRadius: AppRadius.card,
         ),
-        borderRadius: AppRadius.card,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  blocked ? 'Report submission paused' : 'Report an Issue',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    blocked ? 'Report submission paused' : 'Report an Issue',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  blocked
-                      ? 'You can appeal the current reporting restriction.'
-                      : 'Report a local infrastructure concern.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: .9),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    blocked
+                        ? 'You can appeal the current reporting restriction.'
+                        : 'Report a local infrastructure concern.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: .9),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          IconButton.filledTonal(
-            tooltip: 'Start a report',
-            onPressed: onCreate,
-            icon: Icon(
-              blocked ? Icons.rate_review_outlined : Icons.add_rounded,
-              size: 24,
+            const SizedBox(width: AppSpacing.md),
+            IconButton.filledTonal(
+              tooltip: 'Start a report',
+              onPressed: onCreate,
+              icon: Icon(
+                blocked ? Icons.rate_review_outlined : Icons.add_rounded,
+                size: 24,
+              ),
+              style: IconButton.styleFrom(
+                fixedSize: const Size.square(48),
+                padding: EdgeInsets.zero,
+                shape: const CircleBorder(),
+                backgroundColor: Colors.white.withValues(alpha: .18),
+                foregroundColor: Colors.white,
+              ),
             ),
-            style: IconButton.styleFrom(
-              fixedSize: const Size.square(48),
-              padding: EdgeInsets.zero,
-              shape: const CircleBorder(),
-              backgroundColor: Colors.white.withValues(alpha: .18),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -353,52 +357,62 @@ class _ReportListCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final compact =
-                constraints.maxWidth < 360 ||
-                MediaQuery.textScalerOf(context).scale(1) > 1.2;
-            final heading = Row(
-              children: [
-                Icon(
-                  categoryIcon(report.category),
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    report.categoryLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                if (!compact) ReportStatusChip(label: report.statusChipLabel),
-              ],
-            );
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                heading,
-                if (compact) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  ReportStatusChip(label: report.statusChipLabel),
-                ],
-              ],
-            );
-          },
+        ReportStatusHeader(
+          title: report.categoryLabel,
+          status: report.statusChipLabel,
+          leading: Icon(
+            categoryIcon(report.category),
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           report.reportNumber,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(fontFamily: 'RobotoMono'),
+          style: AppTextStyles.technicalHash.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: AppSpacing.xxs),
         Text(
           report.location.displayAddress,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+        if (report.location.needsReview) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _LocationReviewNotice(compact: true),
+        ],
       ],
     ),
   );
+}
+
+class _LocationReviewNotice extends StatelessWidget {
+  const _LocationReviewNotice({this.compact = false});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.error;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.location_off_outlined,
+          size: compact ? 15 : 18,
+          color: color,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Flexible(
+          child: Text(
+            'Location Needs Review',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

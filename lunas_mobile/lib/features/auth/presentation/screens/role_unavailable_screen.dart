@@ -3,6 +3,7 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
+import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 
 class RoleUnavailableScreen extends StatelessWidget {
   const RoleUnavailableScreen({super.key});
@@ -11,7 +12,7 @@ class RoleUnavailableScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = AuthScope.of(context);
     final rawRole = auth.user?.role;
-    final role = rawRole?.replaceAll('_', ' ') ?? 'this account role';
+    final role = rawRole == null ? 'this account role' : roleLabel(rawRole);
     final isWebOnlyRole = const {
       'barangay_official',
       'city_engineer',
