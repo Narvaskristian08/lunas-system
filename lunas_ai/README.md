@@ -49,6 +49,12 @@ incident evidence is submitted. A category without an available model remains
 manual review. Configure and verify the backend-to-Flask path in the target
 environment before demonstrating inference.
 
+The canonical `other` category has no production classifier. It may use the
+environmental-hazards checkpoint as a review-only candidate source; those
+findings are always marked manual review and never become an automatic
+incident-category suggestion. Electrical findings are also manual-review-only
+until the checkpoint is validated against intact-pole negative examples.
+
 ## Validation
 
 From this directory, run the project tests if the required Python packages and

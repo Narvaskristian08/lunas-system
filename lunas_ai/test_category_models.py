@@ -51,3 +51,29 @@ def test_gas_model_remains_manual_until_images_are_available():
 
 def test_other_category_is_manual_review_only():
     assert config.get_category_model("other") is None
+    assert config.get_review_model("other") == "environmental_hazards"
+    assert config.get_model_config("environmental_hazards")["manual_only"] is True
+
+
+def test_other_review_model_never_creates_an_automatic_suggestion():
+    from PIL import Image
+    from src.services.detection_service import DetectionService
+
+    service = DetectionService()
+    service.detect_environmental_hazards = lambda image: {
+        "success": True,
+        "model": "environmental_hazards",
+        "detections": [{
+            "class": "fire_source",
+            "confidence": 0.21,
+            "confidence_status": "manual_review",
+        }],
+    }
+
+    result = service.comprehensive_detection(Image.new("RGB", (32, 32)), "other")
+
+    assert result["model"] == "environmental_hazards"
+    assert result["model_available"] is True
+    assert result["manual_review_only"] is True
+    assert result["ai_suggestion"] is None
+    assert result["classification_status"] == "manual_review"

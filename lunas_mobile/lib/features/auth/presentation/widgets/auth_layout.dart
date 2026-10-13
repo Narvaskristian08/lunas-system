@@ -33,6 +33,10 @@ class AuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final router = GoRouter.maybeOf(context);
+    final path = router?.routerDelegate.currentConfiguration.uri.path;
+    final canPop =
+        router?.canPop() ?? Navigator.maybeOf(context)?.canPop() ?? true;
     final body = SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -108,7 +112,22 @@ class AuthLayout extends StatelessWidget {
       ),
     );
 
-    return Scaffold(backgroundColor: Colors.white, body: body);
+    return PopScope<void>(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final fallback = switch (path) {
+          '/login' => '/onboarding',
+          '/register' || '/register/verify' => '/login',
+          '/forgot-password' || '/reset-password' => '/login',
+          '/onboarding' => '/login',
+          '/splash' => '/login',
+          _ => null,
+        };
+        if (fallback != null && router != null) router.go(fallback);
+      },
+      child: Scaffold(backgroundColor: Colors.white, body: body),
+    );
   }
 }
 

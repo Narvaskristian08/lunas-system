@@ -1,5 +1,6 @@
 const crypto = require('crypto');
-const { deliverEmail, escapeHtml } = require('./emailDeliveryService');
+const { deliverEmail } = require('./emailDeliveryService');
+const { renderBrandedEmail } = require('./emailTemplates');
 
 const hashActivationToken = token => crypto.createHash('sha256').update(token).digest('hex');
 const createActivation = () => {
@@ -24,12 +25,21 @@ const deliverActivation = async (user, activation) => {
     url.search = '';
     url.hash = new URLSearchParams({ token: activation.token }).toString();
     const firstName = user.firstName || 'there';
+    const message = renderBrandedEmail({
+      preheader: 'Activate your LUNAS account and set your password.',
+      title: 'Activate your account',
+      greeting: `Hello ${firstName},`,
+      intro: 'An administrator created a LUNAS account for you. Use the button below to activate access and set your password.',
+      ctaLabel: 'Activate account',
+      ctaUrl: url.toString(),
+      expiryText: `This activation link expires on ${activation.expiresAt.toISOString()}.`,
+      outro: 'If you were not expecting this account, please contact your LUNAS administrator.'
+    });
     return await deliverEmail({
       type: 'account_activation',
       recipient: { email: user.email, firstName },
-      subject: 'Activate your Luna account',
-      text: `Hello ${firstName},\n\nActivate your Luna account here:\n${url.toString()}\n\nThis link expires on ${activation.expiresAt.toISOString()}.`,
-      html: `<p>Hello ${escapeHtml(firstName)},</p><p><a href="${escapeHtml(url.toString())}">Activate your Luna account</a></p><p>This link expires on ${escapeHtml(activation.expiresAt.toISOString())}.</p>`,
+      subject: 'Activate your LUNAS account',
+      ...message,
       webhookPayload: {
         type: 'account_activation',
         recipient: { email: user.email, firstName },

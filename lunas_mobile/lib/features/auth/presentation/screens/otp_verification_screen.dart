@@ -66,7 +66,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final auth = AuthScope.of(context);
     final success = await auth.verifyRegistrationMfa(_code);
     if (success && mounted) {
-      context.go(auth.workspaceHomePath ?? '/citizen');
+      context.go('/login');
     }
   }
 

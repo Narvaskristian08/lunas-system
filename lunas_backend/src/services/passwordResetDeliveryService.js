@@ -1,11 +1,16 @@
-const { deliverEmail, escapeHtml } = require('./emailDeliveryService');
+const { deliverEmail } = require('./emailDeliveryService');
+const { renderBrandedEmail } = require('./emailTemplates');
 
-const buildResetUrl = (token) => {
-  const baseUrl = process.env.PASSWORD_RESET_APP_URL;
+const buildResetUrl = (baseUrl, token, extraParams = {}) => {
   if (!baseUrl) return null;
-
-  const separator = baseUrl.includes('?') ? '&' : '?';
-  return `${baseUrl}${separator}token=${encodeURIComponent(token)}`;
+  const url = new URL(baseUrl);
+  url.searchParams.set('token', token);
+  Object.entries(extraParams).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, String(value));
+    }
+  });
+  return url.toString();
 };
 
 /**
@@ -13,23 +18,47 @@ const buildResetUrl = (token) => {
  * otherwise the existing approved webhook contract remains supported.
  */
 exports.deliverPasswordReset = async ({ user, resetToken }) => {
-  if (!user.recoveryEmail || !user.recoveryEmailVerifiedAt) {
+  const recipientEmail = user.recoveryEmail && user.recoveryEmailVerifiedAt
+    ? user.recoveryEmail
+    : user.role === 'citizen' && user.isVerified
+      ? user.email
+      : null;
+
+  if (!recipientEmail) {
     return { configured: false, delivered: false };
   }
-  const resetUrl = buildResetUrl(resetToken);
+  const mobileResetUrl = buildResetUrl(process.env.PASSWORD_RESET_MOBILE_URL, resetToken);
+  const webResetUrl = buildResetUrl(
+    process.env.PASSWORD_RESET_APP_URL,
+    resetToken,
+    mobileResetUrl ? { openApp: '1' } : {}
+  );
+  const resetUrl = webResetUrl || mobileResetUrl;
 
   if (!resetUrl) {
     return { configured: false, delivered: false };
   }
 
   const firstName = user.firstName || 'there';
-  const recipientEmail = user.recoveryEmail;
+  const message = renderBrandedEmail({
+    preheader: 'Use this secure link to reset your LUNAS password.',
+    title: 'Reset your password',
+    greeting: `Hello ${firstName},`,
+    intro: 'We received a request to reset your LUNAS password.',
+    ctaLabel: webResetUrl ? 'Reset password' : 'Open in LUNAS Mobile',
+    ctaUrl: resetUrl,
+    secondaryCtaLabel: mobileResetUrl && webResetUrl ? 'Open in LUNAS Mobile' : undefined,
+    // Gmail and some mail clients block custom URI schemes such as lunas://.
+    // Keep every visible email action HTTPS; the reset page performs the app handoff.
+    secondaryCtaUrl: mobileResetUrl && webResetUrl ? webResetUrl : undefined,
+    expiryText: 'This link expires soon. For your security, it can only be used once.',
+    outro: 'If you did not request a password reset, you can safely ignore this email.'
+  });
   return deliverEmail({
     type: 'password_reset',
     recipient: { email: recipientEmail, firstName },
-    subject: 'Reset your Luna password',
-    text: `Hello ${firstName},\n\nUse this link to reset your Luna password:\n${resetUrl}\n\nThis link expires soon. If you did not request a reset, you can ignore this email.`,
-    html: `<p>Hello ${escapeHtml(firstName)},</p><p>Use the link below to reset your Luna password:</p><p><a href="${escapeHtml(resetUrl)}">Reset your password</a></p><p>This link expires soon. If you did not request a reset, you can ignore this email.</p>`,
+    subject: 'Reset your LUNAS password',
+    ...message,
     webhookPayload: {
       type: 'password_reset',
       recipient: { email: recipientEmail, firstName },

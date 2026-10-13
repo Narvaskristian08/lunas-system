@@ -1,5 +1,6 @@
 const crypto = require('crypto');
-const { deliverEmail, escapeHtml } = require('./emailDeliveryService');
+const { deliverEmail } = require('./emailDeliveryService');
+const { renderBrandedEmail } = require('./emailTemplates');
 
 const codeSecret = () => process.env.REGISTRATION_MFA_SECRET || process.env.JWT_SECRET;
 
@@ -65,12 +66,20 @@ exports.deliverRegistrationCode = async ({ email, firstName, code }) => {
     5,
     parseInt(process.env.REGISTRATION_MFA_EXPIRE_MINUTES, 10) || 10
   );
+  const message = renderBrandedEmail({
+    preheader: 'Complete your LUNAS registration with this verification code.',
+    title: 'Verify your email',
+    greeting: `Hello ${firstName || 'there'},`,
+    intro: 'Use the one-time code below to finish creating your LUNAS account.',
+    code,
+    expiryText: `This code expires in ${expiresInMinutes} minutes.`,
+    outro: 'If you did not start a registration, you can safely ignore this email.'
+  });
   return deliverEmail({
     type: 'registration_mfa',
     recipient: { email, firstName },
-    subject: 'Your Luna verification code',
-    text: `Hello ${firstName || 'there'},\n\nYour Luna verification code is ${code}. It expires in ${expiresInMinutes} minutes.`,
-    html: `<p>Hello ${escapeHtml(firstName || 'there')},</p><p>Your Luna verification code is <strong>${escapeHtml(code)}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`,
+    subject: 'Your LUNAS verification code',
+    ...message,
     webhookPayload: {
       type: 'registration_mfa',
       recipient: { email, firstName },

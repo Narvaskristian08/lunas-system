@@ -782,7 +782,10 @@ exports.changePassword = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select('+password +refreshTokens +tokenVersion');
 
   if (!user || !(await user.comparePassword(currentPassword))) {
-    return res.status(401).json({
+    // The caller already has an authenticated session. A wrong current
+    // password is a form validation failure, not an expired session; 401
+    // would make mobile clients clear a valid session and return to login.
+    return res.status(400).json({
       success: false,
       message: 'Current password is incorrect'
     });

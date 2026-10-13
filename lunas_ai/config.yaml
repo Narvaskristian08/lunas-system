@@ -17,9 +17,10 @@ models:
     # crack image, while this higher production gate keeps weaker road-scene
     # candidates in manual review instead of auto-suggesting them.
     confidence_threshold: 0.65
-    # Candidate floor for advisory/manual review. Candidates below the
-    # production threshold are never automatic decisions.
-    candidate_threshold: 0.05
+    # Candidate floor for advisory/manual review. The lower floor keeps weak
+    # but useful road candidates visible to a human reviewer; candidates below
+    # the production threshold are never automatic decisions.
+    candidate_threshold: 0.03
     iou_threshold: 0.45
     input_size: 640
     preprocessing:
@@ -51,7 +52,10 @@ models:
       fire_source: 0.40
       garbage_pileup: 0.30
       open_manhole: 0.45
-    candidate_threshold: 0.25
+    # The review floor is lower than the production gate so visible hazards
+    # such as fire can reach an official even when the model is uncertain.
+    candidate_threshold: 0.10
+    max_detections: 6
     iou_threshold: 0.45
     input_size: 640
     preprocessing:
@@ -64,6 +68,11 @@ models:
     name: "YOLOv8n Electrical Damage Detection (fault boxes)"
     path: "models/electrical/electricpole/best.pt"
     type: "detection"
+    # The current checkpoint produced a high-confidence false positive on an
+    # intact pole during QA. Keep its boxes available to officials, but do not
+    # expose any electrical result as an automatic AI suggestion until the
+    # model is validated with intact-pole negative examples.
+    manual_only: true
     damage_only: true
     classes:
       - surge_arrester_discoloration
@@ -201,6 +210,12 @@ category_models:
   # category available, but require an official to classify it manually until
   # a dedicated public-obstruction checkpoint is trained and validated.
   other: null
+
+# Optional review-only routing for categories without a production model.
+# This does not change the canonical category mapping or create an automatic
+# classification; it only lets the official see advisory candidates.
+review_models:
+  other: environmental_hazards
 
 privacy:
   # YuNet is a lightweight face detector. The backend applies visual blur

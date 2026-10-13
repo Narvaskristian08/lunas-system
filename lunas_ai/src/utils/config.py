@@ -107,6 +107,11 @@ class Config:
         """Return the explicitly assigned model for a canonical category."""
         category = str(category_name or '').strip().lower()
         return self.config.get('category_models', {}).get(category)
+
+    def get_review_model(self, category_name: str):
+        """Return an optional review-only model for a canonical category."""
+        category = str(category_name or '').strip().lower()
+        return self.config.get('review_models', {}).get(category)
     
     def get_device(self) -> str:
         """Auto-detect best available device"""

@@ -1,0 +1,22 @@
+[
+  {
+    "image_name": "Image 1",
+    "result": {
+      "success": true,
+      "model": "environmental_hazards",
+      "detections": [],
+      "summary": "No damage detected",
+      "total_detections": 0
+    }
+  },
+  {
+    "image_name": "Image 3",
+    "result": {
+      "success": true,
+      "model": "environmental_hazards",
+      "detections": [],
+      "summary": "No damage detected",
+      "total_detections": 0
+    }
+  }
+]

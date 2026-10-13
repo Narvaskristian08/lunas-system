@@ -56,3 +56,17 @@ test("password reset requires a real token and public legal states render", asyn
   await page.goto("/terms");
   await expect(page.getByRole("heading", { name: "Terms and Conditions" })).toBeVisible();
 });
+
+test("citizen registration shows email verification and returns to sign in", async ({ page }) => {
+  await page.goto("/register");
+  await expect(page.getByRole("heading", { name: "Create your LUNAS account" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /continue to email verification/i })).toBeVisible();
+  await expectNoPageOverflow(page);
+
+  await page.goto("/register/verify");
+  await expect(page.getByRole("heading", { name: "Verify your email address" })).toBeVisible();
+  await expect(page.getByText("This verification session is no longer available on this device.")).toBeVisible();
+
+  await page.goto("/login?registered=1");
+  await expect(page.getByText("Account created successfully", { exact: true })).toBeVisible();
+});

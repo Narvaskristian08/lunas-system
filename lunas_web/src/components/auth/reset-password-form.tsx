@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock3, KeyRound, Link2Off } from "lucide-react";
+import { CheckCircle2, Clock3, KeyRound, Link2Off, Smartphone } from "lucide-react";
 import { AuthAlert, AuthCard, BackToLogin, SecurityNotice } from "@/components/auth/auth-ui";
 import { PasswordField } from "@/components/forms/password-field";
 import { PasswordStrength } from "@/components/forms/password-strength";
@@ -16,9 +16,11 @@ type ResetTokenState = "checking" | "valid" | "invalid" | "expired" | "success";
 export function ResetPasswordForm({
   token,
   initialTokenStatus = "valid",
+  openInMobile = false,
 }: {
   token: string;
   initialTokenStatus?: "valid" | "invalid" | "expired";
+  openInMobile?: boolean;
 }) {
   const [tokenState, setTokenState] = useState<ResetTokenState>("checking");
   const [password, setPassword] = useState("");
@@ -26,7 +28,22 @@ export function ResetPasswordForm({
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [requestError, setRequestError] = useState<"offline" | "server" | null>(null);
+  const [mobileHandoff, setMobileHandoff] = useState<"attempting" | "fallback">(openInMobile && token ? "attempting" : "fallback");
   const { online, checked } = useConnectivity();
+
+  const mobileResetUrl = `lunas://app/reset-password?token=${encodeURIComponent(token)}`;
+
+  useEffect(() => {
+    if (!openInMobile || !token) return;
+    const launchTimer = window.setTimeout(() => {
+      window.location.assign(mobileResetUrl);
+    }, 80);
+    const fallbackTimer = window.setTimeout(() => setMobileHandoff("fallback"), 1600);
+    return () => {
+      window.clearTimeout(launchTimer);
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [mobileResetUrl, openInMobile, token]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setTokenState(initialTokenStatus), 500);
@@ -42,6 +59,24 @@ export function ResetPasswordForm({
     : submitted && !confirmation
       ? "Re-enter your new password to confirm it."
       : undefined;
+
+  if (mobileHandoff === "attempting") {
+    return (
+      <AuthCard className="text-center">
+        <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-sky-100 text-brand-700">
+          <Smartphone className="size-7" aria-hidden="true" />
+        </span>
+        <h2 className="mt-4 text-xl font-semibold text-slate-950">Opening LUNAS Mobile</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600" role="status">
+          We are opening the secure reset screen in the LUNAS app. If it does not open, continue in this browser.
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <a href={mobileResetUrl} className={buttonStyles({ variant: "primary" })}>Open in LUNAS Mobile</a>
+          <Button type="button" variant="secondary" onClick={() => setMobileHandoff("fallback")}>Continue in browser</Button>
+        </div>
+      </AuthCard>
+    );
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

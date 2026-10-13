@@ -1,5 +1,6 @@
 const crypto = require('crypto');
-const { deliverEmail, escapeHtml } = require('./emailDeliveryService');
+const { deliverEmail } = require('./emailDeliveryService');
+const { renderBrandedEmail } = require('./emailTemplates');
 
 const codeSecret = () => process.env.RECOVERY_EMAIL_SECRET || process.env.JWT_SECRET;
 
@@ -49,12 +50,20 @@ const deliverRecoveryEmailCode = async ({ email, firstName, code }) => {
     5,
     parseInt(process.env.RECOVERY_EMAIL_EXPIRE_MINUTES, 10) || 10
   );
+  const message = renderBrandedEmail({
+    preheader: 'Confirm this address as your LUNAS recovery email.',
+    title: 'Verify your recovery email',
+    greeting: `Hello ${firstName || 'there'},`,
+    intro: 'Enter the one-time code below to confirm this address for LUNAS account recovery.',
+    code,
+    expiryText: `This code expires in ${expiresInMinutes} minutes.`,
+    outro: 'If you did not request this change, please contact your LUNAS administrator.'
+  });
   return deliverEmail({
     type: 'recovery_email_verification',
     recipient: { email, firstName },
-    subject: 'Verify your Luna recovery email',
-    text: `Hello ${firstName || 'there'},\n\nYour Luna recovery email verification code is ${code}. It expires in ${expiresInMinutes} minutes.`,
-    html: `<p>Hello ${escapeHtml(firstName || 'there')},</p><p>Your Luna recovery email verification code is <strong>${escapeHtml(code)}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`,
+    subject: 'Verify your LUNAS recovery email',
+    ...message,
     webhookPayload: {
       type: 'recovery_email_verification',
       recipient: { email, firstName },

@@ -144,7 +144,10 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                     ),
                   ),
                   if (auth.message != null) ...[
-                    AuthMessage(message: auth.message!),
+                    AuthMessage(
+                      message: auth.message!,
+                      isError: !auth.registrationCompleted,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                   ],
                   const SizedBox(height: AppSpacing.xs),

@@ -1,0 +1,263 @@
+[
+  {
+    "category": "other",
+    "model_available": true,
+    "model": "environmental_hazards",
+    "manual_review_only": true,
+    "damage_only": false,
+    "detections": [
+      {
+        "class": "fire_source",
+        "class_id": 1,
+        "confidence": 0.206,
+        "production_threshold": 0.4,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.478,
+          "y1": 0.0,
+          "x2": 0.9979,
+          "y2": 0.5297
+        },
+        "area": 216610.37,
+        "severity": "high",
+        "priority": "urgent"
+      },
+      {
+        "class": "fire_source",
+        "class_id": 1,
+        "confidence": 0.171,
+        "production_threshold": 0.4,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.0002,
+          "y1": 0.0002,
+          "x2": 0.3386,
+          "y2": 0.5311
+        },
+        "area": 141299.22,
+        "severity": "high",
+        "priority": "urgent"
+      },
+      {
+        "class": "fire_source",
+        "class_id": 1,
+        "confidence": 0.12,
+        "production_threshold": 0.4,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.4964,
+          "y1": 0.1932,
+          "x2": 0.6127,
+          "y2": 0.4365
+        },
+        "area": 22237.49,
+        "severity": "high",
+        "priority": "urgent"
+      },
+      {
+        "class": "fire_source",
+        "class_id": 1,
+        "confidence": 0.101,
+        "production_threshold": 0.4,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.0974,
+          "y1": 0.4915,
+          "x2": 0.1217,
+          "y2": 0.5317
+        },
+        "area": 769.92,
+        "severity": "high",
+        "priority": "urgent"
+      }
+    ],
+    "ai_suggestion": null,
+    "confidence_score": 0.149,
+    "confidence_threshold": 0.25,
+    "class_confidence_thresholds": {
+      "fallen_tree": 0.5,
+      "fire_source": 0.4,
+      "garbage_pileup": 0.3,
+      "open_manhole": 0.45
+    },
+    "candidate_threshold": 0.1,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 4,
+    "classification_status": "manual_review",
+    "image_name": "Image 1",
+    "image_path": "/Users/deb/Downloads/949d3fd9-0f7e-4b81-8700-49f2b6564222.jpeg",
+    "image_size": {
+      "width": 1024,
+      "height": 768
+    },
+    "expected_visual": "fire/grass fire"
+  },
+  {
+    "category": "electrical",
+    "model_available": true,
+    "model": "electrical_damage",
+    "manual_review_only": true,
+    "damage_only": true,
+    "detections": [
+      {
+        "class": "bird_nest_on_line",
+        "class_id": 24,
+        "confidence": 0.704,
+        "production_threshold": 0.3,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.3277,
+          "y1": 0.1569,
+          "x2": 0.4427,
+          "y2": 0.279
+        },
+        "area": 3505.79
+      }
+    ],
+    "ai_suggestion": null,
+    "confidence_score": 0.704,
+    "confidence_threshold": 0.3,
+    "class_confidence_thresholds": {},
+    "candidate_threshold": 0.3,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 1,
+    "classification_status": "manual_review",
+    "image_name": "Image 2",
+    "image_path": "/Users/deb/Downloads/69a84117-aee5-4604-8211-b48cf67462da.jpeg",
+    "image_size": {
+      "width": 612,
+      "height": 408
+    },
+    "expected_visual": "electrical pole/wiring damage"
+  },
+  {
+    "category": "drainage",
+    "model_available": true,
+    "model": "surface_drainage",
+    "manual_review_only": false,
+    "damage_only": true,
+    "detections": [
+      {
+        "class": "blocked_surface_drain",
+        "class_id": 1,
+        "confidence": 0.13,
+        "production_threshold": 0.35,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.2494,
+          "y1": 0.0,
+          "x2": 1.0,
+          "y2": 0.6434
+        },
+        "area": 203617.98
+      },
+      {
+        "class": "blocked_surface_drain",
+        "class_id": 1,
+        "confidence": 0.06,
+        "production_threshold": 0.35,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.0018,
+          "y1": 0.0066,
+          "x2": 0.8587,
+          "y2": 0.9902
+        },
+        "area": 355339.73
+      }
+    ],
+    "ai_suggestion": null,
+    "confidence_score": 0.095,
+    "confidence_threshold": 0.35,
+    "class_confidence_thresholds": {},
+    "candidate_threshold": 0.05,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 2,
+    "classification_status": "manual_review",
+    "image_name": "Image 3",
+    "image_path": "/Users/deb/Downloads/5b3605fd-0540-48b3-a628-09fc34b0ea02.jpeg",
+    "image_size": {
+      "width": 800,
+      "height": 527
+    },
+    "expected_visual": "flooding/standing water"
+  },
+  {
+    "category": "streetlight",
+    "model_available": true,
+    "model": "streetlight_damage",
+    "manual_review_only": false,
+    "damage_only": true,
+    "detections": [],
+    "ai_suggestion": null,
+    "confidence_score": 0.0,
+    "confidence_threshold": 0.35,
+    "class_confidence_thresholds": {},
+    "candidate_threshold": 0.35,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 0,
+    "classification_status": "no_detection",
+    "image_name": "Image 4",
+    "image_path": "/Users/deb/Downloads/a6e86946-d59a-4ebe-8337-4725f2deb142.jpeg",
+    "image_size": {
+      "width": 612,
+      "height": 408
+    },
+    "expected_visual": "streetlight"
+  },
+  {
+    "category": "road",
+    "model_available": true,
+    "model": "road_damage",
+    "manual_review_only": false,
+    "damage_only": false,
+    "detections": [
+      {
+        "class": "pothole",
+        "class_id": 3,
+        "confidence": 0.047,
+        "production_threshold": 0.65,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.4411,
+          "y1": 0.3175,
+          "x2": 0.4993,
+          "y2": 0.3513
+        },
+        "area": 1036.85,
+        "severity": "severe",
+        "area_percentage": 0.2
+      }
+    ],
+    "ai_suggestion": null,
+    "confidence_score": 0.047,
+    "confidence_threshold": 0.65,
+    "class_confidence_thresholds": {},
+    "candidate_threshold": 0.03,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 1,
+    "classification_status": "manual_review",
+    "image_name": "Image 5",
+    "image_path": "/Users/deb/Downloads/45f070c9-6f39-48df-a3d1-4e38396601fb.jpeg",
+    "image_size": {
+      "width": 886,
+      "height": 595
+    },
+    "expected_visual": "potholes"
+  }
+]

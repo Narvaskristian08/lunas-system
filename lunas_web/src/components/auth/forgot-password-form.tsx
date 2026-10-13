@@ -100,10 +100,10 @@ export function ForgotPasswordForm() {
 
           <FormField
             id="recovery-email"
-            label="Authorized Email Address"
+            label="Account Email Address"
             required
             error={error}
-            helperText="This is your login identifier. Instructions go to your verified recovery email."
+            helperText="Use the email tied to your LUNAS account. Staff reset messages go only to a verified recovery email."
             type="email"
             value={email}
             onChange={(event) => {

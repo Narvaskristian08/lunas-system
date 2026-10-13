@@ -10,10 +10,11 @@ export const metadata: Metadata = {
 export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string | string[] }>;
+  searchParams: Promise<{ token?: string | string[]; openApp?: string | string[] }>;
 }) {
   const query = await searchParams;
   const tokenParam = Array.isArray(query.token) ? query.token[0] : query.token;
+  const openAppParam = Array.isArray(query.openApp) ? query.openApp[0] : query.openApp;
   const initialTokenStatus = tokenParam ? "valid" : "invalid";
 
   return (
@@ -22,7 +23,7 @@ export default async function ResetPasswordPage({
       title="Create a new password"
       description="Use a strong, unique password for your authorized LUNAS account. Every requirement must be met before you can continue."
     >
-      <ResetPasswordForm token={tokenParam ?? ""} initialTokenStatus={initialTokenStatus} />
+      <ResetPasswordForm token={tokenParam ?? ""} initialTokenStatus={initialTokenStatus} openInMobile={openAppParam === "1"} />
     </AuthShell>
   );
 }

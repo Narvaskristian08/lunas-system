@@ -34,7 +34,14 @@ const {
   registrationChallengeResponse,
   verifyRegistrationChallenge
 } = require('../services/registrationMfaService');
-const { getMe, login, register, verifyRegistrationMfa } = require('./authController');
+const {
+  changePassword,
+  getMe,
+  login,
+  register,
+  forgotPassword,
+  verifyRegistrationMfa
+} = require('./authController');
 
 const createResponse = () => {
   const response = {};
@@ -237,6 +244,32 @@ describe('public citizen registration', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+  test('keeps an authenticated session when the current password is incorrect', async () => {
+    const user = {
+      _id: '507f191e810c19729de860aa',
+      comparePassword: jest.fn().mockResolvedValue(false),
+      save: jest.fn().mockResolvedValue()
+    };
+    User.findById.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    const res = createResponse();
+
+    await changePassword({
+      user: { _id: user._id },
+      body: { currentPassword: 'wrong-password', newPassword: 'NewSecure123!' },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(user.comparePassword).toHaveBeenCalledWith('wrong-password');
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      message: 'Current password is incorrect'
+    });
+    expect(user.save).not.toHaveBeenCalled();
+    expect(issueTokenPair).not.toHaveBeenCalled();
+  });
+
   test('audits registration MFA delivery failures without creating an account', async () => {
     User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(null) });
     deliverRegistrationCode.mockResolvedValue({ configured: true, delivered: false });
@@ -295,6 +328,8 @@ describe('public citizen registration', () => {
 
     expect(user.isVerified).toBe(true);
     expect(user.isActive).toBe(true);
+    expect(user.recoveryEmail).toBe('juan@example.com');
+    expect(user.recoveryEmailVerifiedAt).toBeInstanceOf(Date);
     expect(user.refreshTokens).toEqual(expect.arrayContaining([
       expect.objectContaining({ tokenHash: 'refresh-token-hash' })
     ]));
@@ -302,6 +337,37 @@ describe('public citizen registration', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ accessToken: 'access-token' })
     }));
+  });
+
+  test('uses a verified citizen registration email for password reset delivery', async () => {
+    const user = {
+      _id: '507f191e810c19729de860aa',
+      email: 'juan@example.com',
+      role: 'citizen',
+      isActive: true,
+      isVerified: true,
+      firstName: 'Juan',
+      createPasswordResetToken: jest.fn().mockReturnValue('reset-token'),
+      save: jest.fn().mockResolvedValue()
+    };
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue(user)
+    });
+    const { deliverPasswordReset } = require('../services/passwordResetDeliveryService');
+    deliverPasswordReset.mockResolvedValue({ configured: true, delivered: true });
+    const res = createResponse();
+
+    await forgotPassword({
+      body: { email: 'JUAN@EXAMPLE.COM' },
+      ip: '127.0.0.1',
+      headers: {}
+    }, res, jest.fn());
+
+    expect(deliverPasswordReset).toHaveBeenCalledWith(expect.objectContaining({
+      user,
+      resetToken: expect.any(String)
+    }));
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   test('rejects invalid credentials and inactive accounts without issuing tokens', async () => {

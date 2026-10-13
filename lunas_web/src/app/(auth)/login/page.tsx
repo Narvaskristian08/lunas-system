@@ -11,10 +11,11 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[] }>;
+  searchParams: Promise<{ next?: string | string[]; registered?: string | string[] }>;
 }) {
   const query = await searchParams;
   const rawNext = Array.isArray(query.next) ? query.next[0] : query.next;
+  const registered = Array.isArray(query.registered) ? query.registered[0] : query.registered;
 
   return (
     <AuthShell
@@ -24,6 +25,7 @@ export default async function LoginPage({
     >
       <LoginForm
         returnTo={safeReturnPath(rawNext)}
+        registrationComplete={registered === "1"}
         turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
         captchaDisabled={process.env.LUNAS_DISABLE_LOGIN_CAPTCHA === "true" || (
           process.env.NODE_ENV !== "production" &&

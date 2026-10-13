@@ -27,10 +27,15 @@ append_if_missing SUPABASE_SERVICE_ROLE_KEY ''
 append_if_missing GOOGLE_MAPS_API_KEY ''
 append_if_missing REGISTRATION_MFA_DELIVERY_URL ''
 append_if_missing REGISTRATION_MFA_DELIVERY_TOKEN ''
-append_if_missing EMAIL_PROVIDER webhook
+append_if_missing EMAIL_PROVIDER smtp
 append_if_missing RESEND_API_KEY ''
 append_if_missing RESEND_API_URL https://api.resend.com
-append_if_missing EMAIL_FROM ''
+append_if_missing EMAIL_FROM 'LUNAS <your-gmail-address@gmail.com>'
+append_if_missing SMTP_HOST smtp.gmail.com
+append_if_missing SMTP_PORT 465
+append_if_missing SMTP_SECURE true
+append_if_missing SMTP_USER your-gmail-address@gmail.com
+append_if_missing SMTP_PASSWORD ''
 append_if_missing ACCOUNT_ACTIVATION_APP_URL http://localhost:3000/activate-account
 append_if_missing ACCOUNT_ACTIVATION_DELIVERY_URL ''
 append_if_missing ACCOUNT_ACTIVATION_DELIVERY_TOKEN ''

@@ -52,7 +52,7 @@ class DetectionService:
                 source=image,
                 conf=conf_threshold,
                 iou=iou_threshold,
-                max_det=config.MAX_DETECTIONS,
+                max_det=model_config.get('max_detections', config.MAX_DETECTIONS),
                 device=self.model_manager.device,
                 verbose=False
             )
@@ -168,7 +168,7 @@ class DetectionService:
                 source=image,
                 conf=conf_threshold,
                 iou=iou_threshold,
-                max_det=config.MAX_DETECTIONS,
+                max_det=model_config.get('max_detections', config.MAX_DETECTIONS),
                 device=self.model_manager.device,
                 verbose=False
             )
@@ -302,9 +302,11 @@ class DetectionService:
         """
         category = str(category or '').strip().lower()
         assigned_model = config.get_category_model(category)
+        review_model = config.get_review_model(category)
+        selected_model = assigned_model or review_model
         logger.info(f"Running comprehensive detection for category: {category}")
 
-        model_config = config.get_model_config(assigned_model) if assigned_model else {}
+        model_config = config.get_model_config(selected_model) if selected_model else {}
         model_path = model_config.get('path')
         model_file_available = bool(
             model_path and (config.BASE_DIR / model_path).is_file()
@@ -313,7 +315,7 @@ class DetectionService:
         results = {
             'category': category,
             'model_available': model_file_available,
-            'model': assigned_model,
+            'model': selected_model,
             'manual_review_only': bool(model_config.get('manual_only', False))
             or not assigned_model
             or not model_file_available,
@@ -334,12 +336,12 @@ class DetectionService:
             'analysis_status': 'completed' if model_file_available else 'unavailable'
         }
 
-        if not assigned_model or not model_file_available:
+        if not selected_model or not model_file_available:
             return results
 
-        if assigned_model == 'road_damage':
+        if selected_model == 'road_damage':
             model_result = self.detect_road_damage(image)
-        elif assigned_model == 'environmental_hazards':
+        elif selected_model == 'environmental_hazards':
             model_result = self.detect_environmental_hazards(image)
         else:
             # Category assignments remain explicit and backend-owned. This
@@ -410,7 +412,7 @@ class DetectionService:
                 source=image,
                 conf=conf_threshold,
                 iou=iou_threshold,
-                max_det=config.MAX_DETECTIONS,
+                max_det=model_config.get('max_detections', config.MAX_DETECTIONS),
                 device=self.model_manager.device,
                 verbose=False
             )

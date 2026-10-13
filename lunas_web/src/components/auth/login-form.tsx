@@ -24,10 +24,12 @@ const initialLoginState: LoginActionState = { status: "idle", attempt: 0 };
 
 export function LoginForm({
   returnTo = "/dashboard",
+  registrationComplete = false,
   turnstileSiteKey,
   captchaDisabled = false,
 }: {
   returnTo?: string;
+  registrationComplete?: boolean;
   turnstileSiteKey: string;
   captchaDisabled?: boolean;
 }) {
@@ -58,6 +60,11 @@ export function LoginForm({
 
   return (
     <AuthCard>
+      {registrationComplete ? (
+        <AuthAlert tone="success" title="Account created successfully" className="mb-5">
+          Your email is verified. Sign in with the password you created to continue.
+        </AuthAlert>
+      ) : null}
       <form
         action={formAction}
         className="space-y-5"
@@ -147,6 +154,13 @@ export function LoginForm({
           <LockKeyhole className="size-4.5" aria-hidden="true" />
           Sign in to Command Center
         </Button>
+
+        <p className="text-center text-sm text-slate-600">
+          Need a citizen account?{" "}
+          <Link className="font-semibold text-brand-700 hover:text-brand-900 hover:underline" href="/register">
+            Create one
+          </Link>
+        </p>
       </form>
 
       <SecurityNotice>

@@ -72,19 +72,31 @@ class _ResetPasswordWithTokenScreenState
                       'Choose a new password to regain access to your account.',
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                TextFormField(
-                  controller: _tokenController,
-                  enabled: !auth.isSubmitting,
-                  decoration: const InputDecoration(
-                    labelText: 'Reset Token',
-                    hintText: 'Paste the token from your email',
-                    isDense: true,
-                    contentPadding: EdgeInsets.all(16),
+                if (_tokenController.text.trim().isEmpty)
+                  TextFormField(
+                    controller: _tokenController,
+                    enabled: !auth.isSubmitting,
+                    decoration: const InputDecoration(
+                      labelText: 'Reset Token',
+                      hintText: 'Paste the token from your email',
+                      isDense: true,
+                      contentPadding: EdgeInsets.all(16),
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter the reset token from your link.'
+                        : null,
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Secure reset link received from Gmail. Your token is already attached.',
+                    ),
                   ),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Enter the reset token from your link.'
-                      : null,
-                ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _passwordController,

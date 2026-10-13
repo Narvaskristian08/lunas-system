@@ -73,7 +73,7 @@ final GoRouter appRouter = GoRouter(
         }
         if (location == '/register/verify' &&
             authController.pendingRegistration == null) {
-          return '/register';
+          return authController.registrationCompleted ? '/login' : '/register';
         }
         return isPublic ? null : '/onboarding';
       case AuthStatus.roleUnavailable:
@@ -81,6 +81,10 @@ final GoRouter appRouter = GoRouter(
       case AuthStatus.authenticated:
         final home = authController.workspaceHomePath;
         if (home == null) return '/role-unavailable';
+        if (location == '/reset-password' &&
+            state.uri.queryParameters['token']?.isNotEmpty == true) {
+          return null;
+        }
         if (isPublic ||
             location == '/splash' ||
             location == '/role-unavailable') {

@@ -22,12 +22,14 @@ class AuthController extends ChangeNotifier {
   AuthUser? _user;
   String? _message;
   bool _isSubmitting = false;
+  bool _registrationCompleted = false;
   RegistrationMfaChallenge? _pendingRegistration;
 
   AuthStatus get status => _status;
   AuthUser? get user => _user;
   String? get message => _message;
   bool get isSubmitting => _isSubmitting;
+  bool get registrationCompleted => _registrationCompleted;
   RegistrationMfaChallenge? get pendingRegistration => _pendingRegistration;
   bool get isCitizen => _user?.isCitizen == true;
   bool get isRepairPersonnel =>
@@ -119,6 +121,7 @@ class AuthController extends ChangeNotifier {
   }) async {
     _isSubmitting = true;
     _message = null;
+    _registrationCompleted = false;
     notifyListeners();
     try {
       _pendingRegistration = await _authService.register(
@@ -156,15 +159,39 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    final success = await _completeAuthentication(
-      () =>
-          _authService.verifyRegistrationMfa(challenge: challenge, code: code),
-    );
-    if (success) {
+    _isSubmitting = true;
+    _message = null;
+    _registrationCompleted = false;
+    notifyListeners();
+    try {
+      // Registration verification returns a token for API compatibility, but
+      // a new citizen must still sign in explicitly before receiving a mobile
+      // session. This keeps account creation separate from authentication.
+      await _authService.verifyRegistrationMfa(
+        challenge: challenge,
+        code: code,
+      );
+      await _authService.clearSession();
       _pendingRegistration = null;
       await _authService.clearPendingRegistration();
+      _user = null;
+      _status = AuthStatus.unauthenticated;
+      _registrationCompleted = true;
+      _message = 'Account created successfully. Please log in to continue.';
+      return true;
+    } on ApiException catch (error) {
+      _message = error.message;
+      return false;
+    } on FormatException catch (error) {
+      _message = error.message;
+      return false;
+    } catch (_) {
+      _message = 'We could not verify your account. Please try again.';
+      return false;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
     }
-    return success;
   }
 
   Future<bool> resendRegistrationMfa() async {
@@ -205,6 +232,7 @@ class AuthController extends ChangeNotifier {
   ) async {
     _isSubmitting = true;
     _message = null;
+    _registrationCompleted = false;
     notifyListeners();
     try {
       final session = await action();
@@ -286,6 +314,7 @@ class AuthController extends ChangeNotifier {
     } finally {
       _user = null;
       _pendingRegistration = null;
+      _registrationCompleted = false;
       _status = AuthStatus.unauthenticated;
       _isSubmitting = false;
       notifyListeners();
@@ -296,14 +325,16 @@ class AuthController extends ChangeNotifier {
     await _authService.clearSession();
     _user = null;
     _pendingRegistration = null;
+    _registrationCompleted = false;
     _status = AuthStatus.unauthenticated;
     _message = 'Your session has expired. Please sign in again.';
     notifyListeners();
   }
 
   void clearMessage() {
-    if (_message == null) return;
+    if (_message == null && !_registrationCompleted) return;
     _message = null;
+    _registrationCompleted = false;
     notifyListeners();
   }
 }

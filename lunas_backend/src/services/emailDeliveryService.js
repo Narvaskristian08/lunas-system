@@ -1,4 +1,5 @@
 const axios = require('axios');
+const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
 
 const RESEND_API_URL = process.env.RESEND_API_URL || 'https://api.resend.com';
@@ -16,14 +17,26 @@ const providerName = () => {
   return process.env.RESEND_API_KEY ? 'resend' : 'webhook';
 };
 
+const smtpConfigured = () => Boolean(
+  process.env.SMTP_HOST
+  && process.env.SMTP_USER
+  && process.env.SMTP_PASSWORD
+  && (process.env.EMAIL_FROM || process.env.SMTP_USER)
+);
+
+const smtpPort = Number.parseInt(process.env.SMTP_PORT, 10) || 465;
+
+const smtpSecure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true'
+  || smtpPort === 465;
+
 const result = (configured, delivered) => ({ configured, delivered });
 
 /**
  * Transactional email boundary.
  *
- * Resend is the production provider when RESEND_API_KEY and EMAIL_FROM are
- * configured. The existing signed webhook contract remains the local/test
- * fallback so deployments can migrate without changing controller behavior.
+ * Resend or SMTP is used when the selected provider is fully configured. The
+ * existing signed webhook contract remains the local/test fallback so
+ * deployments can migrate without changing controller behavior.
  * Email bodies are never logged because they may contain reset tokens or OTPs.
  */
 exports.deliverEmail = async ({
@@ -59,6 +72,38 @@ exports.deliverEmail = async ({
           authorization: `Bearer ${process.env.RESEND_API_KEY}`,
           'content-type': 'application/json'
         }
+      });
+      return result(true, true);
+    } catch (_error) {
+      logger.error(`Email delivery failed for ${type}`);
+      return result(true, false);
+    }
+  }
+
+  if (provider === 'smtp') {
+    if (!smtpConfigured()) {
+      logger.warn(`Email delivery requested for ${type}, but SMTP is not fully configured`);
+      return result(false, false);
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASSWORD
+        },
+        connectionTimeout: timeout,
+        socketTimeout: timeout
+      });
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: recipient.email,
+        subject,
+        text,
+        html
       });
       return result(true, true);
     } catch (_error) {
