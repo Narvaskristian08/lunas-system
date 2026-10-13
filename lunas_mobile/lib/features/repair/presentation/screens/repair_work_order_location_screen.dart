@@ -1,6 +1,8 @@
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:lunas_mobile/features/maps/presentation/widgets/lunas_street_map.dart';
 import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/core/network/api_exception.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -177,19 +179,30 @@ class _IncidentMap extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: SizedBox(
         height: 360,
-        child: GoogleMap(
-          initialCameraPosition: CameraPosition(target: position, zoom: 16),
-          markers: {
-            Marker(
-              markerId: const MarkerId('repair-work-order-location'),
-              position: position,
-              infoWindow: const InfoWindow(title: 'Reported incident location'),
+        child: LunasStreetMap(
+          options: MapOptions(
+            initialCenter: position,
+            initialZoom: 16,
+            maxZoom: 19,
+          ),
+          layers: [
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: position,
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.topCenter,
+                  child: const Icon(
+                    Icons.location_on,
+                    size: 44,
+                    color: Colors.red,
+                    semanticLabel: 'Reported incident location',
+                  ),
+                ),
+              ],
             ),
-          },
-          myLocationEnabled: false,
-          myLocationButtonEnabled: false,
-          zoomControlsEnabled: false,
-          compassEnabled: true,
+          ],
         ),
       ),
     );

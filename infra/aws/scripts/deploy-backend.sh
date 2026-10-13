@@ -25,6 +25,22 @@ else
 fi
 chmod 600 "$runtime_env"
 
+# Merge optional email configuration on the host without exposing credentials
+# in the deployment command or build logs.
+if [[ -n "${EMAIL_RUNTIME_PARAMETER:-}" ]]; then
+  aws ssm get-parameter --name "$EMAIL_RUNTIME_PARAMETER" --with-decryption --query Parameter.Value --output text | python3 -c '
+import json,sys
+values=json.load(sys.stdin)
+with open(sys.argv[1], "a") as runtime:
+    for key,value in values.items():
+        if key not in {"EMAIL_PROVIDER", "SMTP_HOST", "SMTP_PORT", "SMTP_SECURE", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM"}:
+            raise ValueError("Unexpected email configuration key")
+        if "\n" in str(value) or "\r" in str(value):
+            raise ValueError("Invalid email configuration value")
+        runtime.write(f"{key}={value}\n")
+' "$runtime_env"
+fi
+
 cleanup_candidate() {
   docker rm -f "$candidate_name" >/dev/null 2>&1 || true
 }
@@ -49,9 +65,10 @@ docker run -d \
   --env-file "$runtime_env" \
   -e NODE_ENV=production \
   -e PORT=5000 \
-  -e AI_SERVICE_ENABLED=false \
-  -e AI_EVIDENCE_ANALYSIS_ENABLED=false \
-  -e PRIVACY_REDACTION_ENABLED=false \
+  -e AI_SERVICE_URL="${AI_SERVICE_URL:?Set the AI private service URL}" \
+  -e AI_SERVICE_ENABLED="${AI_SERVICE_ENABLED:-true}" \
+  -e AI_EVIDENCE_ANALYSIS_ENABLED="${AI_EVIDENCE_ANALYSIS_ENABLED:-true}" \
+  -e PRIVACY_REDACTION_ENABLED="${PRIVACY_REDACTION_ENABLED:-true}" \
   -p 127.0.0.1:5001:5000 \
   "lunas-backend:${release}" >/tmp/lunas-backend-candidate.id
 
@@ -81,9 +98,10 @@ docker run -d \
   --env-file "$runtime_env" \
   -e NODE_ENV=production \
   -e PORT=5000 \
-  -e AI_SERVICE_ENABLED=false \
-  -e AI_EVIDENCE_ANALYSIS_ENABLED=false \
-  -e PRIVACY_REDACTION_ENABLED=false \
+  -e AI_SERVICE_URL="${AI_SERVICE_URL:?Set the AI private service URL}" \
+  -e AI_SERVICE_ENABLED="${AI_SERVICE_ENABLED:-true}" \
+  -e AI_EVIDENCE_ANALYSIS_ENABLED="${AI_EVIDENCE_ANALYSIS_ENABLED:-true}" \
+  -e PRIVACY_REDACTION_ENABLED="${PRIVACY_REDACTION_ENABLED:-true}" \
   -p 127.0.0.1:5000:5000 \
   "lunas-backend:${release}" >/tmp/lunas-backend.id
 

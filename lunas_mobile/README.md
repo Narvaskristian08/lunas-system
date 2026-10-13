@@ -147,39 +147,22 @@ domain and matching backend CORS configuration.
 
 Never commit environment-specific endpoints or credentials.
 
-### Android Google Maps key
+### OpenStreetMap and location permissions
 
-The Android Gradle configuration reads, in order:
+Citizen report selection and repair work-location maps use `flutter_map` with
+OpenStreetMap raster tiles. No Google Maps key or billing account is required.
+The Maps navigation tab opens the same OpenStreetMap screen for browsing.
 
-1. the `MAPS_API_KEY` Gradle property; or
-2. the `GOOGLE_MAPS_API_KEY` environment variable.
+Visible attribution links to OpenStreetMap's copyright page. Requests identify
+LUNAS, use the library's HTTP-header-aware cache (64 MB soft limit), and request
+only visible tiles. Do not add bulk/offline downloads from the public tile server.
+Public tiles have no uptime guarantee; choose a dedicated tile provider before
+a large rollout. See https://operations.osmfoundation.org/policies/tiles/.
 
-For example, add the key to your user-level Gradle properties file rather than
-this repository:
-
-```properties
-# ~/.gradle/gradle.properties
-MAPS_API_KEY=replace-with-a-restricted-Android-key
-```
-
-Enable **Maps SDK for Android** for that key and restrict it to the Android
-application ID/signing certificate used for the test build. The appâ€™s Android
-manifest already declares camera, coarse/fine location, and internet access.
-
-The current Android application ID is `com.example.lunas_mobile`. Restrict the
-key to that application ID and the SHA-1/SHA-256 fingerprint from the keystore
-used by the build (normally the local debug keystore; use the release keystore
-fingerprint for release builds). Do not use an unrestricted key.
-
-### iOS maps and permissions
-
-Camera, photo-library, and when-in-use location usage descriptions are present
-in `ios/Runner/Info.plist`. Before testing the map picker on iOS, set the
-`GOOGLE_MAPS_API_KEY` Xcode build setting to a restricted iOS key. The checked-in
-AppDelegate reads that setting from `GMSApiKey`; the Android Gradle key mechanism
-does not configure iOS automatically.
-
-Use a separate restricted key per platform and keep it outside source control.
+The optional `LUNAS_MAP_TILE_URL` build define selects a compatible XYZ tile
+endpoint. Review its usage policy and attribution before changing providers.
+GPS still requires device permission and location services. Android and iOS
+retain their existing camera, photo-library, and location permissions.
 
 ### Backend and storage requirements
 
@@ -429,8 +412,8 @@ backend remains authoritative for evidence acceptance and access control.
 | Symptom | Check |
 | --- | --- |
 | The app cannot connect to the backend | Confirm `LUNAS_API_BASE_URL` includes `/api/v1`, the device can reach the host, and HTTPS/Android network policy is appropriate. |
-| Android map is blank | Confirm the Maps SDK for Android is enabled, the key is present as `MAPS_API_KEY` or `GOOGLE_MAPS_API_KEY`, and restrictions match the test app. |
-| iOS map does not load | Configure a restricted iOS Maps SDK key in the native iOS setup before testing. |
+| Map tiles do not load | Check internet access, tile-provider availability, and the optional `LUNAS_MAP_TILE_URL` build define. No Google key is needed. |
+| Current position is missing | Enable GPS and grant location permission. Manual pin selection remains available. |
 | Evidence upload fails | Verify backend multipart handling, storage credentials/bucket policy, image type/size, and device connectivity. |
 | Official queue is empty | Confirm the account role and barangay/organization fields, that matching reports are still `submitted`, and that the backend scope permits access. |
 | Decision shows a conflict | Another official has already decided the submitted report. Refresh the incident and use the serverâ€™s current state. |

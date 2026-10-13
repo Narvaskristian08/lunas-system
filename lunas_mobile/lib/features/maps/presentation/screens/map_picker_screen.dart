@@ -4,7 +4,9 @@ import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:lunas_mobile/features/maps/presentation/widgets/lunas_street_map.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -42,7 +44,8 @@ class MapPickerScreen extends StatefulWidget {
 class _MapPickerScreenState extends State<MapPickerScreen> {
   static const _dagupan = LatLng(16.0433, 120.3333);
 
-  GoogleMapController? _mapController;
+  final _mapController = MapController();
+  bool _mapReady = false;
   StreamSubscription<Position>? _positionSubscription;
   SelectedLocation? _selectedLocation;
   LatLng _cameraTarget = _dagupan;
@@ -50,7 +53,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   String _pinSource = 'map_pin';
   bool _isLocating = false;
   bool _isGeocoding = false;
-  bool _hasLocationPermission = false;
 
   @override
   void initState() {
@@ -71,7 +73,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   void dispose() {
     _positionSubscription?.cancel();
-    _mapController?.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -84,7 +86,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       final position = await widget.locationService.determinePosition();
       if (!mounted) return;
       setState(() {
-        _hasLocationPermission = true;
         _gpsFix = GpsFix(
           longitude: position.longitude,
           latitude: position.latitude,
@@ -121,7 +122,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     } on LocationServiceException catch (error) {
       if (!mounted) return;
       setState(() {
-        _hasLocationPermission = false;
         _gpsFix = null;
       });
       if (userInitiated) {
@@ -159,12 +159,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     );
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    if (!mounted) {
-      controller.dispose();
-      return;
-    }
-    _mapController = controller;
+  void _onMapReady() {
+    if (!mounted) return;
+    _mapReady = true;
     unawaited(
       _animateCameraTo(
         _cameraTarget,
@@ -174,14 +171,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   Future<void> _animateCameraTo(LatLng target, {required double zoom}) async {
-    final controller = _mapController;
-    if (!mounted || controller == null) return;
+    if (!mounted || !_mapReady) return;
     try {
-      await controller.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: target, zoom: zoom),
-        ),
-      );
+      _mapController.move(target, zoom);
     } catch (_) {
       // The native map can be torn down while a route is leaving. The map
       // remains usable on the next open, so this is intentionally not fatal.
@@ -256,49 +248,70 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _cameraTarget,
-              zoom: selected == null ? 13 : 17,
+          LunasStreetMap(
+            controller: _mapController,
+            options: MapOptions(
+              initialCenter: _cameraTarget,
+              initialZoom: selected == null ? 13 : 17,
+              maxZoom: 19,
+              onMapReady: _onMapReady,
+              onTap: (_, point) => _selectPoint(point),
             ),
-            onMapCreated: _onMapCreated,
-            onTap: _selectPoint,
-            myLocationEnabled: _hasLocationPermission,
-            myLocationButtonEnabled: false,
-            compassEnabled: true,
-            zoomControlsEnabled: false,
-            circles: _gpsFix == null
-                ? const {}
-                : {
-                    Circle(
-                      circleId: const CircleId('gps-accuracy'),
-                      center: LatLng(_gpsFix!.latitude, _gpsFix!.longitude),
+            layers: [
+              if (_gpsFix != null)
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: LatLng(_gpsFix!.latitude, _gpsFix!.longitude),
                       radius: _gpsFix!.accuracyMeters,
-                      fillColor: theme.colorScheme.primary.withValues(
-                        alpha: .12,
-                      ),
-                      strokeColor: theme.colorScheme.primary.withValues(
+                      useRadiusInMeter: true,
+                      color: theme.colorScheme.primary.withValues(alpha: .12),
+                      borderColor: theme.colorScheme.primary.withValues(
                         alpha: .45,
                       ),
-                      strokeWidth: 1,
+                      borderStrokeWidth: 1,
                     ),
-                  },
-            markers: selected == null
-                ? const {}
-                : {
+                  ],
+                ),
+              MarkerLayer(
+                markers: [
+                  if (_gpsFix != null)
                     Marker(
-                      markerId: const MarkerId('selected-location'),
-                      position: LatLng(selected.latitude, selected.longitude),
+                      point: LatLng(_gpsFix!.latitude, _gpsFix!.longitude),
+                      width: 18,
+                      height: 18,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                        ),
+                      ),
                     ),
-                  },
+                  if (selected != null)
+                    Marker(
+                      point: LatLng(selected.latitude, selected.longitude),
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.topCenter,
+                      child: Icon(
+                        Icons.location_on,
+                        color: theme.colorScheme.error,
+                        size: 44,
+                        semanticLabel: 'Selected report location',
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
           if (!widget.showLocationConfirmation &&
               !_isLocating &&
               _gpsFix != null)
             Positioned(
               left: AppSpacing.md,
-              right: AppSpacing.md,
-              top: AppSpacing.md,
+              right: 88,
+              bottom: AppSpacing.md,
               child: LunasCard(
                 child: Text(
                   'Your current location · GPS accuracy ±${_gpsFix!.accuracyMeters.round()} m',
