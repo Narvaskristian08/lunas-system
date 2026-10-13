@@ -46,18 +46,24 @@ role gates. Request validation and exact payload constraints live beside the
 routes in `src/middleware/validation.js` and
 `src/middleware/accountValidation.js`.
 
-## Local synthetic demo
+## Local Dagupan test accounts and fixtures
 
 ```bash
-ALLOW_DEMO_SEED=true npm run seed:demo
+ALLOW_DEMO_SEED=true npm run seed:dagupan
 ```
 
-The script requires a local MongoDB host and database named `lunas_db`. It
-creates six synthetic role accounts and three synthetic submitted reports.
-Re-seeding removes only records in the `demo.*@lunas.test` and `DEMO-QA-`
-namespaces, including their related work orders and notifications. It does not
-create synthetic repair outcomes. See the [root demo guide](../README.md) for
-credentials and the handoff sequence.
+The script requires a local MongoDB host and database named `lunas_db`.
+Docker seeding additionally requires `DEMO_SEED_DOCKER=true`. It creates 42
+local accounts and 31 synthetic submitted reports, covering all canonical
+barangays. Ordinary reruns preserve existing records. Explicit `--replace`
+resets seeded accounts and replaces only marked synthetic fixtures and their
+linked records; non-fixture reports are preserved. Back up the database first.
+
+Run `npm run seed:web` separately to populate synthetic workflow snapshots.
+Both seeders share `dagupan-seed-config.js` and `seed-fixture-evidence.js`;
+these helpers are dependencies, not duplicate seeders. See the
+[root setup guide](../README.md) and
+[account directory](../LOCAL_DAGUPAN_ACCOUNTS.md) for details.
 
 ## Verification
 

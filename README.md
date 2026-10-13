@@ -58,66 +58,46 @@ the production S3 settings, and run the base Compose file without the local
 object-store override. The production backend uses the EC2 instance role and
 keeps evidence in the private AWS bucket.
 
-## Local end-to-end demonstration
+## Local Dagupan accounts and fixtures
 
-The synthetic seed is explicitly local-only. Set `MONGODB_URI` to a local
-MongoDB host and database `lunas_db`, configure the backend `.env`, then run:
-
-```bash
-cd lunas_backend
-ALLOW_DEMO_SEED=true npm run seed:demo
-```
-
-The seed refuses non-local MongoDB hosts and any database other than
-`lunas_db`. It creates six synthetic role accounts and four synthetic
-`submitted` reports; it does not create fake repair outcomes or pre-approve an
-incident. The shared demo password is `LunasDemo2026!` unless
-`DEMO_SEED_PASSWORD` is configured. Emails:
-
-| Role | Demo email |
-| --- | --- |
-| Admin | `demo.admin@lunas.test` |
-| Barangay Official (Poblacion Oeste) | `demo.barangay@lunas.test` |
-| City Engineer | `demo.engineer@lunas.test` |
-| Utility Provider (Dagupan Water District) | `demo.utility@lunas.test` |
-| Repair Personnel (Dagupan Water District) | `demo.repair@lunas.test` |
-| Citizen | `demo.citizen@lunas.test` |
-
-Run the API and web app, then use report `DEMO-QA-001` (a synthetic water-leak
-report in Poblacion Oeste) to demonstrate, in order: Barangay validation → City
-Engineering confirmation → manual priority/SLA → provider routing → provider
-automatic work-order creation → provider Repair Personnel assignment → mobile
-Start Repair, field notes and completion evidence → Utility Provider review → City Engineering
-final verification → Citizen's resolved status. Sign in separately as each
-role; each server enforces its own scope. Use the web Admin account only for
-account/audit administration. Full runtime acceptance still depends on working
-database, evidence storage, login/registration config, and device/browser
-accessibility to the backend.
-
-Existing demo accounts and reports are preserved when the seed runs again.
-Reporting-appeal fixtures are optional (`SEED_REPORTING_APPEALS=true`) and block
-the demo citizen for appeal testing; leave this unset for the normal repair flow.
-
-To populate all web queues in local Docker, run:
+The former six `demo.*@lunas.test` accounts are replaced by 42 local test
+accounts: one official for each of the 31 canonical Dagupan barangays, four
+organization providers and four matching repair accounts, plus admin, city
+engineer, and citizen. See [local account directory](LOCAL_DAGUPAN_ACCOUNTS.md)
+for identifiers, category coverage, and login details. These are synthetic test
+identities, not official government or utility accounts.
 
 ```powershell
-docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true backend npm run seed:web
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:dagupan
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:web
 ```
 
-This adds 24 `MOCK-WEB-*` reports and 10 linked work orders, including readable
-synthetic evidence, assignment/review history, and active/approaching/overdue SLAs.
-Repair progress is 0% until completion is submitted at 100%. These are synthetic
-workflow snapshots, not real approvals. Re-running preserves existing fixtures;
-use `npm run seed:web -- --refresh` with the same local environment to replace
-only these mock reports and their linked work orders/evidence with fresh states.
+`seed:dagupan` creates 31 synthetic submitted reports, one for each barangay,
+with category coverage across all six mobile categories. Coordinates are test
+placeholders, not verified barangay locations. Existing accounts and fixtures
+are preserved on ordinary reruns. Use `seed:dagupan` for accounts and barangay
+fixtures, and `seed:web` for workflow snapshots.
 
-`DEMO-QA-001` is a workflow-only shortcut whose Citizen is seeded. To exercise
-the full account-creation acceptance path, use **Create Account** in the mobile
-app with a fresh email, complete the delivered email code, sign in, and submit a
-new report with evidence and location. Then carry that same report through the
-role handoffs above. This requires a working registration email provider and
-private evidence storage; seed data or direct database edits do not substitute
-for Citizen registration.
+To replace legacy/local fixtures, back up the database first, then append
+`-- --replace` to `npm run seed:dagupan`. Replacement updates local account
+passwords and metadata, revokes their refresh tokens, removes only explicitly
+marked `DEMO-QA-*`, `MOCK-WEB-*`, and `DAGUPAN-LOCAL-*` synthetic fixtures and
+their linked work orders/notifications, and recreates the barangay submissions.
+Legacy account IDs are retained so reports outside the fixture set keep valid
+references. Historical evidence objects remain in the local bucket for backup
+recovery. Non-fixture reports are preserved. Both seeders refuse external
+MongoDB hosts and any database other than local `lunas_db`.
+
+`seed:web` adds 24 synthetic workflow snapshots and 10 linked work orders.
+Water fixtures route to DCWD/Pamana; drainage and other municipal fixtures
+route to the City Engineering maintenance provider; electrical fixtures use
+DECORP. These snapshots support queue testing and are not real approvals.
+Use `npm run seed:web -- --refresh` to refresh only web fixtures.
+
+For the real workflow, submit a new citizen report and carry it through
+Barangay validation, City Engineering confirmation/priority/routing, provider
+assignment, mobile repair, provider review, and final City Engineering
+verification. Registration still requires working email delivery and storage.
 
 ## Verification commands
 

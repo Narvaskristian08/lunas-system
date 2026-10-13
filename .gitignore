@@ -18,3 +18,6 @@ runs/
 # shared or production deployment; never commit credentials or local state.
 /infra/aws/terraform/.terraform/
 /infra/aws/terraform/terraform.tfstate*
+
+# Local database snapshots before fixture replacement.
+/.local-backups/

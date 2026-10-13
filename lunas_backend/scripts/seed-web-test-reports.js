@@ -6,6 +6,7 @@ const WorkOrder = require('../src/models/WorkOrder');
 const User = require('../src/models/User');
 const storage = require('../src/services/storageService');
 const { testEvidence } = require('./seed-fixture-evidence');
+const { ORGANIZATIONS, fixtureEmails, email, requireLocalSeedEnvironment } = require('./dagupan-seed-config');
 
 function incidentPath(status) {
   const path = ['submitted', 'barangay_validated', 'city_confirmed', 'prioritized', 'provider_assigned',
@@ -20,17 +21,20 @@ function incidentPath(status) {
 
 
 async function seed() {
-  const uri = new URL(process.env.MONGODB_URI);
-  if (process.env.ALLOW_DEMO_SEED !== 'true'
-    || !['mongodb:'].includes(uri.protocol)
-    || !['localhost', '127.0.0.1', 'mongodb'].includes(uri.hostname)
-    || uri.pathname !== '/lunas_db') throw new Error('Only explicitly authorized local lunas_db seeding is allowed');
-  await mongoose.connect(uri.toString());
+  const uri = requireLocalSeedEnvironment();
+  await mongoose.connect(uri);
   try {
     const users = {};
-    for (const name of ['citizen', 'barangay', 'engineer', 'utility', 'repair']) {
-      users[name] = await User.findOne({ email: `demo.${name}@lunas.test` });
-      if (!users[name]) throw new Error(`Missing demo ${name} account`);
+    for (const name of ['citizen', 'barangay', 'engineer']) {
+      users[name] = await User.findOne({ email: fixtureEmails[name] });
+      if (!users[name]) throw new Error(`Missing Dagupan ${name} account; run seed:dagupan first.`);
+    }
+    const providers = {};
+    const repairPersonnel = {};
+    for (const org of ORGANIZATIONS) {
+      providers[org.code] = await User.findOne({ email: email(`provider-${org.code}`) });
+      repairPersonnel[org.code] = await User.findOne({ email: email(`repair-${org.code}`) });
+      if (!providers[org.code] || !repairPersonnel[org.code]) throw new Error(`Missing ${org.code} provider/repair account`);
     }
     if (!process.env.S3_ENDPOINT || new URL(process.env.S3_ENDPOINT).hostname !== 'minio') {
       throw new Error('Mock evidence requires the local Compose object store');
@@ -68,6 +72,9 @@ async function seed() {
     let orders = 0;
     let original;
     for (const [index, [status, category, orderStatus, risk]] of fixtures.entries()) {
+      const orgCode = category === 'water' ? 'dcwd' : category === 'electrical' ? 'decorp' : 'city-maintenance';
+      users.utility = providers[orgCode];
+      users.repair = repairPersonnel[orgCode];
       const reportNumber = `MOCK-WEB-${String(index + 1).padStart(3, '0')}`;
       const existing = await Incident.findOne({ reportNumber });
       if (existing && (!orderStatus || existing.workOrder)) { if (index === 0) original = existing; continue; }
@@ -170,8 +177,10 @@ async function seed() {
       }
       created++;
     }
-    const queued = await WorkOrder.exists({ assignedTo: users.repair._id, status: { $in: ['accepted', 'in_progress', 'rework_required', 'city_correction_required'] } });
-    await User.updateOne({ _id: users.repair._id }, { $set: { availability: queued ? 'assigned' : 'available' } });
+    for (const personnel of Object.values(repairPersonnel)) {
+      const queued = await WorkOrder.exists({ assignedTo: personnel._id, status: { $in: ['accepted', 'in_progress', 'rework_required', 'city_correction_required'] } });
+      await User.updateOne({ _id: personnel._id }, { $set: { availability: queued ? 'assigned' : 'available' } });
+    }
     console.log(JSON.stringify({ reportsCreated: created, workOrdersCreated: orders,
       totalMockReports: await Incident.countDocuments({ reportNumber: /^MOCK-WEB-/ }) }));
   } finally { await mongoose.disconnect(); }

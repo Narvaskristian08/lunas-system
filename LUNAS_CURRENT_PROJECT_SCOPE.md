@@ -692,24 +692,9 @@ No claim of Data Privacy Act, GDPR, records-management, accessibility, or other 
 
 ## 20. Seed Accounts and Demonstration Readiness
 
-`lunas_backend/scripts/seed-demo-data.js` is intentionally local-only. It requires an explicit enable flag, accepts only a local MongoDB hostname and database exactly named `lunas_db`, and removes only records in the synthetic demo namespace before reseeding (`seed-demo-data.js:24-48,129-159`). It creates:
+`lunas_backend/scripts/seed-dagupan-data.js` is the local-only account and barangay fixture seeder. It requires `ALLOW_DEMO_SEED=true`, a local MongoDB host, and database exactly named `lunas_db`; Docker additionally requires `DEMO_SEED_DOCKER=true`. It creates 42 local test accounts and 31 synthetic submitted reports. Accounts cover all 31 barangays, four organization providers and four matching repair personnel, plus admin, engineer, and citizen. See [the account directory](LOCAL_DAGUPAN_ACCOUNTS.md).
 
-| Role | Synthetic account | Scope |
-|---|---|---|
-| Admin | `demo.admin@lunas.test` | Account governance |
-| City Engineer | `demo.engineer@lunas.test` | Citywide |
-| Citizen | `demo.citizen@lunas.test` | Own reports |
-| Barangay Official | `demo.barangay@lunas.test` | Poblacion Oeste |
-| Utility Provider | `demo.utility@lunas.test` | Dagupan Water District |
-| Repair Personnel | `demo.repair@lunas.test` | Same provider, Poblacion Oeste |
-
-Passwords are intentionally not reproduced. The seed and root README contain a shared demo password in cleartext; this is acceptable only for isolated synthetic local data and is a repository hygiene/security issue.
-
-The seed creates three **submitted** Incidents and no WorkOrders or uploaded evidence:
-
-- a water leak in Poblacion Oeste intended for sequential workflow demonstration;
-- a drainage blockage in Poblacion Oeste for queue/scope checks;
-- a streetlight outage in Bonuan Gueset to show exclusion from the seeded Barangay Official's scope.
+Ordinary reruns preserve existing data. Explicit `--replace` replaces only marked synthetic fixtures and resets seeded accounts. Legacy account IDs are retained to preserve non-fixture references. Back up the database before replacement. The separate `seed-web-test-reports.js` populates 24 synthetic workflow snapshots and 10 work orders for queue testing. Neither seeder represents official credentials or actual infrastructure repairs.
 
 ### Readiness determination
 
@@ -833,7 +818,7 @@ This is the shortest evidence-faithful demo using current capabilities without d
 1. Configure unique secrets outside source; private Supabase bucket; registration/activation/reset delivery as needed; Turnstile; mobile map keys; optional AI and OneSignal.
 2. Correct web container configuration by setting internal `LUNAS_API_URL` to the backend service and setting a high-entropy `LUNAS_SESSION_SECRET`. Decide whether to enable SLA automation.
 3. Start MongoDB, backend, AI (optional), and web; build/install mobile with reachable API base URL. Confirm service health and private evidence access.
-4. In an isolated local `lunas_db`, explicitly enable and run `npm run seed:demo` from `lunas_backend`. Retrieve the synthetic password through the controlled demo procedure; do not publish/reuse it.
+4. In an isolated local `lunas_db`, explicitly enable and run `npm run seed:dagupan` from `lunas_backend`. Retrieve the synthetic password through the controlled demo procedure; do not publish/reuse it.
 
 ### Sequential workflow
 
