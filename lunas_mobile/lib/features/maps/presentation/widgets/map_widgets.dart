@@ -5,6 +5,7 @@ import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
+import 'package:lunas_mobile/core/utils/display_labels.dart';
 
 class LunasMapCanvas extends StatelessWidget {
   const LunasMapCanvas({
@@ -133,7 +134,7 @@ class NearbyReportCard extends StatelessWidget {
               children: [
                 ReportStatusHeader(
                   title: marker.title,
-                  status: marker.status,
+                  status: humanizeCodeLabel(marker.status),
                   statusColor: marker.color,
                   titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -179,7 +180,7 @@ class MarkerDetailsSheet extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             ReportStatusHeader(
               title: marker.title,
-              status: marker.status,
+              status: humanizeCodeLabel(marker.status),
               statusColor: marker.color,
               titleStyle: Theme.of(
                 context,

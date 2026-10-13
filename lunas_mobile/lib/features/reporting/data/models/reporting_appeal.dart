@@ -1,3 +1,5 @@
+import 'package:lunas_mobile/core/utils/display_labels.dart';
+
 class ReportingAppeal {
   const ReportingAppeal({
     required this.id,
@@ -14,6 +16,8 @@ class ReportingAppeal {
   final String evidenceReference;
   final String status;
   final int version;
+
+  String get statusLabel => humanizeCodeLabel(status);
 
   factory ReportingAppeal.fromJson(Map<String, dynamic> json) {
     return ReportingAppeal(

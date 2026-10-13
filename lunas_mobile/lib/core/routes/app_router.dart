@@ -142,6 +142,7 @@ final GoRouter appRouter = GoRouter(
                   '/reports/barangays',
                   '/reports/categories',
                   '/reports/review',
+                  '/reports/appeal',
                 }.contains(state.uri.path) ||
                 state.fullPath == '/reports/:id' ||
                 state.fullPath == '/reports/:id/timeline' ||
@@ -219,6 +220,8 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/reports/appeal',
+          onExit: (_, _) async =>
+              await ReportingAppealNavigation.confirmExit?.call() ?? true,
           builder: (_, _) => const ReportingAppealScreen(),
         ),
         GoRoute(

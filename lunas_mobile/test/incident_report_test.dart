@@ -2,6 +2,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
 void main() {
+  test('flags a saved non-Dagupan location for review', () {
+    final report = IncidentReport.fromJson({
+      '_id': 'legacy-location',
+      'reportNumber': 'LUNAS-LEGACY-001',
+      'category': 'road',
+      'description': 'Legacy report',
+      'status': 'submitted',
+      'location': {
+        'coordinates': [-122.084, 37.422],
+        'address': {
+          'street': '1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA',
+          'barangay': 'Bonuan Binloc',
+          'city': 'Mountain View',
+        },
+      },
+      'images': const [],
+      'statusHistory': const [],
+    });
+
+    expect(report.location.needsReview, isTrue);
+  });
+
   test(
     'historical evidence remains readable without inventing masking status',
     () {

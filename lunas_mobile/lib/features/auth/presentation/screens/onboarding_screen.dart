@@ -16,7 +16,7 @@ class OnboardingScreen extends StatelessWidget {
       showBrand: false,
       centerContent: true,
       footer: Text(
-        '© 2024 LUNAS Urban Infrastructure Management',
+        '© ${DateTime.now().year} LUNAS Urban Infrastructure Management',
         textAlign: TextAlign.center,
         style: theme.textTheme.labelSmall,
       ),

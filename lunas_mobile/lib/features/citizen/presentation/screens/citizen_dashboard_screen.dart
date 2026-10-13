@@ -377,7 +377,42 @@ class _ReportListCard extends StatelessWidget {
           report.location.displayAddress,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+        if (report.location.needsReview) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _LocationReviewNotice(compact: true),
+        ],
       ],
     ),
   );
+}
+
+class _LocationReviewNotice extends StatelessWidget {
+  const _LocationReviewNotice({this.compact = false});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.error;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.location_off_outlined,
+          size: compact ? 15 : 18,
+          color: color,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Flexible(
+          child: Text(
+            'Location Needs Review',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

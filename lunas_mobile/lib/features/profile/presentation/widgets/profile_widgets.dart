@@ -3,6 +3,7 @@ import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
@@ -80,7 +81,7 @@ class ProfileHero extends StatelessWidget {
                 Chip(
                   visualDensity: VisualDensity.compact,
                   avatar: const Icon(Icons.verified_user_outlined, size: 16),
-                  label: Text(role),
+                  label: Text(roleLabel(role)),
                 ),
               ],
             ),

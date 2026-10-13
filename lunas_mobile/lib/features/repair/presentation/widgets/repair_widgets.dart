@@ -1,5 +1,6 @@
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:lunas_mobile/core/utils/display_labels.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
@@ -775,9 +776,4 @@ class RepairFilterChips extends StatelessWidget {
   }
 }
 
-String formatRepairLabel(String value) => value
-    .replaceAll(RegExp(r'[_-]+'), ' ')
-    .replaceAllMapped(RegExp(r'[A-Za-z]+'), (match) {
-      final word = match.group(0)!;
-      return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
-    });
+String formatRepairLabel(String value) => humanizeCodeLabel(value);

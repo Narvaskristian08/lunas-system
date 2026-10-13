@@ -6,7 +6,12 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/features/reporting/data/models/reporting_appeal.dart';
+
+abstract final class ReportingAppealNavigation {
+  static Future<bool> Function()? confirmExit;
+}
 
 class ReportingAppealScreen extends StatefulWidget {
   const ReportingAppealScreen({super.key});
@@ -22,16 +27,20 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
   ReportingAppeal? _appeal;
   bool _loading = true;
   bool _submitting = false;
+  bool _submitted = false;
+  bool _exitPromptOpen = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    ReportingAppealNavigation.confirmExit = _confirmExit;
     _loadAppeal();
   }
 
   @override
   void dispose() {
+    ReportingAppealNavigation.confirmExit = null;
     _explanationController.dispose();
     _referenceController.dispose();
     super.dispose();
@@ -65,6 +74,26 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => LunasConfirmationDialog(
+        title: const Text('Submit Appeal?'),
+        content: const Text(
+          'Your explanation and supporting reference will be sent to your assigned Barangay Official for review. You cannot edit the appeal while it is pending.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Review Appeal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Submit Appeal'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     setState(() {
       _submitting = true;
       _error = null;
@@ -78,7 +107,11 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
       setState(() {
         _appeal = appeal;
         _submitting = false;
+        _submitted = true;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appeal submitted for review.')),
+      );
     } on ApiException catch (error) {
       if (mounted) {
         setState(() {
@@ -94,6 +127,40 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
         });
       }
     }
+  }
+
+  bool get _hasUnsavedChanges =>
+      !_submitted &&
+      (_appeal == null || _appeal?.status == 'rejected') &&
+      (_explanationController.text.trim().isNotEmpty ||
+          _referenceController.text.trim().isNotEmpty);
+
+  Future<bool> _confirmExit() async {
+    if (!_hasUnsavedChanges || !mounted) return true;
+    if (_exitPromptOpen) return false;
+    _exitPromptOpen = true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => LunasConfirmationDialog(
+        destructive: true,
+        title: const Text('Discard Appeal?'),
+        content: const Text(
+          'Your unsaved explanation and supporting reference will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Keep Editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard Appeal'),
+          ),
+        ],
+      ),
+    );
+    _exitPromptOpen = false;
+    return discard ?? false;
   }
 
   @override
@@ -123,7 +190,7 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Appeal ${appeal.status[0].toUpperCase()}${appeal.status.substring(1)}',
+                          'Appeal ${appeal.statusLabel}',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: AppSpacing.sm),

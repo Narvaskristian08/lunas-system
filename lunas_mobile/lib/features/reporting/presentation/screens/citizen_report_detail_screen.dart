@@ -159,6 +159,10 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     ),
                     const SizedBox(height: AppSpacing.xl),
                   ],
+                  if (report.location.needsReview) ...[
+                    _LocationReviewCard(location: report.location),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
                   if (report.images.isNotEmpty) ...[
                     Text(
                       'Evidence',
@@ -312,6 +316,48 @@ class _CitizenDecisionReason extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(reason),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationReviewCard extends StatelessWidget {
+  const _LocationReviewCard({required this.location});
+
+  final IncidentLocation location;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LunasCard(
+      color: theme.colorScheme.errorContainer,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.location_off_outlined, color: theme.colorScheme.error),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Location Needs Review',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'The saved address does not match Dagupan City. Treat this location as unverified until it is reviewed.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
+                ),
               ],
             ),
           ),

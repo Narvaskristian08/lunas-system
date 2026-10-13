@@ -1,8 +1,7 @@
+import 'package:lunas_mobile/core/utils/display_labels.dart';
+
 /// The mobile application exposes only Citizen and Repair Personnel workspaces.
-const supportedMobileRoles = <String>{
-  'citizen',
-  'repair_personnel',
-};
+const supportedMobileRoles = <String>{'citizen', 'repair_personnel'};
 
 bool isCitizenRole(String role) => role == 'citizen';
 
@@ -19,9 +18,4 @@ String? mobileWorkspaceHome(String role) {
   return null;
 }
 
-String roleLabel(String role) => role
-    .replaceAll('_', ' ')
-    .split(' ')
-    .where((part) => part.isNotEmpty)
-    .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-    .join(' ');
+String roleLabel(String role) => humanizeCodeLabel(role);

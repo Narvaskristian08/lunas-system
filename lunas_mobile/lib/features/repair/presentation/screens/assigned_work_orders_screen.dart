@@ -142,7 +142,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _StatusFilters(
+        RepairStatusFilters(
           selected: _status,
           overdueOnly: _overdueOnly,
           onSelected: _selectStatus,
@@ -222,11 +222,12 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   }
 }
 
-class _StatusFilters extends StatelessWidget {
-  const _StatusFilters({
+class RepairStatusFilters extends StatelessWidget {
+  const RepairStatusFilters({
     required this.selected,
     required this.onSelected,
     this.overdueOnly = false,
+    super.key,
   });
 
   final String? selected;
@@ -250,12 +251,8 @@ class _StatusFilters extends StatelessWidget {
         children: [
           for (var index = 0; index < statuses.length; index++) ...[
             if (index > 0) const SizedBox(width: AppSpacing.xs),
-            SizedBox(
-              width: statuses[index].$2.length > 16
-                  ? 164
-                  : statuses[index].$2.length > 10
-                  ? 144
-                  : 72,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 72),
               child: LunasFilterButton(
                 label: statuses[index].$2,
                 selected: statuses[index].$1 == 'overdue'
