@@ -76,12 +76,17 @@ NotificationKind _kindFor(String type) {
     'sla_escalation',
     'incident_rejected',
     'repair_rejected',
+    'duplicate_detected',
+    'work_order_declined',
   }.contains(type)) {
     return NotificationKind.alert;
   }
   if ({
     'incident_validated',
-    'duplicate_detected',
+    'work_order_assigned',
+    'work_order_reassigned',
+    'work_order_accepted',
+    'system_announcement',
     'status_update',
   }.contains(type)) {
     return NotificationKind.activity;

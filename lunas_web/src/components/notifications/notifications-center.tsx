@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, CircleAlert, RefreshCw, X } from "lucide-react";
 import { PermissionGate } from "@/components/auth/permission-gate";
 import { PageHeader } from "@/components/layout/page-header";
@@ -14,20 +14,12 @@ import { DateRangeFilter, FilterBar, FilterSelect, SortControl } from "@/compone
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
 import { listNotificationsAction, markAllNotificationsReadAction, markNotificationsReadAction } from "@/app/actions/notifications";
-import type { LunasNotification, NotificationCategory, Severity } from "@/types";
+import type { LunasNotification, NotificationCategory } from "@/types";
 
 const PAGE_SIZE = 5;
-const INITIAL_NOW = Date.now();
+
 
 type LoadState = "loading" | "success" | "error" | "offline";
-
-const priority: Record<Severity, number> = {
-  critical: 5,
-  warning: 4,
-  information: 3,
-  success: 2,
-  neutral: 1,
-};
 
 function NotificationListSkeleton() {
   return (
@@ -50,6 +42,10 @@ function NotificationListSkeleton() {
 
 function NotificationsWorkspace() {
   const { notify } = useToast();
+  const requestId = useRef(0);
+  const [total, setTotal] = useState(0);
+  const [unread, setUnread] = useState(0);
+  const [delayedQuery, setDelayedQuery] = useState("");
   const [items, setItems] = useState<LunasNotification[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [query, setQuery] = useState("");
@@ -60,17 +56,25 @@ function NotificationsWorkspace() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  useEffect(() => { const timer = setTimeout(() => setDelayedQuery(query), 300); return () => clearTimeout(timer); }, [query]);
+
 
   const load = useCallback(async () => {
+    const currentRequest = ++requestId.current;
+    setLoadState("loading");
     try {
-      const result = await listNotificationsAction();
-      setItems(result);
+      const result = await listNotificationsAction({ page, limit: PAGE_SIZE, category, search: delayedQuery, readState, dateRange, sort });
+      if (currentRequest !== requestId.current) return;
+      setItems(result.items);
+      setTotal(result.total);
+      setUnread(result.unreadCount);
       setSelected(new Set());
       setLoadState("success");
     } catch (error) {
+      if (currentRequest !== requestId.current) return;
       setLoadState(error instanceof Error && error.message === "OFFLINE" ? "offline" : "error");
     }
-  }, []);
+  }, [page, category, delayedQuery, readState, dateRange, sort]);
 
   const retryLoad = () => {
     setLoadState("loading");
@@ -82,40 +86,9 @@ function NotificationsWorkspace() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
-    const result = items.filter((notification) => {
-      const searchable = [
-        notification.title,
-        notification.message,
-        notification.category,
-        notification.relatedRecord?.id ?? "",
-      ].join(" ").toLocaleLowerCase();
-      if (normalized && !searchable.includes(normalized)) return false;
-      if (category !== "all" && notification.category !== category) return false;
-      if (readState === "unread" && notification.read) return false;
-      if (readState === "read" && !notification.read) return false;
-      if (dateRange !== "all") {
-        const age = INITIAL_NOW - new Date(notification.timestamp).getTime();
-        const maxAge = dateRange === "today" ? 24 * 60 * 60 * 1_000 : dateRange === "week" ? 7 * 24 * 60 * 60 * 1_000 : 30 * 24 * 60 * 60 * 1_000;
-        if (age < 0 || age > maxAge) return false;
-      }
-      return true;
-    });
-
-    return result.sort((a, b) => {
-      if (sort === "oldest") return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-      if (sort === "priority") {
-        return priority[b.severity] - priority[a.severity] || new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-      }
-      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-    });
-  }, [category, dateRange, items, query, readState, sort]);
-
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visiblePage = Math.min(page, pages);
-  const visible = filtered.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
-  const unread = items.filter((notification) => !notification.read).length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const visiblePage = page;
+  const visible = items;
   const allVisibleSelected = visible.length > 0 && visible.every((notification) => selected.has(notification.id));
   const hasFilters = Boolean(query.trim()) || category !== "all" || readState !== "all" || dateRange !== "all";
 
@@ -129,13 +102,15 @@ function NotificationsWorkspace() {
   };
 
   const markRead = async (ids: string[], all = false) => {
-    if (!ids.length || saving) return;
+    if ((!all && !ids.length) || saving) return;
     setSaving(true);
     try {
       if (all) await markAllNotificationsReadAction();
       else await markNotificationsReadAction(ids);
       const idSet = new Set(ids);
       setItems((current) => current.map((notification) => idSet.has(notification.id) ? { ...notification, read: true } : notification));
+      await load();
+      window.dispatchEvent(new Event("lunas-notifications-read"));
       setSelected(new Set());
       notify({
         title: all ? "All notifications marked as read" : `${ids.length} notification${ids.length === 1 ? "" : "s"} marked as read`,
@@ -165,7 +140,7 @@ function NotificationsWorkspace() {
               ? `${unread} unread notification${unread === 1 ? "" : "s"} need your attention.`
               : "You’re caught up. New operational alerts will appear here."}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Notifications" }]}
-        actions={
+        actions={<>
           <Button
             type="button"
             variant="secondary"
@@ -177,7 +152,8 @@ function NotificationsWorkspace() {
             <CheckCheck className="size-4" aria-hidden="true" />
             Mark All as Read
           </Button>
-        }
+          {hasFilters ? <Button variant="secondary" disabled={saving || !visible.some(item => !item.read)} onClick={() => void markRead(visible.filter(item => !item.read).map(item => item.id))}>Mark Visible as Read</Button> : null}
+        </>}
       />
 
       <Card className="overflow-hidden">
@@ -193,7 +169,7 @@ function NotificationsWorkspace() {
             />
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <Bell className="size-4 text-brand-700" aria-hidden="true" />
-              <span><strong className="text-slate-950">{items.length}</strong> total</span>
+              <span><strong className="text-slate-950">{total}</strong> matching</span>
               <span className="text-slate-300" aria-hidden="true">•</span>
               <span><strong className="text-brand-800">{unread}</strong> unread</span>
             </div>
@@ -281,7 +257,7 @@ function NotificationsWorkspace() {
                     />
                     Select this page
                   </label>
-                  <span className="text-xs text-slate-500">{filtered.length} result{filtered.length === 1 ? "" : "s"}</span>
+                  <span className="text-xs text-slate-500">{total} result{total === 1 ? "" : "s"}</span>
                 </div>
                 <div aria-label="Notification List">
                   {visible.map((notification) => (
@@ -300,7 +276,7 @@ function NotificationsWorkspace() {
                     />
                   ))}
                 </div>
-                <Pagination page={visiblePage} pages={pages} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+                <Pagination page={visiblePage} pages={pages} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
               </>
             ) : (
               <EmptyState

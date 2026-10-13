@@ -13,14 +13,17 @@ export function NotificationHeaderLink() {
   useEffect(() => {
     if (!viewer.permissions.includes("notifications.view")) return;
     let active = true;
-    listNotificationsAction()
+    const refresh = () => { void listNotificationsAction({ limit: 1 })
       .then((notifications) => {
-        if (active) setUnread(notifications.filter((notification) => !notification.read).length);
+        if (active) setUnread(notifications.unreadCount);
       })
       .catch(() => {
         if (active) setUnread(0);
       });
-    return () => { active = false; };
+    };
+    refresh();
+    window.addEventListener("lunas-notifications-read", refresh);
+    return () => { active = false; window.removeEventListener("lunas-notifications-read", refresh); };
   }, [viewer.permissions]);
 
   if (!viewer.permissions.includes("notifications.view")) return null;

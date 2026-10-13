@@ -32,12 +32,31 @@ class ReportService {
     return values;
   }
 
-  Future<List<IncidentReport>> getMyReports({int limit = 20}) async {
+  Future<List<IncidentReport>> getMyReports({int limit = 20}) async =>
+      (await getMyReportsPage(limit: limit)).items;
+
+  Future<CitizenReportPage> getMyReportsPage({
+    int page = 1,
+    int limit = 20,
+    String filter = 'all',
+    String search = '',
+  }) async {
     final payload = await _apiClient.get(
       '/incidents/my',
-      queryParameters: {'page': '1', 'limit': '$limit'},
+      queryParameters: {
+        'page': '$page',
+        'limit': '$limit',
+        'reportView': filter,
+        if (search.trim().isNotEmpty) 'search': search.trim(),
+      },
     );
-    return _reportList(payload);
+    final pagination = payload['pagination'] as Map? ?? {};
+    return CitizenReportPage(
+      items: _reportList(payload),
+      page: (pagination['page'] as num?)?.toInt() ?? page,
+      pages: (pagination['pages'] as num?)?.toInt() ?? 1,
+      total: (pagination['total'] as num?)?.toInt() ?? 0,
+    );
   }
 
   Future<IncidentReport> getReport(String id) async {
@@ -161,4 +180,17 @@ class ReportService {
         ? Map<String, dynamic>.from(data)
         : <String, dynamic>{};
   }
+}
+
+class CitizenReportPage {
+  const CitizenReportPage({
+    required this.items,
+    required this.page,
+    required this.pages,
+    required this.total,
+  });
+  final List<IncidentReport> items;
+  final int page;
+  final int pages;
+  final int total;
 }

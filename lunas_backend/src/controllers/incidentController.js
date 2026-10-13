@@ -511,6 +511,11 @@ exports.getIncidents = asyncHandler(async (req, res) => {
 
   if (req.user.role === "utility_provider" && req.query.withoutWorkOrder === "true") filter.workOrder = null;
   if (status) filter.status = status;
+  if (req.user.role === 'citizen') {
+    if (req.query.reportView === 'active') filter.status = { $nin: ['resolved', 'closed', 'rejected', 'duplicate'] };
+    if (req.query.reportView === 'resolved') filter.status = { $in: ['resolved', 'closed'] };
+    if (req.query.reportView === 'in_progress') filter.status = 'in_progress';
+  }
   if (priority) filter.priority = priority;
   if (category) filter.category = category;
   if (barangay && !['barangay_official', 'citizen'].includes(req.user.role)) {
@@ -522,9 +527,13 @@ exports.getIncidents = asyncHandler(async (req, res) => {
     // keeping the same reference/description lookup behavior as the
     // validation queue.
     const safeSearch = escapeRegex(search).slice(0, 100);
+    const categoryMatches = require('../utils/incidentCategories').DEFAULT_INCIDENT_CATEGORIES
+      .filter(item => item.name.toLowerCase().includes(String(search).trim().toLowerCase())).map(item => item.code);
     filter.$or = [
+      ...(categoryMatches.length ? [{ category: { $in: categoryMatches } }] : []),
       { reportNumber: { $regex: safeSearch, $options: 'i' } },
-      { description: { $regex: safeSearch, $options: 'i' } }
+      { description: { $regex: safeSearch, $options: 'i' } },
+      ...['category', 'location.address.street', 'location.address.barangay', 'location.address.city'].map(field => ({ [field]: { $regex: safeSearch, $options: 'i' } }))
     ];
   }
 

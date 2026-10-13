@@ -322,6 +322,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                       latitude: selected.latitude,
                                       longitude: selected.longitude,
                                       address: selected.address,
+                                      city: selected.city,
+                                      countryCode: selected.countryCode,
                                       pinSource: _pinSource,
                                       gpsFix: _gpsFix,
                                       barangayCandidates:

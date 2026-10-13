@@ -10,6 +10,7 @@ enum EvidenceQualityStatus { basicChecksPassed }
 class EvidenceSelection {
   const EvidenceSelection({
     required this.file,
+    this.bytes,
     required this.byteLength,
     required this.mediaType,
     required this.privacyStatus,
@@ -18,6 +19,7 @@ class EvidenceSelection {
   });
 
   final XFile file;
+  final Uint8List? bytes;
   final int byteLength;
   final String mediaType;
   final EvidencePrivacyStatus privacyStatus;
@@ -28,7 +30,7 @@ class EvidenceSelection {
   bool get requiresPrivacyAcknowledgement =>
       privacyStatus == EvidencePrivacyStatus.unavailable;
 
-  Future<Uint8List> readAsBytes() => file.readAsBytes();
+  Future<Uint8List> readAsBytes() async => bytes ?? await file.readAsBytes();
 }
 
 class EvidenceException implements Exception {

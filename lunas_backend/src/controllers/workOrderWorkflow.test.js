@@ -1,6 +1,7 @@
 jest.mock('../models/WorkOrder', () => ({
   findOne: jest.fn(),
   findOneAndUpdate: jest.fn(),
+  countDocuments: jest.fn().mockResolvedValue(0),
   create: jest.fn()
 }));
 jest.mock('../models/Incident', () => ({
@@ -198,7 +199,7 @@ describe('work-order controller boundaries', () => {
     expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'The selected repair personnel is not eligible for this work order'
+      message: 'This repair personnel is off duty or unavailable'
     }));
   });
 
@@ -213,12 +214,13 @@ describe('work-order controller boundaries', () => {
     const updated = pendingWorkOrder({
       assignedTo: worker._id,
       assignedBy: utilityProvider._id,
-      assignmentState: 'pending',
+      status: 'accepted',
+      assignmentState: 'accepted',
       assignments: [{
         _id: '507f191e810c19729de860e1',
         assignee: worker._id,
         assignedBy: utilityProvider._id,
-        status: 'pending',
+        status: 'accepted',
         active: true
       }],
       currentAssignment: '507f191e810c19729de860e1'
@@ -246,7 +248,7 @@ describe('work-order controller boundaries', () => {
         assignmentState: { $in: ['unassigned', 'declined'] }
       }),
       expect.objectContaining({
-        $set: expect.objectContaining({ assignedTo: worker._id, assignmentState: 'pending' })
+        $set: expect.objectContaining({ assignedTo: worker._id, assignmentState: 'accepted', status: 'accepted' })
       }),
       { new: true }
     );
@@ -330,7 +332,7 @@ describe('work-order controller boundaries', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  test('returns an accepted order to pending acceptance when it is reassigned before work starts', async () => {
+  test('keeps an accepted order accepted when the provider reassigns it before work starts', async () => {
     const oldAssignment = {
       _id: '507f191e810c19729de860e1',
       assignee: assignedWorker._id,
@@ -357,7 +359,7 @@ describe('work-order controller boundaries', () => {
     });
     WorkOrder.findOne.mockReturnValue(scopedQuery(workOrder));
     User.findById.mockResolvedValue(replacement);
-    WorkOrder.findOneAndUpdate.mockResolvedValue({ ...workOrder, status: 'pending', assignmentState: 'pending' });
+    WorkOrder.findOneAndUpdate.mockResolvedValue({ ...workOrder, assignedTo: replacement._id, status: 'accepted', assignmentState: 'accepted' });
     Incident.findById.mockReturnValue(scopedQuery({ status: 'repair_assigned' }));
     Incident.findOneAndUpdate.mockResolvedValue({});
     Incident.findByIdAndUpdate.mockResolvedValue(null);
@@ -374,10 +376,10 @@ describe('work-order controller boundaries', () => {
     expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         _id: workOrder._id,
-        status: { $in: expect.arrayContaining(['pending', 'accepted', 'in_progress', 'completed']) }
+        status: 'accepted', startedAt: null, actualStartTime: null, version: workOrder.version
       }),
       expect.objectContaining({
-        $set: expect.objectContaining({ status: 'pending', acceptedAt: null, assignmentState: 'pending' })
+        $set: expect.objectContaining({ status: 'accepted', acceptedAt: expect.any(Date), assignmentState: 'accepted' })
       }),
       { new: true }
     );
@@ -532,8 +534,9 @@ describe('work-order controller boundaries', () => {
     expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ currentAssignment: assignment._id, status: 'in_progress' }),
       expect.objectContaining({
-        $push: expect.objectContaining({
-          'progressUpdates.$[progress].evidence': expect.objectContaining({ $each: expect.any(Array) })
+        $set: expect.objectContaining({
+          repairEvidence: [expect.objectContaining({ key: 'work-orders/example/repair/example/photo.jpg' })],
+          'progressUpdates.$[progress].evidence': [expect.anything()]
         })
       }),
       expect.objectContaining({ arrayFilters: [{ 'progress._id': progressUpdate._id }] })

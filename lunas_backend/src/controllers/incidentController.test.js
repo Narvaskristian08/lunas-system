@@ -508,3 +508,19 @@ test.each(['success', 'conflict', 'failure'])('routing creates an unassigned wor
   if (outcome === 'failure') expect(next).toHaveBeenCalledWith(expect.any(Error));
   else expect(res.status).toHaveBeenCalledWith(outcome === 'conflict' ? 409 : 200);
 });
+
+
+test.each([
+  ['active', { $nin: ['resolved', 'closed', 'rejected', 'duplicate'] }],
+  ['resolved', { $in: ['resolved', 'closed'] }],
+  ['in_progress', 'in_progress'],
+])('citizen report filter %s applies before pagination and preserves ownership', async (reportView, status) => {
+  const query = { populate: jest.fn().mockReturnThis(), sort: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(), skip: jest.fn().mockResolvedValue([]) };
+  Incident.find.mockReturnValue(query); Incident.countDocuments.mockResolvedValue(25);
+  await getMyIncidents({ user: { role: 'citizen', _id: 'citizen-id' }, query: { reportView, page: '2', limit: '20', search: 'Water' } }, createResponse(), jest.fn());
+  const filter = Incident.find.mock.calls.at(-1)[0];
+  expect(JSON.stringify(filter)).toContain('citizen-id');
+  expect(JSON.stringify(filter)).toContain(JSON.stringify(status));
+  expect(Incident.countDocuments).toHaveBeenLastCalledWith(filter);
+  expect(query.skip).toHaveBeenCalledWith(20);
+});

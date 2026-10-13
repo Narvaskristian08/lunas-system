@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:image_picker/image_picker.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_analysis.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
@@ -34,7 +35,22 @@ class EvidenceService {
         'Choose a JPG, PNG, or WebP image for report evidence.',
       );
     }
+    final bytes = await image.readAsBytes();
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      try {
+        final frame = await codec.getNextFrame();
+        frame.image.dispose();
+      } finally {
+        codec.dispose();
+      }
+    } catch (_) {
+      throw const EvidenceException(
+        'This image cannot be displayed. Choose another JPG, PNG, or WebP image.',
+      );
+    }
     return EvidenceSelection(
+      bytes: bytes,
       file: image,
       byteLength: byteLength,
       mediaType: mediaType,

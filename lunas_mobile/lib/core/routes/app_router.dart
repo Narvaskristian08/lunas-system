@@ -49,6 +49,7 @@ final GoRouter appRouter = GoRouter(
   debugLogDiagnostics: false,
   redirect: (context, state) {
     final location = state.uri.path;
+
     const publicLocations = {
       '/onboarding',
       '/login',
@@ -123,6 +124,15 @@ final GoRouter appRouter = GoRouter(
       path: '/role-unavailable',
       builder: (_, _) => const RoleUnavailableScreen(),
     ),
+    GoRoute(
+      path: '/reports/location/picker',
+      builder: (_, state) => MapPickerScreen(
+        showLocationConfirmation: true,
+        initialLocation: state.extra is SelectedLocation
+            ? state.extra as SelectedLocation
+            : null,
+      ),
+    ),
     ShellRoute(
       builder: (context, state, child) => Scaffold(
         body: child,
@@ -142,9 +152,16 @@ final GoRouter appRouter = GoRouter(
                 : null,
           ),
         ),
-        GoRoute(path: '/reports', builder: (_, _) => const MyReportsScreen()),
+        GoRoute(
+          path: '/reports',
+          builder: (_, state) => MyReportsScreen(
+            initialFilter: state.uri.queryParameters['filter'],
+          ),
+        ),
         GoRoute(
           path: '/reports/new',
+          onExit: (_, _) async =>
+              await ReportDraftNavigation.confirmExit?.call() ?? true,
           builder: (_, _) => const NewCitizenReportScreen(),
         ),
         GoRoute(

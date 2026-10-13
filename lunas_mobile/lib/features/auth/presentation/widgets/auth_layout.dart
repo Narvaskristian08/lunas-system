@@ -33,7 +33,6 @@ class AuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context);
     final body = SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -89,7 +88,7 @@ class AuthLayout extends StatelessWidget {
               horizontal,
               AppSpacing.xl,
               horizontal,
-              AppSpacing.xl + viewInsets.bottom,
+              AppSpacing.xl,
             ),
             child: Align(
               alignment: Alignment.topCenter,
@@ -98,7 +97,13 @@ class AuthLayout extends StatelessWidget {
                   : content,
             ),
           );
-          return scrollable ? SingleChildScrollView(child: padded) : padded;
+          return scrollable
+              ? SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: padded,
+                )
+              : padded;
         },
       ),
     );

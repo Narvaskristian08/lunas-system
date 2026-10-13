@@ -28,7 +28,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_sending || !_formKey.currentState!.validate()) return;
     setState(() {
       _sending = true;
       _message = null;
@@ -54,19 +54,9 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   Widget build(BuildContext context) => AuthLayout(
     showBrand: false,
     showBackButton: true,
-    centerContent: true,
-    centerTopFlex: 1,
-    centerBottomFlex: 2,
     headerSpacing: AppSpacing.sm,
     child: Column(
       children: [
-        const LunasBrand(
-          centered: true,
-          large: true,
-          showTitle: false,
-          showSubtitle: false,
-        ),
-        const SizedBox(height: AppSpacing.xl),
         Form(
           key: _formKey,
           child: Column(
@@ -74,16 +64,18 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
             children: [
               const AuthHeading(
                 title: 'Reset Password',
-                centered: true,
                 description:
                     'Enter the email address linked to your account to request a password reset link.',
               ),
               const SizedBox(height: AppSpacing.xl),
               TextFormField(
                 controller: _emailController,
+                enabled: !_sending,
+                maxLength: 254,
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
                   hintText: 'you@example.com',
+                  counterText: '',
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 16,

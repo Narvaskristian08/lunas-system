@@ -9,6 +9,8 @@ class SelectedLocation {
     this.gpsFix,
     this.barangayCandidates = const [],
     this.reverseGeocodingSucceeded = false,
+    this.city,
+    this.countryCode,
   });
 
   final String pinSource;
@@ -16,6 +18,14 @@ class SelectedLocation {
   final double latitude;
   final double longitude;
   final String address;
+  final String? city;
+  final String? countryCode;
+  bool get hasJurisdictionMismatch =>
+      reverseGeocodingSucceeded &&
+      ((countryCode?.isNotEmpty == true &&
+              countryCode!.toUpperCase() != 'PH') ||
+          (city?.trim().isNotEmpty == true &&
+              !city!.toLowerCase().contains('dagupan')));
 
   /// Raw locality candidates from the platform geocoder. They are suggestions
   /// only and must be matched against the backend-provided canonical list.

@@ -1,4 +1,4 @@
-jest.mock('../models/WorkOrder', () => ({ findOne: jest.fn(), findOneAndUpdate: jest.fn() }));
+jest.mock('../models/WorkOrder', () => ({ findOne: jest.fn(), findOneAndUpdate: jest.fn(), countDocuments: jest.fn().mockResolvedValue(0) }));
 jest.mock('../models/Incident', () => ({ findById: jest.fn(), findOneAndUpdate: jest.fn() }));
 jest.mock('../models/User', () => ({ findById: jest.fn(), findByIdAndUpdate: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
@@ -131,90 +131,29 @@ const mockIncidentAt = (status) => {
   Incident.findOneAndUpdate.mockResolvedValue({ status });
 };
 
-describe('in-progress repair-personnel reassignment', () => {
+describe('repair-personnel reassignment boundaries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    WorkOrder.findOne.mockReset();
+    WorkOrder.findOneAndUpdate.mockReset();
+    WorkOrder.countDocuments.mockResolvedValue(0);
     createNotification.mockResolvedValue(null);
     User.findByIdAndUpdate.mockResolvedValue(null);
   });
 
-  test('creates one pending handoff while preserving progress, evidence, timestamps, history, and SLA', async () => {
+  test('rejects reassignment after repair starts without changing evidence, progress, or SLA', async () => {
     const workOrder = inProgressOrder();
-    const replacementAssignment = {
-      _id: '507f191e810c19729de861a2',
-      assignee: replacementWorker._id,
-      assignedBy: provider._id,
-      status: 'pending',
-      active: true
-    };
-    const updated = inProgressOrder({
-      assignedTo: replacementWorker._id,
-      currentAssignment: replacementAssignment._id,
-      assignmentState: 'pending',
-      assignments: [
-        { ...oldAssignment, active: false, status: 'reassigned', endedReason: 'Emergency coverage change' },
-        replacementAssignment
-      ],
-      version: 9
-    });
+    const original = structuredClone(workOrder);
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
-    User.findById.mockResolvedValue(replacementWorker);
-    WorkOrder.findOneAndUpdate.mockResolvedValue(updated);
-    mockIncidentAt('in_progress');
     const res = response();
-
     await reassignWorkOrder(requestFor(provider, {
-      assigneeId: replacementWorker._id,
-      reason: 'Emergency coverage change'
+      assigneeId: replacementWorker._id, reason: 'Emergency coverage change'
     }), res, jest.fn());
-
-    const [condition, update] = WorkOrder.findOneAndUpdate.mock.calls[0];
-    expect(condition).toEqual(expect.objectContaining({
-      version: 8,
-      currentAssignment: oldAssignment._id,
-      assignments: { $elemMatch: { _id: oldAssignment._id, active: true } }
-    }));
-    expect(update.$set).toEqual(expect.objectContaining({
-      status: 'in_progress',
-      assignmentState: 'pending',
-      assignedTo: replacementWorker._id
-    }));
-    expect(update.$set.assignments.filter((entry) => entry.active)).toHaveLength(1);
-    expect(update.$set.assignments[0]).toEqual(expect.objectContaining({
-      assignee: previousWorker._id,
-      active: false,
-      status: 'reassigned',
-      endedReason: 'Emergency coverage change'
-    }));
-    expect(update.$set).not.toHaveProperty('progressPercent');
-    expect(update.$set).not.toHaveProperty('progressUpdates');
-    expect(update.$set).not.toHaveProperty('repairEvidence');
-    expect(update.$set).not.toHaveProperty('startedAt');
-    expect(update.$set).not.toHaveProperty('sla');
-    expect(update.$push.history.metadata).toEqual(expect.objectContaining({
-      assigneeId: replacementWorker._id,
-      previousAssigneeId: previousWorker._id,
-      reason: 'Emergency coverage change'
-    }));
-    expect(updated.progressUpdates).toStrictEqual(workOrder.progressUpdates);
-    expect(updated.repairEvidence).toStrictEqual(workOrder.repairEvidence);
-    expect(updated.sla.deadline).toBe(deadline);
-    expect(User.findByIdAndUpdate).toHaveBeenCalledWith(replacementWorker._id, { availability: 'assigned' });
-    expect(User.findByIdAndUpdate).toHaveBeenCalledWith(previousWorker._id, { availability: 'available' });
-    expect(createNotification).toHaveBeenCalledTimes(2);
-    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
-      recipient: replacementWorker._id,
-      type: 'work_order_assigned',
-      data: expect.objectContaining({
-        incidentId: workOrder.incident,
-        workOrderId: workOrder._id
-      })
-    }));
-    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
-      recipient: previousWorker._id,
-      type: 'work_order_reassigned'
-    }));
-    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(createNotification).not.toHaveBeenCalled();
+    expect(workOrder).toEqual(original);
   });
 
   test('lets the replacement accept the pending handoff without restarting the repair', async () => {
@@ -294,7 +233,8 @@ describe('in-progress repair-personnel reassignment', () => {
       progressPercent: 75,
       updatedBy: replacementWorker._id
     }));
-    expect(update.$push.repairEvidence).toEqual({ $each: [] });
+    expect(update.$push).not.toHaveProperty('repairEvidence');
+    expect(update.$set).not.toHaveProperty('repairEvidence');
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
@@ -316,7 +256,7 @@ describe('in-progress repair-personnel reassignment', () => {
   });
 
   test('denies cross-organization providers and ineligible replacement workers', async () => {
-    const workOrder = inProgressOrder();
+    const workOrder = inProgressOrder({ status: 'accepted', startedAt: null, progressPercent: 0, progressStage: 'assigned' });
     const otherProvider = { ...provider, _id: '507f191e810c19729de860b1', utilityCompany: 'Other Utility' };
     WorkOrder.findOne.mockReturnValueOnce(queryFor(null));
     const providerRes = response();
@@ -337,7 +277,7 @@ describe('in-progress repair-personnel reassignment', () => {
     expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  test('allows an in-progress handoff decline and a later reasoned reassignment', async () => {
+  test('allows a legacy pending handoff decline but blocks reassignment after work started', async () => {
     const pendingAssignment = {
       _id: '507f191e810c19729de861a2',
       assignee: replacementWorker._id,
@@ -388,27 +328,12 @@ describe('in-progress repair-personnel reassignment', () => {
       reason: 'Assign a crew with the required equipment'
     }), assignRes, jest.fn());
 
-    expect(WorkOrder.findOneAndUpdate.mock.calls[1][0]).toEqual(expect.objectContaining({
-      version: 9,
-      currentAssignment: null,
-      assignmentState: 'declined',
-      assignments: { $not: { $elemMatch: { active: true } } }
-    }));
-    expect(WorkOrder.findOneAndUpdate.mock.calls[1][1].$set).toEqual(expect.objectContaining({
-      status: 'in_progress',
-      assignmentState: 'pending',
-      assignedTo: nextWorker._id
-    }));
-    expect(WorkOrder.findOneAndUpdate.mock.calls[1][1].$push.history.metadata).toEqual(expect.objectContaining({
-      previousAssignmentId: pendingAssignment._id,
-      previousAssigneeId: replacementWorker._id,
-      reason: 'Assign a crew with the required equipment'
-    }));
-    expect(assignRes.status).toHaveBeenCalledWith(200);
+    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledTimes(1);
+    expect(assignRes.status).toHaveBeenCalledWith(409);
   });
 
   test('returns conflicts when reassignment or acceptance loses an optimistic-concurrency race', async () => {
-    const workOrder = inProgressOrder();
+    const workOrder = inProgressOrder({ status: 'accepted', startedAt: null, progressPercent: 0, progressStage: 'assigned' });
     WorkOrder.findOne.mockReturnValueOnce(queryFor(workOrder));
     User.findById.mockResolvedValue(replacementWorker);
     WorkOrder.findOneAndUpdate.mockResolvedValueOnce(null);
@@ -433,15 +358,16 @@ describe('in-progress repair-personnel reassignment', () => {
   });
 
   test('does not report a committed reassignment as failed when notification persistence is unavailable', async () => {
-    const workOrder = inProgressOrder();
+    const workOrder = inProgressOrder({ status: 'accepted', startedAt: null, progressPercent: 0, progressStage: 'assigned' });
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
     User.findById.mockResolvedValue(replacementWorker);
     WorkOrder.findOneAndUpdate.mockResolvedValue(inProgressOrder({
+      ...workOrder,
       assignedTo: replacementWorker._id,
-      assignmentState: 'pending',
+      assignmentState: 'accepted',
       version: 9
     }));
-    mockIncidentAt('in_progress');
+    mockIncidentAt('repair_assigned');
     createNotification.mockRejectedValue(new Error('notification store unavailable'));
     const res = response();
 

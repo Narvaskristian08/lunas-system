@@ -29,11 +29,13 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   String? _error;
   RepairWorkOrderPage? _page;
   String? _status;
+  bool _overdueOnly = false;
 
   @override
   void initState() {
     super.initState();
-    _status = widget.initialFilter;
+    _overdueOnly = widget.initialFilter == 'overdue';
+    _status = _overdueOnly ? null : widget.initialFilter;
     _load();
   }
 
@@ -41,7 +43,8 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   void didUpdateWidget(covariant AssignedWorkOrdersScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialFilter != oldWidget.initialFilter) {
-      _status = widget.initialFilter;
+      _overdueOnly = widget.initialFilter == 'overdue';
+      _status = _overdueOnly ? null : widget.initialFilter;
       _load();
     }
   }
@@ -65,6 +68,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
         page: page,
         limit: _pageSize,
         repairView: _status,
+        overdueOnly: _overdueOnly,
       );
       if (mounted) {
         setState(() {
@@ -84,8 +88,14 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   }
 
   void _selectStatus(String? status) {
-    if (_status == status) return;
-    setState(() => _status = status);
+    if (status == 'overdue') {
+      setState(() => _overdueOnly = !_overdueOnly);
+    } else {
+      setState(() {
+        _status = status;
+        if (status == null) _overdueOnly = false;
+      });
+    }
     _load();
   }
 
@@ -109,7 +119,15 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _StatusFilters(selected: _status, onSelected: _selectStatus),
+        _StatusFilters(
+          selected: _status,
+          overdueOnly: _overdueOnly,
+          onSelected: _selectStatus,
+        ),
+        if (!_loading && _error == null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text('${_page?.total ?? 0} matching work orders', style: Theme.of(context).textTheme.bodySmall),
+        ],
         const SizedBox(height: AppSpacing.lg),
         if (_loading || _error != null || (_page?.items.isEmpty ?? true))
           Expanded(
@@ -179,9 +197,14 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
 }
 
 class _StatusFilters extends StatelessWidget {
-  const _StatusFilters({required this.selected, required this.onSelected});
+  const _StatusFilters({
+    required this.selected,
+    required this.onSelected,
+    this.overdueOnly = false,
+  });
 
   final String? selected;
+  final bool overdueOnly;
   final ValueChanged<String?> onSelected;
 
   @override
@@ -208,11 +231,19 @@ class _StatusFilters extends StatelessWidget {
                   : 72,
               child: LunasFilterButton(
                 label: statuses[index].$2,
-                selected: selected == statuses[index].$1,
+                selected: statuses[index].$1 == 'overdue'
+                    ? overdueOnly
+                    : selected == statuses[index].$1 &&
+                          (statuses[index].$1 != null || !overdueOnly),
                 onTap: () => onSelected(statuses[index].$1),
               ),
             ),
           ],
+          if (selected != null || overdueOnly)
+            TextButton(
+              onPressed: () => onSelected(null),
+              child: const Text('Clear Filters'),
+            ),
         ],
       ),
     );

@@ -70,10 +70,14 @@ async function auth() {
   return { viewer, accessToken: await requireAccessToken() };
 }
 
-export async function listNotificationsAction(): Promise<LunasNotification[]> {
+export async function listNotificationsAction(filters: { page?: number; limit?: number; category?: string; search?: string; readState?: string; dateRange?: string; sort?: string } = {}) {
   const { viewer, accessToken } = await auth();
-  const data = responseData(await backendRequest<BackendNotification[]>("/notifications?limit=100", { accessToken }));
-  return data.map((notification) => toNotification(notification, viewer.backendRole));
+  const query = new URLSearchParams({ page: String(filters.page ?? 1), limit: String(filters.limit ?? 20) });
+  for (const key of ['category', 'search', 'dateRange', 'sort'] as const) if (filters[key] && filters[key] !== 'all') query.set(key, filters[key]);
+  if (filters.readState === 'read' || filters.readState === 'unread') query.set('isRead', String(filters.readState === 'read'));
+  const response = await backendRequest<BackendNotification[]>(`/notifications?${query}`, { accessToken });
+  const metadata = response as typeof response & { pagination?: { total: number; pages: number }; unreadCount?: number };
+  return { items: responseData(response).map(notification => toNotification(notification, viewer.backendRole)), total: metadata.pagination?.total ?? 0, unreadCount: metadata.unreadCount ?? 0 };
 }
 
 export async function getNotificationAction(id: string): Promise<LunasNotification | null> {

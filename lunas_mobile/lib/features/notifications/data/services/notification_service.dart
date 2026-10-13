@@ -23,7 +23,11 @@ class NotificationPage {
 }
 
 abstract interface class NotificationRepository {
-  Future<NotificationPage> getNotifications({int page = 1, int limit = 20});
+  Future<NotificationPage> getNotifications({
+    int page = 1,
+    int limit = 20,
+    NotificationKind? kind,
+  });
   Future<NotificationData> markAsRead(String notificationId);
   Future<void> markAllAsRead();
 }
@@ -38,10 +42,15 @@ class NotificationService implements NotificationRepository {
   Future<NotificationPage> getNotifications({
     int page = 1,
     int limit = 20,
+    NotificationKind? kind,
   }) async {
     final payload = await _apiClient.get(
       '/notifications',
-      queryParameters: {'page': '$page', 'limit': '$limit'},
+      queryParameters: {
+        'page': '$page',
+        'limit': '$limit',
+        if (kind != null) 'kind': kind.name,
+      },
     );
     final rawItems = payload['data'];
     final items = rawItems is List

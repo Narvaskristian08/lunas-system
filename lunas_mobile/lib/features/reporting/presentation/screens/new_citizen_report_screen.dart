@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/app/app_services.dart';
@@ -11,6 +12,11 @@ import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_dra
 import 'package:lunas_mobile/features/reporting/domain/models/barangay_suggestion.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
+
+class ReportDraftNavigation {
+  static Future<bool> Function()? confirmExit;
+  static bool submitted = false;
+}
 
 typedef BarangayLoader = Future<List<String>> Function();
 
@@ -38,13 +44,52 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
   @override
   void initState() {
     super.initState();
+    ReportDraftNavigation.submitted = false;
+    ReportDraftNavigation.confirmExit = _confirmExit;
     _loadBarangays();
   }
 
   @override
   void dispose() {
+    ReportDraftNavigation.confirmExit = null;
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  bool _exitPromptOpen = false;
+  Future<bool> _confirmExit() async {
+    if (ReportDraftNavigation.submitted ||
+        !mounted ||
+        (_descriptionController.text.trim().isEmpty &&
+            _category == null &&
+            _evidence == null &&
+            _location == null)) {
+      return true;
+    }
+    if (_exitPromptOpen) return false;
+    _exitPromptOpen = true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => LunasConfirmationDialog(
+        destructive: true,
+        title: const Text('Discard Report?'),
+        content: const Text(
+          'Your unsaved description, photo, and location will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep Editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Discard Report'),
+          ),
+        ],
+      ),
+    );
+    _exitPromptOpen = false;
+    return discard == true;
   }
 
   Future<void> _loadBarangays() async {
@@ -85,7 +130,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
 
   Future<void> _chooseLocation() async {
     final location = await context.push<SelectedLocation>(
-      '/reports/location?mode=picker',
+      '/reports/location/picker',
       extra: _location,
     );
     if (mounted && location != null) {
@@ -124,7 +169,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
 
   bool _showValidation = false;
 
-  void _review() {
+  Future<void> _review() async {
     setState(() => _showValidation = true);
     final formValid = _formKey.currentState?.validate() ?? false;
     if (!formValid) return;
@@ -140,6 +185,28 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
       _showRequired('Choose and confirm a valid report location.');
       return;
     }
+    if (_location!.hasJurisdictionMismatch) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => LunasConfirmationDialog(
+          title: const Text('Check Report Location'),
+          content: Text(
+            'The address lookup suggests ${_location!.city ?? 'a location outside the Philippines'}. It may be inaccurate. Confirm that the pin is the actual damage location in Dagupan City, or return to adjust it.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Adjust Location'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Continue to Review'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true) return;
+    }
     if (_barangay == null) {
       _showRequired('Choose and confirm the barangay for this location.');
       return;
@@ -150,6 +217,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
       location: _location!,
       barangay: _barangay!,
       evidence: _evidence!,
+
       privacyAcknowledged: false,
     );
     context.push('/reports/review', extra: draft);

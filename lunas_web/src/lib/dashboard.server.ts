@@ -4,7 +4,7 @@ import "server-only";
 
 import { backendRequest, responseData } from "@/lib/api/backend.server";
 import { requireAccessToken } from "@/lib/auth/dal.server";
-import { getWorkOrderSummary, getWorkOrders, type WorkOrder } from "@/lib/work-orders.server";
+import { getWorkOrderSummary, getWorkOrders, getProviderIncidentQueue, type WorkOrder } from "@/lib/work-orders.server";
 import type { DashboardMetric, Severity, UserProfile } from "@/types";
 
 interface BackendIncident {
@@ -192,13 +192,14 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
 }
 
 async function providerOperationsDashboard(): Promise<RealDashboardData> {
-  const [summary, workOrderQueue] = await Promise.all([
+  const [summary, workOrderQueue, intake] = await Promise.all([
     getWorkOrderSummary(),
     getWorkOrders({ page: 1, limit: 5, sortBy: "deadline" }),
+    getProviderIncidentQueue({ page: 1, limit: 1 }),
   ]);
   return {
     metrics: [
-      metric("Unassigned Work", summary.unassigned, "warning", "workOrder"),
+      metric("Unassigned Work", summary.unassigned + intake.pagination.total, "warning", "workOrder"),
       metric("Pending Acceptance", summary.pendingAcceptance, "information", "users"),
       metric("Active Repairs", summary.active, "information", "workOrder"),
       metric("Needs Correction", summary.correctiveRepairs + summary.cityCorrections, "warning", "incident"),

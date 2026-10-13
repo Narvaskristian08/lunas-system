@@ -29,11 +29,21 @@ class LocalEvidencePreview extends StatelessWidget {
             height: height,
             width: double.infinity,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => _PreviewFallback(height: height),
+            errorBuilder: (_, error, _) {
+              debugPrint(
+                'Local evidence decoding failed (${error.runtimeType}).',
+              );
+              return _PreviewFallback(height: height);
+            },
           ),
         );
       }
-      if (snapshot.hasError) return _PreviewFallback(height: height);
+      if (snapshot.hasError) {
+        debugPrint(
+          'Local evidence read failed (${snapshot.error.runtimeType}).',
+        );
+        return _PreviewFallback(height: height);
+      }
       return SizedBox(
         height: height,
         child: const Center(
@@ -67,64 +77,73 @@ class RemoteEvidencePreview extends StatelessWidget {
             ? width! / height!
             : 4 / 3,
         child: LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
-            children: [
-              Image.network(
-                url,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const _PreviewFallback(),
-                loadingBuilder: (context, child, progress) => progress == null
-                    ? child
-                    : const Center(
-                        child: SizedBox.square(
-                          dimension: 36,
-                          child: LunasLoadingIndicator(),
-                        ),
-                      ),
-              ),
-              for (final finding in findings)
-                Positioned(
-                  left: finding.bbox.x1 * constraints.maxWidth,
-                  top: finding.bbox.y1 * constraints.maxHeight,
-                  width:
-                      (finding.bbox.x2 - finding.bbox.x1) *
-                      constraints.maxWidth,
-                  height:
-                      (finding.bbox.y2 - finding.bbox.y1) *
-                      constraints.maxHeight,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.amber.shade700,
-                        width: 2,
-                      ),
-                      color: Colors.amber.withValues(alpha: 0.12),
+          builder: (context, constraints) => Image.network(
+            url,
+            fit: BoxFit.contain,
+            errorBuilder: (_, error, _) {
+              debugPrint(
+                'Evidence image could not be loaded (${error.runtimeType}).',
+              );
+              return const _PreviewFallback();
+            },
+            loadingBuilder: (context, child, progress) => progress == null
+                ? child
+                : const Center(
+                    child: SizedBox.square(
+                      dimension: 36,
+                      child: LunasLoadingIndicator(),
                     ),
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: Container(
-                        color: Colors.black87,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
+                  ),
+            frameBuilder: (context, child, frame, synchronous) {
+              if (frame == null && !synchronous) return child;
+              return Stack(
+                fit: StackFit.expand,
+                clipBehavior: Clip.hardEdge,
+                children: [
+                  child,
+                  for (final finding in findings)
+                    Positioned(
+                      left: finding.bbox.x1 * constraints.maxWidth,
+                      top: finding.bbox.y1 * constraints.maxHeight,
+                      width:
+                          (finding.bbox.x2 - finding.bbox.x1) *
+                          constraints.maxWidth,
+                      height:
+                          (finding.bbox.y2 - finding.bbox.y1) *
+                          constraints.maxHeight,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.amber.shade700,
+                            width: 2,
+                          ),
+                          color: Colors.amber.withValues(alpha: 0.12),
                         ),
-                        child: Text(
-                          '${finding.label} · ${(finding.confidence * 100).round()}%',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            color: Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            child: Text(
+                              '${finding.label} · ${(finding.confidence * 100).round()}%',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),

@@ -1429,7 +1429,7 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
   const count = (filter) => WorkOrder.countDocuments({ ...scope, ...filter });
   const result = await Promise.all([
     count({ assignmentState: 'unassigned', status: 'pending' }),
-    count({ assignmentState: 'pending', status: { $in: ['pending', 'in_progress'] } }),
+    count({ assignmentState: 'pending', status: { $ne: 'verified' } }),
     count({ status: 'accepted' }),
     count(req.user.role === REPAIR_PERSONNEL_ROLE
       ? { status: 'in_progress', assignmentState: 'accepted' }
@@ -1440,11 +1440,13 @@ exports.getWorkOrderSummary = asyncHandler(async (req, res) => {
     count({ status: 'provider_accepted' }),
     count({ status: 'city_correction_required' }),
     count({ status: 'rework_required' }),
-    count({ status: 'verified' })
+    count({ status: 'verified' }),
+    count({ status: { $in: ['pending', 'accepted'] } })
   ]);
   return res.status(200).json({
     success: true,
     data: {
+      assignedRepairs: result[11],
       unassigned: result[0],
       pendingAcceptance: result[1],
       accepted: result[2],

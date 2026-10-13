@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { query } = require('express-validator');
 const {
   createIncident,
   getIncidents,
@@ -58,7 +59,7 @@ router.get(
   validate,
   getNearbyIncidents
 );
-router.get('/my', protect, authorize('citizen'), paginationValidation, validate, getMyIncidents);
+router.get('/my', protect, authorize('citizen'), paginationValidation, query('reportView').optional().isIn(['all', 'active', 'resolved', 'in_progress']), query('search').optional().isString().bail().trim().isLength({ max: 100 }), validate, getMyIncidents);
 router.get('/barangays', protect, getBarangays);
 router.get('/location-policy', protect, (req, res) => res.json({
   success: true, data: require('../services/locationIntegrityService').getLocationPolicy()

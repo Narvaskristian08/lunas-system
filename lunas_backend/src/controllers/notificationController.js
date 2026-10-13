@@ -49,17 +49,38 @@ const serializeNotifications = async (notifications) => {
 // @route   GET /api/v1/notifications
 // @access  Private
 exports.getNotifications = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, isRead } = req.query;
-
+  const { page = 1, limit = 20, isRead, kind, category, search, dateRange, sort } = req.query;
   const filter = { recipient: req.user._id };
-  if (typeof isRead !== 'undefined') {
-    filter.isRead = isRead === 'true';
+  if (isRead !== undefined) filter.isRead = isRead === 'true';
+  const alerts = ['sla_approaching', 'sla_overdue', 'sla_reminder', 'sla_escalation', 'incident_rejected', 'repair_rejected', 'duplicate_detected', 'work_order_declined'];
+  const activity = ['incident_validated', 'work_order_assigned', 'work_order_reassigned', 'work_order_accepted', 'status_update', 'system_announcement'];
+  if (kind === 'alert') filter.type = { $in: alerts };
+  if (kind === 'activity') filter.type = { $in: activity };
+  if (kind === 'update') filter.type = { $nin: [...alerts, ...activity] };
+  const categories = { Reports: /^incident_/, 'Work orders': /^work_order_/, SLA: /^sla_/, Repairs: /repair|correction/, Security: /^(account_)|permission/, System: /^(?!incident_|work_order_|sla_|account_)(?!.*(?:repair|correction|permission))/ };
+  if (category && categories[category]) filter.$and = [{ type: categories[category] }];
+  if (search?.trim()) {
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = { $regex: escaped, $options: 'i' };
+    filter.$or = ['title', 'message', 'data.reportNumber'].map(field => ({ [field]: regex }));
   }
-
-  const notifications = await Notification.find(filter)
-    .sort('-createdAt')
-    .limit(parseInt(limit))
-    .skip((parseInt(page) - 1) * parseInt(limit));
+  if (['today', 'week', 'month'].includes(dateRange)) {
+    const now = Date.now();
+    const start = dateRange === 'today'
+      ? Math.floor((now + 8 * 3600000) / 86400000) * 86400000 - 8 * 3600000
+      : now - (dateRange === 'week' ? 7 : 30) * 86400000;
+    filter.createdAt = { $gte: new Date(start), $lte: new Date(now) };
+  }
+  const notifications = sort === 'priority'
+    ? await Notification.aggregate([
+        { $match: { ...filter, recipient: req.user._id } },
+        { $addFields: { priorityRank: { $indexOfArray: [['low', 'medium', 'high', 'urgent'], '$priority'] } } },
+        { $sort: { priorityRank: -1, createdAt: -1, _id: -1 } },
+        { $skip: (parseInt(page) - 1) * parseInt(limit) }, { $limit: parseInt(limit) },
+        { $project: { priorityRank: 0 } }
+      ])
+    : await Notification.find(filter).sort(sort === 'oldest' ? { createdAt: 1, _id: 1 } : { createdAt: -1, _id: -1 })
+        .limit(parseInt(limit)).skip((parseInt(page) - 1) * parseInt(limit));
   const serializedNotifications = await serializeNotifications(notifications);
 
   const total = await Notification.countDocuments(filter);

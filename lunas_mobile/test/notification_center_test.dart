@@ -46,6 +46,7 @@ class _FakeNotifications implements NotificationRepository {
   Future<NotificationPage> getNotifications({
     int page = 1,
     int limit = 20,
+    NotificationKind? kind,
   }) async {
     requestedPages.add(page);
     if (pendingFirstPage != null && page == 1) {

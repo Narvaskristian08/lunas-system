@@ -13,7 +13,8 @@ class CategoryLoadResult {
 }
 
 class CategoryService {
-  const CategoryService({required ApiClient apiClient}) : _apiClient = apiClient;
+  const CategoryService({required ApiClient apiClient})
+    : _apiClient = apiClient;
 
   final ApiClient _apiClient;
 
@@ -30,7 +31,9 @@ class CategoryService {
           .map(CategoryOption.fromJson)
           .where((category) => category.code.isNotEmpty)
           .toList(growable: false);
-      if (categories.isNotEmpty) return CategoryLoadResult(categories: categories);
+      if (categories.isNotEmpty) {
+        return CategoryLoadResult(categories: categories);
+      }
     } on ApiException catch (error) {
       if (error.isUnauthorized || error.isForbidden) rethrow;
     }

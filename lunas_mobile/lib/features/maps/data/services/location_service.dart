@@ -83,6 +83,8 @@ class LocationService {
             : parts.join(', '),
         barangayCandidates: barangayCandidates.toList(growable: false),
         reverseGeocodingSucceeded: true,
+        city: placemark.locality,
+        countryCode: placemark.isoCountryCode,
       );
     } catch (_) {
       // The geocoding plugin is unavailable on some web browsers. Coordinates

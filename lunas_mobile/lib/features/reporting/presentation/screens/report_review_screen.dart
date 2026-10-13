@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/reporting/presentation/screens/new_citizen_report_screen.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'dart:async';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
@@ -134,6 +135,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
           location: widget.draft.location,
           barangay: widget.draft.barangay,
           evidence: widget.draft.evidence,
+
           privacyAcknowledged: _acknowledgedPrivacy,
           locationConfirmed: _locationConfirmed,
           locationExplanationReason: _explanationReason,
@@ -145,6 +147,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
         _sheetState = null;
         Navigator.of(context, rootNavigator: true).pop();
       }
+      ReportDraftNavigation.submitted = true;
       context.go('/citizen', extra: report);
     } on ApiException catch (error) {
       if (mounted) {

@@ -180,7 +180,9 @@ class _RepairMetrics extends StatelessWidget {
       (
         label: 'Assigned Repairs',
         filter: 'assigned',
-        value: summary.pendingAssignments + summary.accepted,
+        value:
+            summary.assignedRepairs ??
+            (summary.pendingAssignments + summary.accepted),
         icon: Icons.assignment_outlined,
         color: AppColorsLight.info,
       ),

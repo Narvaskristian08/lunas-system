@@ -23,6 +23,7 @@ class RepairService {
     int limit = 20,
     RepairWorkOrderStatus? status,
     String? repairView,
+    bool overdueOnly = false,
   }) async {
     _checkPage(page, limit);
     final payload = await _apiClient.get(
@@ -30,7 +31,7 @@ class RepairService {
       queryParameters: {
         'page': '$page',
         'limit': '$limit',
-        if (repairView == 'overdue') 'slaState': 'overdue',
+        if (repairView == 'overdue' || overdueOnly) 'slaState': 'overdue',
         if (repairView != 'overdue') 'repairView': ?repairView,
         if (status != null && status != RepairWorkOrderStatus.unknown)
           'status': status.apiValue,

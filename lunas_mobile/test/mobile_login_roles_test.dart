@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/auth/data/models/registration_mfa_challenge.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_session.dart';
 import 'package:lunas_mobile/features/auth/data/models/auth_user.dart';
@@ -10,6 +11,11 @@ class FakeAuth extends Fake implements AuthService {
   bool persisted = false;
   bool cleared = false;
   AuthUser get user => AuthUser.fromJson({'role': role});
+  @override
+  Future<void> clearPendingRegistration() async {}
+  @override
+  Future<RegistrationMfaChallenge?> restorePendingRegistration() async => null;
+
   @override
   Future<AuthSession> login({
     required String email,

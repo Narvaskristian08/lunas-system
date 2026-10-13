@@ -59,7 +59,7 @@ describe('notification ownership and read actions', () => {
       recipient: userId,
       isRead: false
     });
-    expect(query.sort).toHaveBeenCalledWith('-createdAt');
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
     expect(query.limit).toHaveBeenCalledWith(2);
     expect(query.skip).toHaveBeenCalledWith(2);
     expect(Notification.countDocuments).toHaveBeenNthCalledWith(2, {
@@ -117,4 +117,20 @@ describe('notification ownership and read actions', () => {
     );
     expect(res.status).toHaveBeenCalledWith(200);
   });
+});
+
+
+test('category filters apply before pagination and keep unread count account-wide', async () => {
+  Notification.find.mockReturnValue(listQuery([]));
+  Notification.countDocuments.mockResolvedValue(12);
+  await getNotifications({ user: { _id: userId }, query: { kind: 'alert', page: '2', limit: '20' } }, response(), jest.fn());
+  expect(Notification.find).toHaveBeenLastCalledWith(expect.objectContaining({ recipient: userId, type: { $in: expect.arrayContaining(['sla_overdue', 'incident_rejected', 'work_order_declined']) } }));
+  expect(Notification.countDocuments).toHaveBeenLastCalledWith({ recipient: userId, isRead: false });
+});
+test('Today starts at midnight in Manila', async () => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-10-13T10:00:00Z'));
+  Notification.find.mockReturnValue(listQuery([])); Notification.countDocuments.mockResolvedValue(0);
+  await getNotifications({ user: { _id: userId }, query: { dateRange: 'today' } }, response(), jest.fn());
+  expect(Notification.find).toHaveBeenLastCalledWith(expect.objectContaining({ createdAt: { $gte: new Date('2026-10-12T16:00:00Z'), $lte: new Date('2026-10-13T10:00:00Z') } }));
+  jest.useRealTimers();
 });

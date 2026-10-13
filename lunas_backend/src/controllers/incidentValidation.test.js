@@ -275,7 +275,7 @@ describe('sequential incident review workflow', () => {
   });
 
 
-test('City Engineering can list confirmed incidents awaiting priority', async () => {
+test('City Engineering can list confirmed and prioritized incidents awaiting routing', async () => {
   Incident.find.mockReturnValue(queryFor([]));
   Incident.countDocuments.mockResolvedValue(0);
   const res = response();
@@ -283,7 +283,7 @@ test('City Engineering can list confirmed incidents awaiting priority', async ()
   await getPendingValidation({ query: { stage: 'confirmed' }, user: { role: 'city_engineer' } }, res, next);
   expect(next).not.toHaveBeenCalled();
   expect(Incident.find).toHaveBeenCalledWith(expect.objectContaining({
-    status: 'city_confirmed'
+    status: { $in: ['city_confirmed', 'prioritized'] }
   }));
 });
 

@@ -40,6 +40,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   int _page = 0;
   int _pages = 1;
   int _unreadCount = 0;
+  int _total = 0;
 
   @override
   void initState() {
@@ -65,15 +66,21 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         _loadMoreError = null;
       });
     }
+    final requestedFilter = _filter;
     try {
       final loadedPages = isQuietRefresh ? (_page < 1 ? 1 : _page) : 1;
       final pages = <NotificationPage>[];
       for (var index = 1; index <= loadedPages; index++) {
         pages.add(
-          await _repository.getNotifications(page: index, limit: _pageSize),
+          await _repository.getNotifications(
+            page: index,
+            limit: _pageSize,
+            kind: requestedFilter,
+          ),
         );
         if (index >= pages.first.pages) break;
       }
+      if (_filter != requestedFilter) return;
       final page = pages.first;
       final items = pages.expand((entry) => entry.items).toList();
       if (!mounted) return;
@@ -86,13 +93,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         _page = pages.last.page;
         _pages = page.pages;
         _unreadCount = page.unreadCount;
+        _total = page.total;
         _loading = false;
       });
     } catch (error) {
       if (!mounted || isQuietRefresh) return;
       setState(() {
         _loading = false;
-        _error = error.toString();
+        debugPrint('Notification loading failed (${error.runtimeType}).');
+        _error =
+            'Could not load notifications. Please check your connection and try again.';
       });
     }
   }
@@ -105,12 +115,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       _loadingMore = true;
       _loadMoreError = null;
     });
+    final requestedFilter = _filter;
     try {
       final page = await _repository.getNotifications(
         page: _page + 1,
         limit: _pageSize,
+        kind: requestedFilter,
       );
-      if (!mounted) return;
+      if (!mounted || requestedFilter != _filter) return;
       setState(() {
         final existingIds = _items.map((item) => item.id).toSet();
         _items = [
@@ -123,15 +135,26 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         _page = page.page;
         _pages = page.pages;
         _unreadCount = page.unreadCount;
+        _total = page.total;
         _loadingMore = false;
       });
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _loadingMore = false;
-        _loadMoreError = error.toString();
+        debugPrint('Notification pagination failed (${error.runtimeType}).');
+        _loadMoreError = 'Could not load more notifications. Please try again.';
       });
     }
+  }
+
+  void _selectFilter(NotificationKind? kind) {
+    if (_filter == kind) return;
+    setState(() {
+      _filter = kind;
+      _page = 1;
+    });
+    _load();
   }
 
   Future<void> _markAllRead() async {
@@ -139,18 +162,34 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     _mutating = true;
     await waitForDataRequest();
     try {
-      await _repository.markAllAsRead();
+      if (_filter == null) {
+        await _repository.markAllAsRead();
+      } else {
+        for (final item in _items.where(
+          (item) => !_readItems.contains(item.id),
+        )) {
+          await _repository.markAsRead(item.id);
+        }
+      }
       if (mounted) {
         setState(() {
+          final newlyRead = _items
+              .where((item) => !_readItems.contains(item.id))
+              .length;
           _readItems.addAll(_items.map((item) => item.id));
-          _unreadCount = 0;
+          _unreadCount = _filter == null
+              ? 0
+              : (_unreadCount - newlyRead).clamp(0, _unreadCount);
         });
       }
     } catch (error) {
+      await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not mark notifications as read: $error'),
+            content: const Text(
+              'Could not update read status. Please try again.',
+            ),
           ),
         );
       }
@@ -178,7 +217,19 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       try {
         await _repository.markAsRead(item.id);
       } catch (_) {
-        // The notification remains useful when read-state sync is unavailable.
+        if (mounted) {
+          setState(() {
+            _readItems.remove(item.id);
+            _unreadCount += 1;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Read status could not be saved. This notification remains unread.',
+              ),
+            ),
+          );
+        }
       }
     }
     _mutating = false;
@@ -259,7 +310,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: LunasFilterButton(
                 label: 'All',
                 selected: _filter == null,
-                onTap: () => setState(() => _filter = null),
+                onTap: () => _selectFilter(null),
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
@@ -267,7 +318,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: LunasFilterButton(
                 label: 'Updates',
                 selected: _filter == NotificationKind.update,
-                onTap: () => setState(() => _filter = NotificationKind.update),
+                onTap: () => _selectFilter(NotificationKind.update),
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
@@ -275,8 +326,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: LunasFilterButton(
                 label: 'Activity',
                 selected: _filter == NotificationKind.activity,
-                onTap: () =>
-                    setState(() => _filter = NotificationKind.activity),
+                onTap: () => _selectFilter(NotificationKind.activity),
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
@@ -284,7 +334,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: LunasFilterButton(
                 label: 'Alerts',
                 selected: _filter == NotificationKind.alert,
-                onTap: () => setState(() => _filter = NotificationKind.alert),
+                onTap: () => _selectFilter(NotificationKind.alert),
               ),
             ),
           ],
@@ -295,10 +345,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             Expanded(
               child: Text(
                 _filter == NotificationKind.activity
-                    ? 'Activity Feed'
+                    ? 'Activity · $_total'
                     : _filter == NotificationKind.alert
-                    ? 'Alerts'
-                    : 'Recent Updates',
+                    ? 'Alerts · $_total'
+                    : 'Recent Updates · $_total',
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -313,7 +363,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
               ),
-              child: const Text('Mark All As Read'),
+              child: Text(
+                _filter == null ? 'Mark All As Read' : 'Mark Visible As Read',
+              ),
             ),
           ],
         ),
@@ -379,7 +431,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         if (_loadMoreError != null) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Could not load more notifications: $_loadMoreError',
+            'Could not load more notifications. Please try again.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),

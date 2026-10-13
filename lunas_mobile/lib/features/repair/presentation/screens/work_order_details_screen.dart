@@ -89,9 +89,19 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => LunasConfirmationDialog(
-        title: Text(resume ? 'Resume Repair?' : 'Start Repair?'),
+        title: Text(
+          workOrder.isPendingAcceptance
+              ? 'Accept and Start Repair?'
+              : resume
+              ? 'Resume Repair?'
+              : 'Start Repair?',
+        ),
         content: Text(
-          '${workOrder.orderNumber}: ${resume ? 'Resume the assigned repair and allow field updates.' : 'Record the repair start time and mark this work as in progress.'}',
+          '${workOrder.orderNumber}: ${workOrder.isPendingAcceptance
+              ? 'Accept responsibility for this assignment and start or resume repair work.'
+              : resume
+              ? 'Resume the assigned repair and allow field updates.'
+              : 'Record the repair start time and mark this work as in progress.'}',
         ),
         actions: [
           TextButton(
@@ -100,7 +110,13 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(resume ? 'Resume Repair' : 'Start Repair'),
+            child: Text(
+              workOrder.isPendingAcceptance
+                  ? 'Accept and Start Repair'
+                  : resume
+                  ? 'Resume Repair'
+                  : 'Start Repair',
+            ),
           ),
         ],
       ),

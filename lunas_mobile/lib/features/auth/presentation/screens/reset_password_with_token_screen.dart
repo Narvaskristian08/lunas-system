@@ -1,9 +1,8 @@
+import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
-import 'package:lunas_mobile/core/widgets/lunas_text_field.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
-import 'package:lunas_mobile/features/auth/presentation/screens/citizen_registration_screen.dart';
+import 'package:lunas_mobile/features/auth/presentation/screens/registration_password_screen.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 
@@ -23,6 +22,7 @@ class _ResetPasswordWithTokenScreenState
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmation = true;
 
   @override
   void initState() {
@@ -57,59 +57,85 @@ class _ResetPasswordWithTokenScreenState
     final auth = AuthScope.of(context);
     return AuthLayout(
       showBrand: false,
-      showBackButton: true,
+      showBackButton: !auth.isSubmitting,
+      headerSpacing: AppSpacing.sm,
       child: Column(
         children: [
-          const LunasBrand(centered: true),
-          const SizedBox(height: AppSpacing.xxl),
           Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const AuthHeading(
-                  title: 'Choose a new password',
+                  title: 'Create New Password',
                   description:
-                      'Use the secure reset token from your LUNAS reset link.',
+                      'Choose a new password to regain access to your account.',
                 ),
-                const SizedBox(height: AppSpacing.xxl),
-                LunasTextField(
+                const SizedBox(height: AppSpacing.xl),
+                TextFormField(
                   controller: _tokenController,
-                  label: 'Reset Token',
-                  hint: 'Paste the token from your email',
-                  prefixIcon: Icons.key_outlined,
+                  enabled: !auth.isSubmitting,
+                  decoration: const InputDecoration(
+                    labelText: 'Reset Token',
+                    hintText: 'Paste the token from your email',
+                    isDense: true,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
                   validator: (value) => value == null || value.trim().isEmpty
                       ? 'Enter the reset token from your link.'
                       : null,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                LunasTextField(
+                TextFormField(
                   controller: _passwordController,
-                  label: 'New Password',
-                  prefixIcon: Icons.lock_outline_rounded,
+                  enabled: !auth.isSubmitting,
+                  autofillHints: const [AutofillHints.newPassword],
+                  onChanged: (_) => setState(() {}),
                   obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(16),
+                    suffixIcon: IconButton(
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
                     ),
                   ),
                   validator: validatePassword,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                LunasTextField(
+                TextFormField(
                   controller: _confirmPasswordController,
-                  label: 'Confirm New Password',
-                  prefixIcon: Icons.lock_reset_rounded,
-                  obscureText: _obscurePassword,
+                  enabled: !auth.isSubmitting,
+                  autofillHints: const [AutofillHints.newPassword],
+                  obscureText: _obscureConfirmation,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm New Password',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(16),
+                    suffixIcon: IconButton(
+                      onPressed: () => setState(
+                        () => _obscureConfirmation = !_obscureConfirmation,
+                      ),
+                      icon: Icon(
+                        _obscureConfirmation
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                    ),
+                  ),
                   validator: (value) => value != _passwordController.text
                       ? 'Passwords do not match.'
                       : null,
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                PasswordRequirements(password: _passwordController.text),
+                const SizedBox(height: AppSpacing.xl),
                 if (auth.message != null) ...[
                   AuthMessage(message: auth.message!),
                   const SizedBox(height: AppSpacing.md),

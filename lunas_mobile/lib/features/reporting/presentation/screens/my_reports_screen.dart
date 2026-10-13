@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:lunas_mobile/core/widgets/lunas_filter_button.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,8 @@ import 'package:lunas_mobile/features/citizen/presentation/screens/citizen_dashb
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
 class MyReportsScreen extends StatefulWidget {
-  const MyReportsScreen({super.key});
+  const MyReportsScreen({super.key, this.initialFilter});
+  final String? initialFilter;
 
   @override
   State<MyReportsScreen> createState() => _MyReportsScreenState();
@@ -23,11 +25,86 @@ class _MyReportsScreenState extends State<MyReportsScreen>
   String? _error;
   String _filter = 'all';
   String _query = '';
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+  int _page = 1, _pages = 1;
+  bool _loadingMore = false;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _changeFilter(String value) {
+    if (_filter == value) return;
+    setState(() {
+      _filter = value;
+      _page = 1;
+    });
+    _load();
+  }
+
+  Future<void> _more() async {
+    if (_loadingMore || _loading || _page >= _pages) return;
+    setState(() => _loadingMore = true);
+    final filter = _filter, query = _query;
+    try {
+      final result = await reportService.getMyReportsPage(
+        page: _page + 1,
+        filter: filter,
+        search: query,
+      );
+      if (!mounted || filter != _filter || query != _query) return;
+      setState(() {
+        final ids = _reports.map((report) => report.id).toSet();
+        _reports = [
+          ..._reports,
+          ...result.items.where((report) => ids.add(report.id)),
+        ];
+        _page = result.page;
+        _pages = result.pages;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not load more reports. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
   List<IncidentReport> _reports = const [];
+
+  @override
+  void didUpdateWidget(covariant MyReportsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialFilter != oldWidget.initialFilter) {
+      _changeFilter(
+        {'active', 'resolved', 'in_progress'}.contains(widget.initialFilter)
+            ? widget.initialFilter!
+            : 'all',
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _filter =
+        {
+          'all',
+          'active',
+          'resolved',
+          'in_progress',
+        }.contains(widget.initialFilter)
+        ? widget.initialFilter!
+        : 'all';
     _load();
   }
 
@@ -45,10 +122,28 @@ class _MyReportsScreenState extends State<MyReportsScreen>
       });
     }
     try {
-      final reports = await reportService.getMyReports(limit: 50);
+      final filter = _filter, query = _query;
+      final results = <IncidentReport>[];
+      final requestedPages = isQuietRefresh ? _page : 1;
+      var lastPage = 1, totalPages = 1;
+      for (var index = 1; index <= requestedPages; index++) {
+        final result = await reportService.getMyReportsPage(
+          page: index,
+          filter: filter,
+          search: query,
+        );
+        results.addAll(result.items);
+        lastPage = result.page;
+        totalPages = result.pages;
+        if (index >= totalPages) break;
+      }
+      if (filter != _filter || query != _query) return;
+      final reports = results;
       if (mounted) {
         setState(() {
           _reports = reports;
+          _page = lastPage;
+          _pages = totalPages;
           _error = null;
         });
       }
@@ -65,23 +160,7 @@ class _MyReportsScreenState extends State<MyReportsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _reports.where((report) {
-      final matchesFilter = switch (_filter) {
-        'active' => !{
-          'closed',
-          'rejected',
-          'duplicate',
-        }.contains(report.status),
-        'resolved' => {'resolved', 'closed'}.contains(report.status),
-        'in_progress' => report.status == 'in_progress',
-        _ => true,
-      };
-      final haystack =
-          '${report.reportNumber} ${report.categoryLabel} '
-                  '${report.description} ${report.location.displayAddress}'
-              .toLowerCase();
-      return matchesFilter && haystack.contains(_query.trim().toLowerCase());
-    }).toList();
+    final filtered = _reports;
     final filterOptions = <(String, String)>[
       ('all', 'All'),
       ('active', 'Active'),
@@ -106,15 +185,29 @@ class _MyReportsScreenState extends State<MyReportsScreen>
         children: [
           if (!_loading && _error == null) ...[
             TextField(
-              onChanged: (value) => setState(() => _query = value),
+              controller: _searchController,
+              maxLength: 100,
+              onChanged: (value) {
+                _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted) {
+                    setState(() {
+                      _query = value;
+                      _page = 1;
+                    });
+                    _load();
+                  }
+                });
+              },
               decoration: const InputDecoration(
+                counterText: '',
                 hintText: 'Search reports by ID, type, or location',
                 prefixIcon: Icon(Icons.search_rounded),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
           ],
-          if (!_loading && _error == null && _reports.isNotEmpty)
+          if (!_loading && _error == null)
             Row(
               children: [
                 for (var index = 0; index < filterOptions.length; index++) ...[
@@ -123,8 +216,7 @@ class _MyReportsScreenState extends State<MyReportsScreen>
                     child: LunasFilterButton(
                       label: filterOptions[index].$2,
                       selected: _filter == filterOptions[index].$1,
-                      onTap: () =>
-                          setState(() => _filter = filterOptions[index].$1),
+                      onTap: () => _changeFilter(filterOptions[index].$1),
                     ),
                   ),
                 ],
@@ -160,6 +252,8 @@ class _MyReportsScreenState extends State<MyReportsScreen>
                       : 'No matching reports',
                   message: _reports.isEmpty
                       ? 'Start a report when you see an infrastructure concern.'
+                      : _query.trim().isNotEmpty
+                      ? 'Try another search or clear the search and filters.'
                       : 'Choose another status to see other reports.',
                   actionLabel: _reports.isEmpty ? 'Create report' : null,
                   onAction: _reports.isEmpty
@@ -177,6 +271,11 @@ class _MyReportsScreenState extends State<MyReportsScreen>
                   onTap: () => context.push('/reports/${report.id}'),
                 ),
               ),
+            ),
+          if (!_loading && _error == null && _page < _pages)
+            TextButton(
+              onPressed: _loadingMore ? null : _more,
+              child: Text(_loadingMore ? 'Loading…' : 'Load More'),
             ),
         ],
       ),

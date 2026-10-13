@@ -1,12 +1,11 @@
+import 'package:lunas_mobile/core/theme/app_colors.dart';
+import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_submitted_dialog.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/app/app_services.dart';
-import 'package:lunas_mobile/core/network/api_exception.dart';
-import 'package:lunas_mobile/core/theme/app_colors.dart';
-import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/citizen/presentation/widgets/citizen_scaffold.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
@@ -30,6 +29,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
   bool _loading = true;
   String? _error;
   List<IncidentReport> _reports = const [];
+  int? _activeTotal;
 
   @override
   void initState() {
@@ -65,22 +65,45 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
         _error = null;
       });
     }
-    try {
-      final reports = await reportService.getMyReports(limit: 5);
-      if (!mounted) return;
-      setState(() {
-        _reports = reports;
-        _error = null;
-      });
-    } on ApiException catch (error) {
-      if (mounted && !isQuietRefresh) {
-        setState(() => _error = error.message);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
+    Future<void> loadRecent() async {
+      try {
+        final reports = await reportService.getMyReports(limit: 5);
+        if (mounted) {
+          setState(() {
+            _reports = reports;
+            _error = null;
+          });
+        }
+      } catch (_) {
+        if (mounted && !isQuietRefresh) {
+          setState(
+            () =>
+                _error = 'Could not refresh recent reports. Please try again.',
+          );
+        }
       }
     }
+
+    Future<void> loadTotal() async {
+      try {
+        final result = await reportService.getMyReportsPage(
+          limit: 1,
+          filter: 'active',
+        );
+        if (mounted) setState(() => _activeTotal = result.total);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not refresh the active report count.'),
+            ),
+          );
+        }
+      }
+    }
+
+    await Future.wait([loadRecent(), loadTotal()]);
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
@@ -110,7 +133,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Good Morning${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
+                  'Hello${user == null || user.firstName.isEmpty ? '' : ', ${user.firstName}'}',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -118,7 +141,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 const SizedBox(height: AppSpacing.xs),
                 const Text('Report local issues and track their progress.'),
                 const SizedBox(height: AppSpacing.xl),
-                _ActiveReportSummary(reports: _reports),
+                _ActiveReportSummary(active: _activeTotal),
                 const SizedBox(height: AppSpacing.md),
                 _ReportCallout(
                   restriction: user?.reportingRestriction,
@@ -128,29 +151,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                         : '/reports/new',
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DashboardAction(
-                        icon: Icons.map_outlined,
-                        title: 'View Map',
-                        subtitle: 'Explore the Map',
-                        onTap: () => context.push('/reports/location'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _DashboardAction(
-                        icon: Icons.insights_outlined,
-                        title: 'City Insights',
-                        subtitle: 'Coming Soon',
-                        onTap: null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.xl),
                 if (_error != null)
                   LunasStateView(
                     state: LunasViewState.error,
@@ -273,25 +274,15 @@ class _ReportCallout extends StatelessWidget {
 }
 
 class _ActiveReportSummary extends StatelessWidget {
-  const _ActiveReportSummary({required this.reports});
-  final List<IncidentReport> reports;
+  const _ActiveReportSummary({required this.active});
+  final int? active;
 
   @override
   Widget build(BuildContext context) {
-    final active = reports
-        .where(
-          (report) => !{
-            'resolved',
-            'closed',
-            'rejected',
-            'duplicate',
-          }.contains(report.status),
-        )
-        .length;
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.go('/reports'),
+        onTap: () => context.go('/reports?filter=active'),
         borderRadius: AppRadius.card,
         child: Ink(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -324,7 +315,7 @@ class _ActiveReportSummary extends StatelessWidget {
                 radius: 24,
                 backgroundColor: AppColorsLight.info,
                 child: Text(
-                  '$active',
+                  active?.toString() ?? '—',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontSize: 24,
                     height: 1,
@@ -339,53 +330,6 @@ class _ActiveReportSummary extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashboardAction extends StatelessWidget {
-  const _DashboardAction({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: onTap == null ? const Color(0xFFEDEFF2) : const Color(0xFFE1EAFF),
-    borderRadius: AppRadius.card,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.card,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon,
-              color: onTap == null
-                  ? const Color(0xFF8A919C)
-                  : AppColorsLight.brandBase,
-              size: 28,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: onTap == null ? const Color(0xFF747C88) : null,
-              ),
-            ),
-            Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class ReportListCard extends StatelessWidget {
@@ -409,21 +353,38 @@ class _ReportListCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              categoryIcon(report.category),
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                report.categoryLabel,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            ReportStatusChip(label: report.statusChipLabel),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compact =
+                constraints.maxWidth < 360 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.2;
+            final heading = Row(
+              children: [
+                Icon(
+                  categoryIcon(report.category),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    report.categoryLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                if (!compact) ReportStatusChip(label: report.statusChipLabel),
+              ],
+            );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                heading,
+                if (compact) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  ReportStatusChip(label: report.statusChipLabel),
+                ],
+              ],
+            );
+          },
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
@@ -437,16 +398,6 @@ class _ReportListCard extends StatelessWidget {
           report.location.displayAddress,
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        if (report.repair != null) ...[
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            report.repair!.citizenStatusLabel,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ],
     ),
   );

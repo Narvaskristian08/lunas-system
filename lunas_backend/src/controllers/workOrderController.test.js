@@ -250,3 +250,11 @@ test.each([
   expect(WorkOrder.find).toHaveBeenLastCalledWith(filter);
   expect(WorkOrder.countDocuments).toHaveBeenLastCalledWith(filter);
 });
+
+
+test('dashboard pending acceptance and assigned repairs use destination queue rules', async () => {
+  WorkOrder.countDocuments.mockClear(); WorkOrder.countDocuments.mockResolvedValue(0);
+  await require('./workOrderController').getWorkOrderSummary({ user: { role: 'repair_personnel', repairOrganization: 'Water District', _id: 'worker' } }, response(), jest.fn());
+  expect(WorkOrder.countDocuments.mock.calls[1][0]).toMatchObject({ assignmentState: 'pending', status: { $ne: 'verified' } });
+  expect(WorkOrder.countDocuments.mock.calls[11][0]).toMatchObject({ assignedTo: 'worker', assignmentState: { $in: ['pending', 'accepted'] }, status: { $in: ['pending', 'accepted'] } });
+});

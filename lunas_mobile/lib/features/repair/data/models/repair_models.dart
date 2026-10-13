@@ -599,6 +599,7 @@ class RepairDashboardSummary {
     required this.overdue,
     required this.readyForCompletion,
     this.needsCorrection = 0,
+    this.assignedRepairs,
   });
 
   final int pendingAssignments;
@@ -608,6 +609,7 @@ class RepairDashboardSummary {
   final int overdue;
   final int readyForCompletion;
   final int needsCorrection;
+  final int? assignedRepairs;
 
   factory RepairDashboardSummary.fromPayload(Map<String, dynamic> payload) {
     final data = _map(payload['data']);
@@ -623,6 +625,7 @@ class RepairDashboardSummary {
                 source['assigned'],
           ) ??
           0,
+      assignedRepairs: _int(source['assignedRepairs']),
       accepted: _int(source['accepted']) ?? 0,
       inProgress:
           _int(

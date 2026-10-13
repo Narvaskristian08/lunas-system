@@ -47,7 +47,7 @@ function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"
     active: { label: "Active Repairs", value: summary.active },
     approaching: { label: "Approaching Deadline", value: summary.approaching },
     overdue: { label: "Overdue", value: summary.overdue },
-    providerReview: { label: "Awaiting Review", value: summary.readyForCompletion + (role === "utility_provider" ? summary.awaitingFinalVerification : 0) },
+    providerReview: { label: "Awaiting Review", value: summary.readyForCompletion + (role === "repair_personnel" ? summary.awaitingFinalVerification : 0) },
     cityVerification: { label: "Awaiting Verification", value: summary.awaitingFinalVerification },
     cityCorrections: { label: "Returned for Correction", value: summary.cityCorrections },
     corrective: { label: "Needs Correction", value: summary.correctiveRepairs + (["utility_provider", "repair_personnel"].includes(role) ? summary.cityCorrections : 0) },
@@ -148,9 +148,9 @@ export function WorkOrderList({
     setSearch("");
     navigate({
       search: undefined,
-      status: workspaceView || viewer.backendRole === "utility_provider" ? filters.status : undefined,
+      status: workspaceView === "verification" ? "provider_accepted" : undefined,
       priority: undefined,
-      assignmentStatus: viewer.backendRole === "utility_provider" ? filters.assignmentStatus : undefined,
+      assignmentStatus: undefined,
       progress: undefined,
       slaState: workspaceView ? filters.slaState : undefined,
       personnel: undefined,
@@ -203,7 +203,7 @@ export function WorkOrderList({
             const cardFilter: QueryPatch = item.label === "Pending Repairs" ? { assignmentStatus: "unassigned" }
               : item.label === "Assigned Repairs" ? { status: "accepted" }
               : item.label === "Active Repairs" ? { status: "in_progress" }
-              : item.label === "Awaiting Review" ? { status: "awaiting_review" }
+              : item.label === "Awaiting Review" ? { status: viewer.backendRole === "utility_provider" ? "completed" : "awaiting_review" }
               : item.label === "Returned for Correction" ? { status: "city_correction_required" }
               : item.label === "Needs Correction" ? { status: "needs_correction" }
               : item.label === "Approaching Deadline" ? { slaState: "approaching" }
