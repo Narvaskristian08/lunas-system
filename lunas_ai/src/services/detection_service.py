@@ -470,6 +470,9 @@ class DetectionService:
             # ordinary asset detections into the advisory response.
             if model_config.get('damage_only') and class_name not in class_names:
                 continue
+            enabled_classes = model_config.get('enabled_classes')
+            if enabled_classes is not None and class_name not in enabled_classes:
+                continue
             
             threshold = self._class_production_threshold(
                 model_config,

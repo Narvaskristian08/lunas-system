@@ -1,0 +1,5 @@
+PASS: QA image in training split rejected before validation/training.
+usage: compare_finetune.py [-h] --model MODEL --data DATA --name NAME
+                           [--epochs EPOCHS] [--batch BATCH] --qa QA
+                           [--baseline-only]
+compare_finetune.py: error: Held-out QA leakage: C:\Users\jodeu\Documents\Development\School\lunas-system\lunas_ai\.cache\leakage_guard_check\images\train\heldout.jpg

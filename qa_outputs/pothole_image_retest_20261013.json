@@ -1,0 +1,90 @@
+{
+  "image_path": "C:\\Users\\jodeu\\Downloads\\846483029_1746278599779825_8921914851645189267_n.jpg",
+  "image_size": [
+    886,
+    595
+  ],
+  "device": "cuda",
+  "results": {
+    "current": {
+      "checkpoint": "models/road/rdd/yolov8s-rdd2022-mit.pt",
+      "elapsed_seconds": 1.1969301999779418,
+      "result": {
+        "category": "road",
+        "model_available": true,
+        "model": "road_damage",
+        "manual_review_only": false,
+        "damage_only": false,
+        "detections": [
+          {
+            "class": "pothole",
+            "class_id": 3,
+            "confidence": 0.045,
+            "production_threshold": 0.65,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.4409,
+              "y1": 0.3179,
+              "x2": 0.4988,
+              "y2": 0.3515
+            },
+            "area": 1026.82,
+            "severity": "severe",
+            "area_percentage": 0.19
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.045,
+        "confidence_threshold": 0.65,
+        "class_confidence_thresholds": {},
+        "candidate_threshold": 0.03,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    "candidate": {
+      "checkpoint": "models/road/rdd/road_cuda_20261013-candidate.pt",
+      "elapsed_seconds": 0.05564480001339689,
+      "result": {
+        "category": "road",
+        "model_available": true,
+        "model": "road_damage",
+        "manual_review_only": false,
+        "damage_only": false,
+        "detections": [
+          {
+            "class": "pothole",
+            "class_id": 3,
+            "confidence": 0.038,
+            "production_threshold": 0.65,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.5295,
+              "y1": 0.3113,
+              "x2": 0.5808,
+              "y2": 0.3394
+            },
+            "area": 757.77,
+            "severity": "moderate",
+            "area_percentage": 0.14
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.038,
+        "confidence_threshold": 0.65,
+        "class_confidence_thresholds": {},
+        "candidate_threshold": 0.03,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    }
+  }
+}

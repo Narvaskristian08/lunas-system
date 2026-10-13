@@ -112,16 +112,26 @@ models:
       resize: true
     notes: "Damage-only boxes from Power Equipment transmission faults and Cable Damage; advisory only"
 
-  # Surface drainage issues: visible water and blocked drainage channels only.
+  # Drainage reports concern visible garbage blocking roadside surface drains.
   surface_drainage:
-    name: "YOLOv8n Surface Drainage Issue Detection"
+    name: "YOLOv8n Roadside Drain Blockage Review"
     path: "models/drainage/surfacedrainage/best.pt"
     type: "detection"
     damage_only: true
+    # Preserve checkpoint class IDs while excluding flood-only findings.
+    enabled_classes:
+      - blocked_surface_drain
+    # Generic image-level blockage labels do not validate a garbage cause.
+    manual_only: true
     classes:
       - standing_water
       - blocked_surface_drain
     confidence_threshold: 0.35
+    # Calibrated on clear drains and reviewed dry-road validation images.
+    # A 0.445 false water match stays in manual review below this gate.
+    class_confidence_thresholds:
+      standing_water: 0.50
+      blocked_surface_drain: 0.35
     # Surface-water candidates are surfaced for manual review instead of
     # being silently discarded by the production threshold.
     candidate_threshold: 0.05
@@ -130,7 +140,7 @@ models:
     preprocessing:
       normalize: true
       resize: true
-    notes: "Public-data model for standing water and blocked surface drains; advisory/manual review only"
+    notes: "Visible garbage blockage of roadside drains only; standing-water findings suppressed. Existing generic blockage checkpoint is review-only pending garbage-specific boxes and validation."
 
   # Water infrastructure damage: leak evidence only; no automatic severity or closure decisions.
   water_leak:

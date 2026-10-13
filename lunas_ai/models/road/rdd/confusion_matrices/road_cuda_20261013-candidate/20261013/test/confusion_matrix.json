@@ -1,0 +1,48 @@
+{
+  "labels": [
+    "longitudinal_crack",
+    "transverse_crack",
+    "alligator_crack",
+    "pothole",
+    "background"
+  ],
+  "rows": "predicted",
+  "columns": "true",
+  "counts": [
+    [
+      55.0,
+      0.0,
+      1.0,
+      0.0,
+      26.0
+    ],
+    [
+      1.0,
+      24.0,
+      0.0,
+      0.0,
+      13.0
+    ],
+    [
+      1.0,
+      0.0,
+      16.0,
+      0.0,
+      7.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      42.0,
+      20.0
+    ],
+    [
+      50.0,
+      18.0,
+      13.0,
+      16.0,
+      0.0
+    ]
+  ]
+}

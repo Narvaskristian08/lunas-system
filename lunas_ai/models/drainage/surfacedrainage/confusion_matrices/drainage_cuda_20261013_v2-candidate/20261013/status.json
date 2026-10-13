@@ -1,0 +1,19 @@
+{
+  "checkpoint": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\drainage\\surfacedrainage\\drainage_cuda_20261013_v2-candidate.pt",
+  "sha256": "860753d53c0f7cb00e8af97c84da134e6c51e6171ce12dc0c24c66c25824f28c",
+  "model": "surface_drainage",
+  "folder": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\drainage\\surfacedrainage\\confusion_matrices\\drainage_cuda_20261013_v2-candidate\\20261013",
+  "splits": {
+    "val": {
+      "count_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\drainage\\surfacedrainage\\confusion_matrices\\drainage_cuda_20261013_v2-candidate\\20261013\\val\\confusion_matrix.png",
+      "normalized_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\drainage\\surfacedrainage\\confusion_matrices\\drainage_cuda_20261013_v2-candidate\\20261013\\val\\confusion_matrix_normalized.png"
+    },
+    "test": {
+      "count_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\drainage\\surfacedrainage\\confusion_matrices\\drainage_cuda_20261013_v2-candidate\\20261013\\test\\confusion_matrix.png",
+      "normalized_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\drainage\\surfacedrainage\\confusion_matrices\\drainage_cuda_20261013_v2-candidate\\20261013\\test\\confusion_matrix_normalized.png"
+    }
+  },
+  "status": "generated",
+  "dataset": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\data.yaml",
+  "scope": "Raw water/blockage checkpoint diagnostics, NOT garbage-specific validation. App suppresses water and keeps blockage manual-only."
+}

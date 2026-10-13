@@ -1,0 +1,1144 @@
+{
+  "negative_checks": [
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\drainage_channels_val_00004_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\drainage_channels_val_00012_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Czech_002148_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.348,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0013,
+              "y1": 0.6836,
+              "x2": 1.0,
+              "y2": 1.0
+            },
+            "area": 113739.65
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.348,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Czech_002324_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_003402_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.083,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.3413,
+              "y1": 0.5714,
+              "x2": 0.8714,
+              "y2": 0.6919
+            },
+            "area": 33094.9
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.083,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_003768_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_005675_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.446,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0,
+              "y1": 0.575,
+              "x2": 1.0,
+              "y2": 0.9917
+            },
+            "area": 216026.76
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.446,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_006506_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_006688_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_009876_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_001237_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_002182_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_002702_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_003624_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_004108_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "val",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_004256_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.099,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.6557,
+              "y1": 0.4966,
+              "x2": 0.9976,
+              "y2": 0.6891
+            },
+            "area": 541282.86
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.099,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\drainage_channels_test_00001_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "blocked_surface_drain",
+            "class_id": 1,
+            "confidence": 0.118,
+            "production_threshold": 0.35,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0019,
+              "y1": 0.0,
+              "x2": 0.9987,
+              "y2": 0.9975
+            },
+            "area": 50043.25
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.118,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\drainage_channels_test_00008_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\drainage_channels_test_00034_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.299,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0,
+              "y1": 0.1792,
+              "x2": 0.999,
+              "y2": 0.9381
+            },
+            "area": 38169.28
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.299,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_China_MotorBike_000940_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Czech_002051_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Czech_003319_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_India_000648_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_India_003248_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.09,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0008,
+              "y1": 0.6916,
+              "x2": 0.982,
+              "y2": 0.9969
+            },
+            "area": 155339.54
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.09,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_India_003785_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.071,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0024,
+              "y1": 0.7224,
+              "x2": 0.999,
+              "y2": 1.0
+            },
+            "area": 143441.03
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.071,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_India_006218_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_India_006776_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_India_006913_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.157,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0059,
+              "y1": 0.382,
+              "x2": 0.9991,
+              "y2": 0.992
+            },
+            "area": 314088.84
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.157,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Japan_006680_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.092,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0083,
+              "y1": 0.4662,
+              "x2": 0.5584,
+              "y2": 0.7738
+            },
+            "area": 60915.42
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.092,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_001175_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_002218_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_004004_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_004625_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_004848_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_007190_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "split": "test",
+      "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\dry_road_Norway_008006_repeat00.jpg",
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "standing_water",
+            "class_id": 0,
+            "confidence": 0.077,
+            "production_threshold": 0.5,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0033,
+              "y1": 0.4292,
+              "x2": 0.2017,
+              "y2": 0.5997
+            },
+            "area": 277999.2
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.077,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    }
+  ],
+  "api_flood_response": {
+    "advisory_only": true,
+    "ai_suggestion": "standing_water",
+    "analysis_status": "completed",
+    "candidate_threshold": 0.05,
+    "category": "drainage",
+    "class_confidence_thresholds": {
+      "blocked_surface_drain": 0.35,
+      "standing_water": 0.5
+    },
+    "classification_status": "production",
+    "confidence_score": 0.717,
+    "confidence_threshold": 0.35,
+    "damage_only": true,
+    "detections": [
+      {
+        "area": 316931.36,
+        "bbox": {
+          "x1": 0.0,
+          "x2": 1.0,
+          "y1": 0.2442,
+          "y2": 0.9959
+        },
+        "class": "standing_water",
+        "class_id": 0,
+        "confidence": 0.717,
+        "confidence_status": "production",
+        "production_threshold": 0.5
+      }
+    ],
+    "manual_review_detections": 0,
+    "manual_review_only": false,
+    "model": "surface_drainage",
+    "model_available": true,
+    "processing_time": 0.019,
+    "production_detections": 1,
+    "requires_manual_review": true,
+    "success": true
+  }
+}

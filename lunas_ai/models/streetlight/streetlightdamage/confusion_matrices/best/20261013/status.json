@@ -1,0 +1,9 @@
+{
+  "checkpoint": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\streetlight\\streetlightdamage\\best.pt",
+  "sha256": "82509483ec848d11460c94a8f4bf3989c4fc932fe4b502e8ffa5468da427fe9f",
+  "model": "streetlight_damage",
+  "folder": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\streetlight\\streetlightdamage\\confusion_matrices\\best\\20261013",
+  "splits": {},
+  "status": "missing_labeled_dataset",
+  "reason": "Cannot generate a valid confusion matrix without labeled evaluation images for this model."
+}

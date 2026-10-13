@@ -1,0 +1,133 @@
+[
+  {
+    "sample": "blocked_drain_1",
+    "image_path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\drainage_channels_test_00005_repeat00.jpg",
+    "result": {
+      "category": "drainage",
+      "model_available": true,
+      "model": "surface_drainage",
+      "manual_review_only": true,
+      "damage_only": true,
+      "detections": [
+        {
+          "class": "blocked_surface_drain",
+          "class_id": 1,
+          "confidence": 0.991,
+          "production_threshold": 0.35,
+          "confidence_status": "manual_review",
+          "bbox": {
+            "x1": 0.0,
+            "y1": 0.0229,
+            "x2": 1.0,
+            "y2": 0.9992
+          },
+          "area": 49136.45
+        }
+      ],
+      "ai_suggestion": null,
+      "confidence_score": 0.991,
+      "confidence_threshold": 0.35,
+      "class_confidence_thresholds": {
+        "standing_water": 0.5,
+        "blocked_surface_drain": 0.35
+      },
+      "candidate_threshold": 0.05,
+      "requires_manual_review": true,
+      "advisory_only": true,
+      "analysis_status": "completed",
+      "production_detections": 0,
+      "manual_review_detections": 1,
+      "classification_status": "manual_review"
+    }
+  },
+  {
+    "sample": "blocked_drain_2",
+    "image_path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\test\\drainage_channels_test_00011_repeat00.jpg",
+    "result": {
+      "category": "drainage",
+      "model_available": true,
+      "model": "surface_drainage",
+      "manual_review_only": true,
+      "damage_only": true,
+      "detections": [
+        {
+          "class": "blocked_surface_drain",
+          "class_id": 1,
+          "confidence": 0.597,
+          "production_threshold": 0.35,
+          "confidence_status": "manual_review",
+          "bbox": {
+            "x1": 0.0,
+            "y1": 0.1986,
+            "x2": 1.0,
+            "y2": 1.0
+          },
+          "area": 40269.64
+        }
+      ],
+      "ai_suggestion": null,
+      "confidence_score": 0.597,
+      "confidence_threshold": 0.35,
+      "class_confidence_thresholds": {
+        "standing_water": 0.5,
+        "blocked_surface_drain": 0.35
+      },
+      "candidate_threshold": 0.05,
+      "requires_manual_review": true,
+      "advisory_only": true,
+      "analysis_status": "completed",
+      "production_detections": 0,
+      "manual_review_detections": 1,
+      "classification_status": "manual_review"
+    }
+  },
+  {
+    "sample": "flood",
+    "image_path": "C:\\Users\\jodeu\\Downloads\\847915701_1180016337691912_580455796795374560_n.jpg",
+    "result": {
+      "category": "drainage",
+      "model_available": true,
+      "model": "surface_drainage",
+      "manual_review_only": true,
+      "damage_only": true,
+      "detections": [],
+      "ai_suggestion": null,
+      "confidence_score": 0.0,
+      "confidence_threshold": 0.35,
+      "class_confidence_thresholds": {
+        "standing_water": 0.5,
+        "blocked_surface_drain": 0.35
+      },
+      "candidate_threshold": 0.05,
+      "requires_manual_review": true,
+      "advisory_only": true,
+      "analysis_status": "completed",
+      "production_detections": 0,
+      "manual_review_detections": 0,
+      "classification_status": "no_detection"
+    }
+  },
+  {
+    "sample": "pole_streetlight",
+    "image_path": "C:\\Users\\jodeu\\Downloads\\846279126_907408942309941_4406752512608342515_n.jpg",
+    "result": {
+      "category": "streetlight",
+      "model_available": true,
+      "model": "streetlight_damage",
+      "manual_review_only": false,
+      "damage_only": true,
+      "detections": [],
+      "ai_suggestion": null,
+      "confidence_score": 0.0,
+      "confidence_threshold": 0.35,
+      "class_confidence_thresholds": {},
+      "candidate_threshold": 0.35,
+      "requires_manual_review": true,
+      "advisory_only": true,
+      "analysis_status": "completed",
+      "production_detections": 0,
+      "manual_review_detections": 0,
+      "classification_status": "no_detection"
+    }
+  }
+]

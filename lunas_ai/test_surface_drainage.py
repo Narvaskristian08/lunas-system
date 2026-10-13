@@ -1,9 +1,39 @@
 from pathlib import Path
 
 import yaml
+import pytest
 
 
 BASE_DIR = Path(__file__).resolve().parent
+
+
+@pytest.mark.parametrize("include_blockage", [False, True])
+def test_drainage_suppresses_floods_and_keeps_blockage_review_only(monkeypatch, include_blockage):
+    from types import SimpleNamespace
+    import numpy as np
+    from PIL import Image
+    from src.services.detection_service import DetectionService
+
+    def box(class_id, confidence):
+        return SimpleNamespace(cls=np.array([class_id]), conf=np.array([confidence]),
+                               xyxy=np.array([[0, 0, 16, 16]]))
+
+    boxes = [box(0, 0.99)]
+    if include_blockage:
+        boxes.append(box(1, 0.90))
+    prediction = SimpleNamespace(boxes=boxes, names={0: "standing_water", 1: "blocked_surface_drain"})
+    model = SimpleNamespace(predict=lambda **kwargs: [prediction])
+    service = DetectionService()
+    monkeypatch.setattr(service.model_manager, "load_model", lambda name: model)
+    result = service.comprehensive_detection(Image.new("RGB", (32, 32)), "drainage")
+    assert result["analysis_status"] == "completed"
+    assert result["ai_suggestion"] is None
+    assert result["manual_review_only"] is True
+    assert result["requires_manual_review"] is True
+    assert [d["class"] for d in result["detections"]] == (["blocked_surface_drain"] if include_blockage else [])
+    if include_blockage:
+        assert result["detections"][0]["class_id"] == 1
+        assert result["detections"][0]["confidence_status"] == "manual_review"
 
 
 def test_drainage_category_uses_only_surface_drainage_model():
@@ -85,8 +115,13 @@ def test_fixed_qa_endpoints_route_by_category_without_exposing_model_paths(monke
     client = create_app().test_client()
 
     for endpoint, expected_category in (
+        ("/api/v1/detect/road", "road"),
         ("/api/v1/detect/drainage", "drainage"),
         ("/api/v1/detect/electrical", "electrical"),
+        ("/api/v1/detect/water", "water"),
+        ("/api/v1/detect/streetlight", "streetlight"),
+        ("/api/v1/detect/other", "other"),
+        ("/api/v1/detect/gas", "gas"),
     ):
         image = BytesIO(b"not-an-image")
         response = client.post(
@@ -107,10 +142,10 @@ def test_fixed_qa_endpoints_route_by_category_without_exposing_model_paths(monke
         image.seek(0)
         response = client.post(
             endpoint,
-            data={"image": (image, "test.jpg")},
+            data={"image": (image, "test.jpg"), "category": "electrical" if expected_category != "electrical" else "road"},
             content_type="multipart/form-data",
         )
         assert response.status_code == 200
         assert response.get_json()["category"] == expected_category
 
-    assert calls == ["drainage", "electrical"]
+    assert calls == ["road", "drainage", "electrical", "water", "streetlight", "other", "gas"]

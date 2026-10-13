@@ -79,6 +79,8 @@ describe('category-routed AI service', () => {
 
     const result = await aiService.analyzeIncidentImage(Buffer.from('webp'), category);
 
+    expect(axios.post.mock.calls[0][0]).toMatch(new RegExp(`/api/v1/detect/${category}$`));
+
     expect(axios.post.mock.calls[0][1].values.find(([name]) => name === 'category'))
       .toEqual(['category', category]);
     expect(result).toEqual(expect.objectContaining({

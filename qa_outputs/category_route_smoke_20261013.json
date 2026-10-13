@@ -1,0 +1,51 @@
+[
+  {
+    "route": "/api/v1/detect/road",
+    "status": 200,
+    "model": "road_damage",
+    "available": true,
+    "manual_review_only": false
+  },
+  {
+    "route": "/api/v1/detect/drainage",
+    "status": 200,
+    "model": "surface_drainage",
+    "available": true,
+    "manual_review_only": true
+  },
+  {
+    "route": "/api/v1/detect/electrical",
+    "status": 200,
+    "model": "electrical_damage",
+    "available": true,
+    "manual_review_only": true
+  },
+  {
+    "route": "/api/v1/detect/water",
+    "status": 200,
+    "model": "water_leak",
+    "available": true,
+    "manual_review_only": false
+  },
+  {
+    "route": "/api/v1/detect/streetlight",
+    "status": 200,
+    "model": "streetlight_damage",
+    "available": true,
+    "manual_review_only": false
+  },
+  {
+    "route": "/api/v1/detect/other",
+    "status": 200,
+    "model": "environmental_hazards",
+    "available": true,
+    "manual_review_only": true
+  },
+  {
+    "route": "/api/v1/detect/gas",
+    "status": 200,
+    "model": "gas_infrastructure_damage",
+    "available": false,
+    "manual_review_only": true
+  }
+]

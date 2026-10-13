@@ -1,0 +1,14 @@
+{
+  "torch": "2.14.0+cu130",
+  "torchvision": "0.29.0+cu130",
+  "ultralytics": "8.4.163",
+  "numpy": "2.5.3",
+  "Pillow": "12.3.0",
+  "pytest": "9.1.1",
+  "PyYAML": "6.0.3",
+  "python": "3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\.venv\\Scripts\\python.exe",
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "cuda_runtime": "13.0",
+  "system_site_packages": true
+}

@@ -1,0 +1,15 @@
+{
+  "checkpoint": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\electrical\\electricpole\\best.pt",
+  "sha256": "cb72ffc1799fd3b730350443dd1539d670374144da797e35705237a4f1a5a51d",
+  "model": "electrical_damage",
+  "folder": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\electrical\\electricpole\\confusion_matrices\\best\\20261013",
+  "splits": {
+    "test": {
+      "count_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\electrical\\electricpole\\confusion_matrices\\best\\20261013\\test\\confusion_matrix.png",
+      "normalized_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\electrical\\electricpole\\confusion_matrices\\best\\20261013\\test\\confusion_matrix_normalized.png"
+    }
+  },
+  "status": "partial",
+  "dataset": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\.cache\\confusion_cable_test\\data.yaml",
+  "scope": "PARTIAL: cable break/thunderbolt only; other 27 classes and intact hardware not validated."
+}

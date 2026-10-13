@@ -1,0 +1,23 @@
+{
+  "image_path": "C:\\Users\\jodeu\\Downloads\\848533950_958568280133192_6363952578695930284_n.jpg",
+  "device": "cuda",
+  "result": {
+    "category": "streetlight",
+    "model_available": true,
+    "model": "streetlight_damage",
+    "manual_review_only": false,
+    "damage_only": true,
+    "detections": [],
+    "ai_suggestion": null,
+    "confidence_score": 0.0,
+    "confidence_threshold": 0.35,
+    "class_confidence_thresholds": {},
+    "candidate_threshold": 0.35,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 0,
+    "classification_status": "no_detection"
+  }
+}

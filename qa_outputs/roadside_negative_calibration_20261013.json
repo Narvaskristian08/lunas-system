@@ -1,0 +1,91 @@
+[
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\drainage_channels_val_00004_repeat00.jpg",
+    "boxes": [
+      {
+        "class": "blocked_surface_drain",
+        "confidence": 0.10431672632694244
+      }
+    ]
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\drainage_channels_val_00012_repeat00.jpg",
+    "boxes": [
+      {
+        "class": "blocked_surface_drain",
+        "confidence": 0.10182848572731018
+      }
+    ]
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Czech_002148_repeat00.jpg",
+    "boxes": [
+      {
+        "class": "standing_water",
+        "confidence": 0.34970536828041077
+      }
+    ]
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Czech_002324_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_003402_repeat00.jpg",
+    "boxes": [
+      {
+        "class": "standing_water",
+        "confidence": 0.08341746777296066
+      }
+    ]
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_003768_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_005675_repeat00.jpg",
+    "boxes": [
+      {
+        "class": "standing_water",
+        "confidence": 0.4449639320373535
+      }
+    ]
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_006506_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_006688_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_India_009876_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_001237_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_002182_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_002702_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_003624_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_004108_repeat00.jpg",
+    "boxes": []
+  },
+  {
+    "path": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\drainage\\surface_balanced_20261013\\images\\val\\dry_road_Norway_004256_repeat00.jpg",
+    "boxes": []
+  }
+]

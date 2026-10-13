@@ -267,7 +267,7 @@ exports.comprehensiveDetection = async (imageBuffer, category = '') => {
     logger.info(`Running comprehensive AI detection for category: ${canonicalCategory}`);
     
     const response = await axios.post(
-      `${AI_SERVICE_URL}/api/v1/detect/comprehensive`,
+      `${AI_SERVICE_URL}/api/v1/detect/${canonicalCategory}`,
       form,
       {
         headers: form.getHeaders(),

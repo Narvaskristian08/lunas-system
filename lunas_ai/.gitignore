@@ -52,6 +52,7 @@ training.log
 # Training Output & Cache
 .cache/
 runs/
+weights/
 cache/inference/
 models/cache/
 

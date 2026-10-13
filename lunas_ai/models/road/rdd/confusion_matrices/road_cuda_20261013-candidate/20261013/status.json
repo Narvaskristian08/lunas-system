@@ -1,0 +1,19 @@
+{
+  "checkpoint": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\road\\rdd\\road_cuda_20261013-candidate.pt",
+  "sha256": "54b93fb76ef468473bfd96ff3e461a5d01b48cf4e960290ef441808936b0e34b",
+  "model": "road_damage",
+  "folder": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\road\\rdd\\confusion_matrices\\road_cuda_20261013-candidate\\20261013",
+  "splits": {
+    "val": {
+      "count_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\road\\rdd\\confusion_matrices\\road_cuda_20261013-candidate\\20261013\\val\\confusion_matrix.png",
+      "normalized_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\road\\rdd\\confusion_matrices\\road_cuda_20261013-candidate\\20261013\\val\\confusion_matrix_normalized.png"
+    },
+    "test": {
+      "count_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\road\\rdd\\confusion_matrices\\road_cuda_20261013-candidate\\20261013\\test\\confusion_matrix.png",
+      "normalized_image": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\models\\road\\rdd\\confusion_matrices\\road_cuda_20261013-candidate\\20261013\\test\\confusion_matrix_normalized.png"
+    }
+  },
+  "status": "generated",
+  "dataset": "C:\\Users\\jodeu\\Documents\\Development\\School\\lunas-system\\lunas_ai\\datasets\\road\\rdd_subset_20261013\\data.yaml",
+  "scope": "Small RDD2022 public subset; prior training overlap is unknown."
+}

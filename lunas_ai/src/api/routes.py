@@ -283,6 +283,16 @@ def comprehensive_detection():
     return _run_category_detection(category)
 
 
+@api.route('/detect/<category>', methods=['POST'])
+def detect_category(category):
+    """Select the configured model from the URL's canonical category.
+
+    Static routes (privacy, comprehensive and legacy road routes) retain their
+    existing handlers. A conflicting multipart category cannot change this route.
+    """
+    return _run_category_detection(category)
+
+
 @api.route('/detect/all-hazards', methods=['POST'])
 def detect_all_hazards():
     """

@@ -3,7 +3,7 @@
 // codes so historical data and authorization rules remain compatible.
 const categories = [
   { code: 'road', name: 'Road damage', description: 'Potholes, cracks, and road-surface damage.' },
-  { code: 'drainage', name: 'Drainage', description: 'Flooding, blockages, and drainage damage.' },
+  { code: 'drainage', name: 'Drainage', description: 'Visible garbage blocking roadside drains, gutters, or canals.' },
   { code: 'electrical', name: 'Electrical', description: 'Electrical infrastructure hazards and outages.' },
   { code: 'water', name: 'Water', description: 'Water leaks and water-supply infrastructure issues.' },
   { code: 'streetlight', name: 'Streetlight', description: 'Damaged, missing, or malfunctioning streetlights.' },

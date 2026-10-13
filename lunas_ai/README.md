@@ -29,6 +29,7 @@ configuration.
 | GET | `/api/v1/health` | Service and loaded-model status. |
 | GET | `/api/v1/models` | Configured model metadata/status. |
 | POST | `/api/v1/detect/comprehensive` | Multipart `image` plus canonical `category`; uses the service-owned category/model mapping. |
+| POST | `/api/v1/detect/<category>` | Category-specific inference for `road`, `drainage`, `electrical`, `water`, `streetlight`, `other`, or `gas`. URL category takes precedence over multipart fields. |
 | POST | `/api/v1/detect/drainage`, `/api/v1/detect/electrical` | Fixed-category QA routes. |
 | POST | `/api/v1/detect/road-damage`, `/api/v1/detect/cracks` | Standalone road/crack detection routes. |
 | POST | `/api/v1/detect/privacy` | Detects face and license-plate regions using bundled YuNet and an explicitly configured dedicated plate model; the Node backend applies returned redactions before storage. |
@@ -48,6 +49,11 @@ The Express integration uses `AI_SERVICE_URL`, `AI_SERVICE_TIMEOUT`, and
 incident evidence is submitted. A category without an available model remains
 manual review. Configure and verify the backend-to-Flask path in the target
 environment before demonstrating inference.
+
+The backend now sends each category to `/api/v1/detect/<category>`.
+See [model folders and routing switches](MODEL_ROUTES.md). Drainage is for
+visible garbage blockage of roadside drains; standing-water findings are
+suppressed and generic blockage candidates remain manual-review-only.
 
 The canonical `other` category has no production classifier. It may use the
 environmental-hazards checkpoint as a review-only candidate source; those

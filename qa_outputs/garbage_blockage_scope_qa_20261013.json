@@ -1,0 +1,307 @@
+{
+  "purpose": "held-out regression only; never training data",
+  "torch": "2.14.0+cu130",
+  "device": "cuda",
+  "metric_limit": "Five qualitative cases cannot establish precision, recall or mAP.",
+  "checkpoints": [
+    {
+      "path": "models/drainage/surfacedrainage/best.pt",
+      "sha256": "4d62142129f91375e453512861a404a3223a77698a7236675597ad511e8176b9"
+    },
+    {
+      "path": "models/drainage/surfacedrainage/drainage_cuda_20261013_v2-candidate.pt",
+      "sha256": "860753d53c0f7cb00e8af97c84da134e6c51e6171ce12dc0c24c66c25824f28c"
+    },
+    {
+      "path": "models/drainage/surfacedrainage/pre-roadside-20261013.pt",
+      "sha256": "7d457efaa9d83a31f2856ef5ecb614e041ee4ec13a211d20bc9e5eaa2a871171"
+    },
+    {
+      "path": "models/drainage/surfacedrainage/roadside_drainage_cuda_20261013-candidate.pt",
+      "sha256": "4d62142129f91375e453512861a404a3223a77698a7236675597ad511e8176b9"
+    },
+    {
+      "path": "models/electrical/electricpole/best.pt",
+      "sha256": "cb72ffc1799fd3b730350443dd1539d670374144da797e35705237a4f1a5a51d"
+    },
+    {
+      "path": "models/other/environmentalhazard/yolov8n-env-hazards-best.pt",
+      "sha256": "f511cb37abe60d84a1414eec7b714ad6ff2b9a0043fe2e1d33556d5393415852"
+    },
+    {
+      "path": "models/privacy/license-plate.pt",
+      "sha256": "2d95861825bb4184404344c9cf809f40fd31dba785fe54e8ba5b9a3583789822"
+    },
+    {
+      "path": "models/road/rdd/road_cuda_20261013-candidate.pt",
+      "sha256": "54b93fb76ef468473bfd96ff3e461a5d01b48cf4e960290ef441808936b0e34b"
+    },
+    {
+      "path": "models/road/rdd/yolov8n-rdd2022-best.pt",
+      "sha256": "2aa961426af1eba6479f8938c183964ad34c96a85b6a494515ad8b9b954c6331"
+    },
+    {
+      "path": "models/road/rdd/yolov8s-rdd2022-mit.pt",
+      "sha256": "467779780996cddd6632c318c47f21003de76a2cba2c7f7489f1372f04ff5fa2"
+    },
+    {
+      "path": "models/streetlight/streetlightdamage/best.pt",
+      "sha256": "82509483ec848d11460c94a8f4bf3989c4fc932fe4b502e8ffa5468da427fe9f"
+    },
+    {
+      "path": "models/water/waterleak/best.pt",
+      "sha256": "b6a2c883ff1afc9ee408df24aad3e17a6cf14b5d027e66b4985e5b435f5b4bf1"
+    },
+    {
+      "path": "models/yolov8n-env-hazards-best.pt",
+      "sha256": "f511cb37abe60d84a1414eec7b714ad6ff2b9a0043fe2e1d33556d5393415852"
+    },
+    {
+      "path": "models/yolov8n-rdd2022-best.pt",
+      "sha256": "2aa961426af1eba6479f8938c183964ad34c96a85b6a494515ad8b9b954c6331"
+    }
+  ],
+  "samples": [
+    {
+      "name": "fire",
+      "category": "other",
+      "path": "C:\\Users\\jodeu\\Downloads\\844301033_1411316137780876_8638335178326863001_n.jpg",
+      "sha256": "d4314277ebf3d78b523e671fcdff88089ccbcc427ad34ecf1a2edd22e34e5aa5",
+      "expected": "fire_source",
+      "elapsed_seconds_including_model_load": 1.3565488000167534,
+      "result": {
+        "category": "other",
+        "model_available": true,
+        "model": "environmental_hazards",
+        "manual_review_only": true,
+        "damage_only": false,
+        "detections": [
+          {
+            "class": "fire_source",
+            "class_id": 1,
+            "confidence": 0.17,
+            "production_threshold": 0.4,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.4742,
+              "y1": 0.0,
+              "x2": 0.998,
+              "y2": 0.5284
+            },
+            "area": 217677.86,
+            "severity": "high",
+            "priority": "urgent"
+          },
+          {
+            "class": "fire_source",
+            "class_id": 1,
+            "confidence": 0.159,
+            "production_threshold": 0.4,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0002,
+              "y1": 0.0002,
+              "x2": 0.3383,
+              "y2": 0.5308
+            },
+            "area": 141084.73,
+            "severity": "high",
+            "priority": "urgent"
+          },
+          {
+            "class": "fire_source",
+            "class_id": 1,
+            "confidence": 0.116,
+            "production_threshold": 0.4,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.4972,
+              "y1": 0.1921,
+              "x2": 0.6092,
+              "y2": 0.4348
+            },
+            "area": 21390.69,
+            "severity": "high",
+            "priority": "urgent"
+          },
+          {
+            "class": "fire_source",
+            "class_id": 1,
+            "confidence": 0.105,
+            "production_threshold": 0.4,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.0977,
+              "y1": 0.4915,
+              "x2": 0.1215,
+              "y2": 0.5318
+            },
+            "area": 754.66,
+            "severity": "high",
+            "priority": "urgent"
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.138,
+        "confidence_threshold": 0.25,
+        "class_confidence_thresholds": {
+          "fallen_tree": 0.5,
+          "fire_source": 0.4,
+          "garbage_pileup": 0.3,
+          "open_manhole": 0.45
+        },
+        "candidate_threshold": 0.1,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 4,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "name": "pole",
+      "category": "electrical",
+      "path": "C:\\Users\\jodeu\\Downloads\\846279126_907408942309941_4406752512608342515_n.jpg",
+      "sha256": "26712f3b0cb8b98950e1a0f8a44b314a6bf0b8c3f3fe4250ad1947a235561c52",
+      "expected": "no bird_nest_on_line false positive",
+      "elapsed_seconds_including_model_load": 0.0845539000001736,
+      "result": {
+        "category": "electrical",
+        "model_available": true,
+        "model": "electrical_damage",
+        "manual_review_only": true,
+        "damage_only": true,
+        "detections": [
+          {
+            "class": "bird_nest_on_line",
+            "class_id": 24,
+            "confidence": 0.737,
+            "production_threshold": 0.3,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.3309,
+              "y1": 0.1582,
+              "x2": 0.4434,
+              "y2": 0.2808
+            },
+            "area": 3444.55
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.737,
+        "confidence_threshold": 0.3,
+        "class_confidence_thresholds": {},
+        "candidate_threshold": 0.3,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    },
+    {
+      "name": "flood",
+      "category": "drainage",
+      "path": "C:\\Users\\jodeu\\Downloads\\847915701_1180016337691912_580455796795374560_n.jpg",
+      "sha256": "431df7fd11abf47a6b54b18cc1768e77d18392bee1a716bab5ec8d27ebf3bbd1",
+      "expected": "standing_water",
+      "elapsed_seconds_including_model_load": 0.08577370003331453,
+      "result": {
+        "category": "drainage",
+        "model_available": true,
+        "model": "surface_drainage",
+        "manual_review_only": true,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {
+          "standing_water": 0.5,
+          "blocked_surface_drain": 0.35
+        },
+        "candidate_threshold": 0.05,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "name": "streetlight",
+      "category": "streetlight",
+      "path": "C:\\Users\\jodeu\\Downloads\\848533950_958568280133192_6363952578695930284_n.jpg",
+      "sha256": "550185efa186e1bc7b2d8d9e2e18b00bd6da1f983b9279337ad21019ea0d1317",
+      "expected": "no damage detection acceptable",
+      "elapsed_seconds_including_model_load": 0.0770452999859117,
+      "result": {
+        "category": "streetlight",
+        "model_available": true,
+        "model": "streetlight_damage",
+        "manual_review_only": false,
+        "damage_only": true,
+        "detections": [],
+        "ai_suggestion": null,
+        "confidence_score": 0.0,
+        "confidence_threshold": 0.35,
+        "class_confidence_thresholds": {},
+        "candidate_threshold": 0.35,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 0,
+        "classification_status": "no_detection"
+      }
+    },
+    {
+      "name": "potholes",
+      "category": "road",
+      "path": "C:\\Users\\jodeu\\Downloads\\846483029_1746278599779825_8921914851645189267_n.jpg",
+      "sha256": "6add28d1f87d3dd1a9585f408cf392c12db2f7966985ff73096efacbbc4b189f",
+      "expected": "pothole",
+      "elapsed_seconds_including_model_load": 0.06492650002473965,
+      "result": {
+        "category": "road",
+        "model_available": true,
+        "model": "road_damage",
+        "manual_review_only": false,
+        "damage_only": false,
+        "detections": [
+          {
+            "class": "pothole",
+            "class_id": 3,
+            "confidence": 0.045,
+            "production_threshold": 0.65,
+            "confidence_status": "manual_review",
+            "bbox": {
+              "x1": 0.4409,
+              "y1": 0.3179,
+              "x2": 0.4988,
+              "y2": 0.3515
+            },
+            "area": 1026.79,
+            "severity": "severe",
+            "area_percentage": 0.19
+          }
+        ],
+        "ai_suggestion": null,
+        "confidence_score": 0.045,
+        "confidence_threshold": 0.65,
+        "class_confidence_thresholds": {},
+        "candidate_threshold": 0.03,
+        "requires_manual_review": true,
+        "advisory_only": true,
+        "analysis_status": "completed",
+        "production_detections": 0,
+        "manual_review_detections": 1,
+        "classification_status": "manual_review"
+      }
+    }
+  ],
+  "config_sha256": "0613267e5a9bfeaf239e28e48349c5b78ba59d623e5aa2dd85ce54020595c767"
+}

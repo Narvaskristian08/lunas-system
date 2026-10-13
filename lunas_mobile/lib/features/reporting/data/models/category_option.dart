@@ -43,7 +43,7 @@ const supportedReportCategories = <CategoryOption>[
   CategoryOption(
     code: 'drainage',
     label: 'Drainage',
-    description: 'Blocked drains, flooding, or drainage damage.',
+    description: 'Visible garbage blocking roadside drains, gutters, or canals.',
   ),
   CategoryOption(
     code: 'electrical',

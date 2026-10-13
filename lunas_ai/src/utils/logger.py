@@ -44,7 +44,8 @@ def setup_logger(name: str = "lunas_ai") -> logging.Logger:
         file_handler = RotatingFileHandler(
             config.LOG_FILE,
             maxBytes=10485760,  # 10MB
-            backupCount=5
+            backupCount=5,
+            encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)

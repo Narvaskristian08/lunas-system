@@ -1,0 +1,26 @@
+{
+  "labels": [
+    "standing_water",
+    "blocked_surface_drain",
+    "background"
+  ],
+  "rows": "predicted",
+  "columns": "true",
+  "counts": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      3.0,
+      0.0,
+      17.0
+    ],
+    [
+      41.0,
+      2.0,
+      0.0
+    ]
+  ]
+}

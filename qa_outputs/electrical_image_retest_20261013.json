@@ -1,0 +1,38 @@
+{
+  "image_path": "C:\\Users\\jodeu\\Downloads\\846279126_907408942309941_4406752512608342515_n.jpg",
+  "device": "cuda",
+  "result": {
+    "category": "electrical",
+    "model_available": true,
+    "model": "electrical_damage",
+    "manual_review_only": true,
+    "damage_only": true,
+    "detections": [
+      {
+        "class": "bird_nest_on_line",
+        "class_id": 24,
+        "confidence": 0.737,
+        "production_threshold": 0.3,
+        "confidence_status": "manual_review",
+        "bbox": {
+          "x1": 0.3309,
+          "y1": 0.1582,
+          "x2": 0.4434,
+          "y2": 0.2808
+        },
+        "area": 3444.55
+      }
+    ],
+    "ai_suggestion": null,
+    "confidence_score": 0.737,
+    "confidence_threshold": 0.3,
+    "class_confidence_thresholds": {},
+    "candidate_threshold": 0.3,
+    "requires_manual_review": true,
+    "advisory_only": true,
+    "analysis_status": "completed",
+    "production_detections": 0,
+    "manual_review_detections": 1,
+    "classification_status": "manual_review"
+  }
+}
