@@ -197,6 +197,8 @@ export function WorkOrderList({
       </div> : null}
 
       {summary && !workspaceView ? (
+        <>
+        <p className="mb-2 text-xs text-slate-500">Overall totals for your authorized scope</p>
         <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
           {summaryCards(summary, viewer.backendRole, isSla).map((item) => {
             const provider = viewer.backendRole === "utility_provider" && !isSla;
@@ -215,6 +217,7 @@ export function WorkOrderList({
               : <Card key={item.label} className="p-4">{content}</Card>;
           })}
         </div>
+        </>
       ) : null}
 
 

@@ -25,6 +25,7 @@ class AssignedWorkOrdersScreen extends StatefulWidget {
 class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
     with WidgetsBindingObserver, QuietDataRefresh<AssignedWorkOrdersScreen> {
   static const _pageSize = 20;
+  int _requestSequence = 0;
   bool _loading = true;
   String? _error;
   RepairWorkOrderPage? _page;
@@ -53,10 +54,29 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
   Future<void> refreshVisibleData() =>
       _load(quiet: true, page: _page?.page ?? 1);
 
-  Future<void> _load({int page = 1, bool quiet = false}) =>
-      loadScreenData(() => _loadData(page: page), quiet: quiet);
+  Future<void> _load({int page = 1, bool quiet = false}) {
+    if (quiet && dataRequestInFlight) return Future.value();
+    final sequence = ++_requestSequence;
+    final status = _status;
+    final overdue = _overdueOnly;
+    return loadScreenData(
+      () => _loadData(
+        page: page,
+        sequence: sequence,
+        status: status,
+        overdue: overdue,
+      ),
+      quiet: quiet,
+    );
+  }
 
-  Future<void> _loadData({int page = 1}) async {
+  Future<void> _loadData({
+    required int page,
+    required int sequence,
+    required String? status,
+    required bool overdue,
+  }) async {
+    if (!mounted || sequence != _requestSequence) return;
     if (!isQuietRefresh) {
       setState(() {
         _loading = true;
@@ -67,21 +87,21 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
       final result = await repairService.getMyWorkOrders(
         page: page,
         limit: _pageSize,
-        repairView: _status,
-        overdueOnly: _overdueOnly,
+        repairView: status,
+        overdueOnly: overdue,
       );
-      if (mounted) {
+      if (mounted && sequence == _requestSequence) {
         setState(() {
           _page = result;
           _error = null;
         });
       }
     } on ApiException catch (error) {
-      if (mounted && !isQuietRefresh) {
+      if (mounted && sequence == _requestSequence && !isQuietRefresh) {
         setState(() => _error = error.message);
       }
     } finally {
-      if (mounted) {
+      if (mounted && sequence == _requestSequence) {
         setState(() => _loading = false);
       }
     }
@@ -126,7 +146,10 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
         ),
         if (!_loading && _error == null) ...[
           const SizedBox(height: AppSpacing.sm),
-          Text('${_page?.total ?? 0} matching work orders', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            '${_page?.total ?? 0} matching work orders',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
         const SizedBox(height: AppSpacing.lg),
         if (_loading || _error != null || (_page?.items.isEmpty ?? true))

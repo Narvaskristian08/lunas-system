@@ -761,41 +761,12 @@ export async function getWorkOrderSummary(): Promise<WorkOrderSummary> {
 
 
 export async function getAwaitingAssignmentQueue(filters: WorkOrderFilters): Promise<WorkOrderQueueData> {
-  const orders: WorkOrder[] = [];
-  const reports: ProviderRoutedIncident[] = [];
-  const collectOrders = async () => {
-    let page = 1;
-    while (true) {
-      const batch = await getWorkOrders({ ...filters, page, limit: 100 });
-      orders.push(...batch.workOrders);
-      if (page >= batch.pagination.pages) break;
-      page++;
-    }
-  };
-  const collectReports = async () => {
-    if (filters.status || filters.slaState || filters.personnel || filters.progress !== undefined) return;
-    let page = 1;
-    while (true) {
-      const batch = await getProviderIncidentQueue({ page, limit: 100, search: filters.search, priority: filters.priority, category: filters.category });
-      reports.push(...batch.incidents.filter(report => !report.workOrder));
-      if (page >= batch.pagination.pages) break;
-      page++;
-    }
-  };
-  await Promise.all([collectOrders(), collectReports()]);
-  const rows = [...orders, ...reports.map(report => ({
-    ...normalizeWorkOrder({ _id: report.id, orderNumber: report.reportNumber, status: 'pending', assignmentState: 'unassigned',
-      incident: { ...report, _id: report.id }, priority: report.priority, responsibleOrganization: report.responsibleOrganization,
-      createdAt: report.createdAt, updatedAt: report.routedAt ?? report.createdAt, sla: report.sla })!,
-    intakeIncidentId: report.id,
-  }))];
-  const ranks: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
-  const time = (value?: string) => value ? Date.parse(value) || 0 : 0;
-  rows.sort((a, b) => {
-    if (filters.sortBy === '-priority' || filters.sortBy === 'priority') return (ranks[a.priority ?? ''] ?? 0) === (ranks[b.priority ?? ''] ?? 0) ? time(b.updatedAt) - time(a.updatedAt) : ((ranks[b.priority ?? ''] ?? 0) - (ranks[a.priority ?? ''] ?? 0)) * (filters.sortBy === 'priority' ? -1 : 1);
-    if (filters.sortBy === 'deadline' || filters.sortBy === '-deadline') return (time(a.sla.deadline) - time(b.sla.deadline)) * (filters.sortBy === '-deadline' ? -1 : 1);
-    return filters.sortBy === 'oldest' ? time(a.createdAt) - time(b.createdAt) : time(b.updatedAt) - time(a.updatedAt);
-  });
-  const total = rows.length;
-  return { workOrders: rows.slice((filters.page - 1) * filters.limit, filters.page * filters.limit), pagination: { page: filters.page, limit: filters.limit, total, pages: Math.max(1, Math.ceil(total / filters.limit)) } };
+  const accessToken = await requireAccessToken();
+  const response = await backendRequest<unknown>(`/work-orders/awaiting-assignment?${workOrderQuery(filters)}`, { accessToken });
+  const payload = responseData(response);
+  const workOrders = responseEntries(payload).map((value): WorkOrder | null => {
+    const order = normalizeWorkOrder(value);
+    return order ? { ...order, intakeIncidentId: asString(asRecord(value).intakeIncidentId) } : null;
+  }).filter((item): item is WorkOrder => item !== null);
+  return { workOrders, pagination: readPagination(asRecord(payload).pagination ?? asRecord(response).pagination, filters) };
 }
