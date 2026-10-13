@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendRequest, isBackendApiError, responseData } from "@/lib/api/backend.server";
 import { clearSession, createSession, readSession } from "@/lib/auth/session.server";
+import { workspaceRedirect } from "@/lib/auth/route-policy";
+import { roleLabels } from "@/lib/permissions";
+import type { BackendUserRole } from "@/types";
 import { requireViewer } from "@/lib/auth/dal.server";
 import { isValidEmail, safeReturnPath } from "@/lib/utils";
 import type { AuthFailureCode } from "@/types";
@@ -39,6 +42,7 @@ export interface RegistrationActionResult extends ActionResult {
 }
 
 interface LoginPayload {
+  user?: { role?: string };
   accessToken?: string;
   refreshToken?: string;
   // Retained only for compatibility with the currently deployed API while it
@@ -102,6 +106,7 @@ export async function loginAction(
   const password = String(formData.get("password") ?? "");
   const captchaToken = String(formData.get("captchaToken") ?? "");
   const next = safeReturnPath(String(formData.get("next") ?? "/dashboard"));
+  let destination = next;
   const fieldErrors: LoginActionState["fieldErrors"] = {};
   if (!email) fieldErrors.email = "Enter your authorized email address.";
   else if (!isValidEmail(email)) fieldErrors.email = "Enter a valid email address.";
@@ -135,11 +140,15 @@ export async function loginAction(
     }
 
     await createSession({ accessToken, refreshToken: payload.refreshToken });
+    if (payload.user?.role && Object.hasOwn(roleLabels, payload.user.role)) {
+      const target = new URL(next, "http://lunas.local");
+      destination = workspaceRedirect(target.pathname, target.search, payload.user.role as BackendUserRole) ?? next;
+    }
   } catch (error) {
     return { status: "error", attempt, email, ...authenticationFailure(error) };
   }
 
-  redirect(next);
+  redirect(destination);
 }
 
 export async function logoutAction() {

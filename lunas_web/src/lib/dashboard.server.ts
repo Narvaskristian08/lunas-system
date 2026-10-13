@@ -166,8 +166,24 @@ async function pendingReportingAppeals(accessToken: string) {
 
 async function reviewQueueDashboard(accessToken: string, role: "barangay_official" | "city_engineer"): Promise<RealDashboardData> {
   if (role === "city_engineer") {
-    const barangayReports = await responseData(await backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken }));
-    return { barangayReports, metrics: [], records: [], emptyTitle: "No reports", emptyDescription: "" };
+    const [barangayReports, validation, summary, reviewQueue, verificationQueue] = await Promise.all([
+      responseData(await backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken })),
+      responseData(await backendRequest<ValidationSummaryPayload>("/stats/validation-summary", { accessToken })),
+      getWorkOrderSummary(),
+      responseData(await backendRequest<IncidentListPayload>("/incidents/pending-validation?limit=5", { accessToken })),
+      getWorkOrders({ page: 1, limit: 5, status: "provider_accepted", sortBy: "deadline" }),
+    ]);
+    return {
+      barangayReports,
+      metrics: [
+        metric("Awaiting Review", asNumber(validation.pending), "warning", "reports"),
+        metric("Awaiting Verification", summary.awaitingFinalVerification, "warning", "verified"),
+        metric("Overdue", summary.overdue, "critical", "sla"),
+      ],
+      records: [...verificationQueue.workOrders.map(recordFromWorkOrder), ...extractIncidentList(reviewQueue).incidents.map(recordFromIncident)],
+      emptyTitle: "No reports or repairs awaiting City Engineering",
+      emptyDescription: "Reports awaiting review and repairs awaiting verification will appear here.",
+    };
   }
   const [summary, queue, reportingAppeals] = await Promise.all([
     responseData(await backendRequest<ValidationSummaryPayload>("/stats/validation-summary", { accessToken })),

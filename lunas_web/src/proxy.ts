@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { apiEndpoint } from "@/lib/api/url";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/constants";
+import { workspaceRedirect } from "@/lib/auth/route-policy";
+import { roleLabels } from "@/lib/permissions";
+import type { BackendUserRole } from "@/types";
 import {
   createSessionValue,
   decryptSessionValue,
@@ -12,6 +15,7 @@ import {
 } from "@/lib/auth/session-crypto";
 
 const protectedPrefixes = [
+  "/repair-personnel",
   "/dashboard",
   "/notifications",
   "/profile",
@@ -62,7 +66,7 @@ async function rotateAccessToken(refreshToken: string) {
   }
 }
 
-function sessionExpired(request: NextRequest, reason: "expired" | "invalid") {
+function sessionExpired(request: NextRequest, reason: "expired" | "invalid" | "revoked") {
   const url = new URL("/session-expired", request.url);
   url.searchParams.set("reason", reason);
   url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
@@ -71,7 +75,7 @@ function sessionExpired(request: NextRequest, reason: "expired" | "invalid") {
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const needsSession = protectedPrefixes.some(
+  const needsSession = path === "/" || protectedPrefixes.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
   if (needsSession && process.env.LUNAS_MAINTENANCE_MODE === "full") {
@@ -99,6 +103,7 @@ export async function proxy(request: NextRequest) {
   requestHeaders.delete(SESSION_REFRESH_UNAVAILABLE_HEADER);
   requestHeaders.delete(requestPathHeader);
   requestHeaders.set(requestPathHeader, `${path}${request.nextUrl.search}`);
+  let rotatedCookie: string | undefined;
 
   if (shouldRefreshAccessToken(session)) {
     const refreshed = await rotateAccessToken(session.refreshToken!);
@@ -109,20 +114,57 @@ export async function proxy(request: NextRequest) {
         refreshToken: refreshed.refreshToken,
       });
       requestHeaders.set(SESSION_HEADER_NAME, refreshedCookie);
-      const response = NextResponse.next({ request: { headers: requestHeaders } });
-      response.cookies.set(SESSION_COOKIE_NAME, refreshedCookie, sessionCookieOptions());
-      return response;
+      session.accessToken = refreshed.accessToken;
+      rotatedCookie = refreshedCookie;
     }
     // If rotation temporarily fails, preserve the session and let the route
     // render its ordinary safe unavailable state rather than signing out.
-    requestHeaders.set(SESSION_REFRESH_UNAVAILABLE_HEADER, "1");
+    if (refreshed.kind === "unavailable") requestHeaders.set(SESSION_REFRESH_UNAVAILABLE_HEADER, "1");
   }
 
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  // Resolve navigation redirects before React starts streaming. Rendering a
+  // redirect in the installed App Router runtime can otherwise hit error #310.
+  // The DAL and API remain the authorization boundary, including Server Actions.
+  let response: NextResponse | undefined;
+  if (["GET", "HEAD"].includes(request.method) && !requestHeaders.has(SESSION_REFRESH_UNAVAILABLE_HEADER)) {
+    try {
+      const options = { headers: { Authorization: `Bearer ${session.accessToken}` }, cache: "no-store" as const, signal: AbortSignal.timeout(8000) };
+      let viewerResponse = await fetch(apiEndpoint("/users/me"), options);
+      if (viewerResponse.status === 404) viewerResponse = await fetch(apiEndpoint("/auth/me"), options);
+      if ([401, 403].includes(viewerResponse.status)) response = sessionExpired(request, "revoked");
+      else if (viewerResponse.ok) {
+        const payload = await viewerResponse.json();
+        const user = payload.data;
+        if (user?.isActive === false) response = sessionExpired(request, "revoked");
+        else if (user?.role && Object.hasOwn(roleLabels, user.role)) {
+          const target = workspaceRedirect(path, request.nextUrl.search, user.role as BackendUserRole);
+          if (target) response = NextResponse.redirect(new URL(target, request.url));
+          else if (user.role === "utility_provider" && /^\/work-orders\/intake\/[a-f\d]{24}$/i.test(path)) {
+            const incidentId = path.split("/").at(-1)!;
+            const incidentResponse = await fetch(apiEndpoint(`/incidents/${incidentId}`), options);
+            if (incidentResponse.ok) {
+              const incident = (await incidentResponse.json()).data;
+              const workOrderId = incident?.workOrder?.id ?? incident?.workOrder?._id;
+              if (typeof workOrderId === "string" && /^[a-f\d]{24}$/i.test(workOrderId)) {
+                response = NextResponse.redirect(new URL(`/work-orders/${workOrderId}`, request.url));
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // The page's ordinary server-side unavailable state handles API failures.
+    }
+  }
+  response ??= NextResponse.next({ request: { headers: requestHeaders } });
+  if (rotatedCookie) response.cookies.set(SESSION_COOKIE_NAME, rotatedCookie, sessionCookieOptions());
+  return response;
 }
 
 export const config = {
   matcher: [
+    "/",
+    "/repair-personnel/:path*",
     "/dashboard/:path*",
     "/notifications/:path*",
     "/profile/:path*",

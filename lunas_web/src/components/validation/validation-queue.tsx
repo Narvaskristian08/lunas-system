@@ -187,7 +187,7 @@ export function ValidationQueue({
             </div>
           </div>
 
-          <FilterBar>
+          <FilterBar activeCount={[filters.category, filters.jurisdiction, filters.duplicate, filters.dateFrom, filters.dateTo, filters.sortBy && filters.sortBy !== "createdAt_desc"].filter(Boolean).length}>
             <FilterSelect
               label="Category"
               value={category}

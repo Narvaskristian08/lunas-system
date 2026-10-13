@@ -199,7 +199,7 @@ export function WorkOrderList({
       {summary && !workspaceView ? (
         <>
         <p className="mb-2 text-xs text-slate-500">Overall totals for your authorized scope</p>
-        <div className={`mb-6 grid gap-3 sm:grid-cols-2 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
+        <div className={`mb-6 grid grid-cols-2 gap-3 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
           {summaryCards(summary, viewer.backendRole, isSla).map((item) => {
             const provider = viewer.backendRole === "utility_provider" && !isSla;
             const cardFilter: QueryPatch = item.label === "Pending Repairs" ? { assignmentStatus: "unassigned" }
@@ -230,7 +230,7 @@ export function WorkOrderList({
         <form onSubmit={(event) => { event.preventDefault(); navigate({ search: search.trim() || undefined }); }} className="border-b border-slate-200 bg-white p-4">
           <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => { setSearch(""); navigate({ search: undefined }); }} placeholder="Search report or work-order reference" aria-label="Search Work Orders" className="max-w-xl" />
         </form>
-        <FilterBar>
+        <FilterBar activeCount={[filters.priority, !workspaceView && filters.status, !workspaceView && filters.assignmentStatus, !workspaceView && filters.slaState, filters.sortBy !== "newest" && filters.sortBy].filter(Boolean).length}>
           <FilterSelect label="Priority" value={optionValue(filters.priority)} onChange={(event) => navigate({ priority: event.target.value || undefined })} options={[{ value: "", label: "All Priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" }]} />
           {!workspaceView && viewer.backendRole !== "utility_provider" ? <FilterSelect label="Repair Status" value={optionValue(filters.status)} onChange={(event) => navigate({ status: event.target.value || undefined })} options={workStateOptions} /> : null}
           {!workspaceView && viewer.backendRole !== "utility_provider" ? <FilterSelect label="Assignment State" value={optionValue(filters.assignmentStatus)} onChange={(event) => navigate({ assignmentStatus: event.target.value || undefined })} options={[{ value: "", label: "All Assignments" }, { value: "unassigned", label: "Pending" }, { value: "accepted", label: "Assigned" }]} /> : null}

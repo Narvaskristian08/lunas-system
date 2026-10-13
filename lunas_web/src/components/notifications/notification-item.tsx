@@ -92,7 +92,7 @@ export function NotificationItem({
           <span className="text-xs text-slate-300" aria-hidden="true">•</span>
           <span className="text-xs font-semibold text-slate-600">{notification.category}</span>
           <StatusBadge tone={notification.severity} className="min-h-5 px-2 py-0 text-[11px]">
-            {notification.severity === "information" ? "Information" : notification.severity}
+            {notification.severity.charAt(0).toUpperCase() + notification.severity.slice(1)}
           </StatusBadge>
         </div>
 
@@ -111,9 +111,9 @@ export function NotificationItem({
           <time dateTime={notification.timestamp} title={formatDateTime(notification.timestamp)}>
             {formatRelativeDate(notification.timestamp)}
           </time>
-          {notification.relatedRecord ? (
+          {notification.relatedRecord?.reference ? (
             <span className="mono font-semibold text-slate-600">
-              {notification.relatedRecord.id}
+              {notification.relatedRecord.reference}
             </span>
           ) : null}
         </div>

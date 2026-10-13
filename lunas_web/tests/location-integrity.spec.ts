@@ -13,7 +13,8 @@ test.describe("location integrity review with isolated API fixtures", () => {
       const path = new URL(req.url!, "http://localhost").pathname.replace("/api/v1", "");
       res.setHeader("Content-Type", "application/json");
       const send = (data: unknown) => res.end(JSON.stringify({ success: true, data }));
-      if (path === "/users/me") return send({ id: "official", role: req.headers.authorization?.includes("citizen") ? "citizen" : "barangay_official", firstName: "Ana", lastName: "Reviewer", email: "reviewer@example.test", barangay: "Pantal", isActive: true });
+      if (path === "/notifications") return send([]);
+      if (path === "/users/me") return send({ id: "official", role: req.headers.authorization?.includes("citizen") ? "citizen" : req.headers.authorization?.includes("engineer") ? "city_engineer" : "barangay_official", firstName: "Ana", lastName: "Reviewer", email: "reviewer@example.test", barangay: "Pantal", isActive: true });
       if (path.endsWith("/false-report-review")) {
         if (req.method === "POST") {
           const chunks: Buffer[] = [];
@@ -40,35 +41,46 @@ test.describe("location integrity review with isolated API fixtures", () => {
     finding = ""; version = 0; history = [];
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-official" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
   });
-  test("neutral discrepancy and explanation are visible; documented finding can be corrected", async ({ page }) => {
+  test("neutral discrepancy and explanation are visible; documented finding can be corrected", async ({ page, context, baseURL }) => {
     await page.goto("/validation-routing/home");
-    await expect(page.locator("#main-content").getByText("Location differs from current GPS - location requires verification")).toBeVisible();
-    await expect(page.locator("#main-content").getByText(/Citizen explanation: Photo Taken Earlier/)).toBeVisible();
+    await expect(page.locator("#main-content").getByText("Location Differs from Current GPS — Verification Required")).toBeVisible();
+    await expect(page.locator("#main-content").getByText(/Citizen Explanation: Photo Taken Earlier/)).toBeVisible();
     await expect(page.locator("#main-content").getByText(/geographic jurisdiction is unverified/)).toBeVisible();
-    await expect(page.locator("#main-content").getByText(/within your jurisdiction: 0/)).toBeVisible();
-    await page.locator("#main-content").getByLabel("Evidence supporting deliberate fabrication").fill("Inspection and documented evidence support this reviewed finding.");
-    await page.locator("#main-content").getByLabel("Evidence or documented decision reference").fill("Inspection 123");
-    await page.locator("#main-content").getByRole("button", { name: "Record reviewed finding" }).click();
-    await page.locator("#main-content").getByRole("button", { name: "Confirm reviewed decision" }).click();
-    await expect(page.locator("#main-content").getByText(/within your jurisdiction: 1/)).toBeVisible();
-    await page.locator("#main-content").getByLabel("Correction reason").fill("The inspection record referenced the wrong site; this finding was erroneous.");
-    await page.locator("#main-content").getByLabel("Evidence or documented decision reference").fill("Correction 124");
-    await page.locator("#main-content").getByRole("button", { name: "Correct erroneous finding" }).click();
-    await page.locator("#main-content").getByRole("button", { name: "Confirm reviewed decision" }).click();
-    await expect(page.locator("#main-content").getByText(/within your jurisdiction: 0/)).toBeVisible();
-    await expect(page.locator("#main-content").getByText("Finding corrected", { exact: false })).toBeVisible();
+    const count = page.locator("dt:visible").filter({ hasText: "Active documented findings" }).locator("..").locator("dd");
+    await expect(count).toHaveText(/0\s*\/\s*3/);
+    await page.getByRole("button", { name: "Document Finding", exact: true }).click();
+    const record = page.getByRole("dialog", { name: "Document False-Report Finding", exact: true });
+    await record.getByLabel("Evidence Supporting Deliberate Fabrication").fill("Inspection and documented evidence support this reviewed finding.");
+    await record.getByLabel("Evidence or Documented Decision Reference").fill("Inspection 123");
+    await record.getByRole("button", { name: "Continue to Record Finding" }).click();
+    await record.getByRole("button", { name: "Confirm Reviewed Decision" }).click();
+    await expect(count).toHaveText(/1\s*\/\s*3/);
+    // Barangay documents the initial finding; City Engineering corrects it.
+    await expect(page.getByRole("button", { name: "Correct Finding", exact: true })).toHaveCount(0);
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-engineer" }), url: baseURL!, httpOnly: true }]);
+    await page.goto("/validation-routing/home");
+    await page.getByRole("button", { name: "Correct Finding", exact: true }).click();
+    const correction = page.getByRole("dialog", { name: "Correct False-Report Finding", exact: true });
+    await correction.getByLabel("Correction Reason").fill("The inspection record referenced the wrong site; this finding was erroneous.");
+    await correction.getByLabel("Evidence or Documented Decision Reference").fill("Correction 124");
+    await correction.getByRole("button", { name: "Continue to Correction" }).click();
+    await correction.getByRole("button", { name: "Confirm Reviewed Decision" }).click();
+    await expect(count).toHaveText(/0\s*\/\s*3/);
+    await page.getByText("View review history (2)", { exact: true }).click();
+    await expect(page.locator("#main-content").getByText(/^Finding Corrected ·/)).toBeVisible();
     await expect(page.locator("#main-content").getByText("Inspection 123", { exact: false })).toBeVisible();
   });
   test("matching and missing GPS use neutral labels", async ({ page }) => {
     await page.goto("/validation-routing/matching");
-    await expect(page.locator("#main-content").getByText("No significant discrepancy detected")).toBeVisible();
+    await expect(page.locator("#main-content").getByText("No Significant Discrepancy Detected")).toBeVisible();
     await page.goto("/validation-routing/manual");
-    await expect(page.locator("#main-content").getByText("Comparison unavailable", { exact: true })).toBeVisible();
+    await expect(page.locator("#main-content").getByText("Comparison Unavailable", { exact: true })).toBeVisible();
   });
   test("citizen cannot open the official review interface", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-citizen" }), url: baseURL! }]);
     await page.goto("/validation-routing/home");
     await expect(page).toHaveURL(/\/unauthorized/);
-    await expect(page.locator("#main-content").getByRole("button", { name: "Record reviewed finding" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Document Finding", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Correct Finding", exact: true })).toHaveCount(0);
   });
 });

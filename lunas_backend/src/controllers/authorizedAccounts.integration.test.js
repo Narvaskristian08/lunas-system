@@ -123,7 +123,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
 
     const validPayload = {
       firstName: 'Assigned', lastName: 'Worker', email: 'assigned-worker@example.test', phone: approved.phone,
-      repairTeam: 'Road Team',
+      repairAccountType: 'team', repairTeam: 'Road Team',
     };
     await call('post', '/users/repair-personnel', token).send({
       ...validPayload, organization: 'Forged Organization', role: 'admin', repairOrganization: 'Forged Organization'
@@ -221,7 +221,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
   });
   test('11: crafted self-profile updates cannot change role, status, approval or jurisdiction', async () => {
     const { user, token } = await actor('repair_personnel');
-    await call('patch', '/users/me', token).send({ firstName: 'Updated', role: 'admin', barangay: 'Lucao', accountStatus: 'active', isVerified: true }).expect(200);
+    await call('patch', '/users/me', token).send({ firstName: 'Updated', role: 'admin', barangay: 'Lucao', accountStatus: 'active', isVerified: true }).expect(403);
     const persisted = await User.findById(user.id);
     expect(persisted.role).toBe('repair_personnel');
     expect(persisted.barangay).toBeUndefined();

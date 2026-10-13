@@ -22,7 +22,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
         <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={notification.severity}>
-              {notification.severity === "information" ? "Information" : notification.severity}
+              {notification.severity.charAt(0).toUpperCase() + notification.severity.slice(1)}
             </StatusBadge>
             <StatusBadge tone={notification.read ? "neutral" : "information"}>
               {notification.read ? "Read" : "Unread"}
@@ -69,7 +69,7 @@ export function NotificationDetailPanel({ notification }: { notification: LunasN
             <div className="min-w-0">
               <h2 className="font-semibold text-slate-950">Related Record</h2>
               {related ? (
-                <p className="mono mt-1 break-all text-sm font-semibold text-slate-700">{related.id}</p>
+                <p className="mt-1 break-words text-sm font-semibold text-slate-700">{related.reference ?? related.label}</p>
               ) : (
                 <p className="mt-1 text-sm text-slate-600">No operational record is linked to this notice.</p>
               )}

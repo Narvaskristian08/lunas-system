@@ -99,9 +99,6 @@ export function NotificationDetailModal({
       ) : null}
       {state === "ready" && notification ? (
         <div className="space-y-4">
-          <p className="mono break-all text-xs font-medium text-slate-500">
-            Notification {notification.id}
-          </p>
           <NotificationDetailPanel notification={notification} />
         </div>
       ) : null}

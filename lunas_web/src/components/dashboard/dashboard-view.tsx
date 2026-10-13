@@ -62,6 +62,11 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
     "Overdue": "slaState=overdue",
   };
   const today = new Intl.DateTimeFormat("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" }).format(new Date());
+  const engineeringFilters: Record<string, string> = {
+    "Awaiting Review": "view=review",
+    "Awaiting Verification": "view=verification",
+    "Overdue": "view=orders&slaState=overdue",
+  };
 
   return (
     <div className="mx-auto max-w-370">
@@ -72,15 +77,15 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
         actions={<span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-600"><CalendarDays className="size-4" aria-hidden="true" /> {today}</span>}
       />
 
-      {viewer.backendRole === "city_engineer" ? <BarangayReportTable rows={data.barangayReports ?? []} /> : (      <DashboardGrid className={viewer.backendRole === "utility_provider" ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-4"}>
-        {data.metrics.map((item) => viewer.backendRole === "utility_provider"
-          ? <Link key={item.label} href={`/work-orders?view=orders&${providerFilters[item.label]}`} className="block rounded-2xl transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`${item.label}: ${item.value}. View work orders.`}><SummaryCard metric={item} /></Link>
+      <DashboardGrid className={viewer.backendRole === "utility_provider" || viewer.backendRole === "city_engineer" ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-4"}>
+        {data.metrics.map((item) => viewer.backendRole === "utility_provider" || viewer.backendRole === "city_engineer"
+          ? <Link key={item.label} href={`/work-orders?${viewer.backendRole === "city_engineer" ? engineeringFilters[item.label] : `view=orders&${providerFilters[item.label]}`}`} className="block rounded-2xl transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-brand-700" aria-label={`${item.label}: ${item.value}. Open queue.`}><SummaryCard metric={item} /></Link>
           : <SummaryCard key={item.label} metric={item} />)}
-      </DashboardGrid>)}
+      </DashboardGrid>
 
       {viewer.backendRole === "barangay_official" && data.reportingAppeals ? <ReportingAppealsCard initialAppeals={data.reportingAppeals} /> : null}
 
-      {viewer.backendRole !== "city_engineer" ? <Card className="mt-6 overflow-hidden">
+      <Card className="mt-6 overflow-hidden">
         <CardHeader title={copy.recordsTitle} description={copy.recordsDescription} />
         {data.records.length ? (
           <DataTable
@@ -106,7 +111,8 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
         ) : (
           <EmptyState icon="records" title={data.emptyTitle} description={data.emptyDescription} />
         )}
-      </Card> : null}
+      </Card>
+      {viewer.backendRole === "city_engineer" ? <div className="mt-6"><BarangayReportTable rows={data.barangayReports ?? []} /></div> : null}
     </div>
   );
 }

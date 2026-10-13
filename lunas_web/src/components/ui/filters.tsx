@@ -1,14 +1,20 @@
 "use client";
 
 import { CalendarDays, ListFilter, SlidersHorizontal } from "lucide-react";
-import type { SelectHTMLAttributes } from "react";
+import { useId, useState, type SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-export function FilterBar({ children, className }: { children: React.ReactNode; className?: string }) {
+export function FilterBar({ children, className, activeCount = 0 }: { children: React.ReactNode; className?: string; activeCount?: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
   return (
     <div className={cn("flex flex-col gap-3 border-y border-slate-200 bg-slate-50/70 p-4 lg:flex-row lg:items-center", className)}>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <span className="mr-1 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+      <button type="button" aria-expanded={expanded} aria-controls={contentId} onClick={() => setExpanded(value => !value)} className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 md:hidden">
+        <span className="inline-flex items-center gap-2"><SlidersHorizontal className="size-4" aria-hidden="true" /> Filters{activeCount > 0 ? ` (${activeCount})` : ""}</span>
+        <span>{expanded ? "Hide" : "Show"}</span>
+      </button>
+      <div id={contentId} className={cn("min-w-0 flex-1 flex-wrap items-center gap-2 md:flex", expanded ? "flex" : "hidden")}>
+        <span className="mr-1 hidden items-center gap-2 text-sm font-semibold text-slate-700 md:inline-flex">
           <SlidersHorizontal className="size-4" aria-hidden="true" /> Filters
         </span>
         {children}

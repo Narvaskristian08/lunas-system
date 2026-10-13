@@ -14,7 +14,7 @@ interface BackendNotification {
   createdAt?: string;
   isRead?: boolean;
   priority?: string;
-  data?: { incidentId?: string; workOrderId?: string; link?: string };
+  data?: { incidentId?: string; workOrderId?: string; reportNumber?: string; workOrderNumber?: string; link?: string };
 }
 
 function categoryFor(type = ""): NotificationCategory {
@@ -37,12 +37,16 @@ function toNotification(source: BackendNotification, role: string): LunasNotific
   const id = String(source.id ?? source._id ?? "");
   const workOrderId = source.data?.workOrderId;
   const incidentId = source.data?.incidentId;
+  const text = `${source.title ?? ""} ${source.message ?? ""}`;
+  const workOrderReference = source.data?.workOrderNumber ?? text.match(/\bWO-[A-Z0-9]+(?:-[A-Z0-9]+)+\b/i)?.[0];
+  const reportReference = source.data?.reportNumber ?? text.match(/\b(?:LUNAS|MOCK-WEB|DEMO-QA)-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/i)?.[0];
   const relatedRecord = workOrderId
-    ? { type: "work-order" as const, id: workOrderId, label: "Work Order", href: `/work-orders/${encodeURIComponent(workOrderId)}`, available: true }
+    ? { type: "work-order" as const, id: workOrderId, reference: workOrderReference, label: "Work Order", href: `/work-orders/${encodeURIComponent(workOrderId)}`, available: true }
     : incidentId
       ? {
           type: "incident" as const,
           id: incidentId,
+          reference: reportReference,
           label: "Incident",
           href: ["barangay_official", "city_engineer"].includes(role)
             ? `/validation-routing/${encodeURIComponent(incidentId)}`

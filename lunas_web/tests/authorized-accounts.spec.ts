@@ -21,12 +21,13 @@ test.describe("authorized account screens", () => {
       res.setHeader("Content-Type", "application/json");
       const send = (data: unknown, message = "Account updated") => res.end(JSON.stringify({ success: true, data, message }));
       if (path === "/users/me") return send({ id: adminId, firstName: "Test", lastName: "Administrator", email: "admin@example.test", role: req.headers.authorization?.includes("citizen") ? "citizen" : "admin", isActive: true, isVerified: true });
+      if (path === "/notifications") return send([]);
       if (path === "/users/authorized" && req.method === "GET") return send({ accounts, pagination: { page: 1, limit: 20, total: accounts.length, pages: 1 }, roles: ["barangay_official", "city_engineer", "repair_personnel", "utility_provider", "admin"], barangays: ["Pantal", "Lucao"], canManageAdministrators: false });
       if (path === "/users/authorized" && req.method === "POST") {
         accounts.push({ ...input, id: "507f191e810c19729de860b1", accountStatus: "pending_activation", version: 0, requiresActivation: true, approval: { authority: input.approvalAuthority, reference: input.approvalReference } });
         return send({}, "Account created. Activation email sent.");
       }
-      if (path.endsWith("/status")) {
+      if (/^\/users\/authorized\/[^/]+\/status$/.test(path) && req.method === "PATCH") {
         accounts[0].accountStatus = input.status;
         accounts[0].version++;
         return send({}, "Account status updated. Previous sessions revoked.");
@@ -72,7 +73,7 @@ test.describe("authorized account screens", () => {
     expect(bounds?.height).toBeLessThanOrEqual(700);
     expect(Math.abs(bounds!.x + bounds!.width / 2 - 195)).toBeLessThanOrEqual(1);
     expect(Math.abs(bounds!.y + bounds!.height / 2 - 350)).toBeLessThanOrEqual(1);
-    await profile.getByRole("button", { name: "Close account dialog" }).click();
+    await profile.getByRole("button", { name: "Close My Profile" }).click();
     await expect(profile).not.toBeVisible();
     await expect(page).toHaveURL(/\/admin\/users$/);
     await page.goto("/profile/change-password");
@@ -136,6 +137,7 @@ test.describe("authorized account screens", () => {
     await page.getByLabel("Approval Reference / Remarks").fill("Offline approval REF-001");
     await expect(page.getByLabel("System Role").locator('option[value="admin"]')).toHaveCount(0);
     await page.getByRole("button", { name: "Create Account and Send Activation" }).click();
+    await page.getByRole("button", { name: "Create and Send Activation", exact: true }).click();
     await expect(page.getByRole("cell", { name: "Pending Activation", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "View", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Ana Santos" })).toBeVisible();

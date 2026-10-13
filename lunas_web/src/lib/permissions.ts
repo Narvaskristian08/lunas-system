@@ -1,4 +1,13 @@
-import type { Permission, UserProfile, UserRole } from "@/types";
+import type { BackendUserRole, Permission, UserProfile, UserRole } from "@/types";
+
+export const roleLabels: Record<BackendUserRole, UserRole> = {
+  citizen: "Citizen",
+  repair_personnel: "Repair Personnel",
+  barangay_official: "Barangay Official",
+  city_engineer: "City Engineer",
+  utility_provider: "Utility Provider",
+  admin: "Admin",
+};
 
 export const rolePermissions: Record<UserRole, Permission[]> = {
   Citizen: [],

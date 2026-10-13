@@ -4,10 +4,10 @@ import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { BackendApiError, backendRequest, isBackendApiError, responseData } from "@/lib/api/backend.server";
-import { rolePermissions } from "@/lib/permissions";
+import { roleLabels, rolePermissions } from "@/lib/permissions";
 import { readSession } from "@/lib/auth/session.server";
 import { SESSION_REFRESH_UNAVAILABLE_HEADER } from "@/lib/auth/session-crypto";
-import type { BackendUserRole, Permission, UserProfile, UserRole } from "@/types";
+import type { BackendUserRole, Permission, UserProfile } from "@/types";
 
 interface BackendUser {
   id?: string;
@@ -42,14 +42,6 @@ interface BackendUser {
   createdAt?: string;
 }
 
-const roleLabels: Record<BackendUserRole, UserRole> = {
-  citizen: "Citizen",
-  repair_personnel: "Repair Personnel",
-  barangay_official: "Barangay Official",
-  city_engineer: "City Engineer",
-  utility_provider: "Utility Provider",
-  admin: "Admin",
-};
 
 function isBackendRole(role: string | undefined): role is BackendUserRole {
   return Boolean(role && role in roleLabels);

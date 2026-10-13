@@ -206,8 +206,8 @@ describe('secure incident evidence processing', () => {
       privacyProcessing: { status: 'applied', applied: true } });
   });
 
-  test.each(['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'])
-    ('runs the privacy detector for every incident scanner category: %s', async (category) => {
+  test.each(['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other'])(
+    'runs the privacy detector for every incident scanner category: %s', async (category) => {
       const sourceImage = await sharp({
         create: { width: 400, height: 300, channels: 3, background: '#9c1d36' }
       }).png().toBuffer();

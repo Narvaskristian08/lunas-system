@@ -36,7 +36,7 @@ export default async function WorkOrdersPage({ searchParams }: {
   ];
   return <div className="mx-auto max-w-[1680px]">
     <header className="mb-6"><p className="text-xs font-semibold text-brand-700">City Engineering</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Maintenance</h1><p className="mt-2 text-sm text-slate-600">Review incidents, monitor repairs, and verify completed work.</p></header>
-    <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{cards.map(card => <Link key={card.label} href={card.href} aria-current={card.selected ? "page" : undefined} className={`rounded-2xl border bg-white p-4 shadow-sm transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700 ${card.selected ? "border-brand-700 ring-2 ring-brand-700" : "border-slate-200"}`}><p className="text-sm font-medium text-slate-600">{card.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{card.value ?? "—"}</p></Link>)}</div>
+    <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">{cards.map(card => <Link key={card.label} href={card.href} aria-current={card.selected ? "page" : undefined} className={`rounded-2xl border bg-white p-4 shadow-sm transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700 ${card.selected ? "border-brand-700 ring-2 ring-brand-700" : "border-slate-200"}`}><p className="text-sm font-medium text-slate-600">{card.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{card.value ?? "—"}</p></Link>)}</div>
 
     {content}
   </div>;

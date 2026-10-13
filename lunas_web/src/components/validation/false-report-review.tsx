@@ -33,7 +33,7 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
   const correcting = data?.review?.finding === "confirmed_fabrication";
   const canRecord = role === "barangay_official";
   const canCorrect = role === "city_engineer" || role === "admin";
-  const canOpen = Boolean(data && ((status === "rejected" && canRecord) || (correcting && canCorrect)));
+  const canOpen = Boolean(data && (correcting ? canCorrect : status === "rejected" && canRecord));
   const latestHistory = data?.review?.history.at(-1);
 
   const openModal = () => {

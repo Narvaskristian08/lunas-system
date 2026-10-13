@@ -13,6 +13,7 @@ test.describe("engineering maintenance workspace", () => {
       requested.push(url.pathname + url.search);
       res.setHeader("Content-Type", "application/json");
       const send = (data: unknown) => res.end(JSON.stringify({ success: true, data }));
+      if (path === "/notifications") return send([]);
       if (path === "/users/me") return send({ id: "engineer", role: req.headers.authorization?.includes("provider") ? "utility_provider" : "city_engineer", firstName: "Test", lastName: "Engineer", email: "engineer@example.test", isActive: true, utilityCompany: "Water District" });
       if (path === "/dashboard/work-orders-summary") return send({ active: 2, awaitingFinalVerification: 1 });
       if (path === "/stats/validation-summary") return send({ pending: 3 });

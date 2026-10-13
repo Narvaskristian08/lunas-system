@@ -78,6 +78,7 @@ export interface LunasNotification {
   relatedRecord?: {
     type: "report" | "incident" | "work-order" | "sla" | "repair" | "account" | "announcement";
     id: string;
+    reference?: string;
     label: string;
     href?: string;
     available: boolean;

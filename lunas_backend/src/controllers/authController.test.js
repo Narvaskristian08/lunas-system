@@ -343,7 +343,7 @@ describe('public citizen registration', () => {
     }));
   });
 
-  test('uses a verified citizen registration email for password reset delivery', async () => {
+  test('uses a separately verified recovery email for password reset delivery', async () => {
     const user = {
       _id: '507f191e810c19729de860aa',
       email: 'juan@example.com',
@@ -351,6 +351,8 @@ describe('public citizen registration', () => {
       isActive: true,
       isVerified: true,
       firstName: 'Juan',
+      recoveryEmail: 'recovery@example.com',
+      recoveryEmailVerifiedAt: new Date(),
       createPasswordResetToken: jest.fn().mockReturnValue('reset-token'),
       save: jest.fn().mockResolvedValue()
     };
@@ -395,6 +397,18 @@ describe('public citizen registration', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(User.updateOne).toHaveBeenCalledWith(expect.objectContaining({ passwordResetCodeAttempts: { $lt: 5 } }), { $inc: { passwordResetCodeAttempts: 1 } });
     expect(res.json.mock.calls[0][0].data).toBeUndefined();
+  });
+
+  test('does not send a reset code to personnel without a verified recovery email', async () => {
+    const user = { _id: '507f191e810c19729de860aa', role: 'city_engineer', isActive: true, isVerified: true };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    const res = createResponse();
+    await forgotPassword({ body: { email: 'juan@example.com' }, ip: '127.0.0.1', headers: {} }, res, jest.fn());
+    expect(require('../services/passwordResetDeliveryService').deliverPasswordReset).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({ reason: 'recovery_email_unavailable' })
+    }));
   });
 
   test('rejects invalid credentials and inactive accounts without issuing tokens', async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, CheckCheck, CircleAlert, RefreshCw, X } from "lucide-react";
+import { Bell, CheckCheck, RefreshCw, X } from "lucide-react";
 import { PermissionGate } from "@/components/auth/permission-gate";
 import { PageHeader } from "@/components/layout/page-header";
 import { NotificationItem } from "@/components/notifications/notification-item";
@@ -44,6 +44,7 @@ function NotificationListSkeleton() {
 function NotificationsWorkspace({ initialNotificationId }: { initialNotificationId?: string }) {
   const { notify } = useToast();
   const requestId = useRef(0);
+  const invalidateRequest = useCallback(() => { ++requestId.current; }, []);
   const [total, setTotal] = useState(0);
   const [unread, setUnread] = useState(0);
   const [delayedQuery, setDelayedQuery] = useState("");
@@ -57,7 +58,14 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [refreshedAt, setRefreshedAt] = useState<Date | null>(null);
   const [openNotificationId, setOpenNotificationId] = useState(initialNotificationId ?? null);
+  const reloadInbox = useCallback(() => {
+    ++requestId.current;
+    setLoadState("loading");
+    setRevision((current) => current + 1);
+  }, []);
   useEffect(() => { const timer = setTimeout(() => setDelayedQuery(query), 300); return () => clearTimeout(timer); }, [query]);
 
 
@@ -71,6 +79,9 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
       setTotal(result.total);
       setUnread(result.unreadCount);
       setSelected(new Set());
+      const lastPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
+      if (page > lastPage) { setPage(lastPage); return; }
+      setRefreshedAt(new Date());
       setLoadState("success");
     } catch (error) {
       if (currentRequest !== requestId.current) return;
@@ -85,8 +96,8 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
+    return () => { window.clearTimeout(timer); invalidateRequest(); };
+  }, [load, revision, invalidateRequest]);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const visiblePage = page;
@@ -105,8 +116,8 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
 
   const handleMarkedRead = useCallback((id: string) => {
     setItems((current) => current.map((item) => item.id === id ? { ...item, read: true } : item));
-    setUnread((current) => Math.max(0, current - 1));
-  }, []);
+    reloadInbox();
+  }, [reloadInbox]);
 
   const closeNotification = () => {
     setOpenNotificationId(null);
@@ -125,7 +136,7 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
       else await markNotificationsReadAction(ids);
       const idSet = new Set(ids);
       setItems((current) => current.map((notification) => idSet.has(notification.id) ? { ...notification, read: true } : notification));
-      await load();
+      reloadInbox();
       window.dispatchEvent(new Event("lunas-notifications-read"));
       setSelected(new Set());
       notify({
@@ -133,9 +144,10 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
         tone: "success",
       });
     } catch (error) {
+      reloadInbox();
       notify({
         title: error instanceof Error && error.message === "OFFLINE" ? "You’re offline" : "Read status was not updated",
-        message: "Your notification list has not been changed. Reconnect or try again.",
+        message: "Some updates may have saved. Refresh the inbox before trying again.",
         tone: "error",
       });
     } finally {
@@ -152,6 +164,8 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
           ? "Loading your latest operational and account alerts…"
           : loadState === "offline"
             ? "Reconnect to refresh your notification inbox."
+            : loadState === "error"
+              ? "Your notification inbox could not be loaded. Try refreshing."
             : unread
               ? `${unread} unread notification${unread === 1 ? "" : "s"} need your attention.`
               : "You’re caught up. New operational alerts will appear here."}
@@ -185,14 +199,14 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
             />
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <Bell className="size-4 text-brand-700" aria-hidden="true" />
-              <span><strong className="text-slate-950">{total}</strong> matching</span>
+              <span><strong className="text-slate-950">{loadState === "success" ? total : "—"}</strong> matching</span>
               <span className="text-slate-300" aria-hidden="true">•</span>
-              <span><strong className="text-brand-800">{unread}</strong> unread</span>
+              <span><strong className="text-brand-800">{loadState === "success" ? unread : "—"}</strong> unread</span>
             </div>
           </div>
         </div>
 
-        <FilterBar>
+        <FilterBar activeCount={[category !== "all", readState !== "all", dateRange !== "all", sort !== "newest"].filter(Boolean).length}>
           <FilterSelect
             label="Notification Category"
             value={category}
@@ -307,10 +321,9 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
         ) : null}
       </Card>
 
-      <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-5 text-slate-600">
-        <CircleAlert className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden="true" />
-        This screen supports reading and filtering notifications. It does not provide delete or archive controls.
-        <Button type="button" variant="ghost" size="sm" className="ml-auto hidden min-h-8 shrink-0 px-2 sm:inline-flex" onClick={retryLoad}>
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-5 text-slate-600">
+        <p>{loadState === "success" && refreshedAt ? <>Last refreshed <time dateTime={refreshedAt.toISOString()}>{refreshedAt.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}</time></> : "Refresh to get the latest notifications."}</p>
+        <Button type="button" variant="ghost" size="sm" className="min-h-10 shrink-0 px-2" disabled={loadState === "loading" || saving} onClick={retryLoad}>
           <RefreshCw className="size-3.5" aria-hidden="true" /> Refresh
         </Button>
       </div>
