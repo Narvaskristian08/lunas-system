@@ -21,12 +21,14 @@ class AuthController extends ChangeNotifier {
   AuthStatus _status = AuthStatus.initializing;
   AuthUser? _user;
   String? _message;
+  Map<String, String> _profileFieldErrors = const {};
   bool _isSubmitting = false;
   RegistrationMfaChallenge? _pendingRegistration;
 
   AuthStatus get status => _status;
   AuthUser? get user => _user;
   String? get message => _message;
+  Map<String, String> get profileFieldErrors => _profileFieldErrors;
   bool get isSubmitting => _isSubmitting;
   RegistrationMfaChallenge? get pendingRegistration => _pendingRegistration;
   bool get isCitizen => _user?.isCitizen == true;
@@ -253,6 +255,7 @@ class AuthController extends ChangeNotifier {
   }) async {
     _isSubmitting = true;
     _message = null;
+    _profileFieldErrors = const {};
     notifyListeners();
     try {
       _user = await _authService.updateProfile(
@@ -265,9 +268,11 @@ class AuthController extends ChangeNotifier {
         currentAddress: _user?.address,
         address: address,
       );
+      _profileFieldErrors = const {};
       return true;
     } on ApiException catch (error) {
       _message = error.message;
+      _profileFieldErrors = error.fieldErrors;
       return false;
     } catch (_) {
       _message = 'We could not update your profile. Please try again.';

@@ -8,6 +8,7 @@ import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/features/citizen/presentation/widgets/citizen_scaffold.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
+import 'package:lunas_mobile/features/profile/presentation/utils/phone_number_formatter.dart';
 
 class CitizenProfileScreen extends StatefulWidget {
   const CitizenProfileScreen({super.key});
@@ -17,6 +18,24 @@ class CitizenProfileScreen extends StatefulWidget {
 }
 
 class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final refreshed = await AuthScope.of(context).refreshProfile();
+      if (!refreshed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not refresh profile details. Please try again later.',
+            ),
+          ),
+        );
+      }
+    });
+  }
+
   Future<void> _confirmLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -87,77 +106,60 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Theme(
-                data: Theme.of(
-                  context,
-                ).copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  key: const PageStorageKey('citizen-personal-details'),
-                  initiallyExpanded: false,
-                  collapsedBackgroundColor: Colors.white,
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  collapsedShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  tilePadding: const EdgeInsets.symmetric(
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
                   ),
-                  childrenPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                  ),
-                  title: Text(
-                    'Personal Details',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  children: [
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
-                    _ProfileDetail(
-                      label: 'First Name',
-                      value: user?.firstName ?? '',
-                    ),
-                    if (user?.middleName?.isNotEmpty ?? false)
-                      _ProfileDetail(
-                        label: 'Middle Name',
-                        value: user!.middleName!,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'Personal Details',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
                       ),
-                    _ProfileDetail(
-                      label: 'Last Name',
-                      value: user?.lastName ?? '',
-                    ),
-                    if (user?.suffix?.isNotEmpty ?? false)
-                      _ProfileDetail(label: 'Suffix', value: user!.suffix!),
-                    _ProfileDetail(
-                      label: 'Mobile Number',
-                      value: (user?.phone.trim().isNotEmpty ?? false)
-                          ? user!.phone
-                          : 'Mobile number not added',
-                    ),
-                    _ProfileDetail(
-                      label: 'Address',
-                      value:
-                          (user?.address?['street']
-                                  ?.toString()
-                                  .trim()
-                                  .isNotEmpty ??
-                              false)
-                          ? user!.address!['street'].toString()
-                          : 'Address not added',
-                      last: true,
-                    ),
-                  ],
+                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                      _ProfileDetail(
+                        label: 'First Name',
+                        value: user?.firstName ?? '',
+                      ),
+                      if (user?.middleName?.isNotEmpty ?? false)
+                        _ProfileDetail(
+                          label: 'Middle Name',
+                          value: user!.middleName!,
+                        ),
+                      _ProfileDetail(
+                        label: 'Last Name',
+                        value: user?.lastName ?? '',
+                      ),
+                      if (user?.suffix?.isNotEmpty ?? false)
+                        _ProfileDetail(label: 'Suffix', value: user!.suffix!),
+                      _ProfileDetail(
+                        label: 'Mobile Number',
+                        value: formatPhilippineMobileNumber(user?.phone ?? ''),
+                      ),
+                      _ProfileDetail(
+                        label: 'Address',
+                        value: user?.address?['street']?.toString() ?? '',
+                        last: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
               LunasButton(
-                label: 'Edit Profile',
+                label: 'Edit Personal Details',
                 onPressed: auth.isSubmitting
                     ? null
                     : () => Navigator.of(context, rootNavigator: true).push(
@@ -222,33 +224,48 @@ class _ProfileDetail extends StatelessWidget {
     children: [
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final stack =
+                constraints.maxWidth < 320 ||
+                MediaQuery.textScalerOf(context).scale(14) >= 19;
+            final labelText = Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 3,
-              child: Text(
-                value.trim().isEmpty ? 'Not provided' : value,
-                textAlign: TextAlign.right,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: value.trim().isEmpty
-                      ? FontWeight.normal
-                      : FontWeight.w500,
-                  height: 1.4,
-                ),
+            );
+            final displayValue = value.trim().isEmpty ? 'Not provided' : value;
+            final valueText = Text(
+              displayValue,
+              textAlign: stack ? TextAlign.left : TextAlign.right,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: value.trim().isEmpty
+                    ? FontWeight.normal
+                    : FontWeight.w500,
+                height: 1.4,
               ),
-            ),
-          ],
+            );
+            if (stack) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  labelText,
+                  const SizedBox(height: AppSpacing.xxs),
+                  valueText,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 2, child: labelText),
+                const SizedBox(width: 12),
+                Expanded(flex: 3, child: valueText),
+              ],
+            );
+          },
         ),
       ),
       if (!last) const Divider(height: 1, color: Color(0xFFF1F5F9)),

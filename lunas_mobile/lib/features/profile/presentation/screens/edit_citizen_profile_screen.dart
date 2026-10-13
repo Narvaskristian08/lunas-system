@@ -1,26 +1,40 @@
-import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
-import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart';
+import 'package:lunas_mobile/features/profile/presentation/utils/phone_number_formatter.dart';
 
 class EditCitizenProfileScreen extends StatefulWidget {
   const EditCitizenProfileScreen({super.key});
+
   @override
   State<EditCitizenProfileScreen> createState() =>
       _EditCitizenProfileScreenState();
 }
 
 class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
+  static const _fieldKeys = [
+    'firstName',
+    'middleName',
+    'lastName',
+    'suffix',
+    'phone',
+    'address',
+  ];
+
   final _key = GlobalKey<FormState>();
   final _fields = List.generate(6, (_) => TextEditingController());
   List<String>? _initial;
+  Map<String, String> _fieldErrors = const {};
   bool _noMiddleName = false;
   bool _initialNoMiddle = false;
   bool _saving = false;
   bool _leaving = false;
   String? _error;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -31,26 +45,34 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
       user.middleName ?? '',
       user.lastName,
       user.suffix ?? '',
-      user.phone,
+      formatPhilippineMobileNumber(user.phone),
       user.address?['street']?.toString() ?? '',
     ];
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < _fields.length; i++) {
       _fields[i].text = _initial![i];
-      _fields[i].addListener(_changed);
+      _fields[i].addListener(() => _changed(i));
     }
     _noMiddleName = _initialNoMiddle = (user.middleName ?? '').isEmpty;
   }
 
-  void _changed() {
-    if (mounted) setState(() {});
+  void _changed(int index) {
+    if (!mounted) return;
+    final fieldKey = _fieldKeys[index];
+    setState(() {
+      _error = null;
+      if (_fieldErrors.containsKey(fieldKey)) {
+        _fieldErrors = Map.of(_fieldErrors)..remove(fieldKey);
+      }
+    });
   }
 
   bool get _dirty =>
       _noMiddleName != _initialNoMiddle ||
       List.generate(
-        6,
+        _fields.length,
         (i) => _fields[i].text.trim() != _initial![i],
       ).any((value) => value);
+
   @override
   void dispose() {
     for (final field in _fields) {
@@ -92,11 +114,12 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
   }
 
   Future<void> _save() async {
-    if (_saving || !_key.currentState!.validate()) return;
     setState(() {
-      _saving = true;
+      _fieldErrors = const {};
       _error = null;
     });
+    if (_saving || !_key.currentState!.validate()) return;
+    setState(() => _saving = true);
     final auth = AuthScope.of(context);
     final ok = await auth.updateProfile(
       firstName: _fields[0].text.trim(),
@@ -104,7 +127,7 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
       noMiddleName: _noMiddleName,
       lastName: _fields[2].text.trim(),
       suffix: _fields[3].text.trim(),
-      phone: _fields[4].text.replaceAll(RegExp(r'\s+'), ''),
+      phone: normalizePhilippineMobileNumber(_fields[4].text),
       address: _fields[5].text.trim(),
     );
     if (!mounted) return;
@@ -119,12 +142,15 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.pop(context);
       });
-    } else {
-      setState(() {
-        _saving = false;
-        _error = auth.message;
-      });
+      return;
     }
+
+    setState(() {
+      _saving = false;
+      _fieldErrors = auth.profileFieldErrors;
+      _error = _fieldErrors.isEmpty ? auth.message : null;
+    });
+    _key.currentState?.validate();
   }
 
   Widget _field(
@@ -132,41 +158,82 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
     String label, {
     int limit = 80,
     TextInputType? keyboard,
+    TextCapitalization capitalization = TextCapitalization.none,
+    List<TextInputFormatter>? inputFormatters,
+    int minLines = 1,
+    int maxLines = 1,
+    TextInputAction? textInputAction = TextInputAction.next,
   }) => TextFormField(
     controller: _fields[index],
     enabled: !_saving && !(index == 1 && _noMiddleName),
     maxLength: limit,
+    minLines: minLines,
+    maxLines: maxLines,
     keyboardType: keyboard,
-    textCapitalization: index < 4
-        ? TextCapitalization.words
-        : TextCapitalization.none,
-    decoration: InputDecoration(
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      labelText: label,
-      counterText: '',
-    ),
+    textCapitalization: capitalization,
+    textInputAction: textInputAction,
+    inputFormatters: inputFormatters,
+    decoration: InputDecoration(labelText: label, counterText: ''),
     validator: (value) {
       final text = (value ?? '').trim();
       if ((index == 0 || index == 2 || (index == 1 && !_noMiddleName)) &&
           text.isEmpty) {
         return 'Enter your ${label.toLowerCase()}.';
       }
-      if (index == 4 &&
-          text.isEmpty &&
-          AuthScope.of(context).user?.isCitizen == false) {
-        return 'Enter your mobile number.';
+      if (index == 4 && text.isNotEmpty) {
+        final normalized = normalizePhilippineMobileNumber(text);
+        if (!RegExp(r'^(\+639|09)\d{9}$').hasMatch(normalized)) {
+          return 'Enter a valid Philippine mobile number.';
+        }
       }
-      if (index == 4 &&
-          text.isNotEmpty &&
-          !RegExp(
-            r'^(\+639|09)\d{9}$',
-          ).hasMatch(text.replaceAll(RegExp(r'\s+'), ''))) {
-        return 'Enter a valid Philippine mobile number.';
-      }
-      return null;
+      return _fieldErrors[_fieldKeys[index]];
     },
   );
+
+  Widget _sectionTitle(String title) => Text(
+    title,
+    style: Theme.of(
+      context,
+    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+  );
+
+  Widget _accountEmail(String email) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Email Address',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            email,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Email address cannot be changed here.',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: _leaving,
@@ -175,78 +242,146 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
     },
     child: Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: _saving ? null : _back,
-          icon: const Icon(Icons.arrow_back),
-        ),
+      appBar: LunasAppBar(
+        title: 'Edit Personal Details',
+        subtitle: 'Update your name and contact information.',
+        showBackButton: true,
+        onBack: _saving ? () {} : _back,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Form(
-          key: _key,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const AuthHeading(
-                title: 'Edit Profile',
-                description: 'Update your personal and contact details.',
-              ),
-              const SizedBox(height: 24),
-              _field(0, 'First Name'),
-              const SizedBox(height: 16),
-              _field(1, 'Middle Name'),
-              CheckboxListTile(
-                value: _noMiddleName,
-                onChanged: _saving
-                    ? null
-                    : (value) => setState(() => _noMiddleName = value ?? false),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: const Text("I don't have a middle name"),
-              ),
-              const SizedBox(height: 8),
-              _field(2, 'Last Name'),
-              const SizedBox(height: 16),
-              _field(3, 'Suffix (Optional)', limit: 20),
-              const SizedBox(height: 16),
-              _field(
-                4,
-                AuthScope.of(context).user?.isCitizen == true
-                    ? 'Mobile Number (Optional)'
-                    : 'Mobile Number',
-                limit: 13,
-                keyboard: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              _field(5, 'Address (Optional)', limit: 160),
-              const SizedBox(height: 16),
-              TextFormField(
-                initialValue: AuthScope.of(context).user?.email,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  helperText: 'Email address cannot be changed here.',
-                ),
-              ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    constraints.maxWidth < 360 ? AppSpacing.md : AppSpacing.xl,
+                    AppSpacing.lg,
+                    constraints.maxWidth < 360 ? AppSpacing.md : AppSpacing.xl,
+                    AppSpacing.xl,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 760),
+                      child: Form(
+                        key: _key,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _sectionTitle('Name'),
+                            const SizedBox(height: AppSpacing.md),
+                            _field(
+                              0,
+                              'First Name',
+                              capitalization: TextCapitalization.words,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            _field(
+                              1,
+                              'Middle Name',
+                              capitalization: TextCapitalization.words,
+                            ),
+                            CheckboxListTile(
+                              value: _noMiddleName,
+                              onChanged: _saving
+                                  ? null
+                                  : (value) => setState(() {
+                                      _noMiddleName = value ?? false;
+                                      _fieldErrors = Map.of(_fieldErrors)
+                                        ..remove('middleName');
+                                    }),
+                              contentPadding: EdgeInsets.zero,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              title: const Text("I don't have a middle name"),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            _field(
+                              2,
+                              'Last Name',
+                              capitalization: TextCapitalization.words,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            _field(
+                              3,
+                              'Suffix (Optional)',
+                              limit: 20,
+                              capitalization: TextCapitalization.words,
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                            _sectionTitle('Contact Details'),
+                            const SizedBox(height: AppSpacing.md),
+                            _field(
+                              4,
+                              'Mobile Number (Optional)',
+                              limit: 16,
+                              keyboard: TextInputType.phone,
+                              inputFormatters: const [
+                                PhilippineMobileInputFormatter(),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            _field(
+                              5,
+                              'Address (Optional)',
+                              limit: 160,
+                              keyboard: TextInputType.streetAddress,
+                              capitalization: TextCapitalization.sentences,
+                              minLines: 2,
+                              maxLines: 3,
+                              textInputAction: TextInputAction.newline,
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                            _sectionTitle('Account'),
+                            const SizedBox(height: AppSpacing.md),
+                            _accountEmail(
+                              AuthScope.of(context).user?.email ?? '',
+                            ),
+                            if (_error != null)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: AppSpacing.md,
+                                ),
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              const SizedBox(height: 24),
-              LunasButton(
-                label: 'Save Changes',
-                isLoading: _saving,
-                onPressed: _dirty && !_saving ? _save : null,
               ),
-            ],
-          ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  MediaQuery.sizeOf(context).width < 360
+                      ? AppSpacing.md
+                      : AppSpacing.xl,
+                  AppSpacing.md,
+                  MediaQuery.sizeOf(context).width < 360
+                      ? AppSpacing.md
+                      : AppSpacing.xl,
+                  AppSpacing.md,
+                ),
+                child: LunasButton(
+                  label: 'Save Changes',
+                  isLoading: _saving,
+                  onPressed: _dirty && !_saving ? _save : null,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     ),
