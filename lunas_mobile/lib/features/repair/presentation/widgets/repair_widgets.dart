@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/theme/text_styles.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/core/widgets/lunas_app_bar.dart';
 import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
@@ -395,8 +396,8 @@ class RepairWorkOrderCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             workOrderId,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontFamily: 'RobotoMono',
+                            style: AppTextStyles.technicalHash.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -534,7 +535,12 @@ class LiveRepairWorkOrderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(workOrder.orderNumber, style: theme.textTheme.bodySmall),
+          Text(
+            workOrder.orderNumber,
+            style: AppTextStyles.technicalHash.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           _CompactDetail(
             icon: Icons.location_on_outlined,

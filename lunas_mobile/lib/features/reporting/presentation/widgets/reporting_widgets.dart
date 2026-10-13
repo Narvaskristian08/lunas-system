@@ -73,6 +73,7 @@ class ReportStatusChip extends StatelessWidget {
     this.icon,
     this.isCritical = false,
     this.color,
+    this.maxWidth = 180,
     super.key,
   });
 
@@ -80,6 +81,7 @@ class ReportStatusChip extends StatelessWidget {
   final IconData? icon;
   final bool isCritical;
   final Color? color;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -87,28 +89,128 @@ class ReportStatusChip extends StatelessWidget {
     final chipColor =
         color ??
         (isCritical ? theme.colorScheme.error : theme.colorScheme.tertiary);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: chipColor),
-            const SizedBox(width: AppSpacing.xs),
-          ],
-          Text(
-            label.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(color: chipColor),
+    return Semantics(
+      label: label,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
-        ],
+          decoration: BoxDecoration(
+            color: chipColor.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: chipColor),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              Flexible(
+                child: Text(
+                  label.toUpperCase(),
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelSmall?.copyWith(color: chipColor),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class ReportStatusHeader extends StatelessWidget {
+  const ReportStatusHeader({
+    required this.title,
+    required this.status,
+    this.leading,
+    this.statusColor,
+    this.titleStyle,
+    super.key,
+  });
+
+  final String title;
+  final String status;
+  final Widget? leading;
+  final Color? statusColor;
+  final TextStyle? titleStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedTitleStyle =
+        titleStyle ?? Theme.of(context).textTheme.titleMedium;
+    final statusStyle = Theme.of(context).textTheme.labelSmall;
+    final scaler = MediaQuery.textScalerOf(context);
+
+    double textWidth(String value, TextStyle? style) {
+      final painter = TextPainter(
+        text: TextSpan(text: value, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      return painter.width;
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final leadingWidth = leading == null ? 0.0 : 24 + AppSpacing.sm;
+        final titleWidth = textWidth(title, resolvedTitleStyle);
+        final statusWidth =
+            textWidth(status.toUpperCase(), statusStyle) + AppSpacing.sm * 2;
+        final requiredWidth =
+            leadingWidth + titleWidth + AppSpacing.sm + statusWidth;
+        final useSecondRow = requiredWidth > constraints.maxWidth;
+
+        final titleRow = Row(
+          children: [
+            if (leading != null) ...[
+              SizedBox(width: 24, height: 24, child: leading),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: resolvedTitleStyle,
+              ),
+            ),
+          ],
+        );
+
+        if (useSecondRow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              titleRow,
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ReportStatusChip(
+                  label: status,
+                  color: statusColor,
+                  maxWidth: constraints.maxWidth.clamp(0.0, 180.0),
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: titleRow),
+            const SizedBox(width: AppSpacing.sm),
+            ReportStatusChip(label: status, color: statusColor),
+          ],
+        );
+      },
     );
   }
 }

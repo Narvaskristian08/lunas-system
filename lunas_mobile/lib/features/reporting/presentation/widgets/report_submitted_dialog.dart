@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/theme/text_styles.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
@@ -56,8 +57,10 @@ class ReportSubmittedDialog extends StatelessWidget {
                   SelectableText(
                     report.reportNumber,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: AppTextStyles.technicalHash.copyWith(
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],

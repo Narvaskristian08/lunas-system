@@ -14,7 +14,9 @@ class LunasFilterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 34,
+      height:
+          34 *
+          (MediaQuery.textScalerOf(context).scale(12) / 12).clamp(1.0, 3.0),
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
@@ -32,7 +34,7 @@ class LunasFilterButton extends StatelessWidget {
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
-        child: Text(label),
+        child: Text(label, textAlign: TextAlign.center),
       ),
     );
   }

@@ -31,8 +31,12 @@ class RepairService {
       queryParameters: {
         'page': '$page',
         'limit': '$limit',
-        if (repairView == 'overdue' || overdueOnly) 'slaState': 'overdue',
-        if (repairView != 'overdue') 'repairView': ?repairView,
+        if (repairView == 'overdue' || overdueOnly)
+          'slaState': 'overdue'
+        else if (repairView == 'approaching')
+          'slaState': 'approaching',
+        if (repairView != 'overdue' && repairView != 'approaching')
+          'repairView': ?repairView,
         if (status != null && status != RepairWorkOrderStatus.unknown)
           'status': status.apiValue,
       },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
+import 'package:lunas_mobile/core/theme/text_styles.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/notifications/data/models/notification_data.dart';
 export 'package:lunas_mobile/features/notifications/data/models/notification_data.dart';
@@ -99,7 +100,7 @@ class NotificationCard extends StatelessWidget {
                             : 'Linked Report'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.copyWith(
+                    style: AppTextStyles.technicalHash.copyWith(
                       color: AppColorsLight.brandBase,
                       fontWeight: FontWeight.w600,
                     ),

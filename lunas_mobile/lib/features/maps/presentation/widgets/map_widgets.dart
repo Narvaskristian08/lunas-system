@@ -131,9 +131,11 @@ class NearbyReportCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  marker.title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                ReportStatusHeader(
+                  title: marker.title,
+                  status: marker.status,
+                  statusColor: marker.color,
+                  titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -144,7 +146,6 @@ class NearbyReportCard extends StatelessWidget {
               ],
             ),
           ),
-          ReportStatusChip(label: marker.status, color: marker.color),
         ],
       ),
     );
@@ -176,18 +177,13 @@ class MarkerDetailsSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    marker.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                ReportStatusChip(label: marker.status, color: marker.color),
-              ],
+            ReportStatusHeader(
+              title: marker.title,
+              status: marker.status,
+              statusColor: marker.color,
+              titleStyle: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(marker.id, style: Theme.of(context).textTheme.bodySmall),

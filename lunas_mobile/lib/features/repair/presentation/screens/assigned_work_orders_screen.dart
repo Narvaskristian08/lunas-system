@@ -109,11 +109,14 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
 
   void _selectStatus(String? status) {
     if (status == 'overdue') {
-      setState(() => _overdueOnly = !_overdueOnly);
+      setState(() {
+        _overdueOnly = !_overdueOnly;
+        if (_status == 'approaching') _status = null;
+      });
     } else {
       setState(() {
         _status = status;
-        if (status == null) _overdueOnly = false;
+        if (status == null || status == 'approaching') _overdueOnly = false;
       });
     }
     _load();
@@ -187,7 +190,7 @@ class _AssignedWorkOrdersScreenState extends State<AssignedWorkOrdersScreen>
           'assigned' => 'No assigned repairs',
           'active' => 'No active repairs',
           'correction' => 'No repairs need correction',
-          'overdue' => 'No overdue repairs',
+          'approaching' => 'No repairs approaching their deadline',
           'review' => 'No repairs awaiting review',
           _ => 'No work orders',
         },
@@ -238,6 +241,7 @@ class _StatusFilters extends StatelessWidget {
       ('active', 'Active Repairs'),
       ('correction', 'Needs Correction'),
       ('overdue', 'Overdue'),
+      ('approaching', 'Approaching Deadline'),
       ('review', 'Awaiting Review'),
     ];
     return SingleChildScrollView(

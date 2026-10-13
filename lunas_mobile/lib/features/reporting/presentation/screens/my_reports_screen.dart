@@ -247,16 +247,18 @@ class _MyReportsScreenState extends State<MyReportsScreen>
                 alignment: const Alignment(0, -.18),
                 child: LunasStateView(
                   state: LunasViewState.empty,
-                  title: _reports.isEmpty
+                  title: _filter == 'all' && _query.trim().isEmpty
                       ? 'No reports yet'
                       : 'No matching reports',
-                  message: _reports.isEmpty
+                  message: _filter == 'all' && _query.trim().isEmpty
                       ? 'Start a report when you see an infrastructure concern.'
                       : _query.trim().isNotEmpty
                       ? 'Try another search or clear the search and filters.'
                       : 'Choose another status to see other reports.',
-                  actionLabel: _reports.isEmpty ? 'Create report' : null,
-                  onAction: _reports.isEmpty
+                  actionLabel: _filter == 'all' && _query.trim().isEmpty
+                      ? 'Create report'
+                      : null,
+                  onAction: _filter == 'all' && _query.trim().isEmpty
                       ? () => context.push('/reports/new')
                       : null,
                 ),
