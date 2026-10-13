@@ -159,7 +159,7 @@ export function RepairPersonnelConsole({
           <p className="text-sm leading-6 text-slate-600">Update access for {statusTarget.firstName} {statusTarget.lastName}. Deactivation prevents sign-in and revokes existing sessions. Their account and work history are retained.</p>
           <label className="block text-sm font-medium">Reason *<textarea name="reason" required maxLength={500} className={inputClass} rows={3} /></label>
           {formError ? <p role="alert" className="text-sm text-red-700">{formError}</p> : null}
-          <div className="flex justify-end gap-3"><Button type="button" variant="secondary" disabled={pending} onClick={() => setStatusTarget(null)}>Cancel</Button><Button type="submit" loading={pending}>Confirm</Button></div>
+          <div className="flex justify-end gap-3"><Button type="button" variant="secondary" disabled={pending} onClick={() => setStatusTarget(null)}>Cancel</Button><Button type="submit" variant={statusTarget.accountStatus === "deactivated" || statusTarget.accountStatus === "suspended" ? "primary" : "danger"} loading={pending}>{statusTarget.accountStatus === "deactivated" || statusTarget.accountStatus === "suspended" ? "Reactivate Personnel" : "Deactivate Personnel"}</Button></div>
         </form> : null}
       </Modal>
     </div>

@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/features/auth/presentation/widgets/auth_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
@@ -64,7 +65,8 @@ class _EditCitizenProfileScreenState extends State<EditCitizenProfileScreen> {
         !_dirty ||
         await showDialog<bool>(
               context: context,
-              builder: (context) => AlertDialog(
+              builder: (context) => LunasConfirmationDialog(
+                destructive: true,
                 title: const Text('Discard Changes?'),
                 content: const Text(
                   'Your unsaved profile changes will be lost.',

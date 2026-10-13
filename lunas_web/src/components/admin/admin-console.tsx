@@ -113,22 +113,29 @@ function AccountForm({ account, data, readOnly, onSaved, onBusyChange }: { accou
   const [role, setRole] = useState<AuthorizedAccount["role"]>(account?.role || "barangay_official");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [confirmation, setConfirmation] = useState<FormData | null>(null);
   const roles = data.roles.filter(value => value !== "admin" || data.canManageAdministrators || account?.role === "admin");
   function field(name: string, label: string, value = "", required = true, maxLength = 160, type = "text") {
     return <label className="block text-sm font-medium">{label}{required ? " *" : ""}<input className={inputClass} name={name} defaultValue={value} type={type} required={required} maxLength={maxLength} /></label>;
   }
-  return <form onSubmit={event => {
-    event.preventDefault();
-    if (pending || readOnly) return;
-    const form = new FormData(event.currentTarget);
+  const saveConfirmed = () => {
+    if (!confirmation || pending) return;
+    const form = confirmation;
     onBusyChange(true);
     startTransition(async () => {
       try {
         const result = await manageAccountAction(account ? "edit" : "create", account?.id || "", form);
         if (result.ok) onSaved(result.message); else setError(result.message);
       } catch { setError("The service could not be reached. Refresh before retrying."); }
-      finally { onBusyChange(false); }
+      finally { setConfirmation(null); onBusyChange(false); }
     });
+  };
+  return <form onSubmit={event => {
+    event.preventDefault();
+    if (pending || readOnly) return;
+    const form = new FormData(event.currentTarget);
+    setConfirmation(form);
+    onBusyChange(true);
   }}>
     <p className="mb-5 text-sm text-slate-600">{account ? `Status: ${accountStatusLabels[account.accountStatus]}.` : "Status: Pending Activation. The person will receive an email link to choose their own password."} Approval below records a decision already made by the responsible organization.</p>
     <input type="hidden" name="version" value={account?.version || 0} />
@@ -149,5 +156,14 @@ function AccountForm({ account, data, readOnly, onSaved, onBusyChange }: { accou
     </fieldset>
     {!readOnly && <div className="mt-6"><p className="mb-3 text-sm text-slate-600">By saving, you confirm that the role and jurisdiction match the organization&apos;s offline approval.</p><Button type="submit" loading={pending} loadingLabel="Saving Account…">{account ? "Save Approved Details" : "Create Account and Send Activation"}</Button></div>}
     {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
-  </form>;
+  <ConfirmationDialog open={!!confirmation} icon="none" title={account ? "Save Approved Account Changes" : "Create Authorized Account"} description={account ? "Save these approved details? Existing sessions will be revoked and the person must sign in again." : "Create this account and send an activation invitation? The person will choose their own password."} confirmLabel={account ? "Save Account Changes" : "Create and Send Activation"} loading={pending} onClose={() => { if (!pending) { setConfirmation(null); onBusyChange(false); } }} onConfirm={saveConfirmed}>
+      {confirmation ? <div className="space-y-3 rounded-xl bg-slate-50 p-4 text-sm">
+        <p className="font-semibold">{String(confirmation.get("firstName"))} {String(confirmation.get("lastName"))}</p>
+        <p>{account?.email ?? String(confirmation.get("email"))}</p>
+        <table className="w-full text-left"><thead><tr><th className="pb-2">Assignment</th>{account ? <th className="pb-2">Current</th> : null}<th className="pb-2">{account ? "New" : "Approved"}</th></tr></thead><tbody>
+          {([['role', 'Role'], ['organization', 'Organization'], ['barangay', 'Barangay'], ['utilityCompany', 'Utility Company'], ['repairOrganization', 'Repair Organization']] as const).map(([key, label]) => <tr key={key}><th className="py-1 pr-3 font-medium">{label}</th>{account ? <td className="py-1 pr-3 break-words">{key === 'role' ? accountRoleLabels[account.role] : account[key] || '—'}</td> : null}<td className="py-1 break-words">{key === 'role' ? accountRoleLabels[String(confirmation.get(key)) as AuthorizedAccount['role']] : String(confirmation.get(key) || '—')}</td></tr>)}
+        </tbody></table>
+        <p><span className="font-medium">Approval Reference: </span>{String(confirmation.get('approvalReference'))}</p>
+      </div> : null}
+    </ConfirmationDialog></form>;
 }

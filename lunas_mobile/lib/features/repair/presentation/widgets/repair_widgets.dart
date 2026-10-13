@@ -18,6 +18,7 @@ class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.title = 'LUNAS Repair',
     this.subtitle,
     this.showBackButton = false,
+    this.onBack,
     this.actions,
     super.key,
   });
@@ -25,6 +26,7 @@ class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
   final bool showBackButton;
+  final VoidCallback? onBack;
   final List<Widget>? actions;
 
   @override
@@ -35,6 +37,7 @@ class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
     title: title,
     subtitle: subtitle,
     showBackButton: showBackButton,
+    onBack: onBack,
     actions: actions,
   );
 }

@@ -40,7 +40,7 @@ export function isValidEmail(value: string) {
 
 export function passwordChecks(password: string) {
   return {
-    length: password.length >= 8,
+    length: password.length >= 8 && password.length <= 128 && new TextEncoder().encode(password).length <= 72,
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /\d/.test(password),

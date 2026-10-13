@@ -21,7 +21,7 @@ function DetailRow({ icon: Icon, label, children }: { icon: typeof Mail; label: 
       </span>
       <div className="min-w-0">
         <dt className="text-xs font-semibold tracking-normal text-slate-500">{label}</dt>
-        <dd className="mt-0.5 break-words text-sm font-medium leading-5 text-slate-800">{children}</dd>
+        <dd className="mt-0.5 wrap-break-word text-sm font-medium leading-5 text-slate-800">{children}</dd>
       </div>
     </div>
   );
@@ -40,7 +40,7 @@ export function ProfileSummary({ viewer, onNavigate }: { viewer: UserProfile; on
               <Avatar firstName={viewer.firstName} lastName={viewer.lastName} size="lg" className="-mt-9 size-20 text-xl ring-4 ring-white" />
               <div className="mt-3 min-w-0 pb-1 sm:mt-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="break-words text-xl font-bold text-slate-950">{fullName}</h2>
+                  <h2 className="wrap-break-word text-xl font-bold text-slate-950">{fullName}</h2>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <RoleBadge role={viewer.role} />

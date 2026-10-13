@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/features/auth/presentation/screens/citizen_login_screen.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
@@ -141,7 +142,12 @@ class PasswordRequirements extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rules = <(bool, String)>[
-      (password.length >= 8, 'At least 8 characters'),
+      (
+        password.length >= 8 &&
+            password.length <= 128 &&
+            utf8.encode(password).length <= 72,
+        'At least 8 characters',
+      ),
       (RegExp(r'[A-Z]').hasMatch(password), 'One uppercase letter'),
       (RegExp(r'[a-z]').hasMatch(password), 'One lowercase letter'),
       (RegExp(r'\d').hasMatch(password), 'One number'),
@@ -257,12 +263,14 @@ class PasswordRequirements extends StatelessWidget {
 
 String? validatePassword(String? value) {
   final password = value ?? '';
-  if (password.length > 128) return 'Use no more than 128 characters.';
+  if (password.length > 128 || utf8.encode(password).length > 72) {
+    return 'Use no more than 72 UTF-8 bytes (72 basic characters).';
+  }
   if (password.length < 8 ||
       !RegExp(r'[A-Z]').hasMatch(password) ||
       !RegExp(r'[a-z]').hasMatch(password) ||
       !RegExp(r'\d').hasMatch(password)) {
-    return 'Use 8–128 characters with uppercase, lowercase, and a number.';
+    return 'Use at least 8 characters with uppercase, lowercase, and a number.';
   }
   return null;
 }

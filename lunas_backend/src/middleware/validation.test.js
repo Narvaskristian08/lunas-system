@@ -32,6 +32,10 @@ describe('request validation', () => {
     expect(errors).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'phone' }), expect.objectContaining({ path: 'middleName' })]));
   });
 
+  test.each(['Aa1' + 'b'.repeat(70), 'Aa1' + 'é'.repeat(35)])('rejects passwords exceeding the bcrypt byte limit', async password => {
+    const errors = await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password });
+    expect(errors.some(error => error.path === 'password')).toBe(true);
+  });
   test('accepts eight characters without a special character', async () => {
     expect(await runRules(registerValidation, { firstName: 'Juan', lastName: 'Cruz', email: 'juan@example.test', password: 'Abcdef12' })).toEqual([]);
   });

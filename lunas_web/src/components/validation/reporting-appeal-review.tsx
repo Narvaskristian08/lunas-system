@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { loadReportingAppeal, reviewReportingAppeal, type ReportingAppeal } from "@/app/actions/reporting-appeals";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 
 export function ReportingAppealReview({ reporterId, role }: { reporterId?: string; role: string }) {
   const [appeal, setAppeal] = useState<ReportingAppeal | null>();
+  const [decision, setDecision] = useState<"approved" | "rejected" | null>(null);
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
@@ -26,6 +28,7 @@ export function ReportingAppealReview({ reporterId, role }: { reporterId?: strin
     startTransition(async () => {
       const result = await reviewReportingAppeal({ appealId: appeal.id, decision, notes, expectedVersion: appeal.version });
       setMessage(result.message);
+      setDecision(null);
       if (result.ok) setAppeal({ ...appeal, status: decision, reviewNotes: notes });
     });
   };
@@ -38,9 +41,12 @@ export function ReportingAppealReview({ reporterId, role }: { reporterId?: strin
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="font-semibold">Explanation</p><p className="mt-1 whitespace-pre-wrap">{appeal.explanation}</p><p className="mt-3 font-semibold">Supporting evidence/reference</p><p className="mt-1">{appeal.evidenceReference}</p></div>
         {appeal.status === "pending" && canReview ? <>
           <label className="block font-semibold">Review notes <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={event => setNotes(event.target.value)} maxLength={2000} className="mt-1 min-h-20 w-full rounded-lg border border-slate-300 p-2" disabled={pending} /></label>
-          <div className="grid gap-2 sm:grid-cols-2"><Button onClick={() => submit("approved")} disabled={pending}>Approve &amp; Clear Block</Button><Button variant="danger" onClick={() => submit("rejected")} disabled={pending}>Reject Appeal</Button></div>
+          <div className="grid gap-2 sm:grid-cols-2"><Button onClick={() => setDecision("approved")} disabled={pending}>Approve &amp; Clear Block</Button><Button variant="danger" onClick={() => setDecision("rejected")} disabled={pending}>Reject Appeal</Button></div>
         </> : null}
       </> : null}
     </div>
+    <ConfirmationDialog open={!!decision} icon="none" title={decision === "approved" ? "Approve Reporting Appeal" : "Reject Reporting Appeal"} description={decision === "approved" ? "Approve this appeal and clear the citizen’s reporting block so they can submit reports again." : "Reject this appeal. The current reporting block will remain in place."} confirmLabel={decision === "approved" ? "Approve and Clear Block" : "Reject Appeal"} destructive={decision === "rejected"} loading={pending} onClose={() => !pending && setDecision(null)} onConfirm={() => { if (decision) submit(decision); }}>
+      {notes.trim() ? <p className="rounded-lg bg-slate-50 p-3 text-sm whitespace-pre-wrap">{notes.trim()}</p> : null}
+    </ConfirmationDialog>
   </Card>;
 }

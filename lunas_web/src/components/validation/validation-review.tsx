@@ -244,12 +244,12 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
       setError("This report is missing its validated barangay. Return it for clarification.");
       return;
     }
-    if (["reject", "clarification"].includes(decision) && !reason.trim()) {
-      setError("Provide a reason before continuing.");
+    if (["reject", "clarification"].includes(decision) && reason.trim().length < 2) {
+      setError("Enter a reason of at least 2 characters.");
       return;
     }
-    if (decision === "duplicate" && (!duplicateOf || !reason.trim())) {
-      setError("Select or enter a canonical report and provide a duplicate reason.");
+    if (decision === "duplicate" && (!duplicateOf || reason.trim().length < 2)) {
+      setError("Select or enter a canonical report and provide a duplicate reason of at least 2 characters.");
       return;
     }
     if (decision === "priority" && !priority) {
@@ -333,14 +333,14 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
           <Card className="overflow-hidden"><CardHeader title={isBarangay ? "Barangay Validation" : "City Engineering Decision"} />
             {canBarangayReview ? <form onSubmit={submit} className="space-y-4 p-5">
               <div className="grid grid-cols-3 gap-2">{(["validate", "reject", "duplicate"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "reject" ? "border-red-700 bg-red-700 text-white" : value === "duplicate" ? "border-slate-700 bg-slate-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "validate" ? "Validate" : value === "reject" ? "Reject" : "Duplicate"}</button>)}</div>
-              {decision === "reject" ? <label className="block text-sm font-semibold text-slate-800">Rejection Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label> : null}
-              {decision === "duplicate" ? <><label className="block text-sm font-semibold text-slate-800">Canonical Report<select value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} required><option value="">Select a Likely Match</option>{duplicateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Duplicate Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={500} required /></label></> : null}
+              {decision === "reject" ? <label className="block text-sm font-semibold text-slate-800">Rejection Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} minLength={2} maxLength={500} required /></label> : null}
+              {decision === "duplicate" ? <><label className="block text-sm font-semibold text-slate-800">Canonical Report<select value={duplicateOf} onChange={(event) => setDuplicateOf(event.target.value)} className={fieldClass()} required><option value="">Select a Likely Match</option>{duplicateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Duplicate Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} minLength={2} maxLength={500} required /></label></> : null}
               <label className="block text-sm font-semibold text-slate-800">Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label>
               <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and Forward</> : decision === "reject" ? <><XCircle className="size-4" /> Reject Report</> : <><Route className="size-4" /> Mark Duplicate</>}</Button>
             </form> : null}
             {canCityReview && incident.status === "barangay_validated" ? <form onSubmit={submit} className="space-y-4 p-5">
               <div className="grid grid-cols-2 gap-2">{(["confirm", "clarification"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "clarification" ? "border-amber-700 bg-amber-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "confirm" ? "Confirm" : "Return for Clarification"}</button>)}</div>
-              {decision === "confirm" ? <><label className="block text-sm font-semibold text-slate-800">Engineering Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label></> : <label className="block text-sm font-semibold text-slate-800">Clarification Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} maxLength={2000} required /></label>}
+              {decision === "confirm" ? <><label className="block text-sm font-semibold text-slate-800">Engineering Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label></> : <label className="block text-sm font-semibold text-slate-800">Clarification Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} minLength={2} maxLength={2000} required /></label>}
               <Button type="submit" variant={decision === "clarification" ? "secondary" : "primary"} className="w-full" disabled={pending}>{decision === "confirm" ? "Confirm for Engineering" : "Return with reason"}</Button>
             </form> : null}
             {canCityReview && ["city_confirmed", "prioritized"].includes(incident.status) ? <form onSubmit={submit} className="space-y-4 p-5">

@@ -64,7 +64,7 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
   const today = new Intl.DateTimeFormat("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" }).format(new Date());
 
   return (
-    <div className="mx-auto max-w-[1480px]">
+    <div className="mx-auto max-w-370">
       <PageHeader
         eyebrow={copy.eyebrow}
         title={copy.title}

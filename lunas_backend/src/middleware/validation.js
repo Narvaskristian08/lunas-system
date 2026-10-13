@@ -28,6 +28,7 @@ const dagupanCity = (field, { optional = false } = {}) => {
 
 const passwordValidationRule = (field) => body(field)
   .isLength({ min: 8, max: 128 }).withMessage('Password must be between 8 and 128 characters')
+  .custom(value => Buffer.byteLength(value, 'utf8') <= 72).withMessage('Password must not exceed 72 UTF-8 bytes')
   .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
   .withMessage('Password must contain uppercase, lowercase, and number');
 

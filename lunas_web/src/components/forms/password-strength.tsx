@@ -26,6 +26,7 @@ export function PasswordStrength({ password, compact = false }: { password: stri
           <span key={segment} className={cn("h-1.5 rounded-full", segment <= score ? segmentColors[score] : "bg-slate-200")} />
         ))}
       </div>
+      {new TextEncoder().encode(password).length > 72 ? <p role="alert" className="text-sm text-red-700">Password is too long. Use no more than 72 basic characters; accented characters and emoji may use more space.</p> : null}
       {!compact ? (
         <ul className="grid gap-x-6 gap-y-3 text-sm text-slate-600 sm:grid-cols-2">
           {items.map(([key, label]) => (

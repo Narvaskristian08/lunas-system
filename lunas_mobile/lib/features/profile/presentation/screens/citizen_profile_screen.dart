@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:lunas_mobile/core/widgets/lunas_button.dart';
@@ -19,7 +20,7 @@ class _CitizenProfileScreenState extends State<CitizenProfileScreen> {
   Future<void> _confirmLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => LunasConfirmationDialog(
         title: const Text('Sign Out?'),
         content: const Text('You will be signed out on this device.'),
         actions: [

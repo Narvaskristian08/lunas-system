@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
   Future<void> _confirmLogout() async {
     final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => LunasConfirmationDialog(
         title: const Text('Sign Out?'),
         content: const Text('You will be signed out on this device.'),
         actions: [
@@ -202,7 +203,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           onPressed: () => showDialog<void>(
                             context: context,
-                            builder: (dialogContext) => AlertDialog(
+                            builder: (dialogContext) => LunasConfirmationDialog(
                               title: const Text('Provider-Managed Account'),
                               content: const Text(
                                 'Your account details are managed by your utility provider. Contact them to request corrections.',

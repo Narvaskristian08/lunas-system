@@ -1,4 +1,5 @@
 "use client";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 import { categoryLabel } from "@/lib/category-label";
 
@@ -23,6 +24,7 @@ function address(incident: ProviderRoutedIncident) {
 }
 
 export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedIncident }) {
+  const [confirmCreate, setConfirmCreate] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [result, setResult] = useState<WorkOrderActionResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -36,9 +38,15 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (pending || !canCreate) return;
+    setConfirmCreate(true);
+  };
+
+  const confirmCreation = () => {
     setResult(null);
     startTransition(async () => {
       setResult(await createWorkOrderAction({ incidentId: incident.id, instructions }));
+      setConfirmCreate(false);
     });
   };
 
@@ -150,6 +158,9 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
           </Card>
         </aside>
       </div>
+      <ConfirmationDialog open={confirmCreate} icon="none" title="Create Work Order" description={`Create the primary work order for ${incident.reportNumber}? It will enter your organization’s assignment queue.`} confirmLabel="Create Work Order" loading={pending} onClose={() => !pending && setConfirmCreate(false)} onConfirm={confirmCreation}>
+        {instructions.trim() ? <p className="text-sm whitespace-pre-wrap text-slate-600">{instructions.trim()}</p> : null}
+      </ConfirmationDialog>
     </div>
   );
 }

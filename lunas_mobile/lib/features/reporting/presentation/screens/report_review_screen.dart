@@ -196,10 +196,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 vertical: AppSpacing.lg,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.lg),
+                padding: const EdgeInsets.only(top: AppSpacing.xl),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxHeight:
@@ -219,7 +219,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       AppSpacing.xl,
                       0,
                       AppSpacing.xl,
-                      AppSpacing.lg,
+                      AppSpacing.xl,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

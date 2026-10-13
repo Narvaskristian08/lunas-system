@@ -11,6 +11,7 @@ export const PasswordField = forwardRef<HTMLInputElement, Omit<FormFieldProps, "
     return (
       <FormField
         {...props}
+        maxLength={props.maxLength ?? 128}
         ref={ref}
         type={visible ? "text" : "password"}
         autoComplete={props.autoComplete ?? "current-password"}

@@ -15,7 +15,11 @@ export type WorkOrderActionResult = {
 const allowedEvidenceTypes = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const maxEvidenceBytes = 10 * 1024 * 1024;
 
-const safeText = (value: string | undefined, maximum: number) => value?.trim().slice(0, maximum) || undefined;
+const safeText = (value: string | undefined, maximum: number) => {
+  const text = value?.trim();
+  if (text && text.length > maximum) throw new BackendApiError(400, `This field must contain no more than ${maximum} characters.`);
+  return text || undefined;
+};
 const safeId = (value: string | undefined) => safeText(value, 100);
 
 function responseRecord(value: unknown) {

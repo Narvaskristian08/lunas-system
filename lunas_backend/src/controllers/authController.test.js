@@ -350,12 +350,12 @@ describe('public citizen registration', () => {
 });
 
 
-test('repair personnel cannot change provider-managed profile details', async () => {
+test.each(['repair_personnel', 'utility_provider', 'barangay_official', 'city_engineer', 'admin'])('%s cannot change managed profile details', async role => {
   const { updateProfile } = require('./authController');
   const res = createResponse();
   await new Promise((resolve, reject) => {
     res.json.mockImplementation(resolve);
-    updateProfile({ user: { role: 'repair_personnel' }, body: { firstName: 'Changed' } }, res, reject);
+    updateProfile({ user: { role }, body: { firstName: 'Changed' } }, res, reject);
   });
   expect(res.status).toHaveBeenCalledWith(403);
 });

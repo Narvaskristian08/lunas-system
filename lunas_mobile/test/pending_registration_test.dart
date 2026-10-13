@@ -15,8 +15,9 @@ void main() {
     expect(validatePassword('password'), isNotNull);
   });
   test('password validation enforces backend length maximum', () {
-    expect(validatePassword('Aa1!' + 'x' * 124), isNull);
-    expect(validatePassword('Aa1!' + 'x' * 125), isNotNull);
+    expect(validatePassword("Aa1!${'x' * 68}"), isNull);
+    expect(validatePassword("Aa1!${'x' * 69}"), isNotNull);
+    expect(validatePassword("Aa1!${'é' * 35}"), isNotNull);
   });
   test(
     'pending verification restores in a new service and can be cleared',

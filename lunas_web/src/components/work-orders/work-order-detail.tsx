@@ -112,11 +112,7 @@ function AssignmentPanel({
     event.preventDefault();
     if (!assigneeId || !canChangeAssignment) return;
     if (isReassignment && !reason.trim()) return;
-    if (isReassignment) {
-      setConfirmReassignment(true);
-      return;
-    }
-    runAssignment();
+    setConfirmReassignment(true);
   };
 
   return (
@@ -154,14 +150,14 @@ function AssignmentPanel({
       <ConfirmationDialog
         open={confirmReassignment}
         icon="none"
-        title="Confirm Repair Handoff"
-        description={`Reassign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected repair personnel"}? Existing progress, evidence, history, and the SLA deadline will be preserved, and field updates will pause until acceptance.`}
-        confirmLabel="Confirm Reassignment"
+        title={isReassignment ? "Confirm Repair Handoff" : "Assign Repair Personnel"}
+        description={isReassignment ? `Reassign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected repair personnel"}? Existing progress, evidence, history, and the SLA deadline will be preserved, and field updates will pause until acceptance.` : `Assign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected personnel"}? They will receive responsibility for this repair.`}
+        confirmLabel={isReassignment ? "Reassign Personnel" : "Assign Personnel"}
         loading={pending}
         onClose={() => !pending && setConfirmReassignment(false)}
         onConfirm={runAssignment}
       >
-        <p className="rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700"><span className="font-semibold">Reason:</span> {reason.trim()}</p>
+        <p className="rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700"><span className="font-semibold">{isReassignment ? "Reason:" : "Instructions:"}</span> {isReassignment ? reason.trim() : assignmentInstructions.trim() || "No additional instructions"}</p>
       </ConfirmationDialog>
     </Card>
   );
@@ -174,6 +170,7 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
   const [progressNotes, setProgressNotes] = useState("");
   const [pending, startTransition] = useTransition();
   const [confirmStart, setConfirmStart] = useState(false);
+  const [fieldConfirmation, setFieldConfirmation] = useState<{ title: string; description: string; destructive?: boolean; operation: () => Promise<WorkOrderActionResult> } | null>(null);
   const isCorrectionResubmission = workOrder.status === "in_progress"
     && workOrder.progressPercent === 100
     && workOrder.history.some((event) => event.type === "provider_correction_requested" || event.type === "city_returned");
@@ -189,9 +186,9 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
     <Card className="overflow-hidden">
       <CardHeader title="Field Repair Actions" description="Actions apply only to the currently assigned repair personnel and are revalidated by the API." />
       <div className="space-y-4 p-5">
-        {canAccept ? <div className="grid gap-2 sm:grid-cols-2"><Button type="button" loading={pending} onClick={() => run(() => acceptWorkOrderAction(workOrder.id))}><UserRoundCheck className="size-4" />Accept Assignment</Button><Button type="button" variant="secondary" onClick={() => document.getElementById("decline-assignment")?.focus()} disabled={pending}><XCircle className="size-4" />Decline Assignment</Button></div> : null}
+        {canAccept ? <div className="grid gap-2 sm:grid-cols-2"><Button type="button" loading={pending} onClick={() => setFieldConfirmation({ title: "Accept Assignment", description: "Accept responsibility for this assigned repair.", operation: () => acceptWorkOrderAction(workOrder.id) })}><UserRoundCheck className="size-4" />Accept Assignment</Button><Button type="button" variant="secondary" onClick={() => document.getElementById("decline-assignment")?.focus()} disabled={pending}><XCircle className="size-4" />Decline Assignment</Button></div> : null}
 
-        {canAccept ? <form onSubmit={(event) => { event.preventDefault(); if (!declineReason.trim()) return; run(() => declineWorkOrderAction({ workOrderId: workOrder.id, reason: declineReason, notes: declineNotes })); }} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        {canAccept ? <form onSubmit={(event) => { event.preventDefault(); if (!declineReason.trim()) return; setFieldConfirmation({ title: "Decline Assignment", description: `Release this assignment with the recorded reason: ${declineReason.trim()}`, destructive: true, operation: () => declineWorkOrderAction({ workOrderId: workOrder.id, reason: declineReason, notes: declineNotes }) }); }} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <label className="block text-sm font-semibold text-slate-800">Decline reason
             <textarea id="decline-assignment" value={declineReason} onChange={(event) => setDeclineReason(event.target.value)} required minLength={2} maxLength={500} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Required — for example, workload conflict or equipment issue" />
           </label>
@@ -206,7 +203,7 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
         {canProgress ? <form onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
-          run(async () => {
+          const operation = async (): Promise<WorkOrderActionResult> => {
             try {
               const position = await new Promise<GeolocationPosition>((resolve, reject) => {
                 if (!navigator.geolocation) return reject(new Error("Location is unavailable in this browser."));
@@ -222,7 +219,9 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
             } catch {
               return { ok: false, message: "Allow current location access and enable location services, then try again." };
             }
-          });
+          };
+          if (submitCompletion) setFieldConfirmation({ title: "Submit for Review", description: "Submit the completed repair and final evidence to your utility provider. The incident stays open until final verification.", operation });
+          else run(operation);
         }} className="space-y-4 rounded-xl border border-slate-200 p-4">
           <input type="hidden" name="workOrderId" value={workOrder.id} />
           <fieldset disabled={pending} className="space-y-3">
@@ -246,6 +245,7 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
         {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective Work Requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and resubmit final repair evidence.</p></div> : null}
         {!canAccept && !canStart && !canProgress && workOrder.status !== "completed" ? <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">This work order is waiting for its next controlled assignment or repair transition.</p> : null}
       </div>
+      <ConfirmationDialog open={!!fieldConfirmation} icon="none" title={fieldConfirmation?.title ?? "Repair Action"} description={`${workOrder.reference}: ${fieldConfirmation?.description ?? ""}`} confirmLabel={fieldConfirmation?.title ?? "Continue"} destructive={fieldConfirmation?.destructive} loading={pending} onClose={() => !pending && setFieldConfirmation(null)} onConfirm={() => { if (fieldConfirmation) run(async () => { const result = await fieldConfirmation.operation(); setFieldConfirmation(null); return result; }); }} />
       <ConfirmationDialog open={confirmStart} icon="none" title="Start Repair Work" description="This records the start time and changes the work order to in progress. It does not complete or verify the repair." confirmLabel="Start Work" loading={pending} onClose={() => !pending && setConfirmStart(false)} onConfirm={() => { setConfirmStart(false); run(() => startWorkOrderAction(workOrder.id)); }} />
     </Card>
   );
@@ -262,6 +262,7 @@ function CompletionReviewPanel({
 }) {
   const [reason, setReason] = useState("");
   const [instructions, setInstructions] = useState("");
+  const [confirmation, setConfirmation] = useState<{ title: string; description: string; destructive: boolean; operation: () => Promise<WorkOrderActionResult> } | null>(null);
   const [pending, startTransition] = useTransition();
   const isProvider = viewer.backendRole === "utility_provider" && viewer.permissions.includes("work_orders.manage");
   const isCityEngineer = viewer.backendRole === "city_engineer" && viewer.permissions.includes("repairs.verify");
@@ -292,13 +293,13 @@ function CompletionReviewPanel({
           </label>
           <p id="provider-review-note-help" className="text-xs leading-5 text-slate-500">A note is required when returning the repair for correction.</p>
           <div className="grid gap-2">
-            <Button type="button" loading={pending} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason }))}><ClipboardCheck className="size-4 shrink-0" />Accept Repair</Button>
-            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions: reason }))}><Wrench className="size-4 shrink-0" />Return for Correction</Button>
+            <Button type="button" loading={pending} onClick={() => setConfirmation({ title: "Accept Repair", description: "Forward this completed repair to City Engineering for final verification.", destructive: false, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason }) })}><ClipboardCheck className="size-4 shrink-0" />Accept Repair</Button>
+            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => setConfirmation({ title: "Return for Correction", description: "Return this repair to the assigned personnel with the recorded correction instructions.", destructive: true, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions: reason }) })}><Wrench className="size-4 shrink-0" />Return for Correction</Button>
           </div>
         </> : null}
         {canCoordinateCorrection ? <>
           <label className="block text-sm font-semibold text-slate-800">Corrective Instructions<textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} required minLength={2} maxLength={4000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain the City Engineering return and the work needed" /></label>
-          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => run(() => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }))}><Wrench className="size-4" />Send Correction to Repair Personnel</Button>
+          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => setConfirmation({ title: "Send Correction to Personnel", description: "Send these corrective instructions to the assigned personnel so corrective work can resume.", destructive: false, operation: () => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }) })}><Wrench className="size-4" />Send Correction to Repair Personnel</Button>
         </> : null}
         {canFinalReview ? <>
           <label className="block text-sm font-semibold text-slate-800">Review Note
@@ -306,11 +307,14 @@ function CompletionReviewPanel({
           </label>
           <p className="text-xs leading-5 text-slate-500">A note is required when returning the repair for correction.</p>
           <div className="grid gap-2">
-            <Button type="button" loading={pending} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "approved", reason }))}><ClipboardCheck className="size-4" />Verify &amp; Resolve</Button>
-            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => run(() => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "return", reason }))}><Wrench className="size-4" />Return for Correction</Button>
+            <Button type="button" loading={pending} onClick={() => setConfirmation({ title: "Verify and Resolve", description: "Verify the repair and resolve the linked incident. This is the final approval.", destructive: false, operation: () => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "approved", reason }) })}><ClipboardCheck className="size-4" />Verify &amp; Resolve</Button>
+            <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => setConfirmation({ title: "Return to Provider", description: "Return this repair to the utility provider with the recorded reason.", destructive: true, operation: () => finalReviewWorkOrderAction({ workOrderId: workOrder.id, decision: "return", reason }) })}><Wrench className="size-4" />Return for Correction</Button>
           </div>
         </> : null}
       </div>
+      <ConfirmationDialog open={!!confirmation} icon="none" title={confirmation?.title ?? "Review Work Order"} description={`${workOrder.reference}: ${confirmation?.description ?? ""}`} confirmLabel={confirmation?.title ?? "Continue"} destructive={confirmation?.destructive} loading={pending} onClose={() => !pending && setConfirmation(null)} onConfirm={() => { if (confirmation) run(async () => { const result = await confirmation.operation(); setConfirmation(null); return result; }); }}>
+        {(reason.trim() || instructions.trim()) ? <p className="rounded-lg bg-slate-50 p-3 text-sm whitespace-pre-wrap">{canCoordinateCorrection ? instructions.trim() : reason.trim()}</p> : null}
+      </ConfirmationDialog>
     </Card>
   );
 }

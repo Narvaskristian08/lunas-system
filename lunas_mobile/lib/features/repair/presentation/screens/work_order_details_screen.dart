@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:lunas_mobile/core/widgets/timeline_marker.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
@@ -85,6 +86,30 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
         workOrder.status == RepairWorkOrderStatus.reworkRequired ||
         workOrder.status == RepairWorkOrderStatus.inProgress;
     setState(() => _submitting = true);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => LunasConfirmationDialog(
+        title: Text(resume ? 'Resume Repair?' : 'Start Repair?'),
+        content: Text(
+          '${workOrder.orderNumber}: ${resume ? 'Resume the assigned repair and allow field updates.' : 'Record the repair start time and mark this work as in progress.'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(resume ? 'Resume Repair' : 'Start Repair'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (confirmed != true) {
+      setState(() => _submitting = false);
+      return;
+    }
     await waitForDataRequest();
     if (!mounted) return;
     try {

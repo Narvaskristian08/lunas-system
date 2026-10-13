@@ -47,17 +47,19 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
         _error = null;
       });
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _error = error.message;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _error = 'We could not load your appeal. Please try again.';
         });
+      }
     }
   }
 
@@ -78,17 +80,19 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
         _submitting = false;
       });
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _submitting = false;
           _error = error.message;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _submitting = false;
           _error = 'We could not submit your appeal. Please try again.';
         });
+      }
     }
   }
 

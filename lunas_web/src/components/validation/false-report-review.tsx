@@ -130,8 +130,8 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
         </div>
       </Card>
 
-      {modalOpen && data ? <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-[1px] sm:items-center sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
-        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="false-report-review-title" aria-describedby="false-report-review-description" className="max-h-[min(820px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-2xl">
+      {modalOpen && data ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[1px] sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}>
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="false-report-review-title" aria-describedby="false-report-review-description" className="max-h-[min(820px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-brand-700">{correcting ? "Correct an Existing Finding" : "Barangay Review Action"}</p>
@@ -149,8 +149,8 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
             <label className="block text-sm font-semibold text-slate-800">Evidence or Documented Decision Reference<input className={fieldClass()} value={evidenceReference} onChange={(event) => { setEvidence(event.target.value); setConfirming(false); }} required maxLength={500} disabled={pending} /></label>
             {confirming ? <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">Confirm that you reviewed the cited evidence and documented this {correcting ? "correction" : "finding"}.</p> : null}
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-              <Button type="button" variant="secondary" onClick={closeModal} disabled={pending}>Cancel</Button>
-              <Button type="submit" loading={pending} loadingLabel="Saving…">{confirming ? "Confirm Reviewed Decision" : correcting ? "Continue to Correction" : "Continue to Record Finding"}</Button>
+              <Button className="min-h-12" type="button" variant="secondary" onClick={closeModal} disabled={pending}>Cancel</Button>
+              <Button className="min-h-12" type="submit" loading={pending} loadingLabel="Saving…">{confirming ? "Confirm Reviewed Decision" : correcting ? "Continue to Correction" : "Continue to Record Finding"}</Button>
             </div>
           </form>
         </div>

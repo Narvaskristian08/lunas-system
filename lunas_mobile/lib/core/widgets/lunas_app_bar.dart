@@ -9,6 +9,7 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.titleWidget,
     this.actions,
     this.showBackButton = false,
+    this.onBack,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? titleWidget;
   final List<Widget>? actions;
   final bool showBackButton;
+  final VoidCallback? onBack;
 
   @override
   Size get preferredSize => Size.fromHeight(subtitle == null ? 72 : 84);
@@ -29,9 +31,9 @@ class LunasAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       leadingWidth: showBackButton ? 64 : null,
       leading: showBackButton
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.only(left: 12, right: 4),
-              child: Center(child: LunasBackButton()),
+              child: Center(child: LunasBackButton(onPressed: onBack)),
             )
           : null,
       centerTitle: false,

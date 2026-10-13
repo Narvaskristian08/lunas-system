@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_confirmation_dialog.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
@@ -31,6 +32,10 @@ class _UpdateRepairProgressScreenState
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
   final LocationService _locationService = const LocationService();
+  bool _leaving = false;
+  bool _discardOpen = false;
+  bool get _dirty =>
+      _notesController.text.trim().isNotEmpty || _evidence != null;
   bool _loading = true;
   bool _saving = false;
   Future<bool>? _initialLocation;
@@ -44,6 +49,9 @@ class _UpdateRepairProgressScreenState
   @override
   void initState() {
     super.initState();
+    _notesController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _load();
     _initialLocation = _attachCurrentLocation();
   }
@@ -52,6 +60,45 @@ class _UpdateRepairProgressScreenState
   void dispose() {
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _requestLeave() async {
+    if (_saving || _discardOpen || _leaving) return;
+    if (_dirty) {
+      _discardOpen = true;
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => LunasConfirmationDialog(
+          destructive: true,
+          title: const Text('Discard Repair Update?'),
+          content: const Text(
+            'Your unsaved notes and selected evidence will be lost. The work order will remain unchanged.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep Editing'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Discard Changes'),
+            ),
+          ],
+        ),
+      );
+      _discardOpen = false;
+      if (!mounted || discard != true) return;
+    }
+    if (!mounted) return;
+    setState(() => _leaving = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(RepairRoutes.workOrder(widget.workOrderId));
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -155,6 +202,28 @@ class _UpdateRepairProgressScreenState
     }
     setState(() => _saving = true);
     try {
+      if (_submitCompletion) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => LunasConfirmationDialog(
+            title: const Text('Submit Completed Repair?'),
+            content: Text(
+              '${workOrder.orderNumber}: Submit your final repair evidence to the utility provider for review. The incident remains open until final verification.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Submit for Review'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+      }
       await _initialLocation;
       if (!mounted) return;
       final located = await _attachCurrentLocation();
@@ -189,6 +258,7 @@ class _UpdateRepairProgressScreenState
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+      _leaving = true;
       context.go(RepairRoutes.workOrder(updated.id));
     } on ApiException catch (error) {
       if (!mounted) return;
@@ -263,101 +333,111 @@ class _UpdateRepairProgressScreenState
         ),
       );
     }
-    return RepairPage(
-      appBar: RepairAppBar(
-        title: 'Update Progress',
-        subtitle: workOrder.orderNumber,
-        showBackButton: true,
-      ),
-      bottomActionBar: _SaveProgressActionBar(
-        saving: _saving,
-        submitCompletion: _submitCompletion,
-        onSave: _save,
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LunasCard(
-              child: Row(
-                children: [
-                  Icon(
-                    reportCategoryIcon(workOrder.category),
-                    size: 24,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          categoryFromCode(workOrder.category).label,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          workOrder.location.barangay ??
-                              workOrder.location.displayAddress,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+    return PopScope(
+      canPop: _leaving || (!_dirty && !_saving),
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _requestLeave();
+      },
+      child: RepairPage(
+        appBar: RepairAppBar(
+          title: 'Update Progress',
+          subtitle: workOrder.orderNumber,
+          showBackButton: true,
+          onBack: _requestLeave,
+        ),
+        bottomActionBar: _SaveProgressActionBar(
+          saving: _saving,
+          submitCompletion: _submitCompletion,
+          onSave: _save,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LunasCard(
+                child: Row(
+                  children: [
+                    Icon(
+                      reportCategoryIcon(workOrder.category),
+                      size: 24,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text('Update Type', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: AppSpacing.sm),
-            _UpdateChoice(
-              title: 'Progress Update',
-              subtitle: 'Record work done or explain a delay.',
-              selected: !_submitCompletion,
-              onTap: _saving
-                  ? null
-                  : () => setState(() => _submitCompletion = false),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _UpdateChoice(
-              title: workOrder.isCorrectionResubmission
-                  ? 'Resubmit Repair'
-                  : 'Complete Repair',
-              subtitle: 'Send a completed repair photo for review.',
-              selected: _submitCompletion,
-              onTap: _saving
-                  ? null
-                  : () => setState(() => _submitCompletion = true),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            if (!_submitCompletion) ...[
-              Text(
-                'Progress Notes',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              TextFormField(
-                controller: _notesController,
-                maxLines: 4,
-                maxLength: 2000,
-                textCapitalization: TextCapitalization.sentences,
-                validator: _validateNotes,
-                decoration: const InputDecoration(
-                  hintText:
-                      'Describe work performed, materials, delays, or field conditions.',
-                  alignLabelWithHint: true,
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            categoryFromCode(workOrder.category).label,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            workOrder.location.barangay ??
+                                workOrder.location.displayAddress,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-            if (_submitCompletion) ...[
-              _EvidencePicker(
-                evidence: _evidence,
-                onPick: _saving ? null : _pickEvidence,
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Update Type',
+                style: Theme.of(context).textTheme.titleSmall,
               ),
+              const SizedBox(height: AppSpacing.sm),
+              _UpdateChoice(
+                title: 'Progress Update',
+                subtitle: 'Record work done or explain a delay.',
+                selected: !_submitCompletion,
+                onTap: _saving
+                    ? null
+                    : () => setState(() => _submitCompletion = false),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _UpdateChoice(
+                title: workOrder.isCorrectionResubmission
+                    ? 'Resubmit Repair'
+                    : 'Complete Repair',
+                subtitle: 'Send a completed repair photo for review.',
+                selected: _submitCompletion,
+                onTap: _saving
+                    ? null
+                    : () => setState(() => _submitCompletion = true),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (!_submitCompletion) ...[
+                Text(
+                  'Progress Notes',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                TextFormField(
+                  controller: _notesController,
+                  maxLines: 4,
+                  maxLength: 2000,
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: _validateNotes,
+                  decoration: const InputDecoration(
+                    hintText:
+                        'Describe work performed, materials, delays, or field conditions.',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+              ],
+              if (_submitCompletion) ...[
+                _EvidencePicker(
+                  evidence: _evidence,
+                  onPick: _saving ? null : _pickEvidence,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
