@@ -94,7 +94,7 @@ void main() {
 
     await tester.tap(find.text('Pantal'));
     await tester.pumpAndSettle();
-    expect(find.text('Confirmed for This Report Location'), findsOneWidget);
+    expect(find.text('Confirmed for this report location'), findsOneWidget);
   });
 
   testWidgets('shows API loading and error states with retry', (tester) async {

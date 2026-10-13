@@ -12,6 +12,10 @@ void main() {
       humanizeCodeLabel('awaiting_city_engineering_review'),
       'Awaiting City Engineering Review',
     );
+    expect(
+      humanizeCodeLabel('work_order_created_from_validated_incident'),
+      'Work Order Created from Validated Incident',
+    );
     expect(humanizeCodeLabel('sla_overdue'), 'SLA Overdue');
     expect(humanizeCodeLabel('ai-model_v2'), 'AI Model V2');
   });

@@ -263,7 +263,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                         icon: Icons.add_a_photo_outlined,
                         title: 'Add Photo Evidence',
                         isError: _showValidation && _evidence == null,
-                        subtitle: 'Required · Take or Upload a Photo',
+                        subtitle: 'Required · Take or upload a photo',
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -272,14 +272,33 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                             evidence: _evidence!,
                             height: 170,
                           ),
-                          Padding(
-                            padding: const EdgeInsets.all(AppSpacing.md),
+                          const Divider(height: 1),
+                          SizedBox(
+                            height: 52,
                             child: Row(
                               children: [
-                                const Icon(Icons.image_outlined),
+                                const SizedBox(width: AppSpacing.md),
+                                Icon(
+                                  Icons.photo_library_outlined,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                                 const SizedBox(width: AppSpacing.sm),
-                                const Expanded(child: Text('Change Image')),
-                                const Icon(Icons.edit_outlined),
+                                Expanded(
+                                  child: Text(
+                                    'Replace Photo',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.md),
                               ],
                             ),
                           ),
@@ -295,7 +314,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                 icon: Icons.category_outlined,
                 title: _category?.label ?? 'Select Category',
                 subtitle: _category == null
-                    ? 'Required · Choose the Issue Type'
+                    ? 'Required · Choose the issue type'
                     : _category!.description,
               ),
               const SizedBox(height: AppSpacing.md),
@@ -326,17 +345,13 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                 icon: Icons.location_on_outlined,
                 title: _location?.address ?? 'Confirm Location',
                 subtitle: _location == null
-                    ? 'Required · Confirm the Map Pin'
+                    ? 'Required · Confirm the map pin'
                     : '',
               ),
               const SizedBox(height: AppSpacing.md),
               _barangaySelector(context),
               const SizedBox(height: AppSpacing.xxl),
-              LunasButton(
-                label: 'Review Report',
-                icon: Icons.fact_check_outlined,
-                onPressed: _review,
-              ),
+              LunasButton(label: 'Review Report', onPressed: _review),
             ],
           ),
         ),
@@ -393,8 +408,8 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
           icon: Icons.account_balance_outlined,
           title: _barangay ?? 'Select Barangay',
           subtitle: _barangay == null
-              ? 'Required · Choose the Issue’s Barangay'
-              : 'Confirmed for This Report Location',
+              ? 'Required · Choose the issue’s barangay'
+              : 'Confirmed for this report location',
         ),
         if (_barangay == null && suggestion != null) ...[
           const SizedBox(height: AppSpacing.xs),
@@ -409,7 +424,7 @@ class _NewCitizenReportScreenState extends State<NewCitizenReportScreen> {
                 ),
                 TextButton(
                   onPressed: _useBarangaySuggestion,
-                  child: const Text('Use suggestion'),
+                  child: const Text('Use Suggestion'),
                 ),
               ],
             )

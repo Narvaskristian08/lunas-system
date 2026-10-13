@@ -149,7 +149,7 @@ class _CitizenLoginScreenState extends State<CitizenLoginScreen> {
                   ],
                   const SizedBox(height: AppSpacing.xs),
                   LunasButton(
-                    label: 'Login',
+                    label: 'Log In',
                     isLoading: auth.isSubmitting,
                     onPressed: auth.isSubmitting ? null : _submit,
                   ),

@@ -329,7 +329,7 @@ class _MissingRouteDataScreen extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => context.go('/reports/new'),
-              child: const Text('Start a report'),
+              child: const Text('Start a Report'),
             ),
           ],
         ),

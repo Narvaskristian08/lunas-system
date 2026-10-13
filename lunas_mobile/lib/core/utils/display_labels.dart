@@ -11,14 +11,20 @@ const _displayAcronyms = <String>{
 };
 
 const _displaySmallWords = <String>{
+  'a',
+  'an',
   'and',
   'at',
   'by',
   'for',
+  'from',
   'in',
   'of',
+  'on',
   'or',
+  'the',
   'to',
+  'with',
 };
 
 /// Converts backend codes and enum-style values into readable interface text.

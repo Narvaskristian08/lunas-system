@@ -41,16 +41,21 @@ class AppSplashScreen extends StatelessWidget {
                 ? 'Could not restore your session.'
                 : 'AI-Assisted Urban Infrastructure\nMaintenance and Monitoring System',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(height: 1.5),
           ),
           const SizedBox(height: AppSpacing.xl),
           if (failed) ...[
-            Text(auth.message ?? 'Please try again.', textAlign: TextAlign.center),
+            Text(
+              auth.message ?? 'Please try again.',
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSpacing.md),
             LunasButton(label: 'Try Again', onPressed: auth.restoreSession),
             TextButton(
               onPressed: () => context.go('/login'),
-              child: const Text('Sign in instead'),
+              child: const Text('Sign In Instead'),
             ),
           ] else ...[
             const SizedBox(

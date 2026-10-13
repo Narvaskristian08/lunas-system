@@ -48,7 +48,7 @@ class OnboardingScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          LunasButton(label: 'Login', onPressed: () => context.go('/login')),
+          LunasButton(label: 'Log In', onPressed: () => context.go('/login')),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
             height: 54,

@@ -241,7 +241,7 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
                                 controller: _referenceController,
                                 maxLength: 500,
                                 decoration: const InputDecoration(
-                                  labelText: 'Supporting evidence or reference',
+                                  labelText: 'Supporting Evidence or Reference',
                                 ),
                                 validator: (value) =>
                                     value?.trim().isEmpty ?? true
@@ -268,7 +268,7 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
                 if (appeal?.status == 'pending')
                   OutlinedButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Back to reports'),
+                    child: const Text('Back to Reports'),
                   ),
               ],
             ),

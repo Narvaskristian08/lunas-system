@@ -195,13 +195,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2 Unread Updates'), findsOneWidget);
+    expect(find.text('2 unread updates'), findsOneWidget);
     await tester.tap(find.text('Load more'));
     await tester.pumpAndSettle();
     expect(find.text('Correction coordinated'), findsOneWidget);
     expect(repository.requestedPages, [1, 2]);
 
-    await tester.tap(find.text('Mark All As Read'));
+    await tester.tap(find.text('Mark All as Read'));
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
     expect(find.text('Stay updated on your work orders.'), findsOneWidget);

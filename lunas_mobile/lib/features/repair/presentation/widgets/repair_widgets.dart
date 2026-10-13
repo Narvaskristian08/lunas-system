@@ -444,7 +444,7 @@ class RepairWorkOrderCard extends StatelessWidget {
                         const Spacer(),
                         TextButton(
                           onPressed: onTap,
-                          child: const Text('View details'),
+                          child: const Text('View Details'),
                         ),
                       ],
                     ),
