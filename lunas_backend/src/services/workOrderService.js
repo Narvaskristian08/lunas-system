@@ -1,7 +1,6 @@
 const { normalizeText, getIncidentBarangay } = require('./jurisdictionService');
 
 const OFFICIAL_WORK_ORDER_ROLES = Object.freeze([
-  'city_engineer',
   'utility_provider'
 ]);
 
@@ -44,7 +43,7 @@ const canManageWorkOrder = (user, workOrder) => {
 };
 
 const canReviewFinalWorkOrder = (user, workOrder) => Boolean(
-  user?.role === 'city_engineer' && workOrder
+  canManageWorkOrder(user, workOrder)
 );
 
 /**
@@ -54,7 +53,6 @@ const canReviewFinalWorkOrder = (user, workOrder) => Boolean(
  */
 const buildWorkOrderScope = (user) => {
   if (!user) return { _id: null };
-  if (user.role === 'city_engineer') return {};
   if (user.role === 'utility_provider') {
     const organization = normalizeText(user.utilityCompany);
     return organization ? { responsibleOrganization: organization } : { _id: null };

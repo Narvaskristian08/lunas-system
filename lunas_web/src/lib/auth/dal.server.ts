@@ -62,7 +62,7 @@ function organizationFor(user: BackendUser, role: BackendUserRole) {
 }
 
 export function toViewer(user: BackendUser): UserProfile | null {
-  if (!isBackendRole(user.role)) return null;
+  if (!isBackendRole(user.role) || user.role === "city_engineer") return null;
   const id = user.id ?? user._id;
   if (!id || !user.firstName || !user.lastName || !user.email) return null;
 

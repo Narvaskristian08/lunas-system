@@ -1,178 +1,97 @@
 # LUNAS Project Scope
 
-**Current source of truth — updated 2026-09-29.** This document defines LUNAS's
-six user-facing roles, platforms, authority boundaries, account governance,
-incident and work-order lifecycles, handoffs, and user-facing workflow. It
-supersedes earlier milestone, screen inventory, workflow, and role documents.
-Implementations and future Codex sessions must follow this scope. Setup guides
-may describe how to run a component, but must not redefine product authority.
+**Current source of truth ? updated 2026-10-17.** This scope supersedes earlier
+milestone and workflow documents. City Engineering is a Utility Provider
+organization, not a separate citywide decision role.
 
 ## Product boundary
 
-LUNAS manages the digital flow for reporting and repairing infrastructure
-incidents. It does not verify government employment, approve budgets, conduct
-procurement or bidding, select contractors, award contracts, or issue funds.
-Government/organizational endorsement happens outside LUNAS; LUNAS records and
-enforces the resulting authorized account, role, and scope.
+LUNAS records infrastructure reports, review, provider routing, assignment,
+repair evidence, and completion decisions. Budget approval, procurement,
+contracting, and funding decisions happen outside LUNAS. This role conversion
+does not implement a funding-approval workflow or authorize spending.
 
 ## Roles, platform, and scope
 
-There are exactly six user-facing roles:
-
-| Role | Platform | Record scope and authority |
+| Role | Platform | Authority |
 | --- | --- | --- |
-| Citizen | Mobile | Self-registration; create reports; read only own reports and permitted status/reason details. No operational decisions. |
-| Repair Personnel | Mobile | Organization and assignment scoped; accept/decline assigned tasks, perform repairs, send progress and evidence, and submit completion. |
-| Admin | Web | Authorized personnel account lifecycle, role/scope assignment, and audit/system administration. Outside the incident decision chain. |
-| Barangay Official | Web | Only the account's assigned barangay; first review, validate, reject with a reason, or mark duplicate with a reason and canonical report. No priority, provider routing, repair, or final verification. |
-| City Engineer | Web | Citywide engineering decisions; review Barangay-validated reports, confirm, assign manual priority/SLA, select a Utility Provider, and perform final government verification. |
-| Utility Provider | Web | Only incidents/work orders routed to the account's organization; create/manage work orders, assign eligible same-organization Repair Personnel, review their completion, request corrective work, and forward accepted work for City Engineering verification. |
+| Citizen | Mobile | Self-register; submit reports; read own reports and permitted history. |
+| Barangay Official | Web | Review within assigned barangay; validate, reject, or mark duplicate with reasons; select priority and route validated reports to an active provider. |
+| Utility Provider | Web | Read only reports routed to its organization; manage same-organization repair personnel and work orders; review repairs, request correction, or verify and resolve. |
+| Repair Personnel | Mobile | Accept/decline eligible assignments, start repairs, submit progress and required final evidence. |
+| Admin | Web | Provision endorsed personnel accounts, manage account lifecycle, and audit the system. No incident decisions. |
 
-No Admin, Barangay Official, City Engineer, Utility Provider, or Repair
-Personnel public self-registration is allowed. No Citizen government web
-workspace or Repair Personnel government web workspace is allowed. Frontend
-navigation follows this split; backend authorization and record scope remain
-authoritative.
+City Engineering, DPWH, DECORP, and Pamana/DCWD are organizations using the
+same `utility_provider` role. Each has independent organization scope. City
+Engineering cannot see or approve other organizations' work merely because it
+is a government office. Provider organization names do not establish an agency
+partnership or confirm asset ownership.
+
+`city_engineer` is a retired account role retained in historical schemas only.
+It cannot sign in or be newly provisioned. Existing accounts must be converted
+with the migration below. Historical actors and decisions remain intact.
 
 ## Account governance
 
-| Account | Creation/provisioning | Required scope |
-| --- | --- | --- |
-| Citizen | Public self-registration; activates/verifies as configured. | Citizen role only. |
-| Admin | Controlled deployment bootstrap for the initial administrator; subsequent accounts through an authorized Admin after offline approval. | System account administration. Additional Admin management follows the configured provisioner allowlist. |
-| Barangay Official | Authorized Admin after offline endorsement. | One assigned barangay. |
-| City Engineer | Authorized Admin after offline endorsement. | Citywide engineering scope. |
-| Utility Provider | Authorized Admin after organization authorization. | Utility organization/company. |
-| Repair Personnel | Authorized Admin after organization authorization. | Repair organization; work access additionally requires an eligible active assignment. |
-
-The account workflow records who provisioned/changed an account and the
-approval reference supplied by the authorized administrator. LUNAS does not
-validate a person's employment with an external government body. Admins cannot
-change their own role or scope. The local-only demo seed is a deployment/testing
-bootstrap exception; it must remain restricted to the named local demo database
-and must never be presented as public registration.
+Only Citizens self-register. Authorized Admins provision other roles after
+offline endorsement, recording the approval reference. Provider accounts require
+an organization (`utilityCompany`); repair personnel require a matching repair
+organization. Providers manage only personnel in their organization. Admins
+cannot change their own role or scope; additional administrator provisioning
+continues to require the configured allowlist.
 
 ## Incident lifecycle
 
-The normal path is sequential:
-
 ```text
-submitted
-  → barangay_validated
-  → city_confirmed
-  → prioritized
-  → provider_assigned
-  → repair_assigned
-  → in_progress
-  → repair_completed
-  → provider_review
-  → provider_accepted
-  → city_verification
-  → verified
-  → resolved
-  → closed
+submitted ? barangay_validated ? prioritized ? provider_assigned
+  ? repair_assigned ? in_progress ? repair_completed ? provider_review
+  ? verified ? resolved ? closed
 ```
 
-State meanings and decision owners:
+Barangay validation and priority/provider routing are separate recorded actions.
+A stale decision returns a conflict. Priority is human-selected; the existing
+repair SLA starts on provider routing. Routing currently creates the primary
+unassigned work order. Budget readiness, provider referral acceptance, and
+separate assessment deadlines are future work, not implied by this conversion.
 
-| State | Meaning / next decision owner |
-| --- | --- |
-| `submitted` | Citizen report received; Barangay Official review. |
-| `barangay_validated` | Initial local review passed and forwarded; City Engineer review. |
-| `city_confirmed` | City Engineer confirmed the incident; City Engineer assigns priority. |
-| `prioritized` | Human priority recorded and configured SLA deadline calculated; City Engineer selects provider. |
-| `provider_assigned` | City Engineer routed to an active Utility Provider organization; provider creates the primary work order. |
-| `repair_assigned` | Provider assigned eligible Repair Personnel. |
-| `in_progress` | Assigned worker accepted and started work. |
-| `repair_completed` | Repair Personnel submitted completion and final evidence; this does not resolve the incident. |
-| `provider_review` | Utility Provider reviews progress, completion, and evidence. |
-| `rework_required` | Provider requested a reasoned correction; Repair Personnel continues and resubmits. |
-| `provider_accepted` | Utility Provider accepted the repair and handed it to City Engineering. |
-| `city_verification` | City Engineer performs final government review. |
-| `city_correction_required` | City Engineer returned completion with a reason; Utility Provider coordinates another repair cycle. |
-| `verified` | City Engineer approved the evidence and repair. |
-| `resolved` / `closed` | Official result after City Engineering approval; visible to the reporting Citizen. |
-| `clarification_required` | City Engineer returned a Barangay-validated report with a reason; Barangay Official reviews and resubmits it. |
-| `rejected` | Barangay Official rejected a submitted report with a Citizen-visible reason. |
-| `duplicate` | Barangay Official made a human duplicate decision with a reason and canonical report. |
-
-Clarification is an explicit return to the Barangay Official, not a hidden
-skip. Rejection and duplicate handling are terminal report decisions. Duplicate
-candidate matching (when available) is an advisory system suggestion only; it
-does not use image similarity and never changes a report without a human
-decision.
-
-The City Engineer confirms an incident before assigning priority. Priority is
-always human-assigned. The SLA deadline is calculated from configured priority
-rules and recorded with its actor and timestamp. A stored deadline or displayed
-overdue projection does not by itself mean a scheduled notification/escalation
-worker is enabled.
+Barangay rejection and duplicate decisions require reasons; duplicate decisions
+also require the canonical report. Provider correction follows
+`provider_review ? rework_required ? in_progress`, followed by another completion
+submission and review. Final provider approval records verified, resolved, and
+closed history events and notifies the citizen. No separate City Engineering
+confirmation or government verification is required.
 
 ## Work-order lifecycle
 
-The Utility Provider can create one primary work order only after City
-Engineering routes the incident to that provider's active organization. It
-selects eligible active Repair Personnel whose repair organization matches and
-whose optional barangay restriction allows the work location.
-
 ```text
-pending/unassigned
-  → pending assignment
-  → accepted
-  → in_progress
-  → completed (final evidence required)
-  → provider review
-  → provider_accepted
-  → City Engineer final review
-  → verified
+pending/unassigned ? pending assignment ? accepted ? in_progress
+  ? completed (awaiting provider review) ? verified
 ```
 
-An assignment can be declined and returned to the Utility Provider for
-reassignment. Provider review can instead set `rework_required` with a reason
-and instructions; the assigned Repair Personnel receives the correction,
-continues the work, updates progress, and submits final evidence again. If City Engineering returns
-work, the work order enters `city_correction_required`; the Utility Provider
-must coordinate it back to Repair Personnel before another completion review.
-Only City Engineering can make the final verified/resolved decision.
+Providers assign eligible active personnel in the same organization. Personnel
+may decline with a reason. Progress is append-only at the supported milestones;
+100% requires final evidence in the same submission and does not close a report.
+Only the responsible provider may verify completion. A correction requires a
+reason/instructions and another repair/review cycle. City Engineering uses this
+same workflow for its own municipal maintenance work.
 
-`completed`, `provider_accepted`, `verified`, and `closed` are distinct
-business outcomes. Repair progress at 100% is not verification or resolution.
-Final post-maintenance evidence is required in the same request that records
-100% progress. Progress/history and review decisions retain actor, role,
-timestamp, state, and applicable reason or instructions.
+DPWH is provisionable as a provider organization. Automatic ownership-based
+routing and City Engineering-to-DPWH referral acceptance are not implemented by
+this conversion; do not infer national-road ownership from category alone.
 
-## Handoff responsibilities
+## Migration and deployment
 
-| From → to | Handoff |
-| --- | --- |
-| Citizen → Barangay Official | Submit report, location, and evidence into the assigned barangay queue. |
-| Barangay Official → City Engineer | Validate and record reviewer/time/history. Reject or mark duplicate only with recorded reason. |
-| City Engineer → Utility Provider | Confirm, manually prioritize, calculate/store SLA, select provider organization, and record routing. |
-| Utility Provider → Repair Personnel | Create work order and assign an eligible same-organization worker. |
-| Repair Personnel → Utility Provider | Submit repair progress and final evidence; completion awaits provider review. |
-| Utility Provider → Repair Personnel | Record correction reason/instructions and coordinate corrective work. |
-| Utility Provider → City Engineer | Accept completed work and submit it for final government review. |
-| City Engineer → Utility Provider | Return unacceptable work with a reason for provider-coordinated correction. |
-| City Engineer → Citizen | Verify/resolve/close and expose the permitted final status and timeline. |
+Run `npm run migrate:city-provider` inside `lunas_backend` with the target
+`MONGODB_URI` for a dry run. Add `-- --apply` to convert existing City Engineer
+accounts to the `Dagupan City Engineering Office` provider organization and
+revoke their sessions. Re-running is safe. Account IDs and historical actor
+roles are preserved, and conversion provenance is stored in `role_migrations`.
 
-## User experience by role
-
-- **Citizen mobile:** register/login, submit supported incident details, evidence
-  and location, view own reports, status, history, clarification/rejection
-  reasons where applicable, and final resolved result.
-- **Repair Personnel mobile:** assigned work orders, assignment response,
-  instructions, start/progress, notes/evidence, final completion evidence, and
-  correction instructions/history.
-- **Barangay Official web:** assigned-barangay queue, evidence/location/history
-  review, validate, reject with reason, and human duplicate decision.
-- **City Engineer web:** citywide Barangay-validated queue, confirmation,
-  clarification return, manual priority/SLA, active provider selection,
-  provider-accepted queue, final verification, and reasoned return.
-- **Utility Provider web:** organization-scoped routed incidents and work
-  orders, eligible Repair Personnel assignment/reassignment, progress review,
-  completion review, correction coordination, and provider acceptance.
-- **Admin web:** authorized account lifecycle and audit/system functions; no
-  normal incident decision queue.
+The migration returns pending City-confirmation records to the Barangay routing
+queue, provider-accepted/final-verification records to responsible-provider
+review, and City correction records to corrective work. It does not approve or
+close existing repairs. Deploy the backend and web together, run the migration,
+and require converted users to sign in again.
 
 ## AI, evidence, and privacy boundary
 
@@ -198,7 +117,7 @@ depend on environment configuration.
 The API enforces both role and record scope. Barangay Officials are constrained
 to their assigned barangay; Utility Providers to their organization; Repair
 Personnel to their active assignment and organization; Citizens to their own
-reports; City Engineers to citywide operational workflows; Admins to
+reports; City Engineering provider accounts to their own organization; Admins to
 administration. Hiding a link in the UI is never the security boundary.
 
 Major decisions and handoffs record the actor, role, action/state, timestamp,
@@ -213,7 +132,7 @@ Source implementation is not proof that deployment integrations work. Confirm
 actual MongoDB, private evidence storage, email activation delivery, map
 configuration, optional push delivery, and any enabled AI service in the
 target environment. Do not claim end-to-end completion until the full path in
-the handoff table has been exercised using real role-scoped accounts and the
+the lifecycle has been exercised using real role-scoped accounts and the
 same persisted incident. Known implementation limits and any split-write
 consistency risk must be called out in release/demo reports; check the current
 test results and deployment configuration before each demonstration.

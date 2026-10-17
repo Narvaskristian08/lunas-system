@@ -9,6 +9,7 @@
     "test": "jest --coverage",
     "test:sla:live": "node scripts/verify-sla-scheduler.js",
     "lint": "eslint src/**/*.js scripts/**/*.js",
+    "migrate:city-provider": "node scripts/convert-city-engineering-provider.js",
     "seed:web": "node scripts/seed-web-test-reports.js",
     "migrate:account-retention": "node scripts/remove-audit-ttl.js",
     "audit:incident-barangays": "node scripts/audit-incident-barangays.js",

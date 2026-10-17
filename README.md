@@ -1,8 +1,7 @@
 # LUNAS
 
 LUNAS manages infrastructure reports from Citizen submission through Barangay
-review, City Engineering decisions, Utility Provider repair, and final City
-Engineering verification. The current product definition is
+review, Utility Provider routing, repair, and responsible-provider verification. The current product definition is
 [LUNAS_PROJECT_SCOPE.md](./LUNAS_PROJECT_SCOPE.md); it supersedes older
 milestone and screen inventory documents.
 
@@ -11,7 +10,7 @@ milestone and screen inventory documents.
 | Directory | Purpose |
 | --- | --- |
 | `lunas_backend/` | Express API, MongoDB models, role/scope enforcement, workflow and account services. |
-| `lunas_web/` | Web workspace for Admin, Barangay Official, City Engineer, and Utility Provider. |
+| `lunas_web/` | Web workspace for Admin, Barangay Official, and Utility Provider (including City Engineering). |
 | `lunas_mobile/` | Flutter app for Citizen and Repair Personnel. |
 | `lunas_ai/` | Optional assistive evidence analysis service. AI is not a decision-maker. |
 
@@ -62,8 +61,7 @@ keeps evidence in the private AWS bucket.
 
 The former six `demo.*@lunas.test` accounts are replaced by 42 local test
 accounts: one official for each of the 31 canonical Dagupan barangays, four
-organization providers and four matching repair accounts, plus admin, city
-engineer, and citizen. See [local account directory](LOCAL_DAGUPAN_ACCOUNTS.md)
+organization providers and four matching repair accounts, plus admin, a City Engineering provider account, and citizen. See [local account directory](LOCAL_DAGUPAN_ACCOUNTS.md)
 for identifiers, category coverage, and login details. These are synthetic test
 identities, not official government or utility accounts.
 
@@ -95,9 +93,8 @@ DECORP. These snapshots support queue testing and are not real approvals.
 Use `npm run seed:web -- --refresh` to refresh only web fixtures.
 
 For the real workflow, submit a new citizen report and carry it through
-Barangay validation, City Engineering confirmation/priority/routing, provider
-assignment, mobile repair, provider review, and final City Engineering
-verification. Registration still requires working email delivery and storage.
+Barangay validation/priority/routing, provider assignment, mobile repair,
+and responsible-provider verification. Registration still requires working email delivery and storage.
 
 ## Verification commands
 
@@ -125,3 +122,10 @@ fields are retained for compatibility; legacy images may still report `not_avail
 Incident pins are citizen-confirmed. Delayed reports, earlier photos, GPS selection, and manual map pins remain supported. GPS comparison is advisory and cannot establish photo capture location. Unavailable, stale, or inaccurate GPS does not make a report suspicious. Significant discrepancies require an explanation, not automatic rejection. Canonical barangay selection remains mandatory; geographic jurisdiction is unverified until suitable authoritative boundaries are integrated. Human verification remains required.
 
 Documented false-report findings and corrections are separate from rejection and duplicate decisions. Authorized reviewers see only findings within their existing incident scope. No automatic punishment or account score is applied. See [Revision 8 implementation and verification report](REVISION_8_LOCATION_INTEGRITY_REPORT.md) for the policy, API contract, audit findings, changed files, and verification limits.
+
+## City Engineering provider conversion
+
+City Engineering uses the organization-scoped Utility Provider workspace. Barangay
+Officials validate, prioritize, and route reports; each responsible provider
+verifies its own completed repairs. Existing City Engineer accounts require the
+`migrate:city-provider` migration described in [the project scope](LUNAS_PROJECT_SCOPE.md).

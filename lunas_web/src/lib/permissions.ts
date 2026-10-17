@@ -21,17 +21,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "profile.manage",
     "support.create",
   ],
-  "City Engineer": [
-    "dashboard.view",
-    "reports.view",
-    "reports.validate",
-    "work_orders.view",
-    "repairs.verify",
-    "sla.view",
-    "notifications.view",
-    "profile.manage",
-    "support.create",
-  ],
+  "City Engineer": [], // Retired role; historical records only.
   "Utility Provider": [
     "dashboard.view",
     "work_orders.view",

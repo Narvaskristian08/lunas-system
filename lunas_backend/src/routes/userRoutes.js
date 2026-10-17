@@ -36,7 +36,7 @@ router.post('/repair-personnel/:id/activation', protect, authorize('utility_prov
   accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 router.patch('/repair-personnel/:id/status', protect, authorize('utility_provider'), mongoIdValidation,
   accountRules.accountStatusValidation, validate, accounts.changeAccountStatus);
-router.get('/utility-providers', protect, authorize('city_engineer'), getUtilityProviderOrganizations);
+router.get('/utility-providers', protect, authorize('barangay_official', 'utility_provider'), getUtilityProviderOrganizations);
 
 // Keep an explicit self-service profile endpoint so clients do not need to
 // know an ObjectId or use administrative user routes.

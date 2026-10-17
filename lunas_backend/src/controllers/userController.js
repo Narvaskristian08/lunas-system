@@ -250,8 +250,8 @@ exports.getRepairPersonnel = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/users/utility-providers
 // @access  Private (City Engineer)
 exports.getUtilityProviderOrganizations = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'city_engineer') {
-    return res.status(403).json({ success: false, message: 'Only City Engineering may select a responsible Utility Provider' });
+  if (!['barangay_official', 'utility_provider'].includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Only Barangay Officials and Utility Providers may list provider organizations' });
   }
   const organizations = await User.distinct('utilityCompany', {
     role: 'utility_provider',

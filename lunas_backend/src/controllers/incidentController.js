@@ -695,17 +695,6 @@ const notifyRoutingOfficials = async (incident) => {
   })));
 };
 
-const notifyCityEngineers = async (incident, title, message) => {
-  const reviewers = await User.find({ role: 'city_engineer', isActive: true, isArchived: { $ne: true } }).select('_id');
-  await Promise.all(reviewers.map((reviewer) => notifySafely({
-    recipient: reviewer._id,
-    type: 'incident_validated',
-    title,
-    message,
-    data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
-  })));
-};
-
 const recordOfficialAction = async ({ action, incident, req, details, changes }) => {
   await createAuditLog({
     action,
@@ -800,7 +789,7 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   const allowedSorts = new Set(['createdAt', '-createdAt', 'priority', '-priority']);
   const filter = req.user.role === 'city_engineer'
     ? { status: req.query.stage === 'confirmed' ? { $in: ['city_confirmed', 'prioritized'] } : 'barangay_validated' }
-    : { status: { $in: ['submitted', 'clarification_required'] } };
+    : { status: { $in: ['submitted', 'clarification_required', 'barangay_validated', 'city_confirmed', 'prioritized'] } };
 
   if (category) filter.category = category;
   if (hasDuplicateCandidate === 'true') filter['duplicateDetection.candidateCount'] = { $gt: 0 };
@@ -927,7 +916,7 @@ exports.validateIncident = asyncHandler(async (req, res) => {
       clarificationRequestedBy: undefined,
       clarificationRequestedAt: undefined
     },
-    normalizeText(req.body.notes) || 'Barangay validation completed; forwarded to City Engineering',
+    normalizeText(req.body.notes) || 'Barangay validation completed; ready for provider routing',
     {
       jurisdiction: {
         barangay: reviewedJurisdiction.barangay,
@@ -950,15 +939,10 @@ exports.validateIncident = asyncHandler(async (req, res) => {
     data: { incidentId: updated._id, link: `/incidents/${updated._id}` },
     priority: 'medium'
   });
-  await notifyCityEngineers(
-    updated,
-    'Barangay validated an incident',
-    `Incident ${updated.reportNumber} is ready for City Engineering review.`
-  );
 
   res.status(200).json({
     success: true,
-    message: 'Incident validated by the Barangay Official and forwarded to City Engineering',
+    message: 'Incident validated by the Barangay Official; select priority and provider',
     data: await serializeIncidentForOfficial(updated, { includeCandidates: true })
   });
 });
@@ -1170,7 +1154,7 @@ exports.markDuplicateIncident = asyncHandler(async (req, res) => {
 // @desc    Change priority after validation; raw status transitions stay unavailable
 // @route   PATCH /api/v1/incidents/:id/priority
 exports.updateIncidentPriority = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'city_engineer') {
+  if (req.user.role !== 'barangay_official') {
     return res.status(403).json({ success: false, message: 'You are not authorized to change incident priority' });
   }
   const priority = String(req.body.priority || '').toLowerCase();
@@ -1179,8 +1163,8 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
-  if (!['city_confirmed', 'prioritized'].includes(before.status)) {
-    return res.status(409).json({ success: false, message: 'City Engineering must confirm an incident before assigning its priority' });
+  if (!['barangay_validated', 'city_confirmed', 'prioritized'].includes(before.status)) {
+    return res.status(409).json({ success: false, message: 'Barangay validation is required before assigning priority' });
   }
   const now = new Date();
   const updated = await Incident.findOneAndUpdate(
@@ -1199,7 +1183,7 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
           changedBy: req.user._id,
           actorRole: req.user.role,
           changedAt: now,
-          notes: `City Engineering assigned ${priority} priority and calculated the SLA deadline`,
+          notes: `Barangay Official assigned ${priority} priority and calculated the SLA deadline`,
           metadata: { priority, targetResolutionTime: initializeIncidentSLA(priority, now).targetResolutionTime }
         }
       }
@@ -1268,13 +1252,13 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
 // @desc    Route a validated incident and create its primary work order
 // @route   POST /api/v1/incidents/:id/route
 exports.routeIncident = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'city_engineer') {
-    return res.status(403).json({ success: false, message: 'Only City Engineering may select and assign a Utility Provider' });
+  if (req.user.role !== 'barangay_official') {
+    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official may route a report' });
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
   if (before.status !== 'prioritized' || !before.priority) {
-    return res.status(409).json({ success: false, message: 'Assign City Engineering priority and SLA before routing to a Utility Provider' });
+    return res.status(409).json({ success: false, message: 'Assign priority before routing to a Utility Provider' });
   }
   const jurisdiction = normalizeJurisdiction(before, before.jurisdiction || {});
   if (!hasCompleteRoutingInput(req.body)) {
@@ -1308,7 +1292,7 @@ exports.routeIncident = asyncHandler(async (req, res) => {
       responsibleRole: 'utility_provider', jurisdiction, priority: before.priority, createdBy: req.user._id,
       status: 'pending', assignmentState: 'unassigned', progressPercent: 0, progressStage: 'assigned', sla,
       history: [{ type: 'created', actor: req.user._id, actorRole: req.user.role, status: 'pending',
-        notes: 'Work order created when City Engineering assigned the Utility Provider', createdAt: now }] });
+        notes: 'Work order created when the Barangay Official assigned the Utility Provider', createdAt: now }] });
   } catch (error) {
     if (error.code === 11000) return respondConflict(res);
     throw error;

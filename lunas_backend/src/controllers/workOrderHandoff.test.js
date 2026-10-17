@@ -1,4 +1,4 @@
-jest.mock('../models/WorkOrder', () => ({ findOne: jest.fn(), findOneAndUpdate: jest.fn() }));
+jest.mock('../models/WorkOrder', () => ({ findOne: jest.fn(), findOneAndUpdate: jest.fn(), countDocuments: jest.fn().mockResolvedValue(0) }));
 jest.mock('../models/Incident', () => ({ findById: jest.fn(), findOneAndUpdate: jest.fn() }));
 jest.mock('../models/User', () => ({ find: jest.fn(), findByIdAndUpdate: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
@@ -16,7 +16,6 @@ const { createNotification } = require('../services/notificationService');
 const {
   coordinateCityCorrection,
   reviewCompletedWork,
-  finalReviewWorkOrder,
   getWorkOrderSLA
 } = require('./workOrderController');
 
@@ -59,7 +58,7 @@ const workOrderFixture = (status, overrides = {}) => ({
   ...overrides
 });
 
-describe('Utility Provider and City Engineering completion handoffs', () => {
+describe('Responsible-provider completion handoffs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     User.find.mockReturnValue(queryFor([]));
@@ -144,14 +143,15 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  test('Utility Provider acceptance forwards work into City Engineering verification', async () => {
+  test('Utility Provider approval verifies and closes the report', async () => {
     const workOrder = workOrderFixture('completed');
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
-    WorkOrder.findOneAndUpdate.mockResolvedValue(workOrderFixture('provider_accepted'));
+    WorkOrder.findOneAndUpdate.mockResolvedValue(workOrderFixture('verified'));
     Incident.findById.mockReturnValue(queryFor({ status: 'provider_review' }));
     Incident.findOneAndUpdate.mockResolvedValue({
       _id: workOrder.incident,
-      status: 'city_verification',
+      status: 'closed',
+      reporter: 'citizen-1',
       assignedUtility: 'provider-1'
     });
     const res = response();
@@ -166,23 +166,23 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
 
     const incidentUpdate = Incident.findOneAndUpdate.mock.calls[0][1];
     expect(incidentUpdate.$push.statusHistory.$each.map((entry) => entry.status))
-      .toEqual(['provider_accepted', 'city_verification']);
-    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.state');
+      .toEqual(['verified', 'resolved', 'closed']);
+    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).toHaveProperty(['sla.closedAt']);
     expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.deadline');
-    expect(incidentUpdate.$set).not.toHaveProperty('closedAt');
+    expect(incidentUpdate.$set).toHaveProperty('closedAt');
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'Completion accepted and forwarded to City Engineering'
+      message: 'Repair verified and report resolved'
     }));
   });
 
-  test.each([['2026-10-03T00:00:00Z', 'met'], ['2026-10-05T00:00:00Z', 'breached']])('City closure at %s persists %s on both records and preserves completion history', async (time, outcome) => {
+  test.each([['2026-10-03T00:00:00Z', 'met'], ['2026-10-05T00:00:00Z', 'breached']])('Provider closure at %s persists %s on both records and preserves completion history', async (time, outcome) => {
     jest.useFakeTimers().setSystemTime(new Date(time));
-    const workOrder = workOrderFixture('provider_accepted', {
+    const workOrder = workOrderFixture('completed', {
       incident: { _id: '507f191e810c19729de860b1', reportNumber: 'LUNAS-202608-000001' }
     });
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
     WorkOrder.findOneAndUpdate.mockResolvedValue(workOrderFixture('verified', { incident: workOrder.incident }));
-    Incident.findById.mockReturnValue(queryFor({ status: 'city_verification' }));
+    Incident.findById.mockReturnValue(queryFor({ status: 'provider_review' }));
     Incident.findOneAndUpdate.mockResolvedValue({
       _id: '507f191e810c19729de860b1',
       status: 'closed',
@@ -191,10 +191,10 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
     });
     const res = response();
 
-    await finalReviewWorkOrder({
+    await reviewCompletedWork({
       params: { id: workOrder._id },
-      user: { _id: 'engineer-1', role: 'city_engineer' },
-      body: { decision: 'approved' },
+      user: { _id: 'provider-1', role: 'utility_provider', utilityCompany: 'Dagupan Water District' },
+      body: { decision: 'accepted' },
       headers: {},
       ip: '127.0.0.1'
     }, res, jest.fn());
@@ -208,7 +208,7 @@ describe('Utility Provider and City Engineering completion handoffs', () => {
     expect(incidentUpdate.$set).not.toHaveProperty('sla.deadline');
     expect(incidentUpdate.$set).toEqual(expect.objectContaining({
       status: 'closed',
-      finalVerifiedBy: 'engineer-1'
+      finalVerifiedBy: 'provider-1'
     }));
     expect(incidentUpdate.$push.statusHistory.$each.map((entry) => entry.status))
       .toEqual(['verified', 'resolved', 'closed']);
@@ -229,7 +229,19 @@ test('work-order SLA API preserves a breached terminal outcome instead of forcin
   WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
   const res = response();
   const next = jest.fn();
-  await getWorkOrderSLA({ params: { id: workOrder._id }, user: { role: 'city_engineer' } }, res, next);
+  await getWorkOrderSLA({ params: { id: workOrder._id }, user: { role: 'utility_provider', utilityCompany: 'Dagupan Water District' } }, res, next);
   expect(next).not.toHaveBeenCalled();
   expect(res.json.mock.calls[0][0].data).toMatchObject({ state: 'breached', isOverdue: false, isApproaching: false });
+});
+
+
+test('a different provider cannot verify another organization repair', async () => {
+  jest.clearAllMocks();
+  WorkOrder.findOne.mockReturnValue(queryFor(workOrderFixture('completed')));
+  const res = response();
+  await reviewCompletedWork({ params: { id: 'work-order' },
+    user: { role: 'utility_provider', utilityCompany: 'Different organization' },
+    body: { decision: 'accepted' } }, res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(404);
+  expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
 });

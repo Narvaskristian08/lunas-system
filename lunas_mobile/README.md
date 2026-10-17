@@ -38,7 +38,7 @@ do not have operational screens in the Flutter mobile app:
 | Role | Mobile access | Web access |
 | --- | --- | --- |
 | `barangay_official` | Web-only message | Allowed |
-| `city_engineer` | Web-only message | Allowed |
+| City Engineering (`utility_provider`) | Web-only message | Organization-scoped provider workspace |
 | `utility_provider` | Web-only message | Allowed |
 | `admin` | Web-only message | Allowed |
 | `repair_personnel` | Repair dashboard and field workflow | If applicable |
@@ -200,8 +200,8 @@ configuration. Do not include service secrets in a mobile build.
 - Citizens create reports with supported category, description, location, and
   evidence; then view only their own reports, safe evidence, status history,
   permitted clarification/rejection details, and final result.
-- A 100% repair update does not appear as final resolution. City Engineering
-  must complete final verification first.
+- A 100% repair update does not appear as final resolution. The responsible provider
+  must verify completion first.
 
 ## Repair Personnel workflow
 
@@ -211,7 +211,7 @@ configuration. Do not include service secrets in a mobile build.
   or decline assignment, start work, update progress, attach supporting
   evidence, submit final post-maintenance evidence with completion, and review
   provider correction instructions/history.
-- Completion awaits Utility Provider review and then City Engineering final
+- Completion awaits the responsible Utility Provider final
   verification. It never closes the Citizen's report by itself.
 
 ## API and security

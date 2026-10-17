@@ -316,7 +316,7 @@ export async function reviewCompletedWorkAction(input: {
       JSON.stringify({ decision: input.decision, reason, instructions }),
       workOrderId,
       input.decision === "accepted"
-        ? "Completion accepted and forwarded to City Engineering."
+        ? "Repair verified and report resolved."
         : "Corrective work sent to Repair Personnel.",
     );
   } catch (error) {

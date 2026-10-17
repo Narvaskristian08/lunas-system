@@ -9,12 +9,11 @@ const { testEvidence } = require('./seed-fixture-evidence');
 const { ORGANIZATIONS, fixtureEmails, email, requireLocalSeedEnvironment } = require('./dagupan-seed-config');
 
 function incidentPath(status) {
-  const path = ['submitted', 'barangay_validated', 'city_confirmed', 'prioritized', 'provider_assigned',
-    'repair_assigned', 'in_progress', 'repair_completed', 'provider_review', 'provider_accepted',
-    'city_verification', 'verified', 'resolved', 'closed'];
+  const path = ['submitted', 'barangay_validated', 'prioritized', 'provider_assigned',
+    'repair_assigned', 'in_progress', 'repair_completed', 'provider_review', 'verified', 'resolved', 'closed'];
   if (status === 'rejected' || status === 'duplicate') return ['submitted', status];
   if (status === 'clarification_required') return ['submitted', 'barangay_validated', status];
-  if (status === 'rework_required') return [...path.slice(0, 9), status];
+  if (status === 'rework_required') return [...path.slice(0, 8), status];
   if (status === 'city_correction_required') return [...path.slice(0, 11), status];
   return path.slice(0, path.indexOf(status) + 1);
 }
@@ -55,8 +54,8 @@ async function seed() {
       ['submitted', 'road'], ['submitted', 'drainage'], ['submitted', 'electrical'],
       ['submitted', 'water'], ['submitted', 'drainage'], ['submitted', 'streetlight'], ['submitted', 'drainage'],
       ['barangay_validated', 'water'], ['barangay_validated', 'road'],
-      ['city_confirmed', 'drainage'], ['prioritized', 'water'],
-      ['clarification_required', 'road'], ['rejected', 'road'],
+      ['barangay_validated', 'drainage'], ['prioritized', 'water'],
+      ['barangay_validated', 'road'], ['rejected', 'road'],
       ['provider_assigned', 'water', 'pending'],
       ['repair_assigned', 'drainage', 'accepted'],
       ['in_progress', 'water', 'in_progress'],
@@ -64,8 +63,8 @@ async function seed() {
       ['in_progress', 'water', 'in_progress', 'overdue'],
       ['provider_review', 'water', 'completed'],
       ['rework_required', 'drainage', 'rework_required'],
-      ['city_verification', 'water', 'provider_accepted'],
-      ['city_correction_required', 'drainage', 'city_correction_required'],
+      ['provider_review', 'water', 'completed'],
+      ['rework_required', 'drainage', 'rework_required'],
       ['closed', 'water', 'verified'], ['duplicate', 'road']
     ];
     let created = 0;
@@ -97,8 +96,8 @@ async function seed() {
       const citizenEvidence = await testEvidence(`${reportNumber} - citizen report`, 'mock-web/citizen');
       const lifecycle = incidentPath(status);
       const actors = state => ['submitted'].includes(state) ? users.citizen
-        : ['barangay_validated', 'rejected', 'duplicate'].includes(state) ? users.barangay
-          : ['repair_assigned', 'provider_accepted', 'city_verification', 'rework_required'].includes(state) ? users.utility
+        : ['barangay_validated', 'prioritized', 'provider_assigned', 'rejected', 'duplicate'].includes(state) ? users.barangay
+          : ['repair_assigned', 'verified', 'resolved', 'closed', 'rework_required'].includes(state) ? users.utility
             : ['in_progress', 'repair_completed', 'provider_review'].includes(state) ? users.repair : users.engineer;
       const submittedAt = orderStatus ? new Date(sla.startedAt.getTime() - 2 * 3600000) : earlier(6);
       const stateTime = state => {
@@ -120,16 +119,15 @@ async function seed() {
         status, images: [citizenEvidence], sla, createdAt: submittedAt,
         ...(lifecycle.includes('barangay_validated') ? { validatedBy: users.barangay._id, validatedAt: stateTime('barangay_validated') } : {}),
         ...(['city_confirmed', 'prioritized'].includes(status) || orderStatus ? {
-          cityConfirmedBy: users.engineer._id, cityConfirmedAt: stateTime('city_confirmed'),
-          jurisdiction: { barangay: 'Poblacion Oeste', city: 'Dagupan City', confirmedBy: users.engineer._id, confirmedAt: stateTime('city_confirmed') }
+          jurisdiction: { barangay: 'Poblacion Oeste', city: 'Dagupan City', confirmedBy: users.barangay._id, confirmedAt: stateTime('barangay_validated') }
         } : {}),
-        ...(status === 'prioritized' || orderStatus ? { priority, priorityAssignedBy: users.engineer._id, priorityAssignedAt: stateTime('prioritized') } : {}),
-        ...(orderStatus ? { assignedUtility: users.utility._id, providerAssignedBy: users.engineer._id, providerAssignedAt: sla.startedAt,
-          routing: { responsibleOrganization: users.utility.utilityCompany, responsibleRole: 'utility_provider', routedBy: users.engineer._id, routedAt: sla.startedAt, reason: 'Synthetic workflow fixture' } } : {}),
+        ...(status === 'prioritized' || orderStatus ? { priority, priorityAssignedBy: users.barangay._id, priorityAssignedAt: stateTime('prioritized') } : {}),
+        ...(orderStatus ? { assignedUtility: users.utility._id, providerAssignedBy: users.barangay._id, providerAssignedAt: sla.startedAt,
+          routing: { responsibleOrganization: users.utility.utilityCompany, responsibleRole: 'utility_provider', routedBy: users.barangay._id, routedAt: sla.startedAt, reason: 'Synthetic workflow fixture' } } : {}),
         ...(status === 'clarification_required' ? { clarificationReason: 'Synthetic request: clarify the affected road location.', clarificationRequestedBy: users.engineer._id, clarificationRequestedAt: now } : {}),
         ...(status === 'rejected' ? { rejectedBy: users.barangay._id, rejectedAt: now, rejectionReason: 'Synthetic rejection fixture', rejectionNotes: 'Testing the rejected report detail.' } : {}),
         ...(status === 'duplicate' ? { duplicateOf: original._id, duplicateReason: 'Synthetic duplicate fixture', duplicateMarkedBy: users.barangay._id, duplicateMarkedAt: now } : {}),
-        ...(closed ? { finalVerifiedBy: users.engineer._id, finalVerifiedAt: now, closedAt: now } : {}),
+        ...(closed ? { finalVerifiedBy: users.utility._id, finalVerifiedAt: now, closedAt: now } : {}),
         ...(completed ? { repairCompletedAt: earlier(1) } : {}),
         ...(['provider_accepted', 'city_correction_required', 'verified'].includes(orderStatus) ? { providerAcceptedBy: users.utility._id, providerAcceptedAt: earlier(0.5) } : {}),
         aiAnalysis: { analysisStatus: 'unavailable', advisoryOnly: true, requiresManualReview: true },
@@ -142,25 +140,25 @@ async function seed() {
         const progressPercent = completed ? 100 : 0;
         const repairEvidence = completed ? { ...await testEvidence(`${reportNumber} - completed repair`, 'mock-web/repair'),
           uploadedBy: users.repair._id, uploadedAt: earlier(1), caption: 'Synthetic completion evidence for local testing' } : null;
-        const history = [{ type: 'created', status: 'pending', progressPercent: 0, actor: users.engineer._id, actorRole: 'city_engineer', createdAt: sla.startedAt, notes: 'Synthetic local QA: Engineering routed the report and created its work order.' }];
+        const history = [{ type: 'created', status: 'pending', progressPercent: 0, actor: users.utility._id, actorRole: 'utility_provider', createdAt: sla.startedAt, notes: 'Synthetic local QA: Barangay routed the report and created its work order.' }];
         if (assigned) history.push({ type: 'assigned', status: 'accepted', progressPercent: 0, actor: users.utility._id, actorRole: 'utility_provider', createdAt: earlier(3), notes: 'Synthetic QA: repair personnel assigned.' });
         if (orderStatus === 'in_progress' || completed) history.push({ type: 'started', status: 'in_progress', progressPercent: 0, actor: users.repair._id, actorRole: 'repair_personnel', createdAt: earlier(2), notes: 'Synthetic QA: repair started.' });
         if (completed) history.push({ type: 'repair_completed', status: 'completed', progressPercent: 100, actor: users.repair._id, actorRole: 'repair_personnel', createdAt: earlier(1), notes: 'Synthetic QA: completion evidence submitted for provider review.' });
         const reviews = [];
-        if (['rework_required', 'provider_accepted', 'city_correction_required', 'verified'].includes(orderStatus)) {
+        if (orderStatus === 'rework_required') {
           const correction = orderStatus === 'rework_required';
           reviews.push({ stage: 'utility_provider', decision: correction ? 'correction_required' : 'accepted', actor: users.utility._id, createdAt: earlier(0.5), reason: correction ? 'Synthetic QA: repair needs correction.' : 'Synthetic QA: provider accepted completion.', ...(correction ? { instructions: 'Check the repair and submit updated evidence.' } : {}) });
           history.push({ type: correction ? 'provider_correction_requested' : 'provider_accepted', status: correction ? 'rework_required' : 'provider_accepted', actor: users.utility._id, actorRole: 'utility_provider', createdAt: earlier(0.5), notes: reviews.at(-1).reason });
         }
         if (orderStatus === 'city_correction_required' || closed) {
-          reviews.push({ stage: 'city_engineer', decision: closed ? 'verified' : 'correction_required', actor: users.engineer._id, createdAt: now, reason: closed ? 'Synthetic QA: city verified completion.' : 'Synthetic QA: city returned the repair.', ...(!closed ? { instructions: 'Correct the repair and resubmit it through provider review.' } : {}) });
-          history.push({ type: closed ? 'city_verified' : 'city_returned', status: orderStatus, actor: users.engineer._id, actorRole: 'city_engineer', createdAt: now, notes: reviews.at(-1).reason });
+          reviews.push({ stage: 'utility_provider', decision: closed ? 'verified' : 'correction_required', actor: users.utility._id, createdAt: now, reason: closed ? 'Synthetic QA: provider verified completion.' : 'Synthetic QA: city returned the repair.', ...(!closed ? { instructions: 'Correct the repair and resubmit it through provider review.' } : {}) });
+          history.push({ type: closed ? 'provider_verified' : 'city_returned', status: orderStatus, actor: users.utility._id, actorRole: 'utility_provider', createdAt: now, notes: reviews.at(-1).reason });
         }
         const order = await WorkOrder.create({ incident: incident._id,
           createdAt: sla.startedAt,
           responsibleOrganization: users.utility.utilityCompany, responsibleRole: 'utility_provider',
           jurisdiction: incident.jurisdiction.toObject(), priority, status: orderStatus, sla,
-          createdBy: users.engineer._id, instructions: 'Synthetic QA fixture: use this record to test the workflow.',
+          createdBy: users.barangay._id, instructions: 'Synthetic QA fixture: use this record to test the workflow.',
           assignmentState: assigned ? 'accepted' : 'unassigned',
           ...(assigned ? { assignedTo: users.repair._id, assignedBy: users.utility._id, assignedAt: earlier(3), acceptedAt: earlier(3), currentAssignment: assignmentId,
             assignments: [{ _id: assignmentId, assignee: users.repair._id, assignedBy: users.utility._id, assignedAt: earlier(3), acceptedAt: earlier(3), status: 'accepted', active: true }] } : {}),

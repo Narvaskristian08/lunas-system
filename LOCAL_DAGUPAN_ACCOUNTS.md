@@ -6,12 +6,12 @@ Default local password: `LunasLocal2026!`. Override with `DAGUPAN_SEED_PASSWORD`
 
 ## Organization coverage
 
-- **Dagupan City Engineering Office**: road, drainage, streetlight, other.
+- **Dagupan City Engineering Office**: road, drainage, streetlight.
 - **Dagupan Electric Corporation (DECORP)**: electrical.
 - **Dagupan City Water District / Pamana Water Dagupan**: water.
 - **DPWH - Dagupan National Infrastructure**: road, drainage.
 
-The city maintenance provider is a separate `utility_provider` account from the `city_engineer` reviewer. DPWH is an ownership-dependent routing option; the responsible district must be confirmed for each actual asset. Category coverage is a local routing configuration, not a verified maintenance agreement.
+Both City Engineering accounts use `utility_provider` with the same organization scope; the separate City Engineer reviewer role is retired. DPWH is an ownership-dependent routing option; the responsible district must be confirmed for each actual asset. Category coverage is a local routing configuration, not a verified maintenance agreement.
 
 Sources: [DECORP](https://decorp.com.ph/), [DCWD/Pamana FAQs](https://dcwd.gov.ph/services/faqs/), [Dagupan drainage coordination](https://www.dagupan.gov.ph/category/press-release/). Barangays come from `lunas_backend/src/data/dagupanBarangays.js`.
 
@@ -20,7 +20,7 @@ Sources: [DECORP](https://decorp.com.ph/), [DCWD/Pamana FAQs](https://dcwd.gov.p
 | Role | Assignment | Email |
 | --- | --- | --- |
 | admin | Citywide test account | dagupan.admin@lunas.test |
-| city_engineer | Dagupan City Engineering Office | dagupan.engineer@lunas.test |
+| utility_provider | Dagupan City Engineering Office | dagupan.engineer@lunas.test |
 | citizen | Citywide test account | dagupan.citizen@lunas.test |
 | barangay_official | Bacayao Norte | dagupan.barangay-bacayao-norte@lunas.test |
 | barangay_official | Bacayao Sur | dagupan.barangay-bacayao-sur@lunas.test |

@@ -433,7 +433,7 @@ const slaQuery = (value) => {
 };
 
 test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
-  'City prioritization prepares the %s SLA without starting the timer (%i hours)', async (priority, hours) => {
+  'Barangay prioritization prepares the %s SLA without starting the timer (%i hours)', async (priority, hours) => {
     jest.clearAllMocks();
     const time = new Date('2026-10-02T00:00:00Z');
     jest.useFakeTimers().setSystemTime(time);
@@ -444,7 +444,7 @@ test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
     const res = createResponse();
     const next = jest.fn();
     await updateIncidentPriority({ params: { id: record._id }, body: { priority },
-      user: { _id: '507f191e810c19729de860a1', role: 'city_engineer' }, headers: {} }, res, next);
+      user: { _id: '507f191e810c19729de860a1', role: 'barangay_official', barangay: 'Poblacion Oeste' }, headers: {} }, res, next);
     expect(next).not.toHaveBeenCalled();
     const sla = Incident.findOneAndUpdate.mock.calls[0][1].$set.sla;
     expect(sla.startedAt).toBeUndefined();
@@ -463,7 +463,7 @@ test('incident SLA API projects an overdue deadline during City verification eve
     sla: { deadline: new Date('2026-10-01T00:00:00Z'), state: 'active', isOverdue: false } }));
   const res = createResponse();
   const next = jest.fn();
-  await getIncidentSLA({ params: { id: 'incident' }, user: { role: 'city_engineer' } }, res, next);
+  await getIncidentSLA({ params: { id: 'incident' }, user: { role: 'barangay_official', barangay: 'Poblacion Oeste' } }, res, next);
   expect(next).not.toHaveBeenCalled();
   expect(res.json.mock.calls[0][0].data).toMatchObject({ state: 'overdue', isOverdue: true });
   jest.useRealTimers();
@@ -501,7 +501,7 @@ test.each(['success', 'conflict', 'failure'])('routing creates an unassigned wor
   Incident.findOneAndUpdate.mockReturnValue(outcome === 'failure' ? { populate: () => Promise.reject(new Error('write failed')) } : chain(outcome === 'conflict' ? null : { ...record, status: 'provider_assigned' }));
   const res = createResponse();
   const next = jest.fn();
-  await require('./incidentController').routeIncident({ params: { id: record._id }, body: { responsibleOrganization: 'Water District', responsibleRole: 'utility_provider' }, user: { _id: '507f191e810c19729de860a4', role: 'city_engineer' }, headers: {} }, res, next);
+  await require('./incidentController').routeIncident({ params: { id: record._id }, body: { responsibleOrganization: 'Water District', responsibleRole: 'utility_provider' }, user: { _id: '507f191e810c19729de860a4', role: 'barangay_official', barangay: 'Poblacion Oeste' }, headers: {} }, res, next);
   expect(WorkOrder.create).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending', assignmentState: 'unassigned', priority: 'high', sla: expect.objectContaining({ state: 'active', startedAt: expect.any(Date), deadline: expect.any(Date) }) }));
   expect(Incident.findOneAndUpdate.mock.calls[0][1].$set.workOrder).toBe('507f191e810c19729de860a3');
   if (outcome !== 'success') expect(WorkOrder.deleteOne).toHaveBeenCalledWith({ _id: '507f191e810c19729de860a3' });

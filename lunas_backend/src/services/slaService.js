@@ -125,7 +125,7 @@ const notifyIncident = async (incident, stage, template) => {
   const recipients = await incidentSlaRecipients(incident);
   if (incident.sla.escalationLevel >= 2 && stage === 'escalation') {
     const engineers = await User.find({
-      role: 'city_engineer', isActive: true, isArchived: { $ne: true }
+      role: 'utility_provider', utilityCompany: incident.routing?.responsibleOrganization || '__unassigned__', isActive: true, isArchived: { $ne: true }
     }).select('_id');
     recipients.push(...engineers.map((user) => user._id.toString()));
   }
@@ -223,7 +223,7 @@ const incidentSlaRecipients = async (incident) => {
     return officials.map((official) => official._id.toString());
   }
   const engineers = await User.find({
-    role: 'city_engineer', isActive: true, isArchived: { $ne: true }
+    role: 'utility_provider', utilityCompany: incident.routing?.responsibleOrganization || '__unassigned__', isActive: true, isArchived: { $ne: true }
   }).select('_id');
   return engineers.map((engineer) => engineer._id.toString());
 };

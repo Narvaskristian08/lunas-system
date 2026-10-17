@@ -439,7 +439,7 @@ class ReportStatusEvent {
     if (status == 'rework_required' || status == 'city_correction_required') {
       return 'Corrective Work Required';
     }
-    if (status == 'verified') return 'Repair Verified by City Engineering';
+    if (status == 'verified') return 'Repair Verified by Responsible Provider';
     if (status == 'resolved' || status == 'closed') return 'Resolved';
     if (progressPercent == 100) return 'Repair Progress Reached 100%';
     if (status == 'barangay_validated') return 'Validated by Barangay Official';

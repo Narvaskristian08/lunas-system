@@ -1308,32 +1308,32 @@ exports.reviewCompletedWork = asyncHandler(async (req, res) => {
   if (!['accepted', 'request_correction'].includes(decision)) return fail(res, 400, 'Choose accepted or request_correction');
   if (!workOrder.assignedTo) return fail(res, 409, 'Assign Repair Personnel before reviewing completion');
   const correction = decision === 'request_correction';
-  const nextStatus = correction ? 'rework_required' : 'provider_accepted';
+  const nextStatus = correction ? 'rework_required' : 'verified';
   const updated = await addWorkOrderReview({
     workOrder, req, stage: 'utility_provider',
-    decision: correction ? 'correction_required' : 'accepted', reason: reason || undefined,
+    decision: correction ? 'correction_required' : 'verified', reason: reason || undefined,
     instructions: instructions || (correction ? reason : undefined), nextStatus,
-    historyType: correction ? 'provider_correction_requested' : 'provider_accepted'
+    historyType: correction ? 'provider_correction_requested' : 'provider_verified'
   });
   if (!updated) return fail(res, 409, 'The work-order review changed. Refresh and try again.');
-  const incidentStatus = correction ? 'rework_required' : 'city_verification';
-  const events = correction ? ['rework_required'] : ['provider_accepted', 'city_verification'];
+  const incidentStatus = correction ? 'rework_required' : 'closed';
+  const events = correction ? ['rework_required'] : ['verified', 'resolved', 'closed'];
   const incident = await updateIncidentForWorkOrder({
     incidentId: updated.incident, status: incidentStatus, actor: req.user,
-    events, notes: correction ? (instructions || reason) : 'Utility Provider accepted the repair and forwarded it for City Engineering verification',
+    events, notes: correction ? (instructions || reason) : 'Responsible Utility Provider verified the repair and closed the report',
     metadata: { workOrderId: updated._id, decision },
-    fields: correction ? {} : { providerAcceptedBy: req.user._id, providerAcceptedAt: new Date() }
+    fields: correction ? {} : { providerAcceptedBy: req.user._id, providerAcceptedAt: new Date(), finalVerifiedBy: req.user._id, finalVerifiedAt: new Date(), closedAt: new Date(), ...getClosedSlaFields(workOrder.sla) }
   });
   if (correction) {
     await setAvailability(updated.assignedTo, 'assigned');
     await notifyRepairPersonnel(updated, 'Corrective work requested', instructions || reason);
   } else if (incident) {
-    const cityEngineers = await User.find({ role: 'city_engineer', isActive: true, isArchived: { $ne: true } }).select('_id');
-    await Promise.all(cityEngineers.map((reviewer) => createNotification({
-      recipient: reviewer._id, type: 'work_order_completed', title: 'Repair ready for final verification',
-      message: `Work order ${updated.orderNumber} was accepted by ${updated.responsibleOrganization} and awaits City Engineering review.`,
-      data: { incidentId: incident._id, workOrderId: updated._id, link: `/work-orders/${updated._id}` }
-    })));
+    await setAvailability(updated.assignedTo, 'available');
+    await createNotification({
+      recipient: incident.reporter, type: 'repair_verified', title: 'Your report has been resolved',
+      message: `The responsible provider verified the repair for ${incident.reportNumber}.`,
+      data: { incidentId: incident._id, workOrderId: updated._id, link: `/incidents/${incident._id}` }
+    });
   }
   await createAuditLog({
     action: correction ? 'provider_correction_requested' : 'provider_completion_accepted',
@@ -1343,7 +1343,7 @@ exports.reviewCompletedWork = asyncHandler(async (req, res) => {
   });
   return res.status(200).json({
     success: true,
-    message: correction ? 'Corrective work sent to Repair Personnel' : 'Completion accepted and forwarded to City Engineering',
+    message: correction ? 'Corrective work sent to Repair Personnel' : 'Repair verified and report resolved',
     data: await serializeWorkOrder(updated)
   });
 });

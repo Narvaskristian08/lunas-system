@@ -400,7 +400,7 @@ describe('public citizen registration', () => {
   });
 
   test('does not send a reset code to personnel without a verified recovery email', async () => {
-    const user = { _id: '507f191e810c19729de860aa', role: 'city_engineer', isActive: true, isVerified: true };
+    const user = { _id: '507f191e810c19729de860aa', role: 'utility_provider', isActive: true, isVerified: true };
     User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
     const res = createResponse();
     await forgotPassword({ body: { email: 'juan@example.com' }, ip: '127.0.0.1', headers: {} }, res, jest.fn());

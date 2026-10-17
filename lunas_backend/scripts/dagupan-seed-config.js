@@ -18,7 +18,7 @@ function accountDefinitions(password) {
     approval: { authority: 'Local development seed', reference: 'Synthetic local account; not an officially provisioned government account.' } };
   const accounts = [
     { firstName: 'Local', lastName: 'Administrator', email: fixtureEmails.admin, role: 'admin', legacyEmail: 'demo.admin@lunas.test' },
-    { firstName: 'Local', lastName: 'City Engineer', email: fixtureEmails.engineer, role: 'city_engineer', organization: 'Dagupan City Engineering Office', legacyEmail: 'demo.engineer@lunas.test' },
+    { firstName: 'Local', lastName: 'City Engineer', email: fixtureEmails.engineer, role: 'utility_provider', organization: 'Dagupan City Engineering Office', utilityCompany: 'Dagupan City Engineering Office', expertise: ['road', 'drainage', 'streetlight'], legacyEmail: 'demo.engineer@lunas.test' },
     { firstName: 'Local', lastName: 'Citizen', email: fixtureEmails.citizen, role: 'citizen', legacyEmail: 'demo.citizen@lunas.test' },
     ...DAGUPAN_BARANGAYS.map(barangay => ({ firstName: barangay, lastName: 'Official', email: email(`barangay-${slug(barangay)}`),
       role: 'barangay_official', barangay, organization: `Barangay ${barangay}`, position: 'Local barangay account',

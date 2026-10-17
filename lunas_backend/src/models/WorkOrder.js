@@ -34,7 +34,7 @@ const historySchema = new mongoose.Schema({
       'created', 'assigned', 'reassigned', 'accepted', 'declined', 'started',
       'progress', 'evidence_uploaded', 'ready_for_completion', 'repair_completed',
       'provider_accepted', 'provider_correction_requested', 'city_returned',
-      'city_verified', 'correction_started', 'sla_approaching', 'sla_overdue'
+      'city_verified', 'provider_verified', 'provider_conversion', 'correction_started', 'sla_approaching', 'sla_overdue'
     ],
     required: true
   },

@@ -2,7 +2,6 @@ const { canonicalizeBarangay } = require('../data/dagupanBarangays');
 
 const OFFICIAL_VALIDATION_ROLES = Object.freeze([
   'barangay_official',
-  'city_engineer',
   'utility_provider'
 ]);
 
@@ -12,8 +11,7 @@ const OFFICIAL_VALIDATION_ROLES = Object.freeze([
 // provider-assignment workflow. Keep this narrower set reusable at route
 // boundaries instead of accepting a request and failing only inside a handler.
 const VALIDATION_DECISION_ROLES = Object.freeze([
-  'barangay_official',
-  'city_engineer'
+  'barangay_official'
 ]);
 
 const RESPONSIBLE_ROLES = Object.freeze(['utility_provider']);
@@ -44,7 +42,6 @@ const isValidationDecisionOfficial = (user) => Boolean(user && VALIDATION_DECISI
 const buildIncidentScope = (user) => {
   if (!user) return { _id: null };
 
-  if (user.role === 'city_engineer') return {};
 
   if (user.role === 'citizen') return { reporter: user._id };
 
@@ -85,7 +82,6 @@ const combineIncidentFilters = (...filters) => {
 
 const canAccessIncident = (user, incident) => {
   if (!user || !incident) return false;
-  if (user.role === 'city_engineer') return true;
 
   if (user.role === 'citizen') {
     return asId(incident.reporter) === asId(user._id);
@@ -105,7 +101,6 @@ const canAccessIncident = (user, incident) => {
 
 const canConfirmJurisdiction = (user, jurisdiction) => {
   if (!isValidationOfficial(user)) return false;
-  if (user.role === 'city_engineer') return true;
   if (user.role !== 'barangay_official') return false;
 
   const jurisdictionBarangay = canonicalizeBarangay(jurisdiction?.barangay);
@@ -113,8 +108,9 @@ const canConfirmJurisdiction = (user, jurisdiction) => {
     && jurisdictionBarangay === canonicalizeBarangay(user.barangay);
 };
 
-const canRouteIncident = (user, routing) => {
-  return user?.role === 'city_engineer' && routing?.responsibleRole === 'utility_provider';
+const canRouteIncident = (user, routing, jurisdiction) => {
+  return user?.role === 'barangay_official' && routing?.responsibleRole === 'utility_provider'
+    && canConfirmJurisdiction(user, jurisdiction);
 };
 
 const defaultJurisdictionFor = (incident) => ({

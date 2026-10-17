@@ -23,14 +23,14 @@ const INCIDENT_STATES = Object.freeze([
 
 const INCIDENT_TRANSITIONS = Object.freeze({
   submitted: Object.freeze(['barangay_validated', 'rejected', 'duplicate']),
-  barangay_validated: Object.freeze(['city_confirmed', 'clarification_required']),
+  barangay_validated: Object.freeze(['prioritized', 'clarification_required']),
   city_confirmed: Object.freeze(['prioritized']),
   prioritized: Object.freeze(['provider_assigned']),
   provider_assigned: Object.freeze(['repair_assigned']),
   repair_assigned: Object.freeze(['provider_assigned', 'in_progress']),
   in_progress: Object.freeze(['repair_completed']),
   repair_completed: Object.freeze(['provider_review']),
-  provider_review: Object.freeze(['rework_required', 'provider_accepted']),
+  provider_review: Object.freeze(['rework_required', 'provider_accepted', 'verified']),
   rework_required: Object.freeze(['in_progress']),
   provider_accepted: Object.freeze(['city_verification']),
   city_verification: Object.freeze(['city_correction_required', 'verified']),

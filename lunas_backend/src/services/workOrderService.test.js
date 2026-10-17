@@ -103,7 +103,8 @@ describe('work-order domain rules', () => {
       _id: '507f191e810c19729de8699'
     }, workOrder)).toBe(false);
     expect(canManageWorkOrder(cityEngineer, workOrder)).toBe(false);
-    expect(canReviewFinalWorkOrder(cityEngineer, workOrder)).toBe(true);
+    expect(canReviewFinalWorkOrder(cityEngineer, workOrder)).toBe(false);
+    expect(canReviewFinalWorkOrder(utilityProvider, workOrder)).toBe(true);
     expect(canManageWorkOrder(utilityProvider, workOrder)).toBe(true);
     expect(canManageWorkOrder({
       _id: '507f191e810c19729de860b',

@@ -31,9 +31,9 @@ secrets, an invalid MongoDB URI, and missing Turnstile configuration.
 - Admin provisions authorized accounts after external approval; role/scope
   changes, activation, and account lifecycle are recorded.
 - Barangay Officials can review only reports in their assigned barangay.
-- City Engineers can review citywide incidents and make manual priority,
-  provider-routing, and final-verification decisions.
-- Utility Providers can manage work orders only for their organization.
+- Barangay Officials select priority and route validated reports within their barangay.
+- City Engineering uses the Utility Provider role and its organization scope.
+- Utility Providers manage and verify repairs only for their own organization.
 - Repair Personnel can use only eligible work assigned to them in their
   organization and optional barangay scope.
 - Direct state editing and incident deletion are not exposed. Workflow changes

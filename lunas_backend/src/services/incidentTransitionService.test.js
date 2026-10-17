@@ -19,7 +19,9 @@ describe('incident transition state machine', () => {
 
   test('requires every operational handoff in sequence', () => {
     expect(INCIDENT_TRANSITIONS.submitted).toEqual(['barangay_validated', 'rejected', 'duplicate']);
-    expect(canTransitionIncident('barangay_validated', 'city_confirmed')).toBe(true);
+    expect(canTransitionIncident('barangay_validated', 'prioritized')).toBe(true);
+    expect(canTransitionIncident('barangay_validated', 'city_confirmed')).toBe(false);
+    expect(canTransitionIncident('provider_review', 'verified')).toBe(true);
     expect(canTransitionIncident('city_confirmed', 'prioritized')).toBe(true);
     expect(canTransitionIncident('prioritized', 'provider_assigned')).toBe(true);
     expect(canTransitionIncident('provider_assigned', 'repair_assigned')).toBe(true);

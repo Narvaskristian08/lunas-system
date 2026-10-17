@@ -44,11 +44,11 @@ test('barangay report register scopes and paginates a read-only overdue queue', 
   Incident.countDocuments.mockResolvedValue(0);
   const res = { json: jest.fn() };
   const next = jest.fn();
-  await getBarangayReports({ user: { role: 'city_engineer' }, query: { barangay: 'Pantal', state: 'overdue', page: '2', search: 'TEST.' } }, res, next);
+  await getBarangayReports({ user: { role: 'utility_provider', utilityCompany: 'City Engineering' }, query: { barangay: 'Pantal', state: 'overdue', page: '2', search: 'TEST.' } }, res, next);
   expect(next).not.toHaveBeenCalled();
   expect(query.skip).toHaveBeenCalledWith(20);
   const filter = Incident.find.mock.calls.at(-1)[0];
-  expect(filter.$and[0].$or[0]).toEqual({ 'jurisdiction.barangay': 'Pantal' });
+  expect(filter.$and[0].$and[1].$or[0]).toEqual({ 'jurisdiction.barangay': 'Pantal' });
   expect(filter.$and[1]['sla.deadline'].$lt).toBeInstanceOf(Date);
   expect(new RegExp(filter.$and[2].reportNumber.$regex).test('TESTx')).toBe(false);
   expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ barangay: 'Pantal' }) }));

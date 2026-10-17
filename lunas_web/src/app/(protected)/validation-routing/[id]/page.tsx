@@ -22,7 +22,7 @@ export default async function ValidationReviewPage({
   const { id } = await params;
   const [incident, utilityProviders] = await Promise.all([
     loadValidationIncident(id),
-    viewer.backendRole === "city_engineer" ? getUtilityProviderOrganizations() : Promise.resolve([]),
+    viewer.backendRole === "barangay_official" ? getUtilityProviderOrganizations() : Promise.resolve([]),
   ]);
   return <ValidationReview viewer={viewer} incident={incident} utilityProviders={utilityProviders} />;
 }

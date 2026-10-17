@@ -42,7 +42,7 @@ const {
 } = require('../middleware/validation');
 
 const providerRole = ['utility_provider'];
-const workOrderRoles = ['city_engineer', 'utility_provider', 'repair_personnel'];
+const workOrderRoles = ['utility_provider', 'repair_personnel'];
 
 // Static paths must come before /:id.
 router.get('/awaiting-assignment', protect, authorize('utility_provider'), paginationValidation, workOrderQueryValidation, validate, getAwaitingAssignmentQueue);

@@ -241,7 +241,7 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
           <Button type="submit" className="w-full" loading={pending} loadingLabel="Saving…"><Wrench className="size-4" />{submitCompletion ? "Submit Completed Repair" : "Save Progress Update"}</Button>
         </form> : null}
 
-        {workOrder.status === "completed" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Repair Completed · Awaiting Utility Provider Review</p><p className="mt-1">Your completion and final evidence are submitted. The incident remains open until the provider and City Engineering finish their reviews.</p></div> : null}
+        {workOrder.status === "completed" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Repair Completed · Awaiting Utility Provider Review</p><p className="mt-1">Your completion and final evidence are submitted. The incident remains open until the responsible provider reviews the repair.</p></div> : null}
         {workOrder.status === "rework_required" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><p className="font-semibold">Corrective Work Requested</p><p className="mt-1">Review the provider’s recorded instructions, continue the repair, and resubmit final repair evidence.</p></div> : null}
         {!canAccept && !canStart && !canProgress && workOrder.status !== "completed" ? <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">This work order is waiting for its next controlled assignment or repair transition.</p> : null}
       </div>
@@ -281,7 +281,7 @@ function CompletionReviewPanel({
       <CardHeader
         title={canProviderReview ? "Completion Review" : canCoordinateCorrection ? "Coordinate Corrective Work" : "City Engineering Final Verification"}
         description={canProviderReview
-          ? "Accept the repair to send it to City Engineering, or return it to repair personnel for correction."
+          ? "Verify the repair and resolve the report, or return it to repair personnel for correction."
           : canCoordinateCorrection
             ? "City Engineering returned this repair. Add instructions for the assigned Repair Personnel before restarting work."
             : "Verify the repair to resolve the incident, or return it to the Utility Provider for correction."}
@@ -293,7 +293,7 @@ function CompletionReviewPanel({
           </label>
           <p id="provider-review-note-help" className="text-xs leading-5 text-slate-500">A note is required when returning the repair for correction.</p>
           <div className="grid gap-2">
-            <Button type="button" loading={pending} onClick={() => setConfirmation({ title: "Accept Repair", description: "Forward this completed repair to City Engineering for final verification.", destructive: false, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason }) })}><ClipboardCheck className="size-4 shrink-0" />Accept Repair</Button>
+            <Button type="button" loading={pending} onClick={() => setConfirmation({ title: "Verify and Resolve", description: "Verify this completed repair and close the incident.", destructive: false, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason }) })}><ClipboardCheck className="size-4 shrink-0" />Verify and Resolve</Button>
             <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => setConfirmation({ title: "Return for Correction", description: "Return this repair to the assigned personnel with the recorded correction instructions.", destructive: true, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions: reason }) })}><Wrench className="size-4 shrink-0" />Return for Correction</Button>
           </div>
         </> : null}

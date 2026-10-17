@@ -42,19 +42,19 @@ describe('jurisdiction authorization', () => {
     expect(canRouteIncident(
       barangayOfficial,
       { responsibleRole: 'utility_provider' },
-      { barangay: 'Poblacion Oeste' }
+      { barangay: 'Bonuan Gueset' }
     )).toBe(false);
   });
 
-  test('allows city engineering to manage city-wide routing', () => {
+  test('denies retired city-wide authority', () => {
     const cityEngineer = { _id: 'official-2', role: 'city_engineer' };
-    expect(buildIncidentScope(cityEngineer)).toEqual({});
-    expect(canConfirmJurisdiction(cityEngineer, { barangay: 'Bonuan Gueset' })).toBe(true);
+    expect(buildIncidentScope(cityEngineer)).toEqual({ _id: null });
+    expect(canConfirmJurisdiction(cityEngineer, { barangay: 'Bonuan Gueset' })).toBe(false);
     expect(canRouteIncident(
       cityEngineer,
       { responsibleRole: 'utility_provider' },
       { barangay: 'Bonuan Gueset' }
-    )).toBe(true);
+    )).toBe(false);
   });
 
   test('keeps utility-provider access scoped to already routed reports, not submitted-state decisions', () => {
@@ -65,4 +65,12 @@ describe('jurisdiction authorization', () => {
     expect(isValidationDecisionOfficial(provider)).toBe(false);
     expect(isValidationDecisionOfficial(barangayOfficial)).toBe(true);
   });
+});
+
+
+test('City Engineering provider accounts cannot access another organization', () => {
+  const provider = { role: 'utility_provider', utilityCompany: 'Dagupan City Engineering Office' };
+  expect(buildIncidentScope(provider)).toEqual({ 'routing.responsibleOrganization': provider.utilityCompany });
+  expect(canAccessIncident(provider, { routing: { responsibleOrganization: 'DECORP' } })).toBe(false);
+  expect(canAccessIncident(provider, { routing: { responsibleOrganization: provider.utilityCompany } })).toBe(true);
 });

@@ -275,16 +275,11 @@ describe('sequential incident review workflow', () => {
   });
 
 
-test('City Engineering can list confirmed and prioritized incidents awaiting routing', async () => {
+test('retired City Engineer role receives an empty scope', async () => {
   Incident.find.mockReturnValue(queryFor([]));
   Incident.countDocuments.mockResolvedValue(0);
-  const res = response();
-  const next = jest.fn();
-  await getPendingValidation({ query: { stage: 'confirmed' }, user: { role: 'city_engineer' } }, res, next);
-  expect(next).not.toHaveBeenCalled();
-  expect(Incident.find).toHaveBeenCalledWith(expect.objectContaining({
-    status: { $in: ['city_confirmed', 'prioritized'] }
-  }));
+  await getPendingValidation({ query: {}, user: { role: 'city_engineer' } }, response(), jest.fn());
+  expect(Incident.find.mock.calls[0][0].$and).toContainEqual({ _id: null });
 });
 
   test('returns submitted and clarification-required records only from the assigned barangay queue', async () => {
@@ -294,7 +289,7 @@ test('City Engineering can list confirmed and prioritized incidents awaiting rou
     await getPendingValidation({ query: {}, user: barangayOfficial }, res, jest.fn());
     expect(Incident.find).toHaveBeenCalledWith(expect.objectContaining({
       $and: expect.arrayContaining([expect.objectContaining({
-        status: { $in: ['submitted', 'clarification_required'] }
+        status: { $in: ['submitted', 'clarification_required', 'barangay_validated', 'city_confirmed', 'prioritized'] }
       })])
     }));
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({

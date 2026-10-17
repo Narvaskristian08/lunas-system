@@ -167,7 +167,7 @@ router.post(
 router.patch(
   '/:id/priority',
   protect,
-  authorize('city_engineer'),
+  authorize('barangay_official'),
   mongoIdValidation,
   updatePriorityValidation,
   validate,
@@ -185,7 +185,7 @@ router.patch(
 router.post(
   '/:id/route',
   protect,
-  authorize('city_engineer'),
+  authorize('barangay_official'),
   mongoIdValidation,
   routeIncidentValidation,
   validate,
