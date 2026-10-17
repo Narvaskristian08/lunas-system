@@ -174,7 +174,6 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                         url: evidence.url,
                         width: evidence.width,
                         height: evidence.height,
-                        findings: evidence.aiFindings,
                       ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
