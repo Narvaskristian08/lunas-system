@@ -6,8 +6,7 @@ const categories = [
   { code: 'drainage', name: 'Drainage', description: 'Visible garbage blocking roadside drains, gutters, or canals.' },
   { code: 'electrical', name: 'Electrical', description: 'Electrical infrastructure hazards and outages.' },
   { code: 'water', name: 'Water', description: 'Water leaks and water-supply infrastructure issues.' },
-  { code: 'streetlight', name: 'Streetlight', description: 'Damaged, missing, or malfunctioning streetlights.' },
-  { code: 'other', name: 'Other urban hazard', description: 'A supported infrastructure concern not listed above.' }
+  { code: 'streetlight', name: 'Streetlight', description: 'Damaged, missing, or malfunctioning streetlights.' }
 ];
 
 exports.INCIDENT_CATEGORY_CODES = categories.map((category) => category.code);

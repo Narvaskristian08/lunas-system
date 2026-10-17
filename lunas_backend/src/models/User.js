@@ -96,7 +96,7 @@ const userSchema = new mongoose.Schema({
   },
   expertise: [{
     type: String,
-    enum: ['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight', 'other']
+    enum: ['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight']
   }],
   // Repair staffing stores the assignment fields needed for eligibility;
   // employment verification and HR scheduling remain outside LUNAS.

@@ -29,7 +29,11 @@ class CategoryService {
           : const [];
       final categories = rawCategories
           .map(CategoryOption.fromJson)
-          .where((category) => category.code.isNotEmpty)
+          .where(
+            (category) => supportedReportCategories.any(
+              (supported) => supported.code == category.code,
+            ),
+          )
           .toList(growable: false);
       if (categories.isNotEmpty) {
         return CategoryLoadResult(categories: categories);

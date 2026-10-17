@@ -60,11 +60,6 @@ const supportedReportCategories = <CategoryOption>[
     label: 'Streetlight',
     description: 'Broken, missing, or unlit public streetlights.',
   ),
-  CategoryOption(
-    code: 'other',
-    label: 'Other Infrastructure Concern',
-    description: 'An infrastructure issue not listed above.',
-  ),
 ];
 
 CategoryOption categoryFromCode(String code) {

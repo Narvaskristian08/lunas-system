@@ -510,7 +510,6 @@ const fallbackReportCategories = [
   { value: "electrical", label: "Electrical" },
   { value: "water", label: "Water" },
   { value: "streetlight", label: "Streetlight" },
-  { value: "other", label: "Other Infrastructure Concern" },
 ];
 
 async function getReportCategoryOptions(accessToken: string) {
@@ -524,7 +523,7 @@ async function getReportCategoryOptions(accessToken: string) {
       const label = value === "road" ? "Road Damage" : String(category.label ?? category.name ?? fallback?.label ?? value)
         .replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
       return { value, label };
-    }).filter((option) => option.value);
+    }).filter((option) => fallbackReportCategories.some((supported) => supported.value === option.value));
     return options.length ? options : fallbackReportCategories;
   } catch {
     return fallbackReportCategories;

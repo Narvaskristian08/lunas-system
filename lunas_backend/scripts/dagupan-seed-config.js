@@ -1,7 +1,7 @@
 const { DAGUPAN_BARANGAYS } = require('../src/data/dagupanBarangays');
 
 const ORGANIZATIONS = Object.freeze([
-  { code: 'city-maintenance', name: 'Dagupan City Engineering Office', expertise: ['road', 'drainage', 'streetlight', 'other'] },
+  { code: 'city-maintenance', name: 'Dagupan City Engineering Office', expertise: ['road', 'drainage', 'streetlight'] },
   { code: 'decorp', name: 'Dagupan Electric Corporation (DECORP)', expertise: ['electrical'] },
   { code: 'dcwd', name: 'Dagupan City Water District / Pamana Water Dagupan', expertise: ['water'] },
   { code: 'dpwh', name: 'DPWH - Dagupan National Infrastructure', expertise: ['road', 'drainage'] }

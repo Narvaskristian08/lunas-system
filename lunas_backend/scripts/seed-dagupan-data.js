@@ -51,7 +51,7 @@ async function seed() {
     }
     const removed = process.argv.includes('--replace') ? await removeLegacyFixtures() : { reports: 0, workOrders: 0 };
     const citizen = await User.findOne({ email: fixtureEmails.citizen });
-    const categories = ['road', 'drainage', 'electrical', 'water', 'streetlight', 'other'];
+    const categories = ['road', 'drainage', 'electrical', 'water', 'streetlight'];
     let created = 0;
     for (const [index, barangay] of DAGUPAN_BARANGAYS.entries()) {
       const reportNumber = `DAGUPAN-LOCAL-${String(index + 1).padStart(3, '0')}`;

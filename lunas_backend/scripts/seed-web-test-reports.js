@@ -53,10 +53,10 @@ async function seed() {
     }
     const fixtures = [
       ['submitted', 'road'], ['submitted', 'drainage'], ['submitted', 'electrical'],
-      ['submitted', 'water'], ['submitted', 'other'], ['submitted', 'streetlight'], ['submitted', 'other'],
+      ['submitted', 'water'], ['submitted', 'drainage'], ['submitted', 'streetlight'], ['submitted', 'drainage'],
       ['barangay_validated', 'water'], ['barangay_validated', 'road'],
       ['city_confirmed', 'drainage'], ['prioritized', 'water'],
-      ['clarification_required', 'road'], ['rejected', 'other'],
+      ['clarification_required', 'road'], ['rejected', 'road'],
       ['provider_assigned', 'water', 'pending'],
       ['repair_assigned', 'drainage', 'accepted'],
       ['in_progress', 'water', 'in_progress'],

@@ -73,7 +73,7 @@ docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.loc
 ```
 
 `seed:dagupan` creates 31 synthetic submitted reports, one for each barangay,
-with category coverage across all six mobile categories. Coordinates are test
+with category coverage across all five mobile categories. Coordinates are test
 placeholders, not verified barangay locations. Existing accounts and fixtures
 are preserved on ordinary reruns. Use `seed:dagupan` for accounts and barangay
 fixtures, and `seed:web` for workflow snapshots.
@@ -89,7 +89,7 @@ recovery. Non-fixture reports are preserved. Both seeders refuse external
 MongoDB hosts and any database other than local `lunas_db`.
 
 `seed:web` adds 24 synthetic workflow snapshots and 10 linked work orders.
-Water fixtures route to DCWD/Pamana; drainage and other municipal fixtures
+Water fixtures route to DCWD/Pamana; drainage and municipal fixtures
 route to the City Engineering maintenance provider; electrical fixtures use
 DECORP. These snapshots support queue testing and are not real approvals.
 Use `npm run seed:web -- --refresh` to refresh only web fixtures.
