@@ -33,11 +33,11 @@ const profileRules = [
   text('approvalAuthority', 160), text('approvalReference', 500),
   body().custom(value => {
     if (value.role === 'barangay_official' && !value.barangay) throw new Error('Barangay officials require an assigned barangay');
-    if (value.role === 'repair_personnel' && !value.repairOrganization) throw new Error('Repair personnel require an assigned repair organization');
+    if (value.role === 'repair_personnel' && !value.barangay) throw new Error('Utility Personnel require an assigned barangay');
     if (value.role === 'utility_provider' && !value.utilityCompany) throw new Error('Utility providers require an assigned utility company');
     if (!['barangay_official', 'repair_personnel'].includes(value.role) && value.barangay) throw new Error('This role uses city or organization scope, not a barangay assignment');
     if (value.role !== 'utility_provider' && value.utilityCompany) throw new Error('Utility company applies only to utility providers');
-    if (value.role !== 'repair_personnel' && (value.repairOrganization || value.repairTeam)) throw new Error('Repair assignment applies only to repair personnel');
+    if (value.repairOrganization || value.repairTeam) throw new Error('Provider repair staffing is no longer managed in LUNAS');
     return true;
   })
 ];

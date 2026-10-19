@@ -24,10 +24,10 @@ function dashboardCopy(viewer: UserProfile) {
   if (viewer.backendRole === "utility_provider") {
     return {
       eyebrow: `${viewer.organization} · Provider Operations`,
-      title: "Provider Work Orders",
-      description: "Live maintenance activity routed to your responsible organization.",
-      recordsTitle: "Recent Work Orders",
-      recordsDescription: "Recent repairs assigned to your organization.",
+      title: "Agency Operations",
+      description: "Update routed reports through procurement, work progress, and completion.",
+      recordsTitle: "Recent Agency Reports",
+      recordsDescription: "Reports routed to your organization and their current status.",
     };
   }
   if (viewer.backendRole === "barangay_official") {
@@ -54,11 +54,10 @@ function dashboardCopy(viewer: UserProfile) {
 export function DashboardView({ viewer, data }: { viewer: UserProfile; data: RealDashboardData }) {
   const copy = dashboardCopy(viewer);
   const providerFilters: Record<string, string> = {
-    "Unassigned Work": "assignmentStatus=unassigned",
-    "Pending Acceptance": "assignmentStatus=pending",
-    "Active Repairs": "status=in_progress",
+    "New Agency Reports": "view=orders",
+    "Work in Progress": "view=orders&status=in_progress",
+    "Work Completed": "view=orders&status=completed",
     "Needs Correction": "status=needs_correction",
-    "Awaiting Review": "status=completed",
     "Overdue": "slaState=overdue",
   };
   const today = new Intl.DateTimeFormat("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" }).format(new Date());

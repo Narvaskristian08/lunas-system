@@ -1,6 +1,6 @@
 export type UserRole =
   | "Citizen"
-  | "Repair Personnel"
+  | "Utility Personnel"
   | "Admin"
   | "Barangay Official"
   | "City Engineer"

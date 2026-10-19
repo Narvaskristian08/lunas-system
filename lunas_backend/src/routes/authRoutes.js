@@ -1,5 +1,4 @@
 const express = require('express');
-const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const {
   register,
@@ -38,30 +37,19 @@ const {
   validate
 } = require('../middleware/validation');
 
-const authLimiter = rateLimit({
-  windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
-  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS, 10) || 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many authentication attempts. Please try again later.'
-  }
-});
-
-router.post('/register', authLimiter, registerValidation, validate, register);
-router.post('/activate-account', authLimiter, activateAccountValidation, validate, activateAuthorizedAccount);
-router.post('/register/verify', authLimiter, registrationMfaValidation, validate, verifyRegistrationMfa);
-router.post('/register/resend', authLimiter, registrationMfaResendValidation, validate, resendRegistrationMfa);
+router.post('/register', registerValidation, validate, register);
+router.post('/activate-account', activateAccountValidation, validate, activateAuthorizedAccount);
+router.post('/register/verify', registrationMfaValidation, validate, verifyRegistrationMfa);
+router.post('/register/resend', registrationMfaResendValidation, validate, resendRegistrationMfa);
 router.post('/login', loginIpLimiter, loginAccountLimiter, loginValidation, validate, login);
-router.post('/refresh', authLimiter, refreshValidation, validate, refresh);
-router.post('/forgot-password', authLimiter, forgotPasswordValidation, validate, forgotPassword);
-router.post('/forgot-password/verify', authLimiter, passwordResetCodeValidation, validate, verifyPasswordResetCode);
-router.post('/reset-password', authLimiter, resetPasswordValidation, validate, resetPassword);
+router.post('/refresh', refreshValidation, validate, refresh);
+router.post('/forgot-password', forgotPasswordValidation, validate, forgotPassword);
+router.post('/forgot-password/verify', passwordResetCodeValidation, validate, verifyPasswordResetCode);
+router.post('/reset-password', resetPasswordValidation, validate, resetPassword);
 router.get('/me', protect, getMe);
 router.get('/recovery-email/status', protect, getRecoveryEmailStatus);
-router.post('/recovery-email/request', authLimiter, protect, recoveryEmailRequestValidation, validate, requestRecoveryEmailVerification);
-router.post('/recovery-email/verify', authLimiter, protect, recoveryEmailVerifyValidation, validate, verifyRecoveryEmail);
+router.post('/recovery-email/request', protect, recoveryEmailRequestValidation, validate, requestRecoveryEmailVerification);
+router.post('/recovery-email/verify', protect, recoveryEmailVerifyValidation, validate, verifyRecoveryEmail);
 router.put('/profile', protect, updateProfileValidation, validate, updateProfile);
 router.patch('/profile', protect, updateProfileValidation, validate, updateProfile);
 router.put('/change-password', protect, changePasswordValidation, validate, changePassword);

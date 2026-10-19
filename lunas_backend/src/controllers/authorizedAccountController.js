@@ -21,6 +21,10 @@ const audit = (req, user, action, before, after, details = {}) => createAuditLog
 const denied = (res, message, status = 403) => res.status(status).json({ success: false, message });
 const conflict = res => denied(res, 'Account changed. Refresh and try again.', 409);
 const checkActor = (req, res, target, role = target?.role) => {
+  if (req.user?.role === 'barangay_official' && target?.role === 'repair_personnel'
+    && !target.isArchived && req.user.barangay
+    && target.barangay === req.user.barangay && role === 'repair_personnel') return true;
+  // Compatibility for legacy provider-worker records while the migration runs.
   if (req.user?.role === 'utility_provider' && target?.role === 'repair_personnel'
     && !target.isArchived && req.user.utilityCompany
     && target.repairOrganization === req.user.utilityCompany && role === 'repair_personnel') return true;

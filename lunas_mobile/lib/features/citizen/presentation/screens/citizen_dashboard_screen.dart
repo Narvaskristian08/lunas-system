@@ -377,6 +377,8 @@ class _ReportListCard extends StatelessWidget {
           report.location.displayAddress,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+        const SizedBox(height: AppSpacing.md),
+        ReportWorkflowProgress(report: report),
         if (report.location.needsReview) ...[
           const SizedBox(height: AppSpacing.xs),
           _LocationReviewNotice(compact: true),

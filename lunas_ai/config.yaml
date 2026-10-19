@@ -239,17 +239,19 @@ privacy:
   # Keep a conservative threshold for plates: low-confidence candidates in
   # this traffic scene land on bumpers/road markings rather than plates.
   plate_model_confidence: 0.10
-  plate_tile_size: 640
-  plate_tile_overlap: 0.2
+  # Use fewer, larger tiles so a normal phone photo does not exceed the
+  # bounded CPU worker timeout during report submission.
+  plate_tile_size: 960
+  plate_tile_overlap: 0.0
   plate_cascade: null
   face_min_neighbors: 5
   plate_min_neighbors: 7
   # Multiple upscaled passes improve recall for distant faces and plates.
   # Redaction remains backend-owned; these values do not read plate text.
-  face_upscale_factors: [1.0, 1.5, 2.0]
+  face_upscale_factors: [1.0, 1.5]
   face_tile_size: 960
   face_tile_overlap: 0.35
-  face_tile_upscale_factors: [1.5, 2.0]
+  face_tile_upscale_factors: [1.5]
   plate_upscale_factors: [1.0, 1.5, 2.0]
   max_detection_dimension: 1600
 

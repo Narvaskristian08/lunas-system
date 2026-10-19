@@ -445,7 +445,7 @@ class ReportStatusEvent {
     if (status == 'barangay_validated') return 'Validated by Barangay Official';
     if (status == 'city_confirmed') return 'Confirmed by City Engineering';
     if (status == 'provider_assigned') return 'Assigned to Utility Provider';
-    if (status == 'repair_assigned') return 'Repair Personnel Assigned';
+    if (status == 'repair_assigned') return 'Utility Personnel Assigned';
     if (progressPercent != null && progressPercent! > 0) {
       return 'Repair Progress: $progressPercent%';
     }

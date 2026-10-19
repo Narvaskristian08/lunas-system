@@ -30,9 +30,11 @@ async function seed() {
     }
     const providers = {};
     const repairPersonnel = {};
+    const tanod = await User.findOne({ email: email('tanod-poblacion-oeste') });
+    if (!tanod) throw new Error('Missing Poblacion Oeste Tanod account; run seed:dagupan first.');
     for (const org of ORGANIZATIONS) {
       providers[org.code] = await User.findOne({ email: email(`provider-${org.code}`) });
-      repairPersonnel[org.code] = await User.findOne({ email: email(`repair-${org.code}`) });
+      repairPersonnel[org.code] = tanod;
       if (!providers[org.code] || !repairPersonnel[org.code]) throw new Error(`Missing ${org.code} provider/repair account`);
     }
     if (!process.env.S3_ENDPOINT || new URL(process.env.S3_ENDPOINT).hostname !== 'minio') {

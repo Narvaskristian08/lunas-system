@@ -152,7 +152,7 @@ String timelineNoteLabel(String value) {
     'jurisdiction confirmed': 'Jurisdiction Confirmed',
     'work order created from validated incident':
         'Work Order Created from Validated Incident',
-    'repair personnel assigned': 'Repair Personnel Assigned',
+    'repair personnel assigned': 'Utility Personnel Assigned',
     'repair assignment reassigned': 'Repair Assignment Reassigned',
     'repair assignment declined; awaiting reassignment':
         'Repair Assignment Declined; Awaiting Reassignment',

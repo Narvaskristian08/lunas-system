@@ -88,7 +88,7 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      user?.fullName ?? 'Repair Personnel',
+                      user?.fullName ?? 'Utility Personnel',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -130,15 +130,18 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                       ),
                       const Divider(height: 1, color: Color(0xFFE2E8F0)),
                       _ProfileDetail(
-                        label: 'Utility Provider',
-                        value: user?.repairOrganization ?? '',
+                        label: 'Assigned Barangay',
+                        value:
+                            user?.barangay ??
+                            user?.address?['barangay']?.toString() ??
+                            '',
                       ),
                       _ProfileDetail(
                         label: 'Account Type',
                         value: switch (user?.repairAccountType) {
-                          'team' => 'Team Leader',
-                          'individual' => 'Individual',
-                          _ => '',
+                          'team' => 'Barangay Tanod',
+                          'individual' => 'Barangay Tanod',
+                          _ => 'Utility Personnel / Barangay Tanod',
                         },
                       ),
                       if (user?.repairAccountType == 'team')
@@ -179,9 +182,9 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (dialogContext) => LunasConfirmationDialog(
-                      title: const Text('Provider-Managed Account'),
+                      title: const Text('Utility Personnel Account'),
                       content: const Text(
-                        'Your account details are managed by your utility provider. Contact them to request corrections.',
+                        'Your account details are managed by your Barangay Secretary. Contact the Secretary to request corrections.',
                       ),
                       actions: [
                         FilledButton(
@@ -206,12 +209,12 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Provider-Managed Account',
+                                'Utility Personnel Account',
                                 style: Theme.of(context).textTheme.titleSmall,
                               ),
                               const SizedBox(height: AppSpacing.xxs),
                               Text(
-                                'Contact your utility provider to request corrections.',
+                                'Contact your Barangay Secretary to request corrections.',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],

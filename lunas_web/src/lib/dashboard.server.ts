@@ -215,11 +215,10 @@ async function providerOperationsDashboard(): Promise<RealDashboardData> {
   ]);
   return {
     metrics: [
-      metric("Unassigned Work", summary.unassigned + intake.pagination.total, "warning", "workOrder"),
-      metric("Pending Acceptance", summary.pendingAcceptance, "information", "users"),
-      metric("Active Repairs", summary.active, "information", "workOrder"),
+      metric("New Agency Reports", intake.pagination.total, "warning", "workOrder"),
+      metric("Work in Progress", summary.active, "information", "workOrder"),
+      metric("Work Completed", summary.readyForCompletion, "information", "verified"),
       metric("Needs Correction", summary.correctiveRepairs + summary.cityCorrections, "warning", "incident"),
-      metric("Awaiting Review", summary.readyForCompletion, "warning", "verified"),
       metric("Overdue", summary.overdue, "critical", "sla"),
     ],
     records: workOrderQueue.workOrders.map(recordFromWorkOrder),

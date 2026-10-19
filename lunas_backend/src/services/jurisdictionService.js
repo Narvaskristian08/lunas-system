@@ -62,6 +62,17 @@ const buildIncidentScope = (user) => {
     };
   }
 
+  if (user.role === 'repair_personnel') {
+    const barangay = canonicalizeBarangay(user.barangay);
+    if (!barangay) return { _id: null };
+    return {
+      $or: [
+        { 'jurisdiction.barangay': barangay },
+        { 'jurisdiction.barangay': { $exists: false }, 'location.address.barangay': barangay }
+      ]
+    };
+  }
+
   if (user.role === 'utility_provider') {
     const organization = normalizeText(user.utilityCompany);
     return organization
@@ -88,6 +99,10 @@ const canAccessIncident = (user, incident) => {
   }
 
   if (user.role === 'barangay_official') {
+    return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
+  }
+
+  if (user.role === 'repair_personnel') {
     return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
   }
 

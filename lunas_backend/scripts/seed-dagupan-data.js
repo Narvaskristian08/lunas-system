@@ -25,6 +25,10 @@ async function removeLegacyFixtures() {
   await Incident.deleteMany({ _id: { $in: ids } });
   return { reports: ids.length, workOrders: orderIds.length };
 }
+async function removeSeededAccounts() {
+  const result = await User.deleteMany({ email: /^(?:demo\.|dagupan\.)[^@]+@lunas\.test$/i });
+  return result.deletedCount || 0;
+}
 async function seed() {
   const uri = requireLocalSeedEnvironment();
   const password = process.env.DAGUPAN_SEED_PASSWORD || 'LunasLocal2026!';
@@ -34,6 +38,9 @@ async function seed() {
   for (const definition of definitions) await new User(definition).validate();
   await mongoose.connect(uri);
   try {
+    const replacing = process.argv.includes('--replace');
+    const accountsRemoved = replacing ? await removeSeededAccounts() : 0;
+    const removed = replacing ? await removeLegacyFixtures() : { reports: 0, workOrders: 0 };
     let migrated = 0;
     for (const { legacyEmail, ...definition } of definitions) {
       let account = await User.findOne({ email: definition.email });
@@ -49,7 +56,6 @@ async function seed() {
         await account.save();
       }
     }
-    const removed = process.argv.includes('--replace') ? await removeLegacyFixtures() : { reports: 0, workOrders: 0 };
     const citizen = await User.findOne({ email: fixtureEmails.citizen });
     const categories = ['road', 'drainage', 'electrical', 'water', 'streetlight'];
     let created = 0;
@@ -68,7 +74,7 @@ async function seed() {
       });
       created++;
     }
-    console.log(JSON.stringify({ accounts: definitions.length, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: created }));
+    console.log(JSON.stringify({ accounts: definitions.length, accountsRemoved, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: created }));
   } finally { await mongoose.disconnect(); }
 }
 if (require.main === module) seed().catch(error => { console.error(error.message); process.exitCode = 1; });

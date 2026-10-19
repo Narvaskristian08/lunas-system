@@ -10,6 +10,7 @@ import 'package:lunas_mobile/core/widgets/lunas_state_view.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_status_timeline.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 
 class CitizenReportDetailScreen extends StatefulWidget {
   const CitizenReportDetailScreen({required this.reportId, super.key});
@@ -163,6 +164,8 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     _LocationReviewCard(location: report.location),
                     const SizedBox(height: AppSpacing.xl),
                   ],
+                  LunasCard(child: ReportWorkflowProgress(report: report)),
+                  const SizedBox(height: AppSpacing.xl),
                   if (report.images.isNotEmpty) ...[
                     Text(
                       'Evidence',

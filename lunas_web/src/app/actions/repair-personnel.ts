@@ -11,7 +11,7 @@ const fields = ["firstName", "middleName", "suffix", "lastName", "email", "phone
 export async function createRepairPersonnelAction(form: FormData): Promise<RepairPersonnelActionResult> {
   const viewer = await requirePermission("personnel.manage");
   if (viewer.backendRole !== "utility_provider") {
-    return { ok: false, message: "Only Utility Providers can add Repair Personnel." };
+    return { ok: false, message: "Only Utility Providers can add Utility Personnel." };
   }
   const accessToken = await requireAccessToken();
   const body = Object.fromEntries(fields.map((field) => [field, String(form.get(field) ?? "").trim()]));
@@ -25,7 +25,7 @@ export async function createRepairPersonnelAction(form: FormData): Promise<Repai
     revalidatePath("/repair-personnel");
     revalidatePath("/work-orders");
     revalidatePath("/dashboard");
-    return { ok: true, warning: response.data?.delivery?.delivered === false, message: response.message ?? "Repair Personnel account created." };
+    return { ok: true, warning: response.data?.delivery?.delivered === false, message: response.message ?? "Utility Personnel account created." };
   } catch (error) {
     if (isBackendApiError(error) && error.status < 500) {
       const payload = error.payload as { errors?: Array<{ message?: string }> } | undefined;

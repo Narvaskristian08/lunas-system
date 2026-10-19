@@ -269,7 +269,7 @@ class AuthController extends ChangeNotifier {
     _pendingRegistration = null;
     _status = AuthStatus.unauthenticated;
     _message =
-        'Mobile sign-in is available only for citizen and repair personnel accounts. Please use the LUNAS web portal for your account.';
+        'Mobile sign-in is available only for citizen and utility personnel accounts. Please use the LUNAS web portal for your account.';
   }
 
   Future<bool> updateProfile({

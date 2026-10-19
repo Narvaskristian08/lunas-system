@@ -19,6 +19,7 @@ const INCIDENT_STATES = Object.freeze([
   'clarification_required',
   'rejected',
   'duplicate'
+  , 'tanod_assigned', 'tanod_in_progress', 'tanod_verified', 'tanod_rejected'
 ]);
 
 const INCIDENT_TRANSITIONS = Object.freeze({
@@ -38,6 +39,10 @@ const INCIDENT_TRANSITIONS = Object.freeze({
   verified: Object.freeze(['resolved']),
   resolved: Object.freeze(['closed']),
   clarification_required: Object.freeze(['barangay_validated'])
+  ,tanod_assigned: Object.freeze(['tanod_in_progress', 'tanod_rejected', 'clarification_required'])
+  ,tanod_in_progress: Object.freeze(['tanod_verified', 'tanod_rejected', 'clarification_required'])
+  ,tanod_verified: Object.freeze(['prioritized', 'provider_assigned'])
+  ,tanod_rejected: Object.freeze(['tanod_assigned', 'clarification_required'])
 });
 
 const SUBMITTED_DECISIONS = INCIDENT_TRANSITIONS.submitted;

@@ -74,7 +74,7 @@ function ActionNotice({ message, kind }: { message?: string; kind?: "success" | 
 }
 
 function personName(person: EligibleRepairPersonnel) {
-  const name = formatPerson(person.firstName, person.lastName, "Eligible repair personnel");
+  const name = formatPerson(person.firstName, person.lastName, "Eligible utility personnel");
   return person.repairAccountType === "team" ? `${person.team || "Team"} · ${name} (Team)` : `${name} (Individual)`;
 }
 
@@ -117,7 +117,7 @@ function AssignmentPanel({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Assignment" description="Repair personnel are listed by the responsible organization." />
+      <CardHeader title="Assignment" description="Utility personnel are listed by the responsible organization." />
       <div className="space-y-4 p-5">
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -134,7 +134,7 @@ function AssignmentPanel({
         </div>
 
         {canChangeAssignment ? <form onSubmit={submit} className="space-y-3">
-          <label className="block text-sm font-semibold text-slate-800">{isReassignment ? "Reassign To" : "Assign repair personnel"}
+          <label className="block text-sm font-semibold text-slate-800">{isReassignment ? "Reassign To" : "Assign utility personnel"}
             <select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)} required className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70">
               <option value="">Select Organization Personnel</option>
               {eligiblePersonnel.map((person) => <option key={person.id} value={person.id}>{personName(person)}{person.availability ? ` · ${titleCase(person.availability)}` : ""}</option>)}
@@ -144,14 +144,14 @@ function AssignmentPanel({
           {isReassignment ? <label className="block text-sm font-semibold text-slate-800">Reassignment Reason
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} required minLength={2} maxLength={500} className="mt-1 min-h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain why this assignment must change" />
           </label> : null}
-          {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={isReassignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{isReassignment ? "Reassign Work Order" : "Assign Repair"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No repair personnel were found for this organization.</p>}
+          {eligiblePersonnel.length ? <Button type="submit" className="w-full" loading={pending} loadingLabel={isReassignment ? "Reassigning…" : "Assigning…"}><UsersRound className="size-4" aria-hidden="true" />{isReassignment ? "Reassign Work Order" : "Assign Repair"}</Button> : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">No utility personnel were found for this organization.</p>}
         </form> : <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">Assignment is locked during active repair and review. It can be changed before repair starts or while waiting for corrective work to resume.</p>}
       </div>
       <ConfirmationDialog
         open={confirmReassignment}
         icon="none"
-        title={isReassignment ? "Confirm Repair Handoff" : "Assign Repair Personnel"}
-        description={isReassignment ? `Reassign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected repair personnel"}? Existing progress, evidence, history, and the SLA deadline will be preserved, and field updates will pause until acceptance.` : `Assign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected personnel"}? They will receive responsibility for this repair.`}
+        title={isReassignment ? "Confirm Utility Personnel Handoff" : "Assign Utility Personnel"}
+        description={isReassignment ? `Reassign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected utility personnel"}? Existing progress, evidence, history, and the SLA deadline will be preserved, and field updates will pause until acceptance.` : `Assign ${workOrder.reference} to ${selectedPerson ? personName(selectedPerson) : "the selected personnel"}? They will receive responsibility for this repair.`}
         confirmLabel={isReassignment ? "Reassign Personnel" : "Assign Personnel"}
         loading={pending}
         onClose={() => !pending && setConfirmReassignment(false)}
@@ -184,7 +184,7 @@ function RepairActions({ workOrder, onResult }: { workOrder: WorkOrder; onResult
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Field Repair Actions" description="Actions apply only to the currently assigned repair personnel and are revalidated by the API." />
+      <CardHeader title="Field Repair Actions" description="Actions apply only to the currently assigned utility personnel and are revalidated by the API." />
       <div className="space-y-4 p-5">
         {canAccept ? <div className="grid gap-2 sm:grid-cols-2"><Button type="button" loading={pending} onClick={() => setFieldConfirmation({ title: "Accept Assignment", description: "Accept responsibility for this assigned repair.", operation: () => acceptWorkOrderAction(workOrder.id) })}><UserRoundCheck className="size-4" />Accept Assignment</Button><Button type="button" variant="secondary" onClick={() => document.getElementById("decline-assignment")?.focus()} disabled={pending}><XCircle className="size-4" />Decline Assignment</Button></div> : null}
 
@@ -281,9 +281,9 @@ function CompletionReviewPanel({
       <CardHeader
         title={canProviderReview ? "Completion Review" : canCoordinateCorrection ? "Coordinate Corrective Work" : "City Engineering Final Verification"}
         description={canProviderReview
-          ? "Verify the repair and resolve the report, or return it to repair personnel for correction."
+          ? "Verify the repair and resolve the report, or return it to utility personnel for correction."
           : canCoordinateCorrection
-            ? "City Engineering returned this repair. Add instructions for the assigned Repair Personnel before restarting work."
+            ? "City Engineering returned this repair. Add instructions for the assigned Utility Personnel before restarting work."
             : "Verify the repair to resolve the incident, or return it to the Utility Provider for correction."}
       />
       <div className="space-y-4 p-5">
@@ -299,7 +299,7 @@ function CompletionReviewPanel({
         </> : null}
         {canCoordinateCorrection ? <>
           <label className="block text-sm font-semibold text-slate-800">Corrective Instructions<textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} required minLength={2} maxLength={4000} className="mt-1 min-h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" placeholder="Explain the City Engineering return and the work needed" /></label>
-          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => setConfirmation({ title: "Send Correction to Personnel", description: "Send these corrective instructions to the assigned personnel so corrective work can resume.", destructive: false, operation: () => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }) })}><Wrench className="size-4" />Send Correction to Repair Personnel</Button>
+          <Button type="button" className="w-full" loading={pending} disabled={instructions.trim().length < 2} onClick={() => setConfirmation({ title: "Send Correction to Personnel", description: "Send these corrective instructions to the assigned personnel so corrective work can resume.", destructive: false, operation: () => coordinateCityCorrectionAction({ workOrderId: workOrder.id, instructions }) })}><Wrench className="size-4" />Send Correction to Utility Personnel</Button>
         </> : null}
         {canFinalReview ? <>
           <label className="block text-sm font-semibold text-slate-800">Review Note

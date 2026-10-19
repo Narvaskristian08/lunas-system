@@ -14,7 +14,10 @@
     "migrate:account-retention": "node scripts/remove-audit-ttl.js",
     "audit:incident-barangays": "node scripts/audit-incident-barangays.js",
     "migrate:storage": "node scripts/migrate-supabase-to-s3.js",
-    "seed:dagupan": "node scripts/seed-dagupan-data.js"
+    "seed:dagupan": "node scripts/seed-dagupan-data.js",
+    "seed:barangay-reports": "node scripts/seed-barangay-reports.js",
+    "seed:agency-reports": "node scripts/seed-agency-reports.js",
+    "migrate:tanod-workflow": "node scripts/migrate-tanod-workflow.js"
   },
   "keywords": [
     "infrastructure",

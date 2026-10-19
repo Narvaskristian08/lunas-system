@@ -77,8 +77,8 @@ export function RepairPersonnelConsole({
     <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
         eyebrow="Maintenance operations · Team management"
-        title="Repair Personnel"
-        description="Add repair workers to your Utility Provider organization and invite them to activate their own accounts."
+        title="Utility Personnel"
+        description="Add utility personnel to your Utility Provider organization and invite them to activate their own accounts."
       />
 
       {message ? <p role="status" className={`rounded-xl border p-4 text-sm ${warning ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</p> : null}
@@ -86,7 +86,7 @@ export function RepairPersonnelConsole({
       {error ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{error}</p> : null}
 
       <Card className="p-5">
-        <CardHeader className="-mx-5 -mt-5" title={editing ? "Edit Personnel Details" : "Add Repair Personnel"} />
+        <CardHeader className="-mx-5 -mt-5" title={editing ? "Edit Personnel Details" : "Add Utility Personnel"} />
         <form key={editing?.id ?? "new"} ref={formRef} action={submit} className="mt-5 space-y-6">
           <input type="hidden" name="version" value={editing?.version ?? 0} />
           <fieldset disabled={pending}>
@@ -124,10 +124,10 @@ export function RepairPersonnelConsole({
       </Card>
 
       <Card className="overflow-hidden">
-        <CardHeader title="Organization Personnel" description={`${personnel.length} non-archived Repair Personnel account${personnel.length === 1 ? "" : "s"} in your organization.`} />
+        <CardHeader title="Organization Personnel" description={`${personnel.length} non-archived Utility Personnel account${personnel.length === 1 ? "" : "s"} in your organization.`} />
         {personnel.length ? (
           <DataTable
-            caption="Repair Personnel roster"
+            caption="Utility Personnel roster"
             columns={[
               { key: "name", label: "Name" },
               { key: "team", label: "Account Type" },
@@ -151,7 +151,7 @@ export function RepairPersonnelConsole({
             }))}
           />
         ) : (
-          <EmptyState icon="records" title="No Repair Personnel yet" description="Add a repair person to make them available for matching work orders after activation." />
+          <EmptyState icon="records" title="No Utility Personnel yet" description="Add utility personnel to make them available for matching work orders after activation." />
         )}
       </Card>
       <ConfirmationDialog

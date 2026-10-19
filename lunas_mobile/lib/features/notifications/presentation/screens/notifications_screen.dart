@@ -269,7 +269,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         appBar: RepairAppBar(
           title: 'Notifications',
           subtitle: _unreadCount == 0
-              ? 'Stay updated on your work orders.'
+              ? 'Stay updated on your assigned verifications.'
               : '$_unreadCount unread update${_unreadCount == 1 ? '' : 's'}',
           actions: [
             refreshAction,

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const {
   archiveUser,
-  getRepairPersonnel,
   getUtilityProviderOrganizations
 } = require('../controllers/userController');
 const { getMe, updateProfile } = require('../controllers/authController');
@@ -16,6 +15,7 @@ const {
 } = require('../middleware/validation');
 const accounts = require('../controllers/authorizedAccountController');
 const accountRules = require('../middleware/accountValidation');
+const tanodWorkflow = require('../controllers/tanodWorkflowController');
 
 router.route('/authorized')
   .get(protect, authorize('admin'), paginationValidation, accountRules.accountQueryValidation, validate, accounts.getAuthorizedAccounts)
@@ -28,14 +28,8 @@ router.patch('/authorized/:id/status', protect, authorize('admin'), mongoIdValid
 router.post('/authorized/:id/activation', protect, authorize('admin'), mongoIdValidation,
   accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 
-router.get('/repair-personnel', protect, authorize('utility_provider'), getRepairPersonnel);
-router.post('/repair-personnel', protect, authorize('utility_provider'), accountRules.createRepairPersonnelValidation, validate, accounts.createRepairPersonnel);
-router.put('/repair-personnel/:id', protect, authorize('utility_provider'), mongoIdValidation,
-  accountRules.updateRepairPersonnelValidation, validate, accounts.updateRepairPersonnel);
-router.post('/repair-personnel/:id/activation', protect, authorize('utility_provider'), mongoIdValidation,
-  accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
-router.patch('/repair-personnel/:id/status', protect, authorize('utility_provider'), mongoIdValidation,
-  accountRules.accountStatusValidation, validate, accounts.changeAccountStatus);
+// Compatibility read route: Utility Personnel are barangay-scoped Tanods now.
+router.get('/repair-personnel', protect, authorize('barangay_official'), tanodWorkflow.listTanodPersonnel);
 router.get('/utility-providers', protect, authorize('barangay_official', 'utility_provider'), getUtilityProviderOrganizations);
 
 // Keep an explicit self-service profile endpoint so clients do not need to

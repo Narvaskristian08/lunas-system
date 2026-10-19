@@ -3,7 +3,7 @@ import 'package:lunas_mobile/core/utils/display_labels.dart';
 
 void main() {
   test('humanizes backend codes, camel case, and acronyms', () {
-    expect(humanizeCodeLabel('repair_personnel'), 'Repair Personnel');
+    expect(humanizeCodeLabel('repair_personnel'), 'Utility Personnel');
     expect(
       humanizeCodeLabel('cityCorrectionRequired'),
       'City Correction Required',

@@ -40,7 +40,10 @@ export function ConfirmationDialog({
     restoreRef.current = document.activeElement as HTMLElement;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    requestAnimationFrame(() => cancelRef.current?.focus());
+    requestAnimationFrame(() => {
+      const firstField = dialogRef.current?.querySelector<HTMLElement>("input:not([disabled]), textarea:not([disabled]), select:not([disabled])");
+      (firstField ?? cancelRef.current)?.focus();
+    });
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !loading) onClose();
       if (event.key !== "Tab" || !dialogRef.current) return;

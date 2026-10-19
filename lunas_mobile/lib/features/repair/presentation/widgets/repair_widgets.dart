@@ -13,8 +13,8 @@ import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/repair/routes/repair_routes.dart';
 
-/// Shared components for the authenticated repair-personnel workspace.
-/// Data and workflow actions are supplied by the API-backed repair screens.
+/// Shared components for the authenticated Utility Personnel / Barangay Tanod workspace.
+/// Data and workflow actions are supplied by the API-backed inspection screens.
 class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
   const RepairAppBar({
     this.title = 'LUNAS Repair',
@@ -174,7 +174,7 @@ class RepairBottomNavigation extends StatelessWidget {
         const NavigationDestination(
           icon: Icon(Icons.assignment_outlined, size: 22),
           selectedIcon: Icon(Icons.assignment_rounded, size: 22),
-          label: 'Work Orders',
+          label: 'Work Verification',
         ),
         NavigationDestination(
           icon: _notificationIcon(Icons.notifications_outlined),

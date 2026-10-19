@@ -41,6 +41,8 @@ String humanizeCodeLabel(String value, {String fallback = 'Unavailable'}) {
       .trim();
   if (normalized.isEmpty) return fallback;
 
+  if (normalized.toLowerCase() == 'repair personnel') return 'Utility Personnel';
+
   final words = normalized.split(' ');
   return [
     for (var index = 0; index < words.length; index++)

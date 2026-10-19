@@ -45,6 +45,9 @@ const {
 } = require('../middleware/validation');
 const { OFFICIAL_VALIDATION_ROLES, VALIDATION_DECISION_ROLES } = require('../services/jurisdictionService');
 const { rejectBlockedReporting } = require('../middleware/reportingRestriction');
+const tanodWorkflow = require('../controllers/tanodWorkflowController');
+const { body } = require('express-validator');
+const { uploadMultiple } = require('../middleware/upload');
 
 const officialValidationRoles = OFFICIAL_VALIDATION_ROLES;
 const validationDecisionRoles = VALIDATION_DECISION_ROLES;
@@ -64,6 +67,9 @@ router.get('/barangays', protect, getBarangays);
 router.get('/location-policy', protect, (req, res) => res.json({
   success: true, data: require('../services/locationIntegrityService').getLocationPolicy()
 }));
+router.get('/tanod-personnel', protect, authorize('barangay_official'), tanodWorkflow.listTanodPersonnel);
+router.get('/agency-exceptions', protect, authorize('barangay_official'), tanodWorkflow.listAgencyExceptions);
+router.get('/my-inspections', protect, authorize('repair_personnel'), tanodWorkflow.listMyInspections);
 router.get('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate,
   require('../controllers/falseReportReviewController').getReview);
 router.post('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate,
@@ -103,6 +109,29 @@ router.post(
   validate,
   createWorkOrder
 );
+
+router.post('/:id/tanod-inspections', protect, authorize('barangay_official'), mongoIdValidation,
+  body('tanodId').isMongoId(), validate, tanodWorkflow.assignInitialInspection);
+router.post('/:id/completion-inspections', protect, authorize('barangay_official'), mongoIdValidation,
+  body('tanodId').isMongoId(), validate, tanodWorkflow.assignCompletionInspection);
+router.patch('/:id/agency-status', protect, authorize('utility_provider'), mongoIdValidation,
+  body('status').isIn(['ready_for_work', 'pending_procurement', 'work_in_progress', 'work_completed']),
+  body('priority').optional().isIn(['critical', 'high', 'medium', 'low']),
+  body('note').optional().isString().isLength({ max: 2000 }), validate, tanodWorkflow.updateAgencyStatus);
+router.post('/:id/agency-correction', protect, authorize('barangay_official'), mongoIdValidation,
+  body('reason').isString().trim().isLength({ min: 2, max: 2000 }), validate, tanodWorkflow.requestAgencyCorrection);
+router.post('/:id/complete', protect, authorize('barangay_official'), mongoIdValidation,
+  body('inspectionId').isMongoId(), body('notes').optional().isString().isLength({ max: 2000 }), validate,
+  tanodWorkflow.completeIncident);
+router.post('/:id/inspections/:inspectionId/start', protect, authorize('repair_personnel'), mongoIdValidation,
+  tanodWorkflow.startInspection);
+router.post('/:id/inspections/:inspectionId/submit', protect, authorize('repair_personnel'), mongoIdValidation,
+  uploadMultiple('evidence', 5), body('findings').isString().isLength({ min: 2, max: 4000 }),
+  body('result').optional().isIn(['verified', 'not_verified', 'unable_to_verify']), validate,
+  tanodWorkflow.submitInspection);
+router.post('/:id/inspections/:inspectionId/review', protect, authorize('barangay_official'), mongoIdValidation,
+  body('decision').isIn(['approve', 'reject', 'clarification']), body('notes').optional().isString().isLength({ max: 2000 }), validate,
+  tanodWorkflow.reviewInspection);
 
 router.route('/:id')
   .get(protect, mongoIdValidation, validate, getIncident)

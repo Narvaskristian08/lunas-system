@@ -23,15 +23,16 @@ function accountDefinitions(password) {
     ...DAGUPAN_BARANGAYS.map(barangay => ({ firstName: barangay, lastName: 'Official', email: email(`barangay-${slug(barangay)}`),
       role: 'barangay_official', barangay, organization: `Barangay ${barangay}`, position: 'Local barangay account',
       ...(barangay === 'Poblacion Oeste' ? { legacyEmail: 'demo.barangay@lunas.test' } : {}) })),
-    ...ORGANIZATIONS.flatMap((org, index) => [
-      { firstName: org.code.toUpperCase(), lastName: 'Provider', email: email(`provider-${org.code}`), role: 'utility_provider',
-        organization: org.name, utilityCompany: org.name, expertise: org.expertise,
-        ...(org.code === 'dcwd' ? { legacyEmail: 'demo.utility@lunas.test' } : {}) },
-      { firstName: org.code.toUpperCase(), lastName: 'Repair Personnel', email: email(`repair-${org.code}`), role: 'repair_personnel',
-        phone: `0999000000${index + 1}`, organization: org.name, repairOrganization: org.name, expertise: org.expertise,
-        repairAccountType: 'individual', availability: 'available',
-        ...(org.code === 'dcwd' ? { legacyEmail: 'demo.repair@lunas.test' } : {}) }
-    ])
+    ...DAGUPAN_BARANGAYS.map((barangay, index) => ({
+      firstName: `Tanod ${barangay}`, lastName: 'Utility Personnel', email: email(`tanod-${slug(barangay)}`), role: 'repair_personnel',
+      phone: `0998000${String(index + 1).padStart(4, '0')}`, barangay, organization: `Barangay ${barangay}`,
+      position: 'Barangay Tanod / Utility Personnel', availability: 'available'
+    })),
+    ...ORGANIZATIONS.map((org) => ({
+      firstName: org.code.toUpperCase(), lastName: 'Provider', email: email(`provider-${org.code}`), role: 'utility_provider',
+      organization: org.name, utilityCompany: org.name, expertise: org.expertise,
+      ...(org.code === 'dcwd' ? { legacyEmail: 'demo.utility@lunas.test' } : {})
+    }))
   ];
   return accounts.map(account => ({ ...common, ...account, address: { ...address, barangay: account.barangay || 'Poblacion Oeste' } }));
 }

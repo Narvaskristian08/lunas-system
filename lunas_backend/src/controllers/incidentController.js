@@ -108,6 +108,7 @@ const safeAiAnalysis = (analysis, evidenceFindings = []) => {
 };
 
 const safeEvidenceForCitizen = async (image) => {
+  if (!image) return null;
   const source = image.toObject ? image.toObject() : image;
   let url = source.url || null;
 
@@ -160,7 +161,7 @@ const serializeStatusHistoryForCitizen = (history = []) => history.map((entry) =
 
 const serializeIncidentForCitizen = async (incident) => {
   const source = incident.toObject ? incident.toObject() : incident;
-  const images = await Promise.all((source.images || []).map(safeEvidenceForCitizen));
+  const images = (await Promise.all((source.images || []).filter(Boolean).map(safeEvidenceForCitizen))).filter(Boolean);
 
   return {
     _id: source._id,
@@ -172,6 +173,8 @@ const serializeIncidentForCitizen = async (incident) => {
     location: source.location,
     images,
     status: source.status,
+    agencyStatus: source.agencyStatus,
+    agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
     createdAt: source.createdAt,
     updatedAt: source.updatedAt,
     rejectionReason: source.status === 'rejected' ? source.rejectionReason : undefined,
@@ -224,6 +227,12 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
   const hasConfidence = typeof aiAnalysis?.confidence === 'number' && Number.isFinite(aiAnalysis.confidence);
   const analysisStatus = aiAnalysis?.analysisStatus || (hasConfidence ? 'completed' : 'unavailable');
   const images = await Promise.all((source.images || []).map(safeEvidenceForCitizen));
+  const initialInspectionEvidence = source.initialInspection?.evidence
+    ? (await Promise.all(source.initialInspection.evidence.filter(Boolean).map(safeEvidenceForCitizen))).filter(Boolean)
+    : undefined;
+  const completionInspectionEvidence = source.completionInspection?.evidence
+    ? (await Promise.all(source.completionInspection.evidence.filter(Boolean).map(safeEvidenceForCitizen))).filter(Boolean)
+    : undefined;
   const duplicateCandidates = includeCandidates
     ? (source.duplicateCandidates || []).map((candidate) => ({
       id: (candidate.incident?._id || candidate.incident || candidate.id)?.toString(),
@@ -288,6 +297,30 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       reason: source.routing.reason,
       routedAt: source.routing.routedAt
     } : undefined,
+    agencyStatus: source.agencyStatus,
+    agencyStatusNote: source.agencyStatusNote,
+    agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
+    initialInspection: source.initialInspection && typeof source.initialInspection === 'object' ? {
+      id: source.initialInspection._id?.toString?.() || source.initialInspection._id,
+      status: source.initialInspection.status,
+      type: source.initialInspection.type,
+      findings: source.initialInspection.findings,
+      result: source.initialInspection.result,
+      evidence: initialInspectionEvidence,
+      tanod: source.initialInspection.tanod,
+      secretary: source.initialInspection.secretary,
+      submittedAt: source.initialInspection.submittedAt,
+    } : source.initialInspection ? { id: source.initialInspection.toString() } : undefined,
+    completionInspection: source.completionInspection && typeof source.completionInspection === 'object' ? {
+      id: source.completionInspection._id?.toString?.() || source.completionInspection._id,
+      status: source.completionInspection.status,
+      type: source.completionInspection.type,
+      findings: source.completionInspection.findings,
+      result: source.completionInspection.result,
+      evidence: completionInspectionEvidence,
+      tanod: source.completionInspection.tanod,
+      submittedAt: source.completionInspection.submittedAt,
+    } : source.completionInspection ? { id: source.completionInspection.toString() } : undefined,
     sla: { ...source.sla, ...getSlaProjection(source.sla) },
     validatedAt: source.validatedAt,
     validatedBy: safeReporterForOfficial(source.validatedBy),
@@ -501,6 +534,8 @@ exports.getIncidents = asyncHandler(async (req, res) => {
     category,
     barangay,
     search,
+    from,
+    to,
     sortBy = '-createdAt'
   } = req.query;
   const numericPage = Number(page);
@@ -518,6 +553,11 @@ exports.getIncidents = asyncHandler(async (req, res) => {
   }
   if (priority) filter.priority = priority;
   if (category) filter.category = category;
+  if (from || to) {
+    filter.createdAt = {};
+    if (from) filter.createdAt.$gte = new Date(`${from}T00:00:00.000Z`);
+    if (to) filter.createdAt.$lte = new Date(`${to}T23:59:59.999Z`);
+  }
   if (barangay && !['barangay_official', 'citizen'].includes(req.user.role)) {
     filter['location.address.barangay'] = barangay;
   }
@@ -587,6 +627,7 @@ const findIncidentForRead = async (req, res) => {
     .populate('duplicateOf', 'reportNumber');
   if (incident && typeof incident.populate === 'function') {
     await incident.populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt');
+    await incident.populate('initialInspection completionInspection');
   }
 
   if (!incident) {
@@ -647,7 +688,8 @@ const findScopedIncident = async (req, id = req.params.id, populate = true) => {
     .populate('reporter', 'firstName lastName')
     .populate('validatedBy', 'firstName lastName')
     .populate('duplicateOf', 'reportNumber')
-    .populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt');
+    .populate('workOrder', 'orderNumber status assignmentState progressPercent progressStage readyForCompletionAt updatedAt')
+    .populate('initialInspection completionInspection');
 };
 
 const respondNotFound = (res) => {
@@ -787,9 +829,18 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   const numericPage = Number(page);
   const numericLimit = Number(limit);
   const allowedSorts = new Set(['createdAt', '-createdAt', 'priority', '-priority']);
-  const filter = req.user.role === 'city_engineer'
+  let filter = req.user.role === 'city_engineer'
     ? { status: req.query.stage === 'confirmed' ? { $in: ['city_confirmed', 'prioritized'] } : 'barangay_validated' }
     : { status: { $in: ['submitted', 'clarification_required', 'barangay_validated', 'city_confirmed', 'prioritized'] } };
+
+  if (req.user.role === 'barangay_official') {
+    filter = {
+      $or: [
+        { status: { $in: ['submitted', 'clarification_required', 'tanod_assigned', 'tanod_in_progress', 'tanod_verified', 'barangay_validated', 'city_confirmed', 'prioritized'] } },
+        { status: 'provider_assigned', agencyStatus: 'work_completed' }
+      ]
+    };
+  }
 
   if (category) filter.category = category;
   if (hasDuplicateCandidate === 'true') filter['duplicateDetection.candidateCount'] = { $gt: 0 };

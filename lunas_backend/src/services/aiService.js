@@ -9,6 +9,9 @@ const logger = require('../utils/logger');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:5001';
 const AI_SERVICE_TIMEOUT = parseInt(process.env.AI_SERVICE_TIMEOUT || '30000');
+// Privacy detection runs face and plate detection over tiled images and can
+// take longer than the general advisory classification request.
+const PRIVACY_DETECTION_TIMEOUT = parseInt(process.env.PRIVACY_DETECTION_TIMEOUT || '180000');
 const AI_SERVICE_ENABLED = process.env.AI_SERVICE_ENABLED !== 'false';
 const MANUAL_REVIEW_ONLY_CATEGORIES = new Set(['other']);
 
@@ -62,7 +65,7 @@ exports.detectPrivacy = async (imageBuffer) => {
     });
     const response = await axios.post(`${AI_SERVICE_URL}/api/v1/detect/privacy`, form, {
       headers: form.getHeaders(),
-      timeout: AI_SERVICE_TIMEOUT,
+      timeout: PRIVACY_DETECTION_TIMEOUT,
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
       validateStatus: (status) => status >= 200 && status < 600

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http_parser/http_parser.dart';
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
+import 'package:lunas_mobile/features/repair/data/models/inspection_models.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 
 /// Server-backed repair operations. Authorization, personnel ownership,
@@ -12,6 +13,52 @@ class RepairService {
   const RepairService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
+
+  Future<List<TanodInspection>> getMyInspections() async {
+    final payload = await _apiClient.get('/incidents/my-inspections');
+    final data = payload['data'] is List
+        ? payload['data'] as List
+        : const <dynamic>[];
+    return data.map(TanodInspection.fromJson).toList(growable: false);
+  }
+
+  Future<void> startInspection(String incidentId, String inspectionId) async {
+    await _apiClient.post(
+      '/incidents/$incidentId/inspections/$inspectionId/start',
+    );
+  }
+
+  Future<void> submitInspection({
+    required String incidentId,
+    required String inspectionId,
+    required String findings,
+    required String result,
+    EvidenceSelection? evidence,
+  }) async {
+    final trimmed = findings.trim();
+    if (trimmed.length < 2)
+      throw ArgumentError.value(findings, 'findings', 'Findings are required');
+    final fields = {'findings': trimmed, 'result': result};
+    if (evidence == null) {
+      await _apiClient.post(
+        '/incidents/$incidentId/inspections/$inspectionId/submit',
+        body: fields,
+      );
+      return;
+    }
+    await _apiClient.multipart(
+      '/incidents/$incidentId/inspections/$inspectionId/submit',
+      fields: fields,
+      files: [
+        ApiMultipartFile(
+          fieldName: 'evidence',
+          filename: evidence.filename,
+          bytes: await evidence.readAsBytes(),
+          contentType: MediaType.parse(evidence.mediaType),
+        ),
+      ],
+    );
+  }
 
   Future<RepairDashboardSummary> getDashboardSummary() async {
     final payload = await _apiClient.get('/dashboard/work-orders-summary');

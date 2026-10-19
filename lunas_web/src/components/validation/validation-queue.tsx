@@ -91,6 +91,8 @@ export function ValidationQueue({
   const [dateTo, setDateTo] = useState(filters.dateTo ?? "");
   const [sortBy, setSortBy] = useState<NonNullable<ValidationQueueFilters["sortBy"]>>(filters.sortBy ?? "createdAt_desc");
   const [pending, startTransition] = useTransition();
+  const canSetPriority = isCityEngineering;
+  const isPriorityRoutingQueue = confirmed && canSetPriority;
 
   const categorySuggestions = useMemo(() => Array.from(new Set([
     ...queue.categories,
@@ -173,8 +175,8 @@ export function ValidationQueue({
       <Card className="overflow-hidden">
         <CardHeader
           action={embedded ? <Link href="/work-orders?view=orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : undefined}
-          title={confirmed ? "Priority & Routing" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
-          description={confirmed ? "Set report priority and assign a Utility Provider." : isCityEngineering
+          title={isPriorityRoutingQueue ? "Priority & Routing" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
+          description={isPriorityRoutingQueue ? "Set report priority and assign a Utility Provider." : isCityEngineering
             ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
             : "Search and filters are applied by the server; reports outside your assigned Barangay are never returned."}
         />
@@ -217,7 +219,7 @@ export function ValidationQueue({
               <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Submitted on or Before" className="min-w-0 bg-transparent outline-none" disabled={pending} />
             </label>
             </> : null}
-            <FilterSelect label="Sort Queue" value={sortBy} onChange={(event) => { const value = event.target.value as NonNullable<ValidationQueueFilters["sortBy"]>; setSortBy(value); navigate({ page: 1, sortBy: value }); }} disabled={pending} options={[{ value: "createdAt_desc", label: "Newest Submitted" }, { value: "createdAt_asc", label: "Oldest Submitted" }, { value: "priority_desc", label: "Highest Priority" }]} />
+            <FilterSelect label="Sort Queue" value={canSetPriority ? sortBy : (sortBy === "priority_desc" ? "createdAt_desc" : sortBy)} onChange={(event) => { const value = event.target.value as NonNullable<ValidationQueueFilters["sortBy"]>; setSortBy(value); navigate({ page: 1, sortBy: value }); }} disabled={pending} options={[{ value: "createdAt_desc", label: "Newest Submitted" }, { value: "createdAt_asc", label: "Oldest Submitted" }, ...(canSetPriority ? [{ value: "priority_desc" as const, label: "Highest Priority" }] : [])]} />
             {!confirmed ? <Button type="submit" variant="ghost" size="sm" disabled={pending}><ArrowUpDown className="size-4" aria-hidden="true" /> Apply</Button> : null}
           </FilterBar>
         </form>
@@ -246,7 +248,7 @@ export function ValidationQueue({
                   submitted: <span className="whitespace-nowrap text-sm text-slate-600">{compactDate(incident.createdAt)}</span>,
                   duplicate: <Badge tone={duplicateTone(incident.duplicateCandidateCount)}>{incident.duplicateCandidateCount ? `${incident.duplicateCandidateCount} candidate${incident.duplicateCandidateCount === 1 ? "" : "s"}` : "None"}</Badge>,
                   status: isCityEngineering ? <StatusBadge tone={incident.priority === "critical" ? "critical" : incident.priority === "high" ? "warning" : incident.priority === "medium" ? "information" : "neutral"}>{titleCase(incident.priority)}</StatusBadge> : <StatusBadge tone={incident.status === "city_confirmed" ? "information" : "warning"}>{incident.status === "clarification_required" ? "Clarification Requested" : titleCase(incident.status)}</StatusBadge>,
-                  action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`${confirmed ? "Set Priority and Route" : "Review"} ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">{confirmed ? "Set Priority & Route" : "Review"} <ChevronRight className="size-4" aria-hidden="true" /></Link>,
+                  action: <Link href={`/validation-routing/${encodeURIComponent(incident.id)}`} aria-label={`${isPriorityRoutingQueue ? "Set Priority and Route" : "Review"} ${incident.reportNumber}`} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">{isPriorityRoutingQueue ? "Set Priority & Route" : "Review"} <ChevronRight className="size-4" aria-hidden="true" /></Link>,
                 },
               }))}
             />

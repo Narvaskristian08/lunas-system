@@ -193,6 +193,8 @@ export interface ProviderRoutedIncident {
   description?: string;
   priority?: "critical" | "high" | "medium" | "low";
   status: string;
+  agencyStatus?: string;
+  agencyStatusNote?: string;
   createdAt?: string;
   routedAt?: string;
   responsibleOrganization?: string;
@@ -441,6 +443,8 @@ function normalizeProviderIncident(value: unknown): ProviderRoutedIncident | nul
     description: asString(source.description),
     priority,
     status: asString(source.status) ?? "provider_assigned",
+    agencyStatus: asString(source.agencyStatus),
+    agencyStatusNote: asString(source.agencyStatusNote),
     createdAt: asString(source.createdAt),
     routedAt: asString(routing.routedAt),
     responsibleOrganization: asString(routing.responsibleOrganization),
@@ -577,7 +581,6 @@ function providerIncidentQuery(filters: ProviderIncidentFilters) {
   const query = new URLSearchParams({
     page: String(filters.page),
     limit: String(filters.limit),
-    status: "provider_assigned",
     withoutWorkOrder: "true",
     sortBy: filters.sortBy === "oldest"
       ? "createdAt"

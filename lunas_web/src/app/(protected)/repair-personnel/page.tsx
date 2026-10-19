@@ -11,7 +11,7 @@ export default async function RepairPersonnelPage() {
   try {
     personnel = await getRepairPersonnel(accessToken);
   } catch {
-    error = "The Repair Personnel roster could not be loaded. Refresh to try again.";
+    error = "The Utility Personnel roster could not be loaded. Refresh to try again.";
   }
 
   return <RepairPersonnelConsole organization={viewer.utilityCompany ?? ""} personnel={personnel} error={error} />;

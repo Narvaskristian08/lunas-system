@@ -2,6 +2,102 @@ import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/core/theme/app_spacing.dart';
 import 'package:lunas_mobile/core/widgets/lunas_card.dart';
+import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
+
+int reportWorkflowStep(IncidentReport report) {
+  final status = report.status.toLowerCase();
+  if (status == 'closed' || status == 'resolved') {
+    return 5;
+  }
+  if (status.contains('completion') || status == 'agency_completed') {
+    return 4;
+  }
+  if (status == 'tanod_verified' ||
+      status == 'provider_assigned' ||
+      status == 'prioritized' ||
+      status == 'barangay_validated') {
+    return 3;
+  }
+  if (status == 'tanod_assigned' ||
+      status == 'tanod_in_progress' ||
+      status == 'tanod_rejected' ||
+      status == 'clarification_required') {
+    return 2;
+  }
+  return 1;
+}
+
+class ReportWorkflowProgress extends StatelessWidget {
+  const ReportWorkflowProgress({required this.report, super.key});
+
+  final IncidentReport report;
+
+  static const stages = <String>[
+    'Submitted',
+    'Barangay review',
+    'Agency work',
+    'Final check',
+    'Completed',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final step = reportWorkflowStep(report);
+    final theme = Theme.of(context);
+    return Semantics(
+      label:
+          'Report progress: ${stages[step - 1]}, step $step of ${stages.length}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Progress',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                'Step $step of ${stages.length}',
+                style: theme.textTheme.labelMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              for (var index = 0; index < stages.length; index++) ...[
+                Expanded(
+                  child: Container(
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: index < step
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                  ),
+                ),
+                if (index < stages.length - 1) const SizedBox(width: 3),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            stages[step - 1],
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class ReportSectionTitle extends StatelessWidget {
   const ReportSectionTitle(this.title, {this.trailing, super.key});

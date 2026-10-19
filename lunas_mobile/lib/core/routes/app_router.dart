@@ -21,12 +21,12 @@ import 'package:lunas_mobile/features/notifications/presentation/screens/notific
 import 'package:lunas_mobile/features/notifications/presentation/screens/notification_details_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/citizen_profile_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/assigned_work_orders_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_dashboard_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_profile_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/repair_work_order_location_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_progress_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/tanod_inspections_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/tanod_home_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/category_picker_screen.dart';
@@ -258,11 +258,12 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
-    GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
+    GoRoute(path: '/repair', builder: (_, _) => const TanodHomeScreen()),
     GoRoute(
       path: '/repair/work-orders',
-      builder: (_, state) => AssignedWorkOrdersScreen(
+      builder: (_, state) => TanodInspectionsScreen(
         initialFilter: state.uri.queryParameters['filter'],
+        initialInspectionId: state.uri.queryParameters['inspectionId'],
       ),
     ),
     GoRoute(

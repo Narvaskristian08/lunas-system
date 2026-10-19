@@ -17,7 +17,7 @@ abstract final class ApiConfig {
     // 10.0.2.2 is the Android emulator alias for the host machine. Web,
     // iOS simulator, desktop, and other targets use host loopback instead.
     return kIsWeb || defaultTargetPlatform != TargetPlatform.android
-        ? 'http://localhost:5000/api/v1'
+        ? 'http://localhost:5002/api/v1'
         : 'http://10.0.2.2:5000/api/v1';
   }
 

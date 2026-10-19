@@ -147,6 +147,18 @@ const incidentSchema = new mongoose.Schema({
     enum: INCIDENT_STATES,
     default: 'submitted'
   },
+  agencyStatus: {
+    type: String,
+    enum: ['not_routed', 'ready_for_work', 'pending_procurement', 'work_in_progress', 'work_completed', 'correction_required'],
+    default: 'not_routed'
+  },
+  agencyStatusNote: { type: String, maxlength: 2000 },
+  agencyStatusUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  agencyStatusUpdatedAt: Date,
+  agencyCompletionReportedAt: Date,
+  agencyCompletionReportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  initialInspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' },
+  completionInspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' },
   assignedUtility: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

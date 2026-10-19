@@ -85,7 +85,7 @@ const userSchema = new mongoose.Schema({
   barangay: {
     type: String,
     required: function() {
-      return this.role === 'barangay_official';
+      return this.role === 'barangay_official' || (this.role === 'repair_personnel' && !this.repairOrganization);
     }
   },
   utilityCompany: {
@@ -104,15 +104,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
     maxlength: 160,
-    required: function() {
-      return this.role === 'repair_personnel';
-    }
+    required: false
   },
   repairTeam: {
     type: String,
     trim: true,
     maxlength: 120,
-    required: function() { return this.role === 'repair_personnel' && this.repairAccountType === 'team'; }
+    required: false
   },
   repairAccountType: {
     type: String,

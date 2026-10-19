@@ -10,26 +10,25 @@ import Link from "next/link";
 import { TimelineMarker } from "@/components/ui/timeline-marker";
 import { distinctTimelineEvents, timelineEventLabel, timelineMilestoneLabel, timelineNoteLabel } from "@/lib/timeline-display";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, FileImage, MapPin, Route, ShieldCheck, Sparkles, XCircle } from "lucide-react";
 import {
-  assignIncidentPriorityAction,
   markDuplicateAction,
   rejectIncidentAction,
   routeIncidentAction,
   validateIncidentAction,
 } from "@/app/actions/validation";
+import { assignCompletionTanodAction, assignTanodAction, completeIncidentAction, requestAgencyCorrectionAction, reviewTanodAction } from "@/app/actions/tanod-workflow";
 import { FalseReportReview } from "@/components/validation/false-report-review";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import type { ValidationAiFinding, ValidationIncident, ValidationPriority } from "@/lib/validation.server";
+import type { ValidationAiFinding, ValidationIncident } from "@/lib/validation.server";
 import { formatDateTime } from "@/lib/utils";
 import type { Severity, UserProfile } from "@/types";
 
 type Decision = "validate" | "reject" | "duplicate" | "priority" | "route";
 
-const priorities: ValidationPriority[] = ["critical", "high", "medium", "low"];
 function titleCase(value: string | undefined, fallback = "Not Assigned") {
   if (!value) return fallback;
   return value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -40,6 +39,20 @@ function statusTone(status: string): Severity {
   if (status === "duplicate") return "neutral";
   if (["verified", "resolved", "closed"].includes(status)) return "success";
   return "warning";
+}
+
+function workflowStep(incident: ValidationIncident) {
+  if (incident.status === "closed" || incident.status === "resolved") return 5;
+  if (incident.completionInspection?.status || incident.status === "agency_completed") return 4;
+  if (["tanod_verified", "provider_assigned", "prioritized", "barangay_validated"].includes(incident.status)) return 3;
+  if (["tanod_assigned", "tanod_in_progress", "tanod_rejected", "clarification_required"].includes(incident.status)) return 2;
+  return 1;
+}
+
+function WorkflowProgress({ incident }: { incident: ValidationIncident }) {
+  const stages = ["Submitted", "Barangay review", "Agency work", "Final check", "Completed"];
+  const step = workflowStep(incident);
+  return <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4" aria-label={`Report progress: ${stages[step - 1]}, step ${step} of ${stages.length}`}><div className="flex items-center justify-between text-xs font-semibold text-slate-600"><span>Report progress</span><span>Step {step} of {stages.length}</span></div><div className="mt-3 flex gap-1" aria-hidden="true">{stages.map((stage, index) => <div key={stage} className={`h-2 flex-1 rounded-full ${index < step ? "bg-brand-600" : "bg-slate-200"}`} />)}</div><p className="mt-2 text-sm font-semibold text-brand-700">{stages[step - 1]}</p><div className="mt-1 grid grid-cols-5 gap-1 text-[10px] leading-4 text-slate-500">{stages.map((stage) => <span key={stage}>{stage}</span>)}</div></div>;
 }
 
 function fieldClass() {
@@ -172,6 +185,7 @@ function Evidence({ incident }: { incident: ValidationIncident }) {
 }
 
 function Timeline({ incident }: { incident: ValidationIncident }) {
+  const [expanded, setExpanded] = useState(false);
   const events = distinctTimelineEvents([...incident.history].reverse(), (entry) => ({
     timestamp: entry.changedAt,
     values: [timelineMilestoneLabel(entry.status) ?? entry.status, entry.notes?.trim() ?? ""],
@@ -179,54 +193,81 @@ function Timeline({ incident }: { incident: ValidationIncident }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader title="Status History" />
-      <ol className="space-y-6 p-5">
-        {events.length ? events.map((entry, index) => <li key={`${entry.status}-${entry.changedAt ?? index}`} className="flex gap-4"><TimelineMarker latest={index === 0} last={index === events.length - 1} /><div className="min-w-0 flex-1 break-words"><div className="flex flex-col gap-0.5"><p className="text-sm font-semibold leading-6 text-slate-900">{timelineEventLabel(entry.status)}</p>{entry.changedAt ? <time dateTime={entry.changedAt} className="text-xs leading-5 text-slate-500">{formatDateTime(entry.changedAt)}</time> : null}</div>{entry.notes ? <p className="mt-1 text-sm text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}</div></li>) : <li className="px-5 py-5 text-sm text-slate-600">No status events are available.</li>}
-      </ol>
+      {events.length ? <>
+        <div className="border-b border-slate-200 p-5">
+          <TimelineEntry entry={events[0]} latest last={!expanded && events.length === 1} />
+          {events.length > 1 ? <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-brand-700 hover:bg-brand-50"><span aria-hidden="true">{expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</span>{expanded ? "Hide previous updates" : `Show ${events.length - 1} previous update${events.length - 1 === 1 ? "" : "s"}`}</button> : null}
+        </div>
+        {expanded ? <ol className="space-y-6 p-5 pt-0">{events.slice(1).map((entry, index) => <TimelineEntry key={`${entry.status}-${entry.changedAt ?? index}`} entry={entry} last={index === events.length - 2} />)}</ol> : null}
+      </> : <p className="p-5 text-sm text-slate-600">No status events are available.</p>}
     </Card>
   );
 }
 
-function ValidationRoutingSummary({ incident }: { incident: ValidationIncident }) {
-  const deadline = incident.sla?.deadline ? formatDateTime(incident.sla.deadline) : undefined;
-  const targetHours = incident.sla?.targetResolutionTime;
+function TimelineEntry({ entry, latest = false, last = false }: { entry: ValidationIncident["history"][number]; latest?: boolean; last?: boolean }) {
+  return <li className="flex gap-4"><TimelineMarker latest={latest} last={last} /><div className="min-w-0 flex-1 break-words"><div className="flex flex-col gap-0.5"><p className="text-sm font-semibold leading-6 text-slate-900">{timelineEventLabel(entry.status)}</p>{entry.changedAt ? <time dateTime={entry.changedAt} className="text-xs leading-5 text-slate-500">{formatDateTime(entry.changedAt)}</time> : null}</div>{entry.notes ? <p className="mt-1 text-sm text-slate-600">{timelineNoteLabel(entry.notes)}</p> : null}</div></li>;
+}
 
+function ValidationRoutingSummary({ incident }: { incident: ValidationIncident }) {
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Provider Routing" description="Barangay validation, priority, and provider assignment are recorded as separate handoffs." />
+      <CardHeader title="Agency Routing" description="The approved category selects the agency automatically. The agency sets priority and SLA after receiving the report." />
       <dl className="divide-y divide-slate-200 text-sm">
-        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Priority</dt><dd className="text-right font-semibold text-slate-900">{incident.priority ? titleCase(incident.priority) : "Not assigned"}</dd></div>
         <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Barangay</dt><dd className="text-right font-semibold text-slate-900">{incident.jurisdiction ?? incident.location.address.barangay ?? "To be confirmed"}</dd></div>
         <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">Utility Provider</dt><dd className="text-right font-semibold text-slate-900">{incident.routing?.responsibleOrganization ?? "Not Assigned"}</dd></div>
-        <div className="flex items-start justify-between gap-4 px-5 py-3.5"><dt className="text-slate-600">SLA Deadline</dt><dd className="max-w-56 text-right font-semibold text-slate-900">{deadline ? <>{targetHours ? `${targetHours} hour target` : titleCase(incident.sla?.state)}<span className="mt-0.5 block text-xs font-normal text-slate-600">Due {deadline}</span></> : "Starts when the report is routed"}</dd></div>
       </dl>
     </Card>
   );
 }
 
-export function ValidationReview({ viewer, incident, utilityProviders = [] }: { viewer: UserProfile; incident: ValidationIncident; utilityProviders?: string[] }) {
+export function ValidationReview({ viewer, incident, utilityProviders = [], tanods = [] }: { viewer: UserProfile; incident: ValidationIncident; utilityProviders?: string[]; tanods?: Array<{ id: string; firstName?: string; lastName?: string; barangay?: string }> }) {
   const router = useRouter();
   const isBarangay = viewer.backendRole === "barangay_official";
   const initialDecision: Decision = ["submitted", "clarification_required"].includes(incident.status)
-    ? "validate" : "priority";
+    ? "validate" : "route";
   const [decision, setDecision] = useState<Decision>(initialDecision);
-  const [priority, setPriority] = useState<ValidationPriority | "">(incident.priority ?? "");
   const barangay = incident.jurisdiction ?? incident.location.address.barangay ?? "";
   const [organization, setOrganization] = useState(() => {
     const current = incident.routing?.responsibleOrganization ?? "";
     return utilityProviders.includes(current) ? current : "";
   });
+  const [manualAgencyCorrection, setManualAgencyCorrection] = useState(false);
   const [routingReason, setRoutingReason] = useState("");
+  const [tanodId, setTanodId] = useState("");
+  const [inspectionNotes, setInspectionNotes] = useState("");
+  const [completionTanodId, setCompletionTanodId] = useState("");
+  const [completionNotes, setCompletionNotes] = useState("");
+  const [correctionReason, setCorrectionReason] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [duplicateOf, setDuplicateOf] = useState(incident.duplicateCandidates[0]?.id ?? "");
   const [confirm, setConfirm] = useState(false);
+  const [confirmTanod, setConfirmTanod] = useState(false);
+  const [confirmCompletionTanod, setConfirmCompletionTanod] = useState(false);
+  const [confirmFinalization, setConfirmFinalization] = useState(false);
+  const [confirmCorrection, setConfirmCorrection] = useState(false);
+  const [completionSuccessOpen, setCompletionSuccessOpen] = useState(false);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
   const canBarangayReview = isBarangay && viewer.permissions.includes("reports.validate")
-    && ["submitted", "clarification_required"].includes(incident.status);
+    && !["submitted", "clarification_required", "tanod_assigned", "tanod_in_progress", "tanod_verified", "provider_assigned", "closed"].includes(incident.status)
+    && !incident.initialInspection?.id;
   const canRoute = isBarangay && viewer.permissions.includes("reports.validate")
     && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status);
+  const canAssignTanod = isBarangay && viewer.permissions.includes("reports.validate")
+    && ["submitted", "clarification_required", "tanod_rejected"].includes(incident.status);
+  const canReviewTanod = isBarangay && viewer.permissions.includes("reports.validate")
+    && incident.status === "tanod_verified" && incident.initialInspection?.status === "submitted";
+  const canAssignCompletion = isBarangay && viewer.permissions.includes("reports.validate")
+    && incident.agencyStatus === "work_completed" && !incident.completionInspection?.id;
+  const canComplete = isBarangay && viewer.permissions.includes("reports.validate")
+    && incident.completionInspection?.status === "submitted" && incident.completionInspection.result === "verified"
+    && incident.agencyStatus === "work_completed";
+  const canRequestCorrection = isBarangay && viewer.permissions.includes("reports.validate")
+    && incident.completionInspection?.status === "submitted"
+    && incident.agencyStatus === "work_completed";
+  const correctionAlreadySent = incident.agencyStatus === "correction_required";
 
   const duplicateOptions = useMemo(() => incident.duplicateCandidates.map((candidate) => ({ value: candidate.id, label: `${candidate.reportNumber} · ${candidate.location?.address.barangay ?? "location unavailable"}` })), [incident.duplicateCandidates]);
 
@@ -246,12 +287,8 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
       setError("Select or enter a canonical report and provide a duplicate reason of at least 2 characters.");
       return;
     }
-    if (decision === "priority" && !priority) {
-      setError("Select the report priority.");
-      return;
-    }
-    if (["priority", "route"].includes(decision) && !organization) {
-      setError("Select the responsible Utility Provider.");
+    if (["priority", "route"].includes(decision) && manualAgencyCorrection && !organization) {
+      setError("Choose an agency only if the category or automatic agency assignment is wrong.");
       return;
     }
     setConfirm(true);
@@ -265,20 +302,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
           ? await rejectIncidentAction({ incidentId: incident.id, reason, notes })
           : decision === "duplicate"
             ? await markDuplicateAction({ incidentId: incident.id, duplicateOf, reason, notes })
-            : decision === "priority"
-                  ? await (async () => {
-                    if (incident.status !== "prioritized" || priority !== incident.priority) {
-                      const priorityResult = await assignIncidentPriorityAction({ incidentId: incident.id, priority: priority as ValidationPriority });
-                      if (!priorityResult.ok) return priorityResult;
-                    }
-                    const routingResult = await routeIncidentAction({ incidentId: incident.id, organization, reason: routingReason });
-                    if (!routingResult.ok) {
-                      router.refresh();
-                      return { ...routingResult, message: `Priority saved. ${routingResult.message}` };
-                    }
-                    return routingResult;
-                  })()
-                  : await routeIncidentAction({ incidentId: incident.id, organization, reason: routingReason });
+            : await routeIncidentAction({ incidentId: incident.id, organization, reason: routingReason });
       setConfirm(false);
       if (!result.ok) {
         setError(result.message);
@@ -286,22 +310,71 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
         return;
       }
       setMessage(result.message);
-      if (decision === "validate") setDecision("priority");
+      if (decision === "validate") setDecision("route");
       router.refresh();
+    });
+  };
+
+  const assignTanod = () => {
+    if (!tanodId) return;
+    startTransition(async () => {
+      const result = await assignTanodAction(incident.id, tanodId);
+      setConfirmTanod(false);
+      if (result.ok) router.refresh(); else setError(result.message);
+    });
+  };
+
+  const reviewTanod = (decisionValue: "approve" | "reject" | "clarification") => {
+    if (!incident.initialInspection?.id) return;
+    startTransition(async () => {
+      const result = await reviewTanodAction(incident.id, incident.initialInspection!.id!, decisionValue, inspectionNotes);
+      if (result.ok) router.refresh(); else setError(result.message);
+    });
+  };
+
+  const assignCompletion = () => {
+    if (!completionTanodId) return;
+    startTransition(async () => {
+      const result = await assignCompletionTanodAction(incident.id, completionTanodId);
+      setConfirmCompletionTanod(false);
+      if (result.ok) router.refresh(); else setError(result.message);
+    });
+  };
+
+  const completeIncident = () => {
+    if (!incident.completionInspection?.id) return;
+    startTransition(async () => {
+      const result = await completeIncidentAction(incident.id, incident.completionInspection!.id!, completionNotes);
+      setConfirmFinalization(false);
+      if (result.ok) {
+        setMessage(result.message || "Incident finalized and completed.");
+        setCompletionSuccessOpen(true);
+        router.refresh();
+      } else setError(result.message);
+    });
+  };
+
+  const requestCorrection = () => {
+    if (!correctionReason.trim()) { setError("Enter a correction reason."); return; }
+    startTransition(async () => {
+      const result = await requestAgencyCorrectionAction(incident.id, correctionReason);
+      setConfirmCorrection(false);
+      if (result.ok) { setMessage(result.message || "Correction request sent to the agency."); setCorrectionReason(""); router.refresh(); } else setError(result.message);
     });
   };
 
   const decisionTitle = decision === "validate" ? "Validate at barangay level"
     : decision === "reject" ? "Reject Report"
       : decision === "duplicate" ? "Mark report as duplicate"
-        : decision === "priority" ? "Confirm Priority and Route"
-              : "Route to Utility Provider";
+        : decision === "priority" ? "Apply Agency Correction"
+              : "Apply Agency Correction";
   return (
     <div className="mx-auto max-w-[1480px]">
       <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div><p className="text-sm font-semibold text-brand-700">{isBarangay ? `Barangay Review · ${viewer.organization}` : `City Engineering · ${viewer.organization}`}</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{incident.reportNumber}</h1><p className="mt-2 max-w-3xl text-slate-600">Review citizen evidence and location before making the decision assigned to your role.</p></div>
         <StatusBadge tone={statusTone(incident.status)}>{titleCase(incident.status)}</StatusBadge>
       </div>
+      <WorkflowProgress incident={incident} />
 
       {message ? <div role="status" className="mb-5 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"><CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />{message}</div> : null}
       {error ? <div role="alert" className="mb-5 flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-950"><AlertTriangle className="size-5 shrink-0" aria-hidden="true" />{error}</div> : null}
@@ -320,6 +393,10 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
           <Card className="overflow-hidden"><CardHeader title="Duplicate Candidates" description="Suggestions only; LUNAS never marks a report duplicate automatically." /><div className="divide-y divide-slate-200">{incident.duplicateCandidates.length ? incident.duplicateCandidates.map((candidate) => <div key={candidate.id} className="p-4"><p className="font-semibold text-slate-900">{candidate.reportNumber}</p><p className="mt-1 text-sm text-slate-600">{categoryLabel(candidate.category)} · {candidate.location?.address.barangay ?? "Location unavailable"}</p><div className="mt-2 flex gap-2">{candidate.distanceMeters !== undefined ? <Badge>{Math.round(candidate.distanceMeters)} m away</Badge> : null}{candidate.score !== undefined ? <Badge tone="warning">Candidate score {Math.round(candidate.score)}</Badge> : null}</div></div>) : <p className="p-4 text-sm text-slate-600">No likely duplicate reports found.</p>}</div></Card>
 
           <Card className="overflow-hidden"><CardHeader title={isBarangay ? "Barangay Validation" : "Provider Routing"} />
+            {canAssignTanod ? <div className="space-y-4 border-b border-slate-200 p-5"><div><p className="font-semibold text-slate-900">Assign Barangay Tanod</p><p className="mt-1 text-sm leading-6 text-slate-600">A Tanod must inspect the location before the report can be routed to an agency.</p></div><select value={tanodId} onChange={(event) => setTanodId(event.target.value)} className={fieldClass()}><option value="">Select Utility Personnel</option>{tanods.map((tanod) => <option key={tanod.id} value={tanod.id}>{[tanod.firstName, tanod.lastName].filter(Boolean).join(" ") || "Utility Personnel"}</option>)}</select><Button type="button" className="w-full" disabled={pending || !tanodId} onClick={() => setConfirmTanod(true)}>Assign Tanod for Inspection</Button></div> : null}
+            {canReviewTanod ? <div className="space-y-4 border-b border-slate-200 p-5"><div><p className="font-semibold text-slate-900">Tanod Verification</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600">{incident.initialInspection?.findings || "No findings were submitted."}</p><p className="mt-2 text-xs text-slate-500">Result: {titleCase(incident.initialInspection?.result)}</p>{incident.initialInspection?.evidence?.length ? <div className="mt-3 grid grid-cols-2 gap-2">{incident.initialInspection.evidence.map((photo, index) => photo.url ? <a key={`${photo.url}-${index}`} href={photo.url} target="_blank" rel="noreferrer"><img src={photo.url} alt={`Tanod verification ${index + 1}`} className="aspect-square w-full rounded-lg border object-cover" /></a> : null)}</div> : <p className="mt-2 text-xs text-amber-700">No Tanod verification photo is available.</p>}</div><textarea value={inspectionNotes} onChange={(event) => setInspectionNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} placeholder="Review note (optional)" /><div className="grid gap-2 sm:grid-cols-2"><Button type="button" disabled={pending} onClick={() => reviewTanod("approve")}>Approve Verification</Button><Button type="button" variant="secondary" disabled={pending} onClick={() => reviewTanod("clarification")}>Request Clarification</Button></div><Button type="button" variant="danger" className="w-full" disabled={pending} onClick={() => reviewTanod("reject")}>Reject Verification</Button><p className="text-xs leading-5 text-slate-500">Approval automatically sends this report to the agency assigned to the category. Priority and SLA are set by that agency.</p></div> : null}
+            {canAssignCompletion ? <div className="space-y-4 border-b border-slate-200 p-5"><div><p className="font-semibold text-slate-900">Agency Reported Work Completed</p><p className="mt-1 text-sm leading-6 text-slate-600">Assign a Tanod from {barangay || "this barangay"} for final completion verification.</p></div><p className="text-xs text-slate-600">Agency update: {incident.agencyStatusNote || "No additional agency note."}</p><select value={completionTanodId} onChange={(event) => setCompletionTanodId(event.target.value)} className={fieldClass()}><option value="">Select Utility Personnel</option>{tanods.map((tanod) => <option key={tanod.id} value={tanod.id}>{[tanod.firstName, tanod.lastName].filter(Boolean).join(" ") || "Utility Personnel"}</option>)}</select><Button type="button" className="w-full" disabled={pending || !completionTanodId} onClick={() => setConfirmCompletionTanod(true)}>Assign Tanod for Final Verification</Button></div> : null}
+            {incident.completionInspection?.status === "submitted" ? <div className="space-y-4 border-b border-slate-200 p-5"><div><p className="font-semibold text-slate-900">Final Tanod Verification</p><p className="mt-1 text-sm font-medium text-slate-700">Choose one final decision:</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600">{incident.completionInspection.findings || "No findings were submitted."}</p><p className="mt-2 text-xs text-slate-500">Result: {titleCase(incident.completionInspection.result)}</p>{incident.completionInspection.evidence?.length ? <div className="mt-3 grid grid-cols-2 gap-2">{incident.completionInspection.evidence.map((photo, index) => photo.url ? <a key={`${photo.url}-${index}`} href={photo.url} target="_blank" rel="noreferrer"><img src={photo.url} alt={`Final verification ${index + 1}`} className="aspect-square w-full rounded-lg border object-cover" /></a> : null)}</div> : <p className="mt-2 text-xs text-amber-700">No final verification photos are available.</p>}</div>{correctionAlreadySent ? <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><p className="font-semibold">Correction request has been sent</p><p className="mt-1">The agency must update the work before another final verification can be assigned.</p>{incident.agencyStatusNote ? <p className="mt-2 whitespace-pre-wrap">Reason: {incident.agencyStatusNote}</p> : null}</div> : null}{canRequestCorrection ? <Button type="button" variant="danger" className="w-full" disabled={pending} onClick={() => setConfirmCorrection(true)}>Request Correction</Button> : null}{canComplete ? <><textarea value={completionNotes} onChange={(event) => setCompletionNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} placeholder="Final completion note (optional)" /><Button type="button" className="w-full" disabled={pending} onClick={() => setConfirmFinalization(true)}>Finalize and Complete</Button></> : null}</div> : null}
             {canBarangayReview ? <form onSubmit={submit} className="space-y-4 p-5">
               <div className="grid grid-cols-3 gap-2">{(["validate", "reject", "duplicate"] as Decision[]).map((value) => <button key={value} type="button" onClick={() => { setDecision(value); setError(undefined); }} className={`min-h-10 rounded-lg border px-2 text-xs font-bold ${decision === value ? value === "reject" ? "border-red-700 bg-red-700 text-white" : value === "duplicate" ? "border-slate-700 bg-slate-700 text-white" : "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>{value === "validate" ? "Validate" : value === "reject" ? "Reject" : "Duplicate"}</button>)}</div>
               {decision === "reject" ? <label className="block text-sm font-semibold text-slate-800">Rejection Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} className={`${fieldClass()} min-h-24 py-2`} minLength={2} maxLength={500} required /></label> : null}
@@ -327,16 +404,22 @@ export function ValidationReview({ viewer, incident, utilityProviders = [] }: { 
               <label className="block text-sm font-semibold text-slate-800">Review Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={2000} /></label>
               <Button type="submit" variant={decision === "reject" ? "danger" : "primary"} className="w-full" disabled={pending}>{decision === "validate" ? <><ShieldCheck className="size-4" /> Validate and Forward</> : decision === "reject" ? <><XCircle className="size-4" /> Reject Report</> : <><Route className="size-4" /> Mark Duplicate</>}</Button>
             </form> : null}
-            {canRoute && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status) ? <form onSubmit={submit} className="space-y-4 p-5">
-              <label className="block text-sm font-semibold text-slate-800">Priority and SLA<select value={priority} onChange={(event) => setPriority(event.target.value as ValidationPriority | "")} className={fieldClass()} required><option value="">Select Priority</option>{priorities.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select><span className="mt-2 block text-xs font-normal leading-5 text-slate-500">The SLA timer starts when the report is assigned to the selected Utility Provider.</span></label>
-              <label className="block text-sm font-semibold text-slate-800">Responsible Utility Provider<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an Active Provider Organization</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>{utilityProviders.length ? <p className="text-xs leading-5 text-slate-500">Only organizations with active, provisioned Utility Provider accounts are selectable.</p> : <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">No active Utility Provider organization is provisioned. An Admin must authorize and provision one before the Barangay Official can route this incident.</p>}<label className="block text-sm font-semibold text-slate-800">Routing Note <span className="font-normal text-slate-500">(Optional)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} /></label><Button type="submit" className="w-full" disabled={pending || !organization || utilityProviders.length === 0 || !priority}><Route className="size-4" /> Confirm Priority and Route</Button></form> : null}
-            {!canBarangayReview && !(canRoute && ["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status)) ? <div className="p-5 text-sm text-slate-600">No decision controls are available for this role or incident state.</div> : null}
+            {canRoute ? <form onSubmit={submit} className="space-y-4 p-5"><p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">The approved category chooses the agency automatically. Priority and SLA are set by the agency after it receives the report.</p>
+              <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Automatic agency</p><p className="mt-1 text-sm font-semibold text-slate-900">{incident.routing?.responsibleOrganization ?? "Selected automatically after approval"}</p></div>
+              <label className="flex items-start gap-3 text-sm font-semibold text-slate-800"><input type="checkbox" checked={manualAgencyCorrection} onChange={(event) => { setManualAgencyCorrection(event.target.checked); if (!event.target.checked) setOrganization(incident.routing?.responsibleOrganization ?? ""); }} className="mt-1 size-4 rounded border-slate-300 text-brand-700" /> <span>Category is wrong — choose a different agency manually</span></label>
+              {manualAgencyCorrection ? <><label className="block text-sm font-semibold text-slate-800">Replacement agency<select value={organization} onChange={(event) => setOrganization(event.target.value)} className={fieldClass()} required><option value="">Select an agency</option>{utilityProviders.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label><label className="block text-sm font-semibold text-slate-800">Reason <span className="font-normal text-slate-500">(Required)</span><textarea value={routingReason} onChange={(event) => setRoutingReason(event.target.value)} className={`${fieldClass()} min-h-20 py-2`} maxLength={1000} required /></label><Button type="submit" className="w-full" disabled={pending || !organization}><Route className="size-4" /> Apply Manual Agency Correction</Button></> : <p className="text-xs leading-5 text-slate-500">No action is needed when the automatic agency is correct.</p>}</form> : null}
+            {!canBarangayReview && !(canRoute && (["barangay_validated", "city_confirmed", "prioritized"].includes(incident.status) || incident.status === "tanod_verified")) && !canAssignCompletion && !canComplete && incident.completionInspection?.status !== "submitted" ? <div className="p-5 text-sm text-slate-600">No decision controls are available for this role or incident state.</div> : null}
           </Card>
           {incident.workOrder?.id ? <Card className="overflow-hidden"><CardHeader title="Work Order" description="This incident already has its primary maintenance work order." /><div className="p-5"><p className="font-semibold text-slate-950">{incident.workOrder.reference ?? "Work order created"}</p><p className="mt-1 text-sm text-slate-600">{incident.workOrder.status?.replaceAll("_", " ") ?? "Operational status available"}</p><Link href={`/work-orders/${encodeURIComponent(incident.workOrder.id)}`} className="mt-4 inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Open Work Order <Route className="ml-1 size-4" /></Link></div></Card> : null}
         </aside>
       </div>
 
-      <ConfirmationDialog open={confirm} onClose={() => !pending && setConfirm(false)} onConfirm={confirmDecision} loading={pending} icon="none" destructive={decision === "reject"} title={decisionTitle} description={decision === "validate" ? "This records Barangay validation. Select priority and the responsible provider in the next step." : decision === "reject" ? "This rejects the report with the reason entered above." : decision === "duplicate" ? "This records a human duplicate decision. Candidate matching alone does not change the report."  : decision === "priority" ? "This records the selected priority, assigns the report to the selected Utility Provider, and starts the SLA timer." : "This assigns the incident to the named Utility Provider organization."} confirmLabel={decisionTitle} />
+      <ConfirmationDialog open={confirm} onClose={() => !pending && setConfirm(false)} onConfirm={confirmDecision} loading={pending} icon="none" destructive={decision === "reject"} title={decisionTitle} description={decision === "validate" ? "This records the Barangay review. The report will then be routed automatically by category." : decision === "reject" ? "This rejects the report with the reason entered above." : decision === "duplicate" ? "This records a human duplicate decision. Candidate matching alone does not change the report." : "This applies the selected agency correction. Priority and SLA remain with the agency."} confirmLabel={decisionTitle} />
+      <ConfirmationDialog open={confirmTanod} onClose={() => !pending && setConfirmTanod(false)} onConfirm={assignTanod} loading={pending} icon="none" title="Assign Barangay Tanod" description={`Assign ${tanods.find((tanod) => tanod.id === tanodId)?.firstName ?? "the selected Tanod"} to inspect report ${incident.reportNumber}?`} confirmLabel="Confirm Assignment" />
+      <ConfirmationDialog open={confirmCompletionTanod} onClose={() => !pending && setConfirmCompletionTanod(false)} onConfirm={assignCompletion} loading={pending} icon="none" title="Assign Final Tanod Verification" description={`Assign ${tanods.find((tanod) => tanod.id === completionTanodId)?.firstName ?? "the selected Tanod"} to verify the completed work for report ${incident.reportNumber}?`} confirmLabel="Confirm Assignment" />
+      <ConfirmationDialog open={confirmCorrection} onClose={() => !pending && setConfirmCorrection(false)} onConfirm={requestCorrection} loading={pending} icon="none" destructive title="Request Agency Correction" description="Explain what the agency needs to correct, then submit the request." confirmLabel="Submit Correction Request"><textarea autoFocus value={correctionReason} onChange={(event) => setCorrectionReason(event.target.value)} className={`${fieldClass()} min-h-28 max-h-40 resize-none overflow-y-auto py-2`} placeholder="Correction reason" maxLength={2000} /></ConfirmationDialog>
+      <ConfirmationDialog open={confirmFinalization} onClose={() => !pending && setConfirmFinalization(false)} onConfirm={completeIncident} loading={pending} icon="none" title="Finalize and Complete" description={`Finalize the verified work and close report ${incident.reportNumber}? This will notify the citizen.`} confirmLabel="Confirm and Complete" />
+      {completionSuccessOpen ? <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="completion-success-title"><div className="w-full max-w-md rounded-2xl border border-emerald-200 bg-white p-6 text-center shadow-2xl"><div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 className="size-8" aria-hidden="true" /></div><h2 id="completion-success-title" className="mt-4 text-xl font-bold text-slate-950">Incident completed</h2><p className="mt-2 text-sm leading-6 text-slate-600">The final Tanod verification was approved and the citizen has been notified.</p><Button type="button" className="mt-6 w-full" onClick={() => setCompletionSuccessOpen(false)}>Done</Button></div></div> : null}
     </div>
   );
 }

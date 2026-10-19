@@ -15,7 +15,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { buttonStyles } from "@/components/ui/button";
 import type { UserProfile } from "@/types";
-import type { ProviderIncidentQueueData, WorkOrderFilters, WorkOrderQueueData, WorkOrderSummary } from "@/lib/work-orders.server";
+import type { WorkOrderFilters, WorkOrderQueueData, WorkOrderSummary } from "@/lib/work-orders.server";
 import { assignmentLabel, assignmentTone, formatLocation, formatPerson, priorityTone, SlaBadges, titleCase, workOrderStatusTone, workOrderStatusLabel } from "@/components/work-orders/work-order-ui";
 import { formatDateTime } from "@/lib/utils";
 
@@ -41,10 +41,9 @@ function hasFilters(filters: WorkOrderFilters) {
 
 function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"], isSla: boolean) {
   const cards = {
-    unassigned: { label: "Pending Repairs", value: summary.unassigned },
-    pendingRepairs: { label: "Assigned Repairs", value: summary.accepted },
-    pending: { label: "Pending Acceptance", value: summary.pendingAcceptance },
-    active: { label: "Active Repairs", value: summary.active },
+    ready: { label: "Ready for Work", value: summary.unassigned },
+    active: { label: "Work in Progress", value: summary.active },
+    completed: { label: "Work Completed", value: summary.readyForCompletion },
     approaching: { label: "Approaching Deadline", value: summary.approaching },
     overdue: { label: "Overdue", value: summary.overdue },
     providerReview: { label: "Awaiting Review", value: summary.readyForCompletion + (role === "repair_personnel" ? summary.awaitingFinalVerification : 0) },
@@ -57,10 +56,10 @@ function summaryCards(summary: WorkOrderSummary, role: UserProfile["backendRole"
     return [cards.cityVerification, cards.active, cards.approaching, cards.overdue];
   }
   if (role === "utility_provider") {
-    return [cards.unassigned, cards.pendingRepairs, cards.active, cards.corrective, cards.providerReview];
+    return [cards.ready, cards.active, cards.completed, cards.corrective];
   }
   if (role === "repair_personnel") {
-    return [cards.pending, cards.active, cards.corrective, cards.approaching, cards.overdue];
+    return [cards.ready, cards.active, cards.completed, cards.corrective, cards.approaching, cards.overdue];
   }
   return Object.values(cards);
 }
@@ -72,13 +71,11 @@ export function WorkOrderList({
   summary,
   mode = "work-orders",
   workspaceView,
-  intake,
 }: {
   viewer: UserProfile;
   queue: WorkOrderQueueData;
   filters: WorkOrderFilters;
   summary?: WorkOrderSummary;
-  intake?: ProviderIncidentQueueData;
   mode?: "work-orders" | "sla";
   workspaceView?: "orders" | "verification";
 }) {
@@ -94,7 +91,7 @@ export function WorkOrderList({
       : viewer.backendRole === "city_engineer"
         ? "Monitor provider repairs, review completed work, and track deadlines across the city."
         : viewer.backendRole === "utility_provider"
-          ? "Assign repairs to your team, review completed work, and manage deadlines."
+          ? "Update agency progress, procurement, deadlines, and completion status."
           : "Create, assign, and monitor maintenance work within your authorized scope.";
 
   const workStateOptions = viewer.backendRole === "city_engineer"
@@ -202,9 +199,8 @@ export function WorkOrderList({
         <div className={`mb-6 grid grid-cols-2 gap-3 ${viewer.backendRole === "city_engineer" && !isSla ? "xl:grid-cols-4" : viewer.backendRole === "utility_provider" && !isSla ? "xl:grid-cols-5" : "xl:grid-cols-3"}`}>
           {summaryCards(summary, viewer.backendRole, isSla).map((item) => {
             const provider = viewer.backendRole === "utility_provider" && !isSla;
-            const cardFilter: QueryPatch = item.label === "Pending Repairs" ? { assignmentStatus: "unassigned" }
-              : item.label === "Assigned Repairs" ? { status: "accepted" }
-              : item.label === "Active Repairs" ? { status: "in_progress" }
+            const cardFilter: QueryPatch = item.label === "Work in Progress" ? { status: "in_progress" }
+              : item.label === "Work Completed" ? { status: "completed" }
               : item.label === "Awaiting Review" ? { status: viewer.backendRole === "utility_provider" ? "completed" : "awaiting_review" }
               : item.label === "Returned for Correction" ? { status: "city_correction_required" }
               : item.label === "Needs Correction" ? { status: "needs_correction" }
@@ -212,7 +208,7 @@ export function WorkOrderList({
               : item.label === "Overdue" ? { slaState: "overdue" } : {};
             const selected = provider && Object.entries(cardFilter).every(([key, value]) => ({ status: filters.status, assignmentStatus: filters.assignmentStatus, slaState: filters.slaState } as QueryPatch)[key] === value)
               && (cardFilter.status || !filters.status) && (cardFilter.assignmentStatus || !filters.assignmentStatus);
-            const content = <><p className="text-sm font-medium text-slate-600">{item.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value + (item.label === "Pending Repairs" ? intake?.pagination.total ?? 0 : 0))}</p></>;
+            const content = <><p className="text-sm font-medium text-slate-600">{item.label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{new Intl.NumberFormat("en-PH").format(item.value)}</p></>;
             return provider ? <button key={item.label} type="button" aria-pressed={Boolean(selected)} onClick={() => navigate({ status: undefined, assignmentStatus: undefined, ...cardFilter })} className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700 ${selected ? "border-brand-700 ring-2 ring-brand-700" : "border-slate-200"}`}>{content}</button>
               : <Card key={item.label} className="p-4">{content}</Card>;
           })}

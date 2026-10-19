@@ -16,12 +16,18 @@ String? notificationDestination(
   NotificationData item, {
   required bool repairWorkspace,
 }) {
-  final resourceId = repairWorkspace ? item.workOrderId : item.incidentId;
+  final resourceId = repairWorkspace
+      ? (item.incidentId ?? item.workOrderId)
+      : item.incidentId;
+  if (repairWorkspace) {
+    // Utility Personnel work from assigned inspections, not legacy work-order
+    // detail/progress screens. Any linked notification returns to that queue.
+    return resourceId == null || resourceId.trim().isEmpty
+        ? null
+        : RepairRoutes.workOrders;
+  }
   if (resourceId == null || resourceId.trim().isEmpty) return null;
-  final encodedId = Uri.encodeComponent(resourceId);
-  return repairWorkspace
-      ? RepairRoutes.workOrder(encodedId)
-      : '/reports/$encodedId';
+  return '/reports/${Uri.encodeComponent(resourceId)}';
 }
 
 class NotificationDetailsScreen extends StatelessWidget {
@@ -141,8 +147,8 @@ class NotificationDetailsScreen extends StatelessWidget {
                               resolvedItem.workOrderId != null)
                             const _DetailRow(
                               icon: Icons.engineering_outlined,
-                              label: 'Work Order',
-                              value: 'Linked Assigned Work',
+                              label: 'Work Verification',
+                              value: 'Linked Tanod inspection',
                             ),
                           if (!repairWorkspace &&
                               resolvedItem.incidentId != null)
@@ -169,7 +175,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xl),
                     LunasButton(
                       label: repairWorkspace
-                          ? 'View Assigned Work'
+                          ? 'View Work Verification'
                           : 'View Report',
                       icon: Icons.arrow_forward_rounded,
                       onPressed: () {
@@ -181,7 +187,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                   ] else if (repairWorkspace) ...[
                     const SizedBox(height: AppSpacing.xl),
                     Text(
-                      'This notification is not linked to an accessible assigned work order.',
+                      'This notification is not linked to an accessible work verification.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),

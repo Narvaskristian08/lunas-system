@@ -21,7 +21,10 @@ class ApiClient {
 
   final SecureSessionStore _sessionStore;
   final http.Client _httpClient;
-  static const _requestTimeout = Duration(seconds: 30);
+  // Verification uploads may include server-side image analysis before the
+  // response is returned. Keep the request open long enough to avoid showing
+  // a misleading network error after the server has accepted the evidence.
+  static const _requestTimeout = Duration(seconds: 90);
 
   Future<void> Function()? onAuthenticationFailure;
 

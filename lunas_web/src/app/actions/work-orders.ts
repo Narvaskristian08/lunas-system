@@ -60,7 +60,7 @@ async function requireCityEngineer() {
 async function requireAssignedRepairPersonnel() {
   const viewer = await requirePermission("work_orders.manage");
   if (viewer.backendRole !== "repair_personnel") {
-    throw new BackendApiError(403, "Only assigned repair personnel can perform this action.");
+    throw new BackendApiError(403, "Only assigned utility personnel can perform this action.");
   }
   return viewer;
 }
@@ -141,7 +141,7 @@ export async function assignWorkOrderAction(input: {
       `/work-orders/${encodeURIComponent(workOrderId)}/assign`,
       JSON.stringify({ assigneeId, instructions: safeText(input.instructions, 4000) }),
       workOrderId,
-      "Repair personnel assigned.",
+      "Utility personnel assigned.",
     );
   } catch (error) {
     return failedAction(error, "LUNAS could not assign this work order. Please try again.");
@@ -317,7 +317,7 @@ export async function reviewCompletedWorkAction(input: {
       workOrderId,
       input.decision === "accepted"
         ? "Repair verified and report resolved."
-        : "Corrective work sent to Repair Personnel.",
+        : "Corrective work sent to Utility Personnel.",
     );
   } catch (error) {
     return failedAction(error, "LUNAS could not save the provider completion review. Please try again.");
@@ -333,13 +333,13 @@ export async function coordinateCityCorrectionAction(input: {
     const workOrderId = safeId(input.workOrderId);
     const instructions = safeText(input.instructions, 4000);
     if (!workOrderId || !instructions || instructions.length < 2) {
-      return { ok: false, message: "Add corrective instructions before returning work to Repair Personnel." };
+      return { ok: false, message: "Add corrective instructions before returning work to Utility Personnel." };
     }
     return mutateWorkOrder(
       `/work-orders/${encodeURIComponent(workOrderId)}/coordinate-correction`,
       JSON.stringify({ instructions }),
       workOrderId,
-      "Corrective work sent to Repair Personnel.",
+      "Corrective work sent to Utility Personnel.",
     );
   } catch (error) {
     return failedAction(error, "LUNAS could not coordinate the corrective work. Please try again.");

@@ -49,4 +49,4 @@ ENV FLASK_ENV=production
 # Run with gunicorn for production
 # The t3.small has 2 GiB RAM; two workers duplicate the PyTorch model and can
 # be OOM-killed during privacy processing. Keep one worker for the bounded AI host.
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "1", "--timeout", "240", "--access-logfile", "-", "--error-logfile", "-", "app:create_app()"]

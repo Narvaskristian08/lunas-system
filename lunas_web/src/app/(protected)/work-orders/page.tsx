@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { WorkOrderList } from "@/components/work-orders/work-order-list";
+import { ProviderIncidentList } from "@/components/work-orders/provider-incident-list";
 import { ValidationQueue } from "@/components/validation/validation-queue";
 import { requirePermission } from "@/lib/auth/dal.server";
-import { getAwaitingAssignmentQueue, getProviderIncidentQueue, readProviderIncidentFilters, getWorkOrderSummary, getWorkOrders, readWorkOrderFilters } from "@/lib/work-orders.server";
+import { getProviderIncidentQueue, getWorkOrderSummary, getWorkOrders, readProviderIncidentFilters, readWorkOrderFilters } from "@/lib/work-orders.server";
 import { getValidationQueue, getValidationSummary, readValidationFilters } from "@/lib/validation.server";
 
 export default async function WorkOrdersPage({ searchParams }: {
@@ -10,14 +11,14 @@ export default async function WorkOrdersPage({ searchParams }: {
 }) {
   const viewer = await requirePermission("work_orders.view");
   const params = await searchParams;
+  if (viewer.backendRole === "utility_provider") {
+    const incidentFilters = readProviderIncidentFilters(params);
+    return <div className="mx-auto max-w-6xl"><header className="mb-6"><p className="text-xs font-semibold text-brand-700">{viewer.organization} · Agency Operations</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Agency Reports</h1><p className="mt-2 text-sm text-slate-600">Update routed reports through the new agency workflow.</p></header><ProviderIncidentList queue={await getProviderIncidentQueue(incidentFilters)} filters={incidentFilters} /></div>;
+  }
   if (viewer.backendRole !== "city_engineer") {
-    const hasQueueSelection = params.view === "orders" || params.status || params.assignmentStatus || params.slaState;
-    const filters = readWorkOrderFilters(viewer.backendRole === "utility_provider" && !hasQueueSelection
-      ? { ...params, assignmentStatus: "unassigned" } : params);
-    const [queue, summary] = await Promise.all([viewer.backendRole === "utility_provider" && filters.assignmentStatus === "unassigned" ? getAwaitingAssignmentQueue(filters) : getWorkOrders(filters), getWorkOrderSummary()]);
-    const intakeFilters = readProviderIncidentFilters({});
-    const intake = viewer.backendRole === "utility_provider" ? await getProviderIncidentQueue(intakeFilters) : undefined;
-    return <WorkOrderList viewer={viewer} queue={queue} filters={filters} summary={summary} intake={intake} />;
+    const filters = readWorkOrderFilters(params);
+    const [queue, summary] = await Promise.all([getWorkOrders(filters), getWorkOrderSummary()]);
+    return <WorkOrderList viewer={viewer} queue={queue} filters={filters} summary={summary} />;
   }
   const view = params.view === "confirmed" ? "confirmed" : params.view === "review" ? "review" : params.view === "verification" ? "verification" : params.view === "orders" || params.status || params.slaState || params.assignmentStatus ? "orders" : "review";
   const [summary, validationSummary] = await Promise.all([

@@ -149,9 +149,9 @@ function AccountForm({ account, data, readOnly, onSaved, onBusyChange }: { accou
       {field("position", "Position / designation", account?.position, true, 120)}
       {field("organization", "Office / organization", account?.organization)}
       <label className="text-sm font-medium">System role *<select name="role" value={role} onChange={event => setRole(event.target.value as AuthorizedAccount["role"])} className={inputClass}>{roles.map(value => <option key={value} value={value}>{accountRoleLabels[value]}</option>)}</select></label>
-      {["barangay_official", "repair_personnel"].includes(role) && <label className="text-sm font-medium">Assigned barangay{role === "barangay_official" ? " *" : " (optional)"}<select name="barangay" className={inputClass} defaultValue={account?.barangay || ""} required={role === "barangay_official"}><option value="">{role === "repair_personnel" ? "Citywide within assigned organization" : "Select barangay"}</option>{data.barangays.map(value => <option key={value}>{value}</option>)}</select></label>}
+      {["barangay_official", "repair_personnel"].includes(role) && <label className="text-sm font-medium">Assigned barangay *<select name="barangay" className={inputClass} defaultValue={account?.barangay || ""} required><option value="">Select barangay</option>{data.barangays.map(value => <option key={value}>{value}</option>)}</select></label>}
       {role === "utility_provider" && field("utilityCompany", "Assigned utility company", account?.utilityCompany)}
-      {role === "repair_personnel" && <>{field("repairOrganization", "Assigned repair organization", account?.repairOrganization)}{field("repairTeam", "Repair team (optional)", account?.repairTeam, false, 120)}</>}
+      {role === "repair_personnel" ? <p className="text-sm leading-6 text-slate-600">This account is a Barangay Tanod / Utility Personnel account. It can inspect reports only within the assigned barangay.</p> : null}
       {field("approvalAuthority", "Approved By / Approving Authority", account?.approval?.authority)}
       <label className="text-sm font-medium md:col-span-2">Approval reference / remarks *<textarea className={inputClass} name="approvalReference" required maxLength={500} defaultValue={account?.approval?.reference || ""} placeholder="Reference or remarks confirming the offline authorization" /></label>
     </fieldset>
