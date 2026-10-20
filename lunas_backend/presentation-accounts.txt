@@ -16,15 +16,71 @@ dagupan.citizen@lunas.test               Local Citizen
 
 BARANGAY OFFICIALS
 ------------------
-Email format: dagupan.barangay-<barangay-slug>@lunas.test
-One account is created for every canonical Dagupan barangay.
-Example: dagupan.barangay-poblacion-oeste@lunas.test
+dagupan.barangay-bacayao-norte@lunas.test
+dagupan.barangay-bacayao-sur@lunas.test
+dagupan.barangay-barangay-ii@lunas.test
+dagupan.barangay-barangay-iv@lunas.test
+dagupan.barangay-bolosan@lunas.test
+dagupan.barangay-bonuan-binloc@lunas.test
+dagupan.barangay-bonuan-boquig@lunas.test
+dagupan.barangay-bonuan-gueset@lunas.test
+dagupan.barangay-calmay@lunas.test
+dagupan.barangay-carael@lunas.test
+dagupan.barangay-caranglaan@lunas.test
+dagupan.barangay-herrero@lunas.test
+dagupan.barangay-lasip-chico@lunas.test
+dagupan.barangay-lasip-grande@lunas.test
+dagupan.barangay-lomboy@lunas.test
+dagupan.barangay-lucao@lunas.test
+dagupan.barangay-malued@lunas.test
+dagupan.barangay-mamalingling@lunas.test
+dagupan.barangay-mangin@lunas.test
+dagupan.barangay-mayombo@lunas.test
+dagupan.barangay-pantal@lunas.test
+dagupan.barangay-poblacion-oeste@lunas.test
+dagupan.barangay-barangay-i@lunas.test
+dagupan.barangay-pogo-chico@lunas.test
+dagupan.barangay-pogo-grande@lunas.test
+dagupan.barangay-pugaro-suit@lunas.test
+dagupan.barangay-salapingao@lunas.test
+dagupan.barangay-salisay@lunas.test
+dagupan.barangay-tambac@lunas.test
+dagupan.barangay-tapuac@lunas.test
+dagupan.barangay-tebeng@lunas.test
 
 TANOD / UTILITY PERSONNEL
 -------------------------
-Email format: dagupan.tanod-<barangay-slug>@lunas.test
-One account is created for every canonical Dagupan barangay.
-Example: dagupan.tanod-poblacion-oeste@lunas.test
+dagupan.tanod-bacayao-norte@lunas.test
+dagupan.tanod-bacayao-sur@lunas.test
+dagupan.tanod-barangay-ii@lunas.test
+dagupan.tanod-barangay-iv@lunas.test
+dagupan.tanod-bolosan@lunas.test
+dagupan.tanod-bonuan-binloc@lunas.test
+dagupan.tanod-bonuan-boquig@lunas.test
+dagupan.tanod-bonuan-gueset@lunas.test
+dagupan.tanod-calmay@lunas.test
+dagupan.tanod-carael@lunas.test
+dagupan.tanod-caranglaan@lunas.test
+dagupan.tanod-herrero@lunas.test
+dagupan.tanod-lasip-chico@lunas.test
+dagupan.tanod-lasip-grande@lunas.test
+dagupan.tanod-lomboy@lunas.test
+dagupan.tanod-lucao@lunas.test
+dagupan.tanod-malued@lunas.test
+dagupan.tanod-mamalingling@lunas.test
+dagupan.tanod-mangin@lunas.test
+dagupan.tanod-mayombo@lunas.test
+dagupan.tanod-pantal@lunas.test
+dagupan.tanod-poblacion-oeste@lunas.test
+dagupan.tanod-barangay-i@lunas.test
+dagupan.tanod-pogo-chico@lunas.test
+dagupan.tanod-pogo-grande@lunas.test
+dagupan.tanod-pugaro-suit@lunas.test
+dagupan.tanod-salapingao@lunas.test
+dagupan.tanod-salisay@lunas.test
+dagupan.tanod-tambac@lunas.test
+dagupan.tanod-tapuac@lunas.test
+dagupan.tanod-tebeng@lunas.test
 
 AGENCY / UTILITY PROVIDERS
 -------------------------
