@@ -23,13 +23,45 @@ test.describe("workspace redirects and operational layouts", () => {
       if (/^\/work-orders\/[a-f\d]{24}$/i.test(path)) return send({ _id: path.split("/").at(-1), orderNumber: "WO-202610-001", status: "provider_accepted", priority: "high" });
       if (path.startsWith("/work-orders")) return send({ workOrders: [{ _id: "507f191e810c19729de860a3", orderNumber: "WO-202610-001", status: "provider_accepted", priority: "high", sla: { state: "overdue", deadline: "2026-10-13T00:00:00Z", isOverdue: true }, incident: { _id: "507f191e810c19729de860a4", reportNumber: "LUNAS-202610-001", category: "water", location: { address: { barangay: "Pantal", city: "Dagupan City" } } } }], pagination: { page: 1, pages: 1, total: 1, limit: 20 } });
       if (path === "/categories") return send([]);
-      if (path === "/incidents/pending-validation") return send({ incidents: [], pagination: { page: 1, pages: 1, total: 0 } });
+      if (path === "/incidents/pending-validation") {
+        const query = new URL(req.url!, "http://localhost").searchParams;
+        const currentPage = Number(query.get("page") ?? 1);
+        const limit = Number(query.get("limit") ?? 5);
+        const reports = Array.from({ length: 11 }, (_, index) => ({
+          _id: (index + 1).toString(16).padStart(24, "0"),
+          reportNumber: `REVIEW-${index + 1}`,
+          category: "road_damage", status: "submitted",
+          location: { address: { barangay: "Pantal", city: "Dagupan City" } },
+        }));
+        return res.end(JSON.stringify({ success: true, data: reports.slice((currentPage - 1) * limit, currentPage * limit), pagination: { page: currentPage, limit, total: reports.length, pages: Math.ceil(reports.length / limit) } }));
+      }
       if (path === "/reporting-appeals") return send([]);
       return send({});
     });
     await new Promise<void>(resolve => server.listen(5119, "127.0.0.1", resolve));
   });
   test.afterAll(async () => { await new Promise<void>(resolve => server.close(() => resolve())); });
+
+  test("Secretary dashboard paginates all review reports and bounds invalid pages", async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-barangay_official" }), url: baseURL!, httpOnly: true }]);
+    await page.goto("/dashboard");
+    const pagination = page.getByRole("navigation", { name: "Reports awaiting review pagination" });
+    await expect(pagination.getByText("Page 1 of 3")).toBeVisible();
+    await expect(pagination.getByRole("button", { name: "Previous" })).toBeDisabled();
+    await expect(page.getByRole("link", { name: "REVIEW-1", exact: false })).toHaveCount(1);
+    await pagination.getByRole("link", { name: "Next" }).click();
+    await expect(pagination.getByText("Page 2 of 3")).toBeVisible();
+    await expect(page.getByRole("link", { name: /^REVIEW-6/ })).toBeVisible();
+    await pagination.getByRole("link", { name: "Next" }).click();
+    await expect(pagination.getByText("Page 3 of 3")).toBeVisible();
+    await expect(pagination.getByRole("button", { name: "Next" })).toBeDisabled();
+    await pagination.getByRole("link", { name: "Previous" }).click();
+    await expect(pagination.getByText("Page 2 of 3")).toBeVisible();
+    await page.goto("/dashboard?reviewPage=999");
+    await expect(pagination.getByText("Page 3 of 3")).toBeVisible();
+    await page.goto("/dashboard?reviewPage=-1");
+    await expect(pagination.getByText("Page 1 of 3")).toBeVisible();
+  });
 
   test("successful Admin sign-in lands at the canonical accounts URL", async ({ page }) => {
     await page.route("https://challenges.cloudflare.com/turnstile/**", route => route.fulfill({ contentType: "application/javascript", body: `window.turnstile = { render(element, options) { this.verify = () => options.callback('test-captcha'); setTimeout(this.verify, 0); return 'test-widget'; }, reset() { setTimeout(this.verify, 0); } };` }));

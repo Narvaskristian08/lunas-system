@@ -6,12 +6,17 @@ import { getRealDashboardData } from "@/lib/dashboard.server";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   // Admin's first workspace is authorized account governance, not citywide
   // incident operations.
   const current = await requireViewer();
   if (current.backendRole === "admin") redirect("/admin/users");
   const viewer = await requirePermission("dashboard.view");
-  const data = await getRealDashboardData(viewer);
+  const params = await searchParams;
+  const requestedPage = typeof params.reviewPage === "string" ? Number(params.reviewPage) : 1;
+  const reviewPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const data = await getRealDashboardData(viewer, reviewPage);
   return <DashboardView viewer={viewer} data={data} />;
 }

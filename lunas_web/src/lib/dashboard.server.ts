@@ -74,6 +74,7 @@ export interface DashboardReportingAppeal {
 }
 
 export interface RealDashboardData {
+  reviewPagination?: { page: number; pages: number; total: number; pageSize: number };
   barangayReports?: Array<{ barangay: string; reports: number; unresolved: number }>;
   reportingAppeals?: DashboardReportingAppeal[];
   metrics: DashboardMetric[];
@@ -164,7 +165,7 @@ async function pendingReportingAppeals(accessToken: string) {
   }
 }
 
-async function reviewQueueDashboard(accessToken: string, role: "barangay_official" | "city_engineer"): Promise<RealDashboardData> {
+async function reviewQueueDashboard(accessToken: string, role: "barangay_official" | "city_engineer", requestedPage = 1): Promise<RealDashboardData> {
   if (role === "city_engineer") {
     const [barangayReports, validation, summary, reviewQueue, verificationQueue] = await Promise.all([
       responseData(await backendRequest<Array<{ barangay: string; reports: number; unresolved: number }>>("/stats/barangay-reports", { accessToken })),
@@ -185,12 +186,22 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
       emptyDescription: "Reports awaiting review and repairs awaiting verification will appear here.",
     };
   }
-  const [summary, queue, reportingAppeals] = await Promise.all([
+  const pageSize = 5;
+  async function loadQueue(page: number) {
+    const response = await backendRequest<IncidentListPayload | BackendIncident[]>(`/incidents/pending-validation?limit=${pageSize}&page=${page}`, { accessToken });
+    const list = extractIncidentList(responseData(response));
+    const pagination = (response as typeof response & { pagination?: { total?: number } }).pagination;
+    return { ...list, total: pagination?.total ?? list.total };
+  }
+  const [summary, initialQueue, reportingAppeals] = await Promise.all([
     responseData(await backendRequest<ValidationSummaryPayload>("/stats/validation-summary", { accessToken })),
-    responseData(await backendRequest<IncidentListPayload | BackendIncident[]>("/incidents/pending-validation?limit=5", { accessToken })),
+    loadQueue(requestedPage),
     pendingReportingAppeals(accessToken),
   ]);
-  const { incidents } = extractIncidentList(queue);
+  const pages = Math.max(1, Math.ceil(initialQueue.total / pageSize));
+  const page = Math.min(requestedPage, pages);
+  const queue = page === requestedPage ? initialQueue : await loadQueue(page);
+  const { incidents } = queue;
   {
     return {
       metrics: [
@@ -200,6 +211,7 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
         metric("Confirmed Duplicates", asNumber(summary.duplicate), "neutral", "reports"),
       ],
       reportingAppeals,
+      reviewPagination: { page, pages, total: queue.total, pageSize },
       records: incidents.map(recordFromIncident),
       emptyTitle: "No reports awaiting Barangay review",
       emptyDescription: "New reports in your assigned Barangay will appear here.",
@@ -227,10 +239,10 @@ async function providerOperationsDashboard(): Promise<RealDashboardData> {
   };
 }
 
-export async function getRealDashboardData(viewer: UserProfile) {
+export async function getRealDashboardData(viewer: UserProfile, reviewPage = 1) {
   if (viewer.backendRole === "utility_provider") return providerOperationsDashboard();
   if (viewer.backendRole === "barangay_official" || viewer.backendRole === "city_engineer") {
-    return reviewQueueDashboard(await requireAccessToken(), viewer.backendRole);
+    return reviewQueueDashboard(await requireAccessToken(), viewer.backendRole, reviewPage);
   }
   throw new Error("This web dashboard is only available to operational web roles");
 }

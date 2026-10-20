@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { DashboardGrid, SummaryCard } from "@/components/dashboard/dashboard-components";
 import type { RealDashboardData } from "@/lib/dashboard.server";
 import type { Severity, UserProfile } from "@/types";
@@ -110,6 +111,20 @@ export function DashboardView({ viewer, data }: { viewer: UserProfile; data: Rea
         ) : (
           <EmptyState icon="records" title={data.emptyTitle} description={data.emptyDescription} />
         )}
+        {viewer.backendRole === "barangay_official" && data.reviewPagination ? (
+          <nav aria-label="Reports awaiting review pagination" className="flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row">
+            <p className="text-sm text-slate-600">{data.reviewPagination.total} reports · {data.reviewPagination.pageSize} per page</p>
+            <div className="flex items-center gap-2">
+              {data.reviewPagination.page > 1 ? (
+                <Link prefetch={false} scroll={false} href={`/dashboard?reviewPage=${data.reviewPagination.page - 1}`} className={buttonStyles({ variant: "secondary", size: "sm" })}>Previous</Link>
+              ) : <Button variant="secondary" size="sm" disabled>Previous</Button>}
+              <span className="px-2 text-sm font-medium text-slate-600" aria-current="page">Page {data.reviewPagination.page} of {data.reviewPagination.pages}</span>
+              {data.reviewPagination.page < data.reviewPagination.pages ? (
+                <Link prefetch={false} scroll={false} href={`/dashboard?reviewPage=${data.reviewPagination.page + 1}`} className={buttonStyles({ variant: "secondary", size: "sm" })}>Next</Link>
+              ) : <Button variant="secondary" size="sm" disabled>Next</Button>}
+            </div>
+          </nav>
+        ) : null}
       </Card>
       {viewer.backendRole === "city_engineer" ? <div className="mt-6"><BarangayReportTable rows={data.barangayReports ?? []} /></div> : null}
     </div>
