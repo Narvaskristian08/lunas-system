@@ -97,6 +97,8 @@ void main() {
   testWidgets(
     'home reporting requires explanation and accepts photo taken earlier',
     (tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 820));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       CitizenReportDraft? submitted;
       await tester.pumpWidget(
         MaterialApp(
@@ -122,12 +124,21 @@ void main() {
         ),
         findsOneWidget,
       );
-      final dropdown = find.byType(DropdownButtonFormField<String>);
-      await tester.ensureVisible(dropdown);
-      await tester.tap(dropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Photo was taken earlier').last);
-      await tester.pumpAndSettle();
+      final fullReason = find.text('Reporting from another location');
+      await tester.ensureVisible(fullReason);
+      final option = find.ancestor(
+        of: fullReason,
+        matching: find.byType(RadioListTile<String>),
+      );
+      expect(
+        tester.getRect(fullReason).bottom,
+        lessThanOrEqualTo(tester.getRect(option).bottom),
+      );
+      expect(
+        tester.getRect(fullReason).right,
+        lessThanOrEqualTo(tester.getRect(option).right),
+      );
+      await tap(tester, 'Photo was taken earlier');
       await tap(tester, 'Submit Report');
       expect(submitted?.locationExplanationReason, 'photo_taken_earlier');
       expect(

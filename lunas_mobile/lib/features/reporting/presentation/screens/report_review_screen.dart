@@ -241,10 +241,24 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                if (_comparison == 'discrepancy')
-                                  const Text(
-                                    'The pin is away from your current location. Tell us why—you can report from elsewhere or use an earlier photo.',
+                                if (_comparison == 'discrepancy') ...[
+                                  Text(
+                                    'The pin is away from your current location.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(height: 1.5),
                                   ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
+                                    'Tell us why. You can report from elsewhere or use an earlier photo.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(height: 1.5),
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                ],
 
                                 if (_loadingPolicy)
                                   Semantics(
@@ -257,43 +271,106 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                                     child: const Text('Retry Location Review'),
                                   ),
                                 if (_comparison == 'discrepancy') ...[
-                                  DropdownButtonFormField<String>(
-                                    isExpanded: true,
-                                    initialValue: _explanationReason,
-                                    decoration: const InputDecoration(
-                                      labelText:
-                                          'Location discrepancy explanation',
-                                    ),
-                                    items: const [
-                                      DropdownMenuItem(
-                                        value: 'photo_taken_earlier',
-                                        child: Text('Photo was taken earlier'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'gps_inaccurate',
-                                        child: Text(
-                                          'GPS location is inaccurate',
-                                        ),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'reporting_elsewhere',
-                                        child: Text(
-                                          'Reporting from another location',
-                                        ),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'other',
-                                        child: Text('Other'),
-                                      ),
-                                    ],
-                                    onChanged: _submitting
-                                        ? null
-                                        : (value) => _updateReview(
-                                            () => _explanationReason = value,
+                                  Text(
+                                    'Reason for the location difference',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  RadioGroup<String>(
+                                    groupValue: _explanationReason,
+                                    onChanged: (value) {
+                                      if (!_submitting) {
+                                        _updateReview(
+                                          () => _explanationReason = value,
+                                        );
+                                      }
+                                    },
+                                    child: Column(
+                                      children: [
+                                        for (final option in const [
+                                          (
+                                            'photo_taken_earlier',
+                                            'Photo was taken earlier',
                                           ),
+                                          (
+                                            'gps_inaccurate',
+                                            'GPS location is inaccurate',
+                                          ),
+                                          (
+                                            'reporting_elsewhere',
+                                            'Reporting from another location',
+                                          ),
+                                          ('other', 'Other'),
+                                        ])
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: AppSpacing.sm,
+                                            ),
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    _explanationReason ==
+                                                        option.$1
+                                                    ? Theme.of(context)
+                                                          .colorScheme
+                                                          .primaryContainer
+                                                    : Theme.of(
+                                                        context,
+                                                      ).colorScheme.surface,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color:
+                                                      _explanationReason ==
+                                                          option.$1
+                                                      ? Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary
+                                                      : Theme.of(context)
+                                                            .colorScheme
+                                                            .outlineVariant,
+                                                ),
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: RadioListTile<String>(
+                                                  value: option.$1,
+                                                  enabled: !_submitting,
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal:
+                                                            AppSpacing.sm,
+                                                        vertical: AppSpacing.sm,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  title: Text(
+                                                    option.$2,
+                                                    softWrap: true,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyMedium
+                                                        ?.copyWith(height: 1.4),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                   if (_explanationReason == 'other')
                                     TextField(
+                                      minLines: 2,
+                                      maxLines: 4,
                                       controller: _explanationText,
                                       maxLength: 500,
                                       decoration: const InputDecoration(

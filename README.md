@@ -669,14 +669,124 @@ For the existing local stack use `./scripts/local-up.sh -d` (shell) or the suppl
 
 AWS-connected deployment uses root `.env.example` → `.env`, production S3/region/instance-role settings and base Compose without local storage override. Do not put permanent AWS keys in the repository. Review secret, HTTPS/CORS, DB least privilege, privacy and SLA settings before release. AWS Terraform is a scaffold gated by enable flags; no apply/deploy was run. Backups/restores require a separately authorized isolated target and a restore drill.
 
+### USB Android with the local Docker backend (2026-10-20)
+
+The local run uses ignored `.env.local` settings: web port `3001`, backend port
+`5002`, and RustFS API port `9002`, because host services already occupied
+`3000`, `5000`, and `9000`. Set `WEB_PORT=3001`, `BACKEND_PORT=5002`,
+`MINIO_API_PORT=9002`, `NEXT_PUBLIC_API_URL=http://localhost:5002/api/v1`,
+`CORS_ORIGIN=http://localhost:3001`, and
+`S3_PUBLIC_ENDPOINT=http://127.0.0.1:9002`. Keep `BACKEND_BIND_ADDRESS`,
+`WEB_BIND_ADDRESS`, and `MINIO_BIND_ADDRESS` on `127.0.0.1`. Activation/reset web URLs use port
+`3001` too. The web container retains `LUNAS_API_URL=http://backend:5000/api/v1`;
+the phone and web therefore address the same backend container and MongoDB.
+
+With an authorized Android phone connected over USB, run:
+
+```sh
+./scripts/local-up.sh -d
+adb devices -l
+adb reverse tcp:5002 tcp:5002
+adb reverse tcp:9002 tcp:9002
+cd lunas_mobile
+flutter build apk --debug --dart-define=LUNAS_API_BASE_URL=http://127.0.0.1:5002/api/v1
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+adb shell am start -n com.example.lunas_mobile.docker/com.example.lunas_mobile.MainActivity
+```
+
+`lunas_mobile/android/app/src/debug/AndroidManifest.xml` and
+`src/debug/res/xml/local_network_security_config.xml` allow local HTTP only
+for `127.0.0.1`, `localhost`, and the Android emulator host `10.0.2.2` in debug
+builds. `lunas_mobile/android/app/build.gradle.kts` adds the debug-only `.docker`
+application ID suffix, and the debug manifest labels it **LUNAS Docker**, so
+it can coexist with a differently signed existing installation without
+uninstalling that app or clearing its data. Release network settings and
+application ID are unchanged. Keep the USB cable connected
+and restore both `adb reverse` mappings after reconnecting/restarting the
+phone. Private signed evidence uses the forwarded RustFS endpoint. Do not use
+this loopback configuration for an untethered/release deployment.
+
+Verified during this run: Compose configuration validation; Docker web build;
+Docker backend build; MongoDB/backend/web healthy; web `/api/health` returned
+`ready` with backend `reachable`; backend `/health/ready` returned `ready` with
+MongoDB `connected`, including in Chrome on the Infinix HOT 40 Pro over USB.
+`flutter pub get` succeeded. `flutter analyze` returned eight informational
+lint findings (no warnings/errors); the command exits nonzero for these
+existing findings. AI container health and backend-to-AI HTTP 200 were also verified (CPU,
+`road_damage` model loaded); private storage returned the expected unauthenticated
+HTTP 403 and bucket initialization exited successfully. Web `/login` returned
+HTTP 200. The debug APK build succeeded and its kernel contains the exact
+`http://127.0.0.1:5002/api/v1` endpoint. The separate `com.example.lunas_mobile.docker` package installed successfully
+on the Infinix HOT 40 Pro, launched its welcome screen, and remained running;
+no `FATAL EXCEPTION` or `E/flutter` entries appeared in the inspected startup
+log window. APK badging confirmed the **LUNAS Docker** label and debug package
+ID; both USB port mappings were active. The existing differently signed
+`com.example.lunas_mobile` installation was preserved. The final incremental
+APK build completed in 7.5 seconds after first-time toolchain/dependency setup. This verifies local service connectivity only;
+authenticated reporting, evidence uploads, email delivery, and the full
+workflow have not been acceptance-tested. Existing host services and data
+were retained; Docker uses its own Compose database/storage volumes.
+
+### Mobile Final Check selection layout (2026-10-20)
+
+`lunas_mobile/lib/features/reporting/presentation/screens/report_review_screen.dart`
+replaces the location-explanation dropdown with four wrapped radio selection
+cards, keeping the complete reason visible (including "Reporting from another
+location"). The discrepancy guidance now uses separated paragraphs and spacing
+before the selection heading. "Other" has a multiline explanation field. The
+existing scrollable dialog accommodates smaller screens; location/privacy
+confirmations, reason values, submission validation and API payloads are retained.
+
+Verification: `flutter test test/report_location_review_test.dart` passed both
+existing tests, updated to select the cards and check the long reason stays
+inside its option at a 360×820 logical viewport. `flutter build apk --debug
+--dart-define=LUNAS_API_BASE_URL=http://127.0.0.1:5002/api/v1` passed (9.4-second
+incremental Gradle build). The updated **LUNAS Docker** APK installed successfully on the USB Infinix
+and its launch command succeeded; API/storage USB forwards were restored.
+Scoped analysis of the changed screen/test passed with no issues:
+`flutter analyze lib/features/reporting/presentation/screens/report_review_screen.dart test/report_location_review_test.dart`.
+The changed Final Check dialog itself has widget-level verification; it was
+not re-entered through a fresh live report after installation. Flutter emitted existing Gradle/AGP/Kotlin future-support warnings;
+no toolchain upgrade was made. This layout check does not certify live GPS,
+evidence upload, or the full incident lifecycle.
+
 ### Local Dagupan fixtures (optional, isolated data only)
 
-The fixture design has 42 synthetic local accounts: 31 barangay officials, four organization providers and four matching repair accounts, plus Admin, City Engineering provider and citizen. [Local account directory](LOCAL_DAGUPAN_ACCOUNTS.md) contains controlled test identifiers; passwords are not repeated here. These are not official government or provider accounts. No seed command was executed by this audit.
+Current seed definitions contain 69 synthetic local accounts: 31 barangay Secretaries (`barangay_official`), 31 barangay Tanods (`repair_personnel`), five agency logins (`utility_provider`, including two City Engineering accounts with the same organization scope), one Admin, and one citizen. [Local account directory](LOCAL_DAGUPAN_ACCOUNTS.md) contains controlled test identifiers; passwords are not repeated here. These are not official government or provider accounts. The historical audit did not execute seeds; the local Docker run below did.
 
 ```powershell
 docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:dagupan
 docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:web
 ```
+
+On **2026-10-20 (Asia/Manila)**, `seed:dagupan -- --accounts-only` seeded all
+69 accounts in the running Docker `mongodb/lunas_db`, with zero account
+replacements/deletions and zero report fixtures. Implementation:
+`lunas_backend/scripts/seed-dagupan-data.js` now accepts `--accounts-only` and
+reuses `scripts/dagupan-seed-config.js` definitions/local-database safeguards.
+Ordinary existing-account preservation remains in effect. Reproduce with:
+
+```sh
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -T -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:dagupan -- --accounts-only
+```
+
+Actual checks: all 69 account password hashes matched the documented synthetic
+password, roles/scopes matched definitions, and accounts were active/verified;
+nine representative HTTP login/logout requests succeeded on Docker API,
+covering citizen/Tanod Android and Secretary/admin/all agency web accounts.
+The Poblacion Oeste Secretary `/incidents/tanod-personnel` response contained
+exactly its matching Tanod; report count remained zero. `node --check
+lunas_backend/scripts/seed-dagupan-data.js` and `git diff --check` passed.
+The account directory now lists the current 69 definitions rather than old
+agency repair-worker fixtures. Start a fresh citizen report in **Poblacion
+Oeste** to use its matching Secretary and Tanod. Current source includes
+`tanodWorkflowController` and initial/final inspection routes despite the
+older audit's missing-feature entries; seeding/login checks do not certify
+the screenshot's complete lifecycle. Registration/recovery email delivery,
+evidence submission, routing, external progress, and final review still need
+live workflow testing. The historical `dagupan-seed-config.test.js` still
+expects 42 accounts/agency repair personnel; updating that stale test is a
+follow-up, and no passing unit-suite claim is made here.
 
 `seed:dagupan` creates 31 submitted synthetic reports, one per canonical barangay, covering five mobile categories; coordinates are placeholders, not verified boundaries. Ordinary reruns preserve existing accounts/fixtures. `seed:web` creates 24 workflow snapshots and 10 linked orders; these are illustrative states, not actual approvals or evidence of workflow correctness. The seed scripts reject external Mongo hosts and non-local `lunas_db` use; Docker additionally requires the explicit seed flag.
 

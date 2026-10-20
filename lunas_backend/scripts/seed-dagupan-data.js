@@ -56,6 +56,10 @@ async function seed() {
         await account.save();
       }
     }
+    if (process.argv.includes('--accounts-only')) {
+      console.log(JSON.stringify({ accounts: definitions.length, accountsRemoved, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: 0, accountsOnly: true }));
+      return;
+    }
     const citizen = await User.findOne({ email: fixtureEmails.citizen });
     const categories = ['road', 'drainage', 'electrical', 'water', 'streetlight'];
     let created = 0;
