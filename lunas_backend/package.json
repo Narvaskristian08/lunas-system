@@ -19,6 +19,7 @@
     "seed:agency-reports": "node scripts/seed-agency-reports.js",
     "seed:presentation": "node scripts/seed-presentation-data.js",
     "seed:barangay-presentation": "node scripts/seed-barangay-presentation.js",
+    "seed:full-presentation": "node scripts/seed-full-presentation.js",
     "migrate:tanod-workflow": "node scripts/migrate-tanod-workflow.js"
   },
   "keywords": [
