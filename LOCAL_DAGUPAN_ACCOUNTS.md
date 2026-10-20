@@ -15,11 +15,11 @@ The City Engineering provider uses `utility_provider`; the separate legacy City 
 
 Sources: [DECORP](https://decorp.com.ph/), [DCWD/Pamana FAQs](https://dcwd.gov.ph/services/faqs/), [Dagupan drainage coordination](https://www.dagupan.gov.ph/category/press-release/). Barangays come from `lunas_backend/src/data/dagupanBarangays.js`.
 
-The current seed creates 68 accounts: Admin, citizen, 31 barangay officials, 31 Utility Personnel (Tanods) and four agency providers. It never creates repair personnel or the legacy engineer account. Tanod logins are `dagupan.tanod-<barangay-slug>@lunas.test`, using each barangay suffix listed below. Their stored role is `utility_personnel`. All 31 existing Tanods were converted in place on 2026-10-20 with sessions revoked and IDs retained.
+The current seed creates 68 accounts: Admin, citizen, 31 barangay officials, 31 Utility Personnel (Tanods) and four agency providers. It never creates repair personnel or the legacy engineer account. Tanod logins are `dagupan.tanod-<barangay-slug>@lunas.test`, using each barangay suffix listed below. Their stored role is `utility_personnel`. The Docker Oeste fixture was found with the stale `repair_personnel` role on 2026-10-20 and corrected in place to `utility_personnel`, retaining its ID, password and barangay and clearing its refresh tokens. Android-platform API login then returned 200 with the correct role. This check does not verify the stored roles of the other 30 Tanods.
 
 ## Login identifiers
 
-Current definitions contain **69 accounts**: one citizen, one administrator, 31 Secretaries, 31 barangay Tanods, and five agency logins (two share City Engineering scope). Tanods currently use the `repair_personnel` API role and their assigned barangay; they are not agency repair-worker fixtures.
+Current seed definitions contain **68 accounts**: one citizen, one administrator, 31 Secretaries, 31 barangay Tanods, and four agency logins. Existing Docker data may include an additional legacy agency fixture. Tanods use the `utility_personnel` API role and their assigned barangay; the mobile app deliberately rejects `repair_personnel`. Ordinary seed reruns preserve existing accounts, so they do not repair a stale role automatically.
 
 For one continuous test, use **Poblacion Oeste** for the citizen report, its Secretary, and its Tanod. Road/drainage/streetlight reports currently route to City Engineering; water routes to DCWD/Pamana and electrical to DECORP in the current local source configuration. These mappings are test configuration, not verified institutional jurisdiction.
 
