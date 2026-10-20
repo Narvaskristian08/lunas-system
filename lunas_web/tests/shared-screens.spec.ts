@@ -60,16 +60,12 @@ test("password reset requires email code verification before showing passwords a
   await expect(page.getByRole("heading", { name: "Terms and Conditions" })).toBeVisible();
 });
 
-test("citizen registration shows email verification and returns to sign in", async ({ page }) => {
-  await page.goto("/register");
-  await expect(page.getByRole("heading", { name: "Create your LUNAS account" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /continue to email verification/i })).toBeVisible();
-  await expectNoPageOverflow(page);
-
-  await page.goto("/register/verify");
-  await expect(page.getByRole("heading", { name: "Verify your email address" })).toBeVisible();
-  await expect(page.getByText("This verification session is no longer available on this device.")).toBeVisible();
-
-  await page.goto("/login?registered=1");
-  await expect(page.getByText("Account created successfully", { exact: true })).toBeVisible();
+test("web login has no citizen signup and registration pages are unavailable", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByText("Need a citizen account?")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Create one" })).toHaveCount(0);
+  for (const path of ["/register", "/register/verify"]) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+  }
 });
