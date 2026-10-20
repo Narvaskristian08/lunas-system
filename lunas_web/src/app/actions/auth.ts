@@ -28,19 +28,6 @@ export interface ActionResult {
   code?: "duplicate" | "invalid" | "expired" | "unavailable";
 }
 
-export interface RegistrationChallenge {
-  challengeToken: string;
-  email: string;
-  expiresInSeconds: number;
-  resendAfterSeconds: number;
-}
-
-export interface RegistrationActionResult extends ActionResult {
-  challenge?: RegistrationChallenge;
-  fieldErrors?: Record<string, string>;
-  code?: "duplicate" | "invalid" | "expired" | "unavailable";
-}
-
 interface LoginPayload {
   user?: { role?: string };
   accessToken?: string;
@@ -273,99 +260,6 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
     // Do not expose account existence or email-provider details from this
     // public action. A retryable service failure is all the browser needs.
     return { ok: false, message: "The password reset service is temporarily unavailable." };
-  }
-}
-
-function registrationFieldErrors(payload: unknown): Record<string, string> | undefined {
-  if (!payload || typeof payload !== "object") return undefined;
-  const errors = (payload as { errors?: Array<{ field?: string; message?: string }> }).errors;
-  if (!Array.isArray(errors)) return undefined;
-  const fieldErrors = errors.reduce<Record<string, string>>((result, error) => {
-    if (error.field && error.message && !result[error.field]) result[error.field] = error.message;
-    return result;
-  }, {});
-  return Object.keys(fieldErrors).length ? fieldErrors : undefined;
-}
-
-export async function registerCitizenAction(input: {
-  firstName: string;
-  middleName: string;
-  noMiddleName: boolean;
-  suffix: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  password: string;
-}): Promise<RegistrationActionResult> {
-  try {
-    const result = await backendRequest<RegistrationChallenge>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        firstName: input.firstName.trim(),
-        middleName: input.noMiddleName ? "" : input.middleName.trim(),
-        noMiddleName: input.noMiddleName,
-        suffix: input.suffix.trim() || undefined,
-        lastName: input.lastName.trim(),
-        email: input.email.trim().toLowerCase(),
-        phone: input.phone.trim() || undefined,
-        password: input.password,
-      }),
-    });
-    return { ok: true, challenge: responseData(result) };
-  } catch (error) {
-    if (isBackendApiError(error)) {
-      if (error.status === 409) {
-        return {
-          ok: false,
-          code: "duplicate",
-          message: "An account with this email already exists. Sign in or use Forgot Password.",
-        };
-      }
-      if (error.status === 429) return { ok: false, message: "Wait a moment before requesting another verification code." };
-      if (error.status === 400) {
-        return { ok: false, message: "Review the highlighted fields.", fieldErrors: registrationFieldErrors(error.payload) };
-      }
-    }
-    return { ok: false, code: "unavailable", message: "Registration verification is temporarily unavailable. Please try again later." };
-  }
-}
-
-export async function verifyRegistrationAction(input: {
-  email: string;
-  challengeToken: string;
-  code: string;
-}): Promise<ActionResult> {
-  try {
-    await backendRequest("/auth/register/verify", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-    return { ok: true };
-  } catch (error) {
-    if (isBackendApiError(error)) {
-      if (error.status === 429) return { ok: false, message: "Too many verification attempts. Wait a moment and try again." };
-      if (error.status === 400) return { ok: false, code: "invalid", message: "The verification code is invalid or expired." };
-    }
-    return { ok: false, code: "unavailable", message: "Registration verification is temporarily unavailable. Please try again later." };
-  }
-}
-
-export async function resendRegistrationAction(input: {
-  email: string;
-  challengeToken: string;
-}): Promise<RegistrationActionResult> {
-  try {
-    const result = await backendRequest<RegistrationChallenge>("/auth/register/resend", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-    return { ok: true, challenge: responseData(result) };
-  } catch (error) {
-    if (isBackendApiError(error)) {
-      if (error.status === 429) return { ok: false, message: "Wait before requesting another verification code." };
-      if (error.status === 400) return { ok: false, code: "expired", message: "This registration session expired. Start registration again." };
-    }
-    return { ok: false, code: "unavailable", message: "Registration verification is temporarily unavailable. Please try again later." };
   }
 }
 
