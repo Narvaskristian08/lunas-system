@@ -1,10 +1,17 @@
-LUNAS PRESENTATION ACCOUNTS
-===========================
-LOCAL DEMO ONLY — synthetic accounts, not real government identities.
-Use only with a local MongoDB database and ALLOW_DEMO_SEED=true.
+LUNAS PRESENTATION ACCOUNTS (68 TOTAL)
+======================================
+Synthetic presentation accounts only; these are not real government identities.
+The same account set is used by local presentation seeding and the AWS
+presentation environment. Do not use these credentials for production users.
 
 Default password for every account: LunasLocal2026!
 Override with DAGUPAN_SEED_PASSWORD before running the seeder.
+
+AWS PRESENTATION STATUS
+-----------------------
+The 68 accounts listed below were synchronized in the AWS backend on
+2026-10-21. All were verified as present, active, verified, and matching the
+default password above. This status must be rechecked after any reseed.
 
 ADMIN
 -----
