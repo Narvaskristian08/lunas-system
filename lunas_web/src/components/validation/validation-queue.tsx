@@ -8,7 +8,7 @@ import { categoryLabel } from "@/lib/category-label";
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpDown, CalendarDays, ChevronRight, FileImage, MapPin, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpDown, ChevronRight, FileImage, MapPin, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/states/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge, StatusBadge } from "@/components/ui/badge";
@@ -209,14 +209,13 @@ export function ValidationQueue({
             />
             {!confirmed ? <>
             <FilterSelect label="Possible Duplicate" value={duplicate} onChange={(event) => setDuplicate(event.target.value)} disabled={pending} options={[{ value: "", label: "Any Duplicate State" }, { value: "yes", label: "Possible Duplicate" }, { value: "no", label: "No Duplicate Candidates" }]} />
-            <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
-              <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
-              <span className="sr-only">From Date</span>
-              <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} aria-label="Submitted on or After" className="min-w-0 bg-transparent outline-none" disabled={pending} />
+            <label className="flex w-full min-w-0 flex-col gap-2 text-sm font-semibold text-slate-700 sm:min-w-44 sm:flex-1">
+              <span>From Date</span>
+              <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} aria-label="Submitted on or After" className="min-h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" disabled={pending} />
             </label>
-            <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
-              <span className="sr-only">To Date</span>
-              <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Submitted on or Before" className="min-w-0 bg-transparent outline-none" disabled={pending} />
+            <label className="flex w-full min-w-0 flex-col gap-2 text-sm font-semibold text-slate-700 sm:min-w-44 sm:flex-1">
+              <span>To Date</span>
+              <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Submitted on or Before" className="min-h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" disabled={pending} />
             </label>
             </> : null}
             <FilterSelect label="Sort Queue" value={canSetPriority ? sortBy : (sortBy === "priority_desc" ? "createdAt_desc" : sortBy)} onChange={(event) => { const value = event.target.value as NonNullable<ValidationQueueFilters["sortBy"]>; setSortBy(value); navigate({ page: 1, sortBy: value }); }} disabled={pending} options={[{ value: "createdAt_desc", label: "Newest Submitted" }, { value: "createdAt_asc", label: "Oldest Submitted" }, ...(canSetPriority ? [{ value: "priority_desc" as const, label: "Highest Priority" }] : [])]} />

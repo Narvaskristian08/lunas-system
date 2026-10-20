@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FilterSelect } from "@/components/ui/filters";
 import { categoryLabel } from "@/lib/category-label";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -26,12 +27,19 @@ function pageHref(filters: ProviderIncidentFilters, page: number) {
 export function ProviderIncidentList({ queue, filters }: { queue: ProviderIncidentQueueData; filters: ProviderIncidentFilters }) {
   return <Card className="overflow-hidden">
     <CardHeader title="Agency Reports" description="Routed reports that your agency can update through the LUNAS workflow." />
-    <form method="get" action="/work-orders" className="flex flex-wrap items-end gap-3 border-b border-slate-200 p-5">
+    <form method="get" action="/work-orders" className="grid items-end gap-4 border-b border-slate-200 bg-slate-50/70 p-5 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(11rem,14rem)_minmax(10rem,12rem)_auto]">
       <input type="hidden" name="view" value="orders" />
-      <label className="min-w-56 flex-1 text-sm font-semibold text-slate-900">Search<input name="search" defaultValue={filters.search ?? ""} placeholder="Report number or description" className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal" /></label>
-      <label className="text-sm font-semibold text-slate-900">Priority<select name="priority" defaultValue={filters.priority ?? ""} className="mt-1 min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal"><option value="">All priorities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
-      <label className="text-sm font-semibold text-slate-900">Sort<select name="sortBy" defaultValue={filters.sortBy ?? "newest"} className="mt-1 min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="priority">Priority</option></select></label>
-      <button type="submit" className="min-h-11 rounded-xl bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-800">Search</button>
+      <label className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-slate-700 sm:col-span-2 xl:col-span-1">
+        <span>Search</span>
+        <input name="search" defaultValue={filters.search ?? ""} placeholder="Report number or description" className="min-h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900 outline-none focus:border-brand-600 focus:ring-3 focus:ring-sky-200/70" />
+      </label>
+      <FilterSelect label="Priority" name="priority" defaultValue={filters.priority ?? ""} options={[
+        { value: "", label: "All priorities" }, { value: "critical", label: "Critical" }, { value: "high", label: "High" }, { value: "medium", label: "Medium" }, { value: "low", label: "Low" },
+      ]} />
+      <FilterSelect label="Sort" name="sortBy" defaultValue={filters.sortBy ?? "newest"} options={[
+        { value: "newest", label: "Newest" }, { value: "oldest", label: "Oldest" }, { value: "priority", label: "Priority" },
+      ]} />
+      <button type="submit" className="min-h-11 rounded-xl bg-brand-700 px-5 text-sm font-semibold text-white outline-none hover:bg-brand-800 focus-visible:ring-3 focus-visible:ring-sky-200 sm:col-span-2 xl:col-span-1">Search</button>
     </form>
     {queue.incidents.length ? <div className="divide-y divide-slate-200">
       {queue.incidents.map((incident) => <Link key={incident.id} href={`/work-orders/intake/${encodeURIComponent(incident.id)}`} className="block p-5 transition hover:bg-brand-50">

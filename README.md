@@ -771,6 +771,31 @@ not re-entered through a fresh live report after installation. Flutter emitted e
 no toolchain upgrade was made. This layout check does not certify live GPS,
 evidence upload, or the full incident lifecycle.
 
+### Web search/filter layout (2026-10-20)
+
+The Agency Reports search row in
+`lunas_web/src/components/work-orders/provider-incident-list.tsx` now uses a
+responsive grid with stacked Search/Priority/Sort labels, consistent 44px
+minimum control heights, spacing, and full-width controls. It stacks on narrow
+screens rather than crowding labels beside dropdowns. The shared
+`src/components/ui/filters.tsx` displays field labels above selects and aligns
+wrapped filter groups at their controls; this applies to Secretary queues,
+work-order lists, and notifications across web roles. Date-range and notification
+sorting use the same select component. Admin account filters in
+`src/components/admin/admin-console.tsx` reuse it with extra organization space;
+Secretary date inputs in `src/components/validation/validation-queue.tsx` have
+matching visible labels/heights. Existing filter values, query parameters,
+submission behavior, and backend/RBAC scopes remain unchanged.
+
+Verification: production web build and all 27 existing Playwright tests passed
+(`cd lunas_web && npm run test:e2e`; isolated API fixtures, not live workflow
+certification). TypeScript and targeted ESLint checks passed for the affected
+components. Browser skill discovery returned no connected browsers, so no
+interactive visual inspection was possible in this session. Docker web rebuild and startup succeeded; `http://localhost:3001/api/health`
+returned `ready` with backend `reachable`, and `/login` returned HTTP 200. Review the live layout at desktop
+and phone widths as a follow-up; automated suite coverage does not certify every
+filter/page combination.
+
 ### Local Dagupan fixtures (optional, isolated data only)
 
 Current role update (2026-10-20): Tanods are now `utility_personnel`, superseding earlier notes below about deferred Tanod seeding. Converted all 31 existing `barangay_tanod` demo accounts in place; preserved IDs, barangays and inspection references, revoked sessions and recorded `role_changed` audits. The database has 68 accounts: Admin 1, citizen 1, barangay official 31, Utility Personnel 31 and agency provider 4, with no repair personnel or legacy City Engineer accounts.

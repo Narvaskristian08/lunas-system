@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DataTable } from "@/components/ui/data-table";
-import { FilterBar } from "@/components/ui/filters";
+import { FilterBar, FilterSelect } from "@/components/ui/filters";
 import { Modal } from "@/components/ui/modal";
 import { manageAccountAction } from "@/app/actions/authorized-accounts";
 import { accountRoleLabels, accountStatusLabels, type AuthorizedAccount, type AuthorizedAccountPage } from "@/lib/authorized-accounts";
@@ -62,9 +62,9 @@ export function AdminConsole({ data, viewerId, search, filters }: { data: Author
         <label className="flex-1 text-sm">Search accounts<input name="search" defaultValue={search} maxLength={100} placeholder="Name, Email, or Organization" className={inputClass} /></label>
         <Button type="submit" variant="secondary" className="self-end">Search</Button>
         <FilterBar className="w-full rounded-lg border-0 p-0" activeCount={Object.values(filters).filter(Boolean).length}>
-          <label className="text-sm">Role<select name="role" defaultValue={filters.role} onChange={event => event.currentTarget.form?.requestSubmit()} className={inputClass}><option value="">All Roles</option>{data.roles.map(role => <option key={role} value={role}>{accountRoleLabels[role]}</option>)}</select></label>
-          <label className="text-sm">Organization<select name="organization" defaultValue={filters.organization} onChange={event => event.currentTarget.form?.requestSubmit()} className={inputClass}><option value="">All Organizations</option>{[...new Set([...(data.organizations || []), ...(filters.organization ? [filters.organization] : [])])].map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-          <label className="text-sm">Status<select name="status" defaultValue={filters.status} onChange={event => event.currentTarget.form?.requestSubmit()} className={inputClass}><option value="">All Statuses</option>{Object.entries(accountStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <FilterSelect label="Role" name="role" defaultValue={filters.role} onChange={event => event.currentTarget.form?.requestSubmit()} options={[{ value: "", label: "All Roles" }, ...data.roles.map(role => ({ value: role, label: accountRoleLabels[role] }))]} />
+          <FilterSelect label="Organization" name="organization" className="sm:min-w-72 sm:flex-[2]" defaultValue={filters.organization} onChange={event => event.currentTarget.form?.requestSubmit()} options={[{ value: "", label: "All Organizations" }, ...[...new Set([...(data.organizations || []), ...(filters.organization ? [filters.organization] : [])])].map(name => ({ value: name, label: name }))]} />
+          <FilterSelect label="Status" name="status" defaultValue={filters.status} onChange={event => event.currentTarget.form?.requestSubmit()} options={[{ value: "", label: "All Statuses" }, ...Object.entries(accountStatusLabels).map(([value, label]) => ({ value, label }))]} />
         </FilterBar>
       </form>
       <DataTable caption="Authorized personnel" columns={[{ key: "name", label: "Name" }, { key: "role", label: "Role" }, { key: "scope", label: "Organization / Jurisdiction" }, { key: "status", label: "Status" }, { key: "actions", label: "Actions" }]}
