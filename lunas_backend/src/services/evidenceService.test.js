@@ -347,4 +347,19 @@ describe('secure incident evidence processing', () => {
 
     expect(storageService.uploadToStorage).not.toHaveBeenCalled();
   });
+  test('disabled privacy policy fails closed for citizen/Tanod and repair evidence', async () => {
+    const previous = process.env.PRIVACY_REDACTION_ENABLED;
+    process.env.PRIVACY_REDACTION_ENABLED = 'false';
+    try {
+      const buffer = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#123456' } }).jpeg().toBuffer();
+      await expect(processAndUploadEvidence([{ buffer }], { reporterId: 'citizen', category: 'road' })).rejects.toMatchObject({ statusCode: 503 });
+      await expect(processAndUploadRepairEvidence([{ buffer }], { workOrderId: 'order', uploaderId: 'worker' })).rejects.toMatchObject({ statusCode: 503 });
+      expect(storageService.uploadToStorage).not.toHaveBeenCalled();
+    } finally { if (previous === undefined) delete process.env.PRIVACY_REDACTION_ENABLED; else process.env.PRIVACY_REDACTION_ENABLED = previous; }
+  });
+  test('cleanup failures return explicit reconciliation counts', async () => {
+    storageService.deleteFromStorage.mockRejectedValueOnce(new Error('storage unavailable'));
+    await expect(require('./evidenceService').cleanupEvidence([{ key: 'new-uncommitted-object' }])).resolves.toEqual({ attempted: 1, failed: 1 });
+  });
+
 });

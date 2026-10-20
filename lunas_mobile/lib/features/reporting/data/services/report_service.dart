@@ -12,6 +12,17 @@ class ReportService {
 
   final ApiClient _apiClient;
 
+  Future<void> respondToVerificationClarification(
+    String incidentId,
+    String response,
+    int expectedVersion,
+  ) async {
+    await _apiClient.post(
+      '/incidents/$incidentId/clarification-response',
+      body: {'response': response.trim(), 'expectedVersion': expectedVersion},
+    );
+  }
+
   Future<LocationPolicy> getLocationPolicy() async {
     final payload = await _apiClient.get('/incidents/location-policy');
     return LocationPolicy.fromJson(_dataMap(payload));

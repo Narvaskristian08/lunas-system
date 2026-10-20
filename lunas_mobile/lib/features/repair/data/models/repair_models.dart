@@ -444,18 +444,15 @@ class RepairWorkOrder {
           (status == RepairWorkOrderStatus.pending && assignmentState == null));
 
   bool get canStart =>
-      (status == RepairWorkOrderStatus.pending ||
-          status == RepairWorkOrderStatus.accepted ||
-          status == RepairWorkOrderStatus.reworkRequired ||
-          (status == RepairWorkOrderStatus.inProgress &&
-              _hasPendingAssignment)) &&
-      (_hasPendingAssignment ||
-          _hasAcceptedAssignment ||
-          assignmentState == null);
+      (status == RepairWorkOrderStatus.accepted ||
+          status == RepairWorkOrderStatus.reworkRequired) &&
+      _hasAcceptedAssignment &&
+      !_hasPendingAssignment;
 
   bool get canUpdateProgress =>
       status == RepairWorkOrderStatus.inProgress &&
-      (_hasAcceptedAssignment || assignmentState == null);
+      _hasAcceptedAssignment &&
+      !_hasPendingAssignment;
   bool get isReadyForCompletion => status == RepairWorkOrderStatus.completed;
 
   bool get isCorrectionResubmission =>

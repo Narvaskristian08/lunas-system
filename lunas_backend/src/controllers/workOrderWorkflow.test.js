@@ -84,13 +84,21 @@ const pendingWorkOrder = (overrides = {}) => ({
   progressPercent: 0,
   progressStage: 'assigned',
   version: 3,
-  sla: {},
+  sla: { startedAt: new Date('2026-10-01T00:00:00Z'), deadline: new Date('2026-10-04T00:00:00Z'), state: 'overdue', isOverdue: true, approachingNotifiedAt: new Date('2026-10-03T00:00:00Z') },
   ...overrides
 });
 
 describe('work-order controller boundaries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    for (const [, update] of [...WorkOrder.findOneAndUpdate.mock.calls, ...Incident.findOneAndUpdate.mock.calls]) {
+      for (const fields of Object.values(update)) {
+        for (const key of Object.keys(fields || {})) expect(key === 'sla' || key.startsWith('sla.')).toBe(false);
+      }
+    }
   });
 
   test('scopes a repair-personnel detail lookup to the caller assignment to prevent IDOR', async () => {
@@ -112,7 +120,7 @@ describe('work-order controller boundaries', () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  test('turns a duplicate-key primary work-order race into a conflict response', async () => {
+  test('blocks legacy work-order creation before a duplicate-key race can occur', async () => {
     const incident = {
       _id: '507f191e810c19729de860b1',
       status: 'provider_assigned',
@@ -138,11 +146,11 @@ describe('work-order controller boundaries', () => {
     expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'A primary work order already exists for this incident'
+      code: 'WORKFLOW_POLICY_REQUIRED'
     }));
   });
 
-  test('rolls back a newly created work order when the incident claim loses a concurrent race', async () => {
+  test('legacy creation cannot create or delete work orders even with a stale claim', async () => {
     const incident = {
       _id: '507f191e810c19729de860b1',
       status: 'provider_assigned',
@@ -170,10 +178,11 @@ describe('work-order controller boundaries', () => {
       headers: {}
     }, res, jest.fn());
 
-    expect(workOrder.deleteOne).toHaveBeenCalledTimes(1);
+    expect(workOrder.deleteOne).not.toHaveBeenCalled();
+    expect(WorkOrder.create).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'This incident changed before the work order could be created'
+      code: 'WORKFLOW_POLICY_REQUIRED'
     }));
   });
 
@@ -248,7 +257,7 @@ describe('work-order controller boundaries', () => {
         assignmentState: { $in: ['unassigned', 'declined'] }
       }),
       expect.objectContaining({
-        $set: expect.objectContaining({ assignedTo: worker._id, assignmentState: 'accepted', status: 'accepted' })
+        $set: expect.objectContaining({ assignedTo: worker._id, assignmentState: 'pending', status: 'pending' })
       }),
       { new: true }
     );
@@ -332,7 +341,7 @@ describe('work-order controller boundaries', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  test('keeps an accepted order accepted when the provider reassigns it before work starts', async () => {
+  test('requires replacement acceptance when reassigning an accepted order before start', async () => {
     const oldAssignment = {
       _id: '507f191e810c19729de860e1',
       assignee: assignedWorker._id,
@@ -372,14 +381,13 @@ describe('work-order controller boundaries', () => {
       user: utilityProvider,
       headers: {}
     }, res, jest.fn());
-
     expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         _id: workOrder._id,
-        status: 'accepted', startedAt: null, actualStartTime: null, version: workOrder.version
+        status: 'accepted', version: workOrder.version
       }),
       expect.objectContaining({
-        $set: expect.objectContaining({ status: 'accepted', acceptedAt: expect.any(Date), assignmentState: 'accepted' })
+        $set: expect.objectContaining({ status: 'pending', acceptedAt: null, assignmentState: 'pending' })
       }),
       { new: true }
     );
@@ -491,7 +499,8 @@ describe('work-order controller boundaries', () => {
   });
 
   test('links later field evidence to its existing progress update atomically', async () => {
-    const progressUpdate = { _id: '507f191e810c19729de860e2', evidence: [] };
+    const progressUpdate = { _id: '507f191e810c19729de860e2', updatedBy: assignedWorker._id, evidence: [] };
+    Incident.findById.mockReturnValue(scopedQuery({ status: 'in_progress' }));
     const assignment = {
       _id: '507f191e810c19729de860e1',
       assignee: assignedWorker._id,
@@ -534,9 +543,9 @@ describe('work-order controller boundaries', () => {
     expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ currentAssignment: assignment._id, status: 'in_progress' }),
       expect.objectContaining({
-        $set: expect.objectContaining({
-          repairEvidence: [expect.objectContaining({ key: 'work-orders/example/repair/example/photo.jpg' })],
-          'progressUpdates.$[progress].evidence': [expect.anything()]
+        $push: expect.objectContaining({
+          repairEvidence: { $each: [expect.objectContaining({ key: 'work-orders/example/repair/example/photo.jpg' })] },
+          'progressUpdates.$[progress].evidence': { $each: [expect.anything()] }
         })
       }),
       expect.objectContaining({ arrayFilters: [{ 'progress._id': progressUpdate._id }] })

@@ -69,3 +69,21 @@ test.each([{ ...body, reason: 'short' }, { ...body, evidenceReference: '' }, { .
   const response = res(); await saveReview(req(input), response, jest.fn());
   expect(response.status).toHaveBeenCalledWith(400); expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
 });
+
+test('barangay review returns only its scoped count and never queries a global count', async () => {
+  Incident.countDocuments.mockResolvedValue(2);
+  const response = res(); await getReview(req(), response, jest.fn());
+  expect(Incident.countDocuments).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(Incident.countDocuments.mock.calls[0][0])).toContain('Pantal');
+  expect(response.json.mock.calls[0][0].data).not.toHaveProperty('confirmedFindingsTotal');
+});
+test('existing administrator oversight retains its global count', async () => {
+  Incident.countDocuments.mockResolvedValue(2);
+  const response = res(); await getReview(req({}, 'admin'), response, jest.fn());
+  expect(response.json.mock.calls[0][0].data.confirmedFindingsTotal).toBe(2);
+});
+test('out-of-scope record exposes neither review nor aggregates', async () => {
+  Incident.findOne.mockResolvedValue(null);
+  const response = res(); await getReview(req(), response, jest.fn());
+  expect(response.status).toHaveBeenCalledWith(404); expect(Incident.countDocuments).not.toHaveBeenCalled();
+});

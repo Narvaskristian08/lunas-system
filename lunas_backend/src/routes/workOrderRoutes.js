@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { body } = require('express-validator');
+const decisionVersion = body('version').isInt({ min: 0 }).toInt();
 const {
   createWorkOrder,
   getWorkOrders,
@@ -57,11 +59,11 @@ router.route('/')
 
 router.get('/:id/assignments', protect, authorize(...providerRole), mongoIdValidation, validate, getAssignments);
 router.get('/:id/eligible-personnel', protect, authorize(...providerRole), mongoIdValidation, validate, getEligiblePersonnel);
-router.post('/:id/assign', protect, authorize(...providerRole), mongoIdValidation, assignWorkOrderValidation, validate, assignWorkOrder);
-router.post('/:id/reassign', protect, authorize(...providerRole), mongoIdValidation, reassignWorkOrderValidation, validate, reassignWorkOrder);
-router.post('/:id/accept', protect, authorize('repair_personnel'), mongoIdValidation, validate, acceptWorkOrder);
-router.post('/:id/decline', protect, authorize('repair_personnel'), mongoIdValidation, declineWorkOrderValidation, validate, declineWorkOrder);
-router.post('/:id/start', protect, authorize('repair_personnel'), mongoIdValidation, validate, startWorkOrder);
+router.post('/:id/assign', protect, authorize(...providerRole), mongoIdValidation, assignWorkOrderValidation, decisionVersion, validate, assignWorkOrder);
+router.post('/:id/reassign', protect, authorize(...providerRole), mongoIdValidation, reassignWorkOrderValidation, decisionVersion, validate, reassignWorkOrder);
+router.post('/:id/accept', protect, authorize('repair_personnel'), mongoIdValidation, decisionVersion, validate, acceptWorkOrder);
+router.post('/:id/decline', protect, authorize('repair_personnel'), mongoIdValidation, declineWorkOrderValidation, decisionVersion, validate, declineWorkOrder);
+router.post('/:id/start', protect, authorize('repair_personnel'), mongoIdValidation, decisionVersion, validate, startWorkOrder);
 router.post(
   '/:id/progress',
   protect,

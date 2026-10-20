@@ -12,14 +12,14 @@ int reportWorkflowStep(IncidentReport report) {
   if (status.contains('completion') || status == 'agency_completed') {
     return 4;
   }
-  if (status == 'tanod_verified' ||
-      status == 'provider_assigned' ||
+  if (status == 'provider_assigned' ||
       status == 'prioritized' ||
       status == 'barangay_validated') {
     return 3;
   }
   if (status == 'tanod_assigned' ||
       status == 'tanod_in_progress' ||
+      status == 'tanod_verified' ||
       status == 'tanod_rejected' ||
       status == 'clarification_required') {
     return 2;
@@ -35,7 +35,7 @@ class ReportWorkflowProgress extends StatelessWidget {
   static const stages = <String>[
     'Submitted',
     'Barangay review',
-    'Agency work',
+    'Agency review / preparation',
     'Final check',
     'Completed',
   ];

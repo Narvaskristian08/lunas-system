@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lunas_mobile/core/theme/app_colors.dart';
@@ -16,6 +17,13 @@ String? notificationDestination(
   NotificationData item, {
   required bool repairWorkspace,
 }) {
+  if (!item.resourceAvailable) return null;
+  if (repairWorkspace && !authController.isTanod) {
+    final id = item.workOrderId;
+    return id == null || id.trim().isEmpty
+        ? null
+        : RepairRoutes.workOrder(Uri.encodeComponent(id));
+  }
   final resourceId = repairWorkspace
       ? (item.incidentId ?? item.workOrderId)
       : item.incidentId;
@@ -24,7 +32,9 @@ String? notificationDestination(
     // detail/progress screens. Any linked notification returns to that queue.
     return resourceId == null || resourceId.trim().isEmpty
         ? null
-        : RepairRoutes.workOrders;
+        : item.inspectionId == null
+        ? null
+        : '${RepairRoutes.workOrders}?inspectionId=${Uri.encodeComponent(item.inspectionId!)}';
   }
   if (resourceId == null || resourceId.trim().isEmpty) return null;
   return '/reports/${Uri.encodeComponent(resourceId)}';
@@ -51,7 +61,7 @@ class NotificationDetailsScreen extends StatelessWidget {
           id: 'notification',
           title: 'LUNAS Update',
           message: 'A new update is available for your account.',
-          time: 'Just now',
+          time: 'Time unavailable',
           icon: Icons.notifications_outlined,
           color: AppColorsLight.brandBase,
           kind: NotificationKind.update,
@@ -145,10 +155,12 @@ class NotificationDetailsScreen extends StatelessWidget {
                           const Divider(height: AppSpacing.xxl),
                           if (repairWorkspace &&
                               resolvedItem.workOrderId != null)
-                            const _DetailRow(
+                            _DetailRow(
                               icon: Icons.engineering_outlined,
                               label: 'Work Verification',
-                              value: 'Linked Tanod inspection',
+                              value: authController.isTanod
+                                  ? 'Linked field inspection'
+                                  : 'Linked repair work order',
                             ),
                           if (!repairWorkspace &&
                               resolvedItem.incidentId != null)

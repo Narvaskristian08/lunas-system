@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { createAuthLimiters, normalizeAuthEmail } = require('../middleware/securityRateLimiter');
+const { authMutationIpLimiter, publicSensitiveIpLimiter, publicAccountLimiter, refreshIpLimiter, securityAccountLimiter } = createAuthLimiters();
+router.use(authMutationIpLimiter, normalizeAuthEmail);
+const publicSecurity = [publicSensitiveIpLimiter, publicAccountLimiter];
 const {
   register,
   verifyRegistrationMfa,
@@ -37,22 +41,22 @@ const {
   validate
 } = require('../middleware/validation');
 
-router.post('/register', registerValidation, validate, register);
-router.post('/activate-account', activateAccountValidation, validate, activateAuthorizedAccount);
-router.post('/register/verify', registrationMfaValidation, validate, verifyRegistrationMfa);
-router.post('/register/resend', registrationMfaResendValidation, validate, resendRegistrationMfa);
+router.post('/register', ...publicSecurity, registerValidation, validate, register);
+router.post('/activate-account', ...publicSecurity, activateAccountValidation, validate, activateAuthorizedAccount);
+router.post('/register/verify', ...publicSecurity, registrationMfaValidation, validate, verifyRegistrationMfa);
+router.post('/register/resend', ...publicSecurity, registrationMfaResendValidation, validate, resendRegistrationMfa);
 router.post('/login', loginIpLimiter, loginAccountLimiter, loginValidation, validate, login);
-router.post('/refresh', refreshValidation, validate, refresh);
-router.post('/forgot-password', forgotPasswordValidation, validate, forgotPassword);
-router.post('/forgot-password/verify', passwordResetCodeValidation, validate, verifyPasswordResetCode);
-router.post('/reset-password', resetPasswordValidation, validate, resetPassword);
+router.post('/refresh', refreshIpLimiter, refreshValidation, validate, refresh);
+router.post('/forgot-password', ...publicSecurity, forgotPasswordValidation, validate, forgotPassword);
+router.post('/forgot-password/verify', ...publicSecurity, passwordResetCodeValidation, validate, verifyPasswordResetCode);
+router.post('/reset-password', ...publicSecurity, resetPasswordValidation, validate, resetPassword);
 router.get('/me', protect, getMe);
 router.get('/recovery-email/status', protect, getRecoveryEmailStatus);
-router.post('/recovery-email/request', protect, recoveryEmailRequestValidation, validate, requestRecoveryEmailVerification);
-router.post('/recovery-email/verify', protect, recoveryEmailVerifyValidation, validate, verifyRecoveryEmail);
-router.put('/profile', protect, updateProfileValidation, validate, updateProfile);
-router.patch('/profile', protect, updateProfileValidation, validate, updateProfile);
-router.put('/change-password', protect, changePasswordValidation, validate, changePassword);
-router.post('/logout', protect, logout);
+router.post('/recovery-email/request', protect, securityAccountLimiter, recoveryEmailRequestValidation, validate, requestRecoveryEmailVerification);
+router.post('/recovery-email/verify', protect, securityAccountLimiter, recoveryEmailVerifyValidation, validate, verifyRecoveryEmail);
+router.put('/profile', protect, securityAccountLimiter, updateProfileValidation, validate, updateProfile);
+router.patch('/profile', protect, securityAccountLimiter, updateProfileValidation, validate, updateProfile);
+router.put('/change-password', protect, securityAccountLimiter, changePasswordValidation, validate, changePassword);
+router.post('/logout', protect, securityAccountLimiter, logout);
 
 module.exports = router;

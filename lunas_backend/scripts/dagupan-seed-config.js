@@ -24,9 +24,13 @@ function accountDefinitions(password) {
       role: 'barangay_official', barangay, organization: `Barangay ${barangay}`, position: 'Local barangay account',
       ...(barangay === 'Poblacion Oeste' ? { legacyEmail: 'demo.barangay@lunas.test' } : {}) })),
     ...DAGUPAN_BARANGAYS.map((barangay, index) => ({
-      firstName: `Tanod ${barangay}`, lastName: 'Utility Personnel', email: email(`tanod-${slug(barangay)}`), role: 'repair_personnel',
+      firstName: `Tanod ${barangay}`, lastName: 'Tanod', email: email(`tanod-${slug(barangay)}`), role: 'barangay_tanod',
       phone: `0998000${String(index + 1).padStart(4, '0')}`, barangay, organization: `Barangay ${barangay}`,
-      position: 'Barangay Tanod / Utility Personnel', availability: 'available'
+      position: 'Barangay Tanod', availability: 'available'
+    })),
+    ...ORGANIZATIONS.map((org) => ({
+      firstName: org.code.toUpperCase(), lastName: 'Repair Worker', email: email(`repair-${org.code}`), role: 'repair_personnel',
+      organization: org.name, repairOrganization: org.name, expertise: org.expertise, availability: 'available'
     })),
     ...ORGANIZATIONS.map((org) => ({
       firstName: org.code.toUpperCase(), lastName: 'Provider', email: email(`provider-${org.code}`), role: 'utility_provider',

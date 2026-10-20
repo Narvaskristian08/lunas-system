@@ -246,7 +246,7 @@ export function WorkOrderList({
                 workOrder: <div className="space-y-2">
                   <Link href={workOrder.intakeIncidentId ? `/work-orders/intake/${encodeURIComponent(workOrder.intakeIncidentId)}` : `/work-orders/${encodeURIComponent(workOrder.id)}`} className="block whitespace-nowrap text-sm font-semibold text-brand-700 hover:underline">{workOrder.reference}</Link>
                   <p className="text-sm font-medium text-slate-800">{categoryLabel(workOrder.incident?.category, "Uncategorized")}</p>
-                  <p className="whitespace-nowrap text-xs text-slate-500">{workOrder.intakeIncidentId ? "Create Work Order & Assign" : workOrder.incident?.reportNumber ?? "Incident unavailable"}</p>
+                  <p className="whitespace-nowrap text-xs text-slate-500">{workOrder.intakeIncidentId ? "Agency intake / assessment" : workOrder.incident?.reportNumber ?? "Incident unavailable"}</p>
                 </div>,
                 location: <p className="line-clamp-3 text-sm leading-6 text-slate-600" title={formatLocation(workOrder.incident?.location)}>{formatLocation(workOrder.incident?.location)}</p>,
                 assignee: <div className="space-y-1.5">

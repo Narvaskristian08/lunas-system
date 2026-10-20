@@ -38,6 +38,7 @@ const WorkOrder = require('../models/WorkOrder');
 const { getWorkOrders } = require('./workOrderController');
 
 test.each(['accepted', 'rework_required'])('assignment can be reassigned before starting or resuming (%s)', async (status) => {
+  Incident.findById.mockResolvedValue({ status: 'in_progress' });
   const assignmentId = '507f191e810c19729de860a4';
   const workOrder = { _id: '507f191e810c19729de860a5', version: 3,
     status, assignmentState: 'accepted', responsibleOrganization: 'Water District',
@@ -53,8 +54,8 @@ test.each(['accepted', 'rework_required'])('assignment can be reassigned before 
     body: { assigneeId: '507f191e810c19729de860a6', reason: 'Change crew before start' } }, res, next);
   expect(next).not.toHaveBeenCalled();
   expect(WorkOrder.findOneAndUpdate).toHaveBeenLastCalledWith(
-    expect.objectContaining({ assignmentState: 'accepted', status, version: 3, ...(status === 'accepted' ? { startedAt: null, actualStartTime: null } : {}) }),
-    expect.objectContaining({ $set: expect.objectContaining({ assignmentState: 'accepted', status }) }),
+    expect.objectContaining({ assignmentState: 'accepted', status, version: 3,  }),
+    expect.objectContaining({ $set: expect.objectContaining({ assignmentState: 'pending', status: status === 'accepted' ? 'pending' : status }) }),
     expect.any(Object)
   );
 });
@@ -89,7 +90,8 @@ test('provider cannot reassign a started accepted assignment', async () => {
   expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
 });
 
-test('replacement upload sets one photo and preserves the old file if the write conflicts', async () => {
+test('evidence upload appends a photo and preserves historical files on conflict', async () => {
+  Incident.findById.mockResolvedValue({ status: 'in_progress' });
   const evidenceService = require('../services/evidenceService');
   const assignee = '507f191e810c19729de860a3';
   const workOrder = { _id: '507f191e810c19729de860a5', assignedTo: assignee,
@@ -104,34 +106,20 @@ test('replacement upload sets one photo and preserves the old file if the write 
     user: { _id: assignee, role: 'repair_personnel', repairOrganization: 'Water District' },
     files: [{}], body: {} }, res, jest.fn());
   const mutation = WorkOrder.findOneAndUpdate.mock.calls.at(-1)[1];
-  expect(mutation.$set.repairEvidence).toHaveLength(1);
-  expect(mutation.$set.repairEvidence[0].key).toBe('new-photo');
-  expect(mutation.$push.repairEvidence).toBeUndefined();
+  expect(mutation.$set).toBeUndefined();
+  expect(mutation.$push.repairEvidence.$each).toHaveLength(1);
+  expect(mutation.$push.repairEvidence.$each[0].key).toBe('new-photo');
   expect(evidenceService.cleanupEvidence).toHaveBeenCalledWith([{ key: 'new-photo' }]);
   expect(evidenceService.cleanupEvidence).not.toHaveBeenCalledWith(workOrder.repairEvidence);
   expect(res.status).toHaveBeenCalledWith(409);
 });
 
-test.each(['pending', 'rework_required', 'in_progress'])('start directly authorizes a legacy pending %s assignment atomically', async (status) => {
-  const assignee = '507f191e810c19729de860a3';
-  const assignmentId = '507f191e810c19729de860a4';
-  const workOrder = { _id: '507f191e810c19729de860a5', assignedTo: assignee,
-    status, assignmentState: 'pending', version: 2, currentAssignment: assignmentId,
-    assignments: [{ _id: assignmentId, active: true, assignee }] };
-  const query = { populate: jest.fn().mockReturnThis(), then: (resolve) => Promise.resolve(workOrder).then(resolve) };
-  WorkOrder.findOne.mockReturnValue(query);
-  WorkOrder.findOneAndUpdate.mockResolvedValue(null);
-  const res = response();
-  const next = jest.fn();
-  await require('./workOrderController').startWorkOrder({ params: { id: workOrder._id },
-    user: { _id: assignee, role: 'repair_personnel', repairOrganization: 'Water District' } }, res, next);
-  expect(next).not.toHaveBeenCalled();
-  expect(WorkOrder.findOneAndUpdate).toHaveBeenLastCalledWith(
-    expect.objectContaining({ version: 2, assignmentState: 'pending', assignedTo: assignee, status }),
-    expect.objectContaining({ $set: expect.objectContaining({ status: 'in_progress', assignmentState: 'accepted', 'assignments.$[active].status': 'accepted' }) }),
-    expect.objectContaining({ arrayFilters: [{ 'active._id': assignmentId }] })
-  );
-  expect(res.status).toHaveBeenCalledWith(409);
+test.each(['pending', 'rework_required', 'in_progress'])('start cannot implicitly accept a pending %s assignment', async status => {
+  const worker = '507f191e810c19729de860a3';
+  WorkOrder.findOne.mockReturnValue({ populate: jest.fn().mockReturnThis(), then: resolve => Promise.resolve({ status, assignedTo: worker, assignmentState: 'pending' }).then(resolve) });
+  WorkOrder.findOneAndUpdate.mockClear(); const res = response();
+  await require('./workOrderController').startWorkOrder({ params: { id: 'order' }, body: {}, user: { _id: worker, role: 'repair_personnel' } }, res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(409); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
 });
 
 test.each([
@@ -318,4 +306,28 @@ test('combined queue preserves ordering and distinguishes intake links from work
   expect(data.map(row => row.id)).toEqual(['report', 'order']);
   expect(data[0]).toEqual(expect.objectContaining({ intakeIncidentId: 'report', reference: 'REPORT-1' }));
   expect(data[1]).not.toHaveProperty('intakeIncidentId');
+});
+
+test('replacement worker cannot attach evidence to a former worker progress event', async () => {
+  const worker = '507f191e810c19729de860a3'; const event = '507f191e810c19729de860b4';
+  const order = { _id: 'work', incident: 'incident', assignedTo: worker, status: 'in_progress', assignmentState: 'accepted', version: 2,
+    progressUpdates: [{ _id: event, updatedBy: 'another-worker' }] };
+  Incident.findById.mockResolvedValue({ status: 'in_progress' });
+  WorkOrder.findOne.mockReturnValue({ populate: jest.fn().mockReturnThis(), then: resolve => Promise.resolve(order).then(resolve) });
+  const service = require('../services/evidenceService'); service.processAndUploadRepairEvidence.mockClear();
+  const res = response();
+  await require('./workOrderController').uploadRepairEvidence({ params: { id: 'work' }, user: { _id: worker }, files: [{}], body: { version: 2, progressUpdateId: event } }, res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(403); expect(service.processAndUploadRepairEvidence).not.toHaveBeenCalled();
+});
+
+test('ambiguous evidence write failure retains new objects for reconciliation', async () => {
+  const worker = '507f191e810c19729de860a3';
+  const order = { _id: 'work', incident: 'incident', assignedTo: worker, status: 'in_progress', assignmentState: 'accepted', version: 2, repairEvidence: [{ key: 'historical' }] };
+  Incident.findById.mockResolvedValue({ status: 'in_progress' });
+  WorkOrder.findOne.mockReturnValue({ populate: jest.fn().mockReturnThis(), then: resolve => Promise.resolve(order).then(resolve) });
+  WorkOrder.findOneAndUpdate.mockRejectedValueOnce(new Error('Unknown write outcome'));
+  const service = require('../services/evidenceService'); service.processAndUploadRepairEvidence.mockResolvedValue([{ key: 'new-object' }]); service.cleanupEvidence.mockClear();
+  const next = jest.fn();
+  await require('./workOrderController').uploadRepairEvidence({ params: { id: 'work' }, user: { _id: worker }, files: [{}], body: { version: 2 } }, response(), next);
+  expect(next).toHaveBeenCalled(); expect(service.cleanupEvidence).not.toHaveBeenCalled();
 });

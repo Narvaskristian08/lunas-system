@@ -1,22 +1,20 @@
+const { citizenTracking, agencyLabels } = require('../services/citizenTrackingService');
+const { buildReadableIncidentScope, isFieldRole } = require('../services/fieldIncidentAccess');
 const { getSlaProjection } = require('../services/workOrderService');
 const Incident = require('../models/Incident');
-const WorkOrder = require('../models/WorkOrder');
-const User = require('../models/User');
+const { createIncidentRecord } = require('../services/incidentCreation');
 const { buildLocationIntegrity, safeLocationIntegrity } = require('../services/locationIntegrityService');
 const { createAuditLog } = require('../utils/auditLogger');
 const asyncHandler = require('../middleware/asyncHandler');
 const storageService = require('../services/storageService');
 const { createNotification, notificationTemplates } = require('../services/notificationService');
 const { findPossibleDuplicateCandidates } = require('../services/duplicateDetectionService');
-const { initializeIncidentSLA } = require('../services/slaService');
 const {
   buildIncidentScope,
   combineIncidentFilters,
   canConfirmJurisdiction,
-  canRouteIncident,
   defaultJurisdictionFor,
-  normalizeText,
-  RESPONSIBLE_ROLES
+  normalizeText
 } = require('../services/jurisdictionService');
 const { buildIncidentTransition, canTransitionIncident, transitionConflict } = require('../services/incidentTransitionService');
 const {
@@ -149,6 +147,7 @@ const safeEvidenceForCitizen = async (image) => {
 // fields below; official history has the richer note and actor metadata.
 const serializeStatusHistoryForCitizen = (history = []) => history.map((entry) => ({
   status: entry.status,
+  ...(agencyLabels[entry.metadata?.agencyStatus] ? { statusLabel: agencyLabels[entry.metadata.agencyStatus] } : {}),
   changedAt: entry.changedAt,
   // Repair percentage and readiness are safe high-level information. Internal
   // notes, actor identities, reassignment reasons, and escalation metadata
@@ -168,6 +167,9 @@ const serializeIncidentForCitizen = async (incident) => {
     id: source._id,
     reportNumber: source.reportNumber,
     category: source.category,
+    originalCategory: source.originalCategory,
+    originalCategorySource: source.originalCategorySource,
+    verificationClarification: source.verificationClarification?.recipient === 'citizen' ? { recipient: 'citizen', reason: source.verificationClarification.reason, requestedAt: source.verificationClarification.requestedAt, respondedAt: source.verificationClarification.respondedAt, expectedVersion: source.initialInspection?.version } : undefined,
     subcategory: source.subcategory,
     description: source.description,
     location: source.location,
@@ -196,6 +198,7 @@ const serializeIncidentForCitizen = async (incident) => {
         updatedAt: source.workOrder.updatedAt
       }
       : undefined,
+    ...citizenTracking(source),
     possibleDuplicateCandidateCount: source.duplicateDetection?.candidateCount || 0
   };
 };
@@ -221,7 +224,7 @@ const safeDuplicateReference = (duplicateOf) => {
   return id ? { id: id.toString(), reportNumber: source.reportNumber } : undefined;
 };
 
-const serializeIncidentForOfficial = async (incident, { includeHistory = true, includeCandidates = false, includeLocationIntegrity = true } = {}) => {
+const serializeIncidentForOfficial = async (incident, { includeHistory = true, includeCandidates = false, includeLocationIntegrity = true, includeAgencyPreparation = false } = {}) => {
   const source = incident.toObject ? incident.toObject() : incident;
   const aiAnalysis = source.aiAnalysis;
   const hasConfidence = typeof aiAnalysis?.confidence === 'number' && Number.isFinite(aiAnalysis.confidence);
@@ -248,6 +251,11 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
     id: source._id?.toString?.() || source.id,
     reportNumber: source.reportNumber,
     category: source.category,
+    originalCategory: source.originalCategory,
+    originalCategorySource: source.originalCategorySource,
+    categoryHistory: source.categoryHistory,
+    clarificationResponses: source.clarificationResponses,
+    verificationClarification: source.verificationClarification?.recipient === 'citizen' ? { recipient: 'citizen', reason: source.verificationClarification.reason, requestedAt: source.verificationClarification.requestedAt, respondedAt: source.verificationClarification.respondedAt, expectedVersion: source.initialInspection?.version } : undefined,
     subcategory: source.subcategory,
     description: source.description,
     location: source.location,
@@ -297,6 +305,8 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       reason: source.routing.reason,
       routedAt: source.routing.routedAt
     } : undefined,
+    agencyPreparation: includeAgencyPreparation && source.agencyPreparation?.organization === source.routing?.responsibleOrganization ? source.agencyPreparation : undefined,
+    maintenanceReady: false,
     agencyStatus: source.agencyStatus,
     agencyStatusNote: source.agencyStatusNote,
     agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
@@ -310,6 +320,10 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       tanod: source.initialInspection.tanod,
       secretary: source.initialInspection.secretary,
       submittedAt: source.initialInspection.submittedAt,
+      assignedAt: source.initialInspection.assignedAt,
+      acknowledgedAt: source.initialInspection.acknowledgedAt,
+      version: source.initialInspection.version,
+      instructions: source.initialInspection.instructions,
     } : source.initialInspection ? { id: source.initialInspection.toString() } : undefined,
     completionInspection: source.completionInspection && typeof source.completionInspection === 'object' ? {
       id: source.completionInspection._id?.toString?.() || source.completionInspection._id,
@@ -346,26 +360,12 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
   };
 };
 
-const normalizeLegacyImages = (images = [], privacyAcknowledged = false) => images.map((image) => ({
-  url: image.url,
-  uploadedAt: new Date(),
-  // A legacy JSON client must never be able to supply an internal storage key:
-  // doing so could otherwise make a later signed-URL request disclose another
-  // reporter's private evidence. Claims from legacy clients also cannot prove
-  // that an image was redacted.
-  isPrivacyMasked: false,
-  privacyProcessing: {
-    status: 'unverified_legacy_upload',
-    applied: false,
-    acknowledgedByReporter: Boolean(privacyAcknowledged)
-  }
-}));
-
 // @desc    Create a new citizen incident report
 // @route   POST /api/v1/incidents
 // @access  Private (Citizen)
 exports.createIncident = asyncHandler(async (req, res) => {
   const { category, subcategory, description, location } = req.body;
+  if (req.body.images !== undefined && (!Array.isArray(req.body.images) || req.body.images.length)) return res.status(400).json({ success: false, message: 'Upload managed evidence files; external image references are not accepted' });
   const barangay = canonicalizeBarangay(location?.address?.barangay);
   const city = canonicalizeDagupanCity(location?.address?.city);
   if (!barangay || !city) {
@@ -383,6 +383,8 @@ exports.createIncident = asyncHandler(async (req, res) => {
   const files = getUploadedEvidenceFiles(req);
   const privacyAcknowledged = req.body.privacyAcknowledged === true || req.body.privacyAcknowledged === 'true';
   let uploadedImages = [];
+  let committed = false;
+  let committedIncident;
 
   const possibleDuplicateCandidates = await findPossibleDuplicateCandidates({
     category,
@@ -390,7 +392,7 @@ exports.createIncident = asyncHandler(async (req, res) => {
   });
 
   try {
-    let images = normalizeLegacyImages(req.body.images, privacyAcknowledged);
+    let images = [];
     let aiAnalysis;
 
     if (files.length) {
@@ -404,8 +406,9 @@ exports.createIncident = asyncHandler(async (req, res) => {
       aiAnalysis = processedEvidence.aiAnalysis || undefined;
     }
 
-    const incident = await Incident.create({
+    const incident = await createIncidentRecord(Incident, {
       reporter: req.user._id,
+      originalCategory: category, originalCategorySource: 'reporter',
       category,
       subcategory,
       description,
@@ -438,6 +441,8 @@ exports.createIncident = asyncHandler(async (req, res) => {
       }]
     });
 
+    committed = true;
+    committedIncident = incident;
     await createAuditLog({
       action: 'incident_created',
       performedBy: req.user._id,
@@ -505,11 +510,17 @@ exports.createIncident = asyncHandler(async (req, res) => {
       data: await serializeIncidentForCitizen(incident)
     });
   } catch (error) {
-    // If database persistence fails after storage succeeds, remove the
-    // private objects rather than leaving orphaned citizen evidence behind.
-    if (uploadedImages.length) {
+    // Clean up only definitive rejected writes. Preserve committed evidence
+    // and uncertain outcomes for reconciliation; never replay an unknown write.
+    if (committed) {
+      logger.error('Committed incident requires post-processing reconciliation', { incidentId: committedIncident._id });
+      return res.status(201).json({ success: true, message: 'Report saved; post-processing requires reconciliation', data: { _id: committedIncident._id, reportNumber: committedIncident.reportNumber, status: committedIncident.status } });
+    }
+    const definitiveRejection = error.name === 'ValidationError' || error.code === 11000;
+    if (!committed && uploadedImages.length && definitiveRejection) {
       await cleanupEvidence(uploadedImages);
     }
+    if (!committed && uploadedImages.length && !definitiveRejection) logger.error('Incident evidence requires reconciliation after an unconfirmed write outcome', { evidenceCount: uploadedImages.length });
     throw error;
   }
 });
@@ -577,7 +588,7 @@ exports.getIncidents = asyncHandler(async (req, res) => {
     ];
   }
 
-  const criteria = combineIncidentFilters(buildIncidentScope(req.user), filter);
+  const criteria = combineIncidentFilters(await buildReadableIncidentScope(req.user), filter);
   const incidents = await Incident.find(criteria)
     .populate('reporter', 'firstName lastName')
     .populate('validatedBy', 'firstName lastName')
@@ -586,7 +597,7 @@ exports.getIncidents = asyncHandler(async (req, res) => {
     .limit(numericLimit)
     .skip((numericPage - 1) * numericLimit);
   const total = await Incident.countDocuments(criteria);
-  const data = req.user.role === 'citizen'
+  const data = (req.user.role === 'citizen' || isFieldRole(req.user))
     ? await Promise.all(incidents.map(serializeIncidentForCitizen))
     : await Promise.all(incidents.map((incident) => serializeIncidentForOfficial(incident, { includeHistory: false })));
 
@@ -619,7 +630,7 @@ exports.getMyIncidents = asyncHandler(async (req, res) => {
 const findIncidentForRead = async (req, res) => {
   const criteria = combineIncidentFilters(
     { _id: req.params.id },
-    buildIncidentScope(req.user)
+    await buildReadableIncidentScope(req.user)
   );
   const incident = await Incident.findOne(criteria)
     .populate('reporter', 'firstName lastName')
@@ -649,9 +660,9 @@ exports.getIncident = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: req.user.role === 'citizen'
+    data: (req.user.role === 'citizen' || isFieldRole(req.user))
       ? await serializeIncidentForCitizen(incident)
-      : await serializeIncidentForOfficial(incident, { includeCandidates: true })
+      : await serializeIncidentForOfficial(incident, { includeCandidates: true, includeAgencyPreparation: req.user.role === 'utility_provider' })
   });
 });
 
@@ -662,7 +673,7 @@ exports.getIncidentHistory = asyncHandler(async (req, res) => {
   const incident = await findIncidentForRead(req, res);
   if (!incident) return;
 
-  const data = req.user.role === 'citizen'
+  const data = (req.user.role === 'citizen' || isFieldRole(req.user))
     ? serializeStatusHistoryForCitizen(incident.statusHistory || [])
     : (incident.statusHistory || []).map((entry) => ({
       status: entry.status,
@@ -716,27 +727,6 @@ const notifySafely = async (notification) => {
   }
 };
 
-const notifyRoutingOfficials = async (incident) => {
-  const routing = incident.routing || {};
-  if (routing.responsibleRole !== 'utility_provider' || !routing.responsibleOrganization) return;
-  const criteria = {
-    role: 'utility_provider',
-    utilityCompany: routing.responsibleOrganization,
-    isActive: true,
-    isArchived: { $ne: true }
-  };
-
-  const recipients = await User.find(criteria).select('_id');
-  await Promise.all(recipients.map((recipient) => notifySafely({
-    recipient: recipient._id,
-    type: 'incident_routed',
-    title: 'Incident routed to your organization',
-    message: `Incident ${incident.reportNumber} requires review by ${routing.responsibleOrganization}.`,
-    data: { incidentId: incident._id, link: `/incidents/${incident._id}` },
-    priority: incident.priority === 'critical' ? 'urgent' : incident.priority
-  })));
-};
-
 const recordOfficialAction = async ({ action, incident, req, details, changes }) => {
   await createAuditLog({
     action,
@@ -760,34 +750,6 @@ const normalizeJurisdiction = (incident, input = {}) => {
     city: canonicalizeDagupanCity(normalizeText(input.city) || fallback.city)
   };
 };
-
-const normalizeRouting = (input = {}) => {
-  return {
-    responsibleOrganization: normalizeText(input.responsibleOrganization),
-    responsibleRole: input.responsibleRole,
-    reason: normalizeText(input.reason)
-  };
-};
-
-// Routing must name the selected Utility Provider explicitly.
-const hasCompleteRoutingInput = (input = {}) => {
-  const organization = normalizeText(input.responsibleOrganization);
-  const role = normalizeText(input.responsibleRole);
-  return Boolean(organization) && RESPONSIBLE_ROLES.includes(role);
-};
-
-const pushRoutingHistory = (previous, next, actor, now) => ([
-  ...(previous?.history || []),
-  {
-    fromOrganization: previous?.responsibleOrganization,
-    fromRole: previous?.responsibleRole,
-    toOrganization: next.responsibleOrganization,
-    toRole: next.responsibleRole,
-    reason: next.reason,
-    routedBy: actor,
-    routedAt: now
-  }
-]);
 
 const transitionIncidentDecision = async (req, res, nextStatus, fields, notes, metadata) => {
   const before = await findScopedIncident(req);
@@ -850,12 +812,12 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   }
   if (search) {
     const safeSearch = escapeRegex(search).slice(0, 100);
-    filter.$or = [
+    filter.$and = [{ $or: [
       { reportNumber: { $regex: safeSearch, $options: 'i' } },
       { description: { $regex: safeSearch, $options: 'i' } },
       { 'location.address.street': { $regex: safeSearch, $options: 'i' } },
       { 'location.address.barangay': { $regex: safeSearch, $options: 'i' } }
-    ];
+    ] }];
   }
   if (from || to) {
     filter.createdAt = {};
@@ -918,8 +880,8 @@ exports.getDuplicateCandidates = asyncHandler(async (req, res) => {
 // @desc    Get the SLA foundation for an authorized incident
 // @route   GET /api/v1/incidents/:id/sla
 exports.getIncidentSLA = asyncHandler(async (req, res) => {
-  const incident = await findScopedIncident(req, req.params.id, false);
-  if (!incident) return respondNotFound(res);
+  const incident = await findIncidentForRead(req, res);
+  if (!incident) return;
   res.status(200).json({
     success: true,
     data: {
@@ -936,66 +898,7 @@ exports.getIncidentSLA = asyncHandler(async (req, res) => {
 // @desc    Barangay review validates a citizen report and forwards it to City Engineering.
 // @route   POST /api/v1/incidents/:id/validate
 exports.validateIncident = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'barangay_official') {
-    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official may perform initial validation' });
-  }
-  const before = await findScopedIncident(req);
-  if (!before) return respondNotFound(res);
-  if (!['submitted', 'clarification_required'].includes(before.status)) return respondConflict(res);
-  const jurisdiction = normalizeJurisdiction(before, req.body.jurisdiction || {});
-  if (!jurisdiction.barangay || !jurisdiction.city) {
-    return res.status(400).json({ success: false, message: 'Choose a recognized Dagupan barangay' });
-  }
-  if (!canConfirmJurisdiction(req.user, jurisdiction)) {
-    return res.status(403).json({ success: false, message: 'You are not authorized to confirm this jurisdiction' });
-  }
-  const now = new Date();
-  const reviewedJurisdiction = {
-    ...jurisdiction,
-    confirmedBy: req.user._id,
-    confirmedAt: now
-  };
-  const updated = await transitionIncidentDecision(
-    req,
-    res,
-    'barangay_validated',
-    {
-      validatedBy: req.user._id,
-      validatedAt: now,
-      jurisdiction: reviewedJurisdiction,
-      clarificationReason: undefined,
-      clarificationRequestedBy: undefined,
-      clarificationRequestedAt: undefined
-    },
-    normalizeText(req.body.notes) || 'Barangay validation completed; ready for provider routing',
-    {
-      jurisdiction: {
-        barangay: reviewedJurisdiction.barangay,
-        city: reviewedJurisdiction.city
-      }
-    }
-  );
-  if (!updated) return;
-
-  await recordOfficialAction({
-    action: 'incident_barangay_validated',
-    incident: updated,
-    req,
-    details: { jurisdiction: reviewedJurisdiction },
-    changes: { before: { status: before.status }, after: { status: 'barangay_validated' } }
-  });
-  await notifySafely({
-    recipient: updated.reporter,
-    ...notificationTemplates.incidentValidated(updated.reportNumber),
-    data: { incidentId: updated._id, link: `/incidents/${updated._id}` },
-    priority: 'medium'
-  });
-
-  res.status(200).json({
-    success: true,
-    message: 'Incident validated by the Barangay Official; select priority and provider',
-    data: await serializeIncidentForOfficial(updated, { includeCandidates: true })
-  });
+  return res.status(409).json({ success: false, code: 'WORKFLOW_POLICY_REQUIRED', message: 'Use the current inspection workflow. Maintenance authorization and closure policy are not established for this legacy action.' });
 });
 
 // @desc    Confirm a barangay-validated incident at City Engineering level
@@ -1119,7 +1022,7 @@ exports.rejectIncident = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Incident rejected',
-    data: await serializeIncidentForOfficial(updated, { includeCandidates: true })
+    data: await serializeIncidentForOfficial(updated, { includeCandidates: true, includeAgencyPreparation: req.user.role === 'utility_provider' })
   });
 });
 
@@ -1205,51 +1108,7 @@ exports.markDuplicateIncident = asyncHandler(async (req, res) => {
 // @desc    Change priority after validation; raw status transitions stay unavailable
 // @route   PATCH /api/v1/incidents/:id/priority
 exports.updateIncidentPriority = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'barangay_official') {
-    return res.status(403).json({ success: false, message: 'You are not authorized to change incident priority' });
-  }
-  const priority = String(req.body.priority || '').toLowerCase();
-  if (!['critical', 'high', 'medium', 'low'].includes(priority)) {
-    return res.status(400).json({ success: false, message: 'A valid priority is required' });
-  }
-  const before = await findScopedIncident(req);
-  if (!before) return respondNotFound(res);
-  if (!['barangay_validated', 'city_confirmed', 'prioritized'].includes(before.status)) {
-    return res.status(409).json({ success: false, message: 'Barangay validation is required before assigning priority' });
-  }
-  const now = new Date();
-  const updated = await Incident.findOneAndUpdate(
-    combineIncidentFilters({ _id: before._id, status: before.status }, officialScope(req)),
-    {
-      $set: {
-        status: 'prioritized',
-        priority,
-        priorityAssignedBy: req.user._id,
-        priorityAssignedAt: now,
-        sla: { targetResolutionTime: initializeIncidentSLA(priority, now).targetResolutionTime, state: 'not_started', isOverdue: false, escalationLevel: 0, remindersSent: 0 }
-      },
-      $push: {
-        statusHistory: {
-          status: 'prioritized',
-          changedBy: req.user._id,
-          actorRole: req.user.role,
-          changedAt: now,
-          notes: `Barangay Official assigned ${priority} priority and calculated the SLA deadline`,
-          metadata: { priority, targetResolutionTime: initializeIncidentSLA(priority, now).targetResolutionTime }
-        }
-      }
-    },
-    { new: true, runValidators: true }
-  ).populate('reporter', 'firstName lastName');
-  if (!updated) return respondConflict(res);
-  await recordOfficialAction({
-    action: 'incident_priority_assigned',
-    incident: updated,
-    req,
-    details: { priority },
-    changes: { before: { status: before.status, priority: before.priority }, after: { status: 'prioritized', priority } }
-  });
-  res.status(200).json({ success: true, message: 'Incident priority updated', data: await serializeIncidentForOfficial(updated) });
+  return res.status(409).json({ success: false, code: 'WORKFLOW_POLICY_REQUIRED', message: 'Use the current inspection workflow. Maintenance authorization and closure policy are not established for this legacy action.' });
 });
 
 // @desc    Confirm/correct a validated incident's jurisdiction
@@ -1303,95 +1162,7 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
 // @desc    Route a validated incident and create its primary work order
 // @route   POST /api/v1/incidents/:id/route
 exports.routeIncident = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'barangay_official') {
-    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official may route a report' });
-  }
-  const before = await findScopedIncident(req);
-  if (!before) return respondNotFound(res);
-  if (before.status !== 'prioritized' || !before.priority) {
-    return res.status(409).json({ success: false, message: 'Assign priority before routing to a Utility Provider' });
-  }
-  const jurisdiction = normalizeJurisdiction(before, before.jurisdiction || {});
-  if (!hasCompleteRoutingInput(req.body)) {
-    return res.status(400).json({ success: false, message: 'Routing must include both a responsible organization and a valid responsible role' });
-  }
-  const route = normalizeRouting(req.body);
-  if (!route.responsibleOrganization || route.responsibleRole !== 'utility_provider'
-    || !canRouteIncident(req.user, route, jurisdiction)) {
-    return res.status(403).json({ success: false, message: 'You are not authorized to route this incident to that organization' });
-  }
-  const providerAccount = await User.findOne({
-    role: 'utility_provider',
-    utilityCompany: route.responsibleOrganization,
-    isActive: true,
-    isArchived: { $ne: true }
-  }).select('_id');
-  if (!providerAccount) {
-    return res.status(400).json({ success: false, message: 'No active Utility Provider account is provisioned for that organization' });
-  }
-  const now = new Date();
-  const routing = {
-    ...route,
-    routedBy: req.user._id,
-    routedAt: now,
-    history: pushRoutingHistory(before.routing, route, req.user._id, now)
-  };
-  const sla = initializeIncidentSLA(before.priority, now);
-  let workOrder;
-  try {
-    workOrder = await WorkOrder.create({ incident: before._id, responsibleOrganization: route.responsibleOrganization,
-      responsibleRole: 'utility_provider', jurisdiction, priority: before.priority, createdBy: req.user._id,
-      status: 'pending', assignmentState: 'unassigned', progressPercent: 0, progressStage: 'assigned', sla,
-      history: [{ type: 'created', actor: req.user._id, actorRole: req.user.role, status: 'pending',
-        notes: 'Work order created when the Barangay Official assigned the Utility Provider', createdAt: now }] });
-  } catch (error) {
-    if (error.code === 11000) return respondConflict(res);
-    throw error;
-  }
-  let updated;
-  try {
-    updated = await Incident.findOneAndUpdate(
-    combineIncidentFilters({ _id: before._id, status: 'prioritized' }, officialScope(req)),
-    {
-      $set: {
-        status: 'provider_assigned',
-        routing,
-        assignedUtility: providerAccount._id,
-        providerAssignedBy: req.user._id,
-        providerAssignedAt: now,
-        sla,
-        workOrder: workOrder._id
-      },
-      $push: {
-        statusHistory: {
-          status: 'provider_assigned',
-          changedBy: req.user._id,
-          actorRole: req.user.role,
-          changedAt: now,
-          notes: route.reason || `Routed to ${route.responsibleOrganization}`,
-          metadata: { responsibleOrganization: route.responsibleOrganization, responsibleRole: route.responsibleRole }
-        }
-      }
-    },
-    { new: true, runValidators: true }
-  ).populate('reporter', 'firstName lastName');
-  } catch (error) {
-    await WorkOrder.deleteOne({ _id: workOrder._id });
-    throw error;
-  }
-  if (!updated) {
-    await WorkOrder.deleteOne({ _id: workOrder._id });
-    return respondConflict(res);
-  }
-  await recordOfficialAction({
-    action: 'incident_routed',
-    incident: updated,
-    req,
-    details: { routing: route },
-    changes: { before: { status: before.status, routing: before.routing }, after: { status: 'provider_assigned', routing } }
-  });
-  await notifyRoutingOfficials(updated);
-  res.status(200).json({ success: true, message: 'Incident routed successfully', data: await serializeIncidentForOfficial(updated) });
+  return res.status(409).json({ success: false, code: 'WORKFLOW_POLICY_REQUIRED', message: 'Use the current inspection workflow. Maintenance authorization and closure policy are not established for this legacy action.' });
 });
 
 // @desc    Update non-workflow notes only. Status, priority, and decisions have
@@ -1429,7 +1200,7 @@ exports.getNearbyIncidents = asyncHandler(async (req, res) => {
   }
 
   const incidents = await Incident.find(combineIncidentFilters(
-    buildIncidentScope(req.user),
+    await buildReadableIncidentScope(req.user),
     {
       location: {
         $near: {
@@ -1443,9 +1214,9 @@ exports.getNearbyIncidents = asyncHandler(async (req, res) => {
 
   // Operational map results must not serialize the full document, which now
   // contains restricted false-report review records.
-  const data = await Promise.all(incidents.map((incident) => serializeIncidentForOfficial(incident, {
-    includeHistory: false, includeLocationIntegrity: false
-  })));
+  const data = await Promise.all(incidents.map((incident) => isFieldRole(req.user)
+    ? serializeIncidentForCitizen(incident)
+    : serializeIncidentForOfficial(incident, { includeHistory: false, includeLocationIntegrity: false })));
   res.status(200).json({ success: true, data, count: data.length });
 });
 

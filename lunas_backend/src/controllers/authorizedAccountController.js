@@ -43,7 +43,9 @@ const checkActor = (req, res, target, role = target?.role) => {
   return true;
 };
 const targetAccount = async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = req.user.role === 'utility_provider'
+    ? await User.findOne({ _id: req.params.id, role: 'repair_personnel', repairOrganization: req.user.utilityCompany, isArchived: { $ne: true } })
+    : await User.findById(req.params.id);
   if (!user || !AUTHORIZED_ROLES.includes(user.role)) {
     denied(res, 'Authorized account not found', 404);
     return null;
@@ -55,7 +57,7 @@ const approvedFields = (input, actor) => ({
   ...(input.role === 'repair_personnel' ? { phone: input.phone } : {}),
   personnelId: input.personnelId || '', position: input.position, organization: input.organization,
   role: input.role,
-  barangay: ['barangay_official', 'repair_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
+  barangay: ['barangay_official', 'barangay_tanod', 'repair_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
   utilityCompany: input.role === 'utility_provider' ? input.utilityCompany : undefined,
   repairOrganization: input.role === 'repair_personnel' ? input.repairOrganization : undefined,
   repairTeam: input.role === 'repair_personnel' ? input.repairTeam || '' : undefined,

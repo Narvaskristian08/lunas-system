@@ -138,7 +138,7 @@ export async function requireViewer() {
 
 export async function requireWebWorkspace() {
   const viewer = await requireViewer();
-  if (["citizen", "repair_personnel"].includes(viewer.backendRole)) {
+  if (["citizen", "repair_personnel", "barangay_tanod"].includes(viewer.backendRole)) {
     redirect("/unauthorized?platform=mobile");
   }
   return viewer;

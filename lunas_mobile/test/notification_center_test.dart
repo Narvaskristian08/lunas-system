@@ -204,7 +204,7 @@ void main() {
     await tester.tap(find.text('Mark All as Read'));
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
-    expect(find.text('Stay updated on your work orders.'), findsOneWidget);
+    expect(find.text('Stay updated on your assigned verifications.'), findsOneWidget);
   });
 
   testWidgets(
@@ -240,7 +240,7 @@ void main() {
 
       expect(repository.markedRead, ['notification-1']);
       expect(find.byType(BottomSheet), findsOneWidget);
-      expect(find.text('View Assigned Work'), findsOneWidget);
+      expect(find.text('View Work Verification'), findsOneWidget);
       expect(router.state.uri.path, '/repair/notifications');
       Navigator.of(tester.element(find.byType(BottomSheet))).pop();
       await tester.pumpAndSettle();
@@ -264,11 +264,11 @@ void main() {
 
     expect(
       find.text(
-        'This notification is not linked to an accessible assigned work order.',
+        'This notification is not linked to an accessible work verification.',
       ),
       findsOneWidget,
     );
     expect(find.text('View Report'), findsNothing);
-    expect(find.text('View Assigned Work'), findsNothing);
+    expect(find.text('View Work Verification'), findsNothing);
   });
 }

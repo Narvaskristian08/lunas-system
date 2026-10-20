@@ -1,3 +1,5 @@
+> Step 14 compatibility notice (2026-10-20): the tables below describe the historical API and are not authority to enable a workflow. Use the [current registered route inventory](../qa_outputs/legacy_compatibility_20261020/route_inventory.md) and [current root handoff](../README.md) for exact registration, consumers, roles, scopes and policy blocks. The retired `city_engineer` role cannot authenticate. Legacy validate/priority/manual-route, new work-order creation and final closure refuse requests; provider acceptance cannot close an incident. Current approval requires assigned Tanod initial findings followed by an independent Secretary decision. New maintenance authorization, SLA-start/amendment and export audiences remain policy pending. No endpoint or historical record was deleted. The old Tanod migration now refuses before environment/database access.
+
 # LUNAS API v1 Route Catalog
 
 Base URL: `http://localhost:5000/api/v1`. Routes marked authenticated require

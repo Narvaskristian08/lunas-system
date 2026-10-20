@@ -8,13 +8,13 @@ const { processAndUploadRepairEvidence, cleanupEvidence } = require('../services
 const { getEvidenceUrl } = require('../services/storageService');
 const logger = require('../utils/logger');
 const asyncHandler = require('../middleware/asyncHandler');
+const { withInspectionMutation } = require('../services/inspectionMutation');
 const {
   ACTIVE_WORK_ORDER_STATUSES,
   REPAIR_PERSONNEL_ROLE,
   buildWorkOrderScope,
   canAccessWorkOrder,
   canManageWorkOrder,
-  canReviewFinalWorkOrder,
   getSlaProjection,
   getClosedSlaFields,
   getApproachingThresholdHours,
@@ -51,7 +51,6 @@ const pageNumber = (value) => Math.max(1, Number.parseInt(value, 10) || 1);
 const pageSize = (value) => Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(value, 10) || 20));
 const fail = (res, status, message) => res.status(status).json({ success: false, message });
 const activeWorkOrder = (workOrder) => ACTIVE_WORK_ORDER_STATUSES.includes(workOrder.status);
-const duplicateKey = (error) => Boolean(error && error.code === 11000);
 
 const populateWorkOrder = (query, includeIncident = true) => {
   if (includeIncident) query.populate('incident', SAFE_INCIDENT_FIELDS);
@@ -170,6 +169,7 @@ const serializeWorkOrder = async (workOrder, detail = true) => {
     readyForCompletionAt: source.readyForCompletionAt,
     closedAt: source.closedAt ?? source.finalVerifiedAt,
     version: source.version,
+    maintenanceProtocol: source.maintenanceProtocol,
     assignee: safePerson(source.assignedTo),
     assignedBy: safePerson(source.assignedBy),
     currentAssignment: activeAssignment ? safeAssignment(activeAssignment) : null,
@@ -229,16 +229,8 @@ const serializeWorkOrder = async (workOrder, detail = true) => {
   return result;
 };
 
-const incidentCanCreateWorkOrder = (incident, user) => {
-  if (!incident || incident.status !== 'provider_assigned') return false;
-  if (!incident.routing || !incident.routing.responsibleOrganization
-    || incident.routing.responsibleRole !== 'utility_provider') return false;
-  return user.role === 'utility_provider'
-    && normalizeText(incident.routing.responsibleOrganization) === normalizeText(user.utilityCompany);
-};
-
 const updateIncidentForWorkOrder = async ({ incidentId, status, actor, notes, metadata, events, fields = {} }) => {
-  const incident = await Incident.findById(incidentId).select('status');
+  const incident = await Incident.findById(incidentId);
   if (!incident) return null;
   const eventStates = events || (incident.status === status ? [status] : [status]);
   let current = incident.status;
@@ -258,10 +250,20 @@ const updateIncidentForWorkOrder = async ({ incidentId, status, actor, notes, me
     metadata: { ...(metadata || {}), ...(index === eventStates.length - 1 ? {} : { handoffEvent: true }) }
   }));
   return Incident.findOneAndUpdate(
-    { _id: incidentId, status: incident.status },
+    { _id: incidentId, status: incident.status, 'inspectionMutation.token': { $exists: false } },
     { $set: { status, ...fields }, $push: { statusHistory: { $each: history } } },
     { new: true, runValidators: true }
   );
+};
+
+// Legacy maintenance remains usable, but a held incident claim or terminal /
+// mismatched current owner must never be bypassed by staffing or worker actions.
+const repairIncidentAvailable = async (order) => {
+  const incident = await Incident.findById(order.incident);
+  return Boolean(incident && !incident.inspectionMutation?.token
+    && ['provider_assigned', 'repair_assigned', 'in_progress', 'rework_required', 'city_correction_required'].includes(incident.status)
+    && (!incident.workOrder || sameId(incident.workOrder, order._id))
+    && (!incident.routing?.responsibleOrganization || incident.routing.responsibleOrganization === order.responsibleOrganization));
 };
 
 const notify = async (recipient, template, workOrder) => {
@@ -270,6 +272,7 @@ const notify = async (recipient, template, workOrder) => {
     await createNotification({
       recipient: recipient._id || recipient,
       ...template,
+      idempotencyKey: `work-order:${workOrder._id}:${workOrder.version}:${template.type}:${recipient._id || recipient}`,
       data: {
         incidentId: workOrder.incident && workOrder.incident._id ? workOrder.incident._id : workOrder.incident,
         workOrderId: workOrder._id,
@@ -362,112 +365,7 @@ const listFilter = async (req) => {
 };
 
 exports.createWorkOrder = asyncHandler(async (req, res) => {
-  const incidentId = (req.params && (req.params.incidentId || req.params.id)) || req.body.incident;
-  const incident = await Incident.findById(incidentId);
-  if (!incident) return fail(res, 404, 'Incident not found');
-  if (!incidentCanCreateWorkOrder(incident, req.user)) {
-    return fail(
-      res,
-      incident.status === 'provider_assigned' ? 403 : 409,
-      incident.status === 'provider_assigned'
-        ? 'Only the assigned Utility Provider organization may create a work order'
-        : 'Only a City Engineering-routed incident can receive a work order'
-    );
-  }
-  const existing = await WorkOrder.findOne({ incident: incident._id });
-  if (existing) return fail(res, 409, 'A primary work order already exists for this incident');
-
-  const now = new Date();
-  let workOrder;
-  try {
-    workOrder = await WorkOrder.create({
-      incident: incident._id,
-      responsibleOrganization: incident.routing.responsibleOrganization,
-      responsibleRole: incident.routing.responsibleRole,
-      jurisdiction: {
-        barangay: (incident.jurisdiction && incident.jurisdiction.barangay)
-          || (incident.location && incident.location.address && incident.location.address.barangay),
-        city: (incident.jurisdiction && incident.jurisdiction.city)
-          || (incident.location && incident.location.address && incident.location.address.city)
-          || 'Dagupan City'
-      },
-      priority: incident.priority,
-      createdBy: req.user._id,
-      instructions: req.body.instructions,
-      status: 'pending',
-      assignmentState: 'unassigned',
-      progressPercent: 0,
-      progressStage: 'assigned',
-      sla: {
-        targetResolutionTime: incident.sla && incident.sla.targetResolutionTime,
-        startedAt: incident.sla && incident.sla.startedAt,
-        deadline: incident.sla && incident.sla.deadline,
-        state: incident.sla && incident.sla.deadline ? 'active' : 'not_started',
-        isOverdue: false
-      },
-      history: [workOrderHistoryEntry({
-        type: 'created',
-        actor: req.user,
-        status: 'pending',
-        progressPercent: 0,
-        stage: 'assigned',
-        notes: 'Work order created from validated incident',
-        now
-      })]
-    });
-  } catch (error) {
-    if (duplicateKey(error)) return fail(res, 409, 'A primary work order already exists for this incident');
-    throw error;
-  }
-
-  // Claim the incident with a conditional update. If the write itself fails,
-  // remove the just-created work order so a transient storage/database error
-  // cannot leave an orphan blocking a later legitimate create attempt.
-  let claimed;
-  try {
-    claimed = await Incident.findOneAndUpdate(
-      {
-        _id: incident._id,
-        status: 'provider_assigned',
-        $or: [{ workOrder: null }, { workOrder: { $exists: false } }]
-      },
-      {
-        $set: { workOrder: workOrder._id },
-        $push: {
-          statusHistory: {
-            status: 'provider_assigned',
-            changedBy: req.user._id,
-            actorRole: req.user.role,
-            changedAt: now,
-            notes: 'Work order ' + workOrder.orderNumber + ' created by the assigned Utility Provider',
-            metadata: { workOrderId: workOrder._id, event: 'work_order_created' }
-          }
-        }
-      },
-      { new: true }
-    );
-  } catch (error) {
-    await workOrder.deleteOne();
-    throw error;
-  }
-  if (!claimed) {
-    await workOrder.deleteOne();
-    return fail(res, 409, 'This incident changed before the work order could be created');
-  }
-  await createAuditLog({
-    action: 'work_order_created',
-    performedBy: req.user._id,
-    resourceType: 'WorkOrder',
-    resourceId: workOrder._id,
-    details: { orderNumber: workOrder.orderNumber, incidentId: incident._id },
-    ipAddress: req.ip,
-    userAgent: req.headers['user-agent']
-  });
-  return res.status(201).json({
-    success: true,
-    message: 'Work order created and ready for assignment',
-    data: await serializeWorkOrder(workOrder)
-  });
+  return res.status(409).json({ success: false, code: 'WORKFLOW_POLICY_REQUIRED', message: 'Use the current inspection workflow. Maintenance authorization and closure policy are not established for this legacy action.' });
 });
 
 exports.getWorkOrders = asyncHandler(async (req, res) => {
@@ -581,8 +479,8 @@ exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
   if (!workOrder || !canManageWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
   const organization = normalizeText(workOrder.responsibleOrganization);
-  const personnel = await User.find({ role: REPAIR_PERSONNEL_ROLE })
-    .select('firstName lastName role isActive isArchived repairOrganization repairTeam repairAccountType availability barangay expertise');
+  const personnel = await User.find({ role: REPAIR_PERSONNEL_ROLE, repairOrganization: organization, isActive: true, isArchived: { $ne: true }, requiresActivation: { $ne: true }, accountStatus: { $nin: ['pending_activation', 'suspended', 'deactivated'] } })
+    .select('firstName lastName role isActive isArchived requiresActivation accountStatus repairOrganization repairTeam repairAccountType availability barangay expertise');
   return res.status(200).json({
     success: true,
     data: personnel.filter((person) => organization && isEligibleRepairPersonnel(person, workOrder)).map((person) => ({
@@ -601,9 +499,12 @@ exports.getEligiblePersonnel = asyncHandler(async (req, res) => {
 
 const assign = async (req, res, reassign) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
+  if (workOrder && req.body?.version !== undefined && Number(req.body.version) !== workOrder.version) return fail(res, 409, 'Work order changed; refresh before continuing');
+  if (workOrder?.maintenanceProtocol === 9) return fail(res, 409, 'New maintenance requires approved work-authorization policy; preparation alone cannot activate work');
   if (!workOrder || !canManageWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
-  if (workOrder.status !== 'rework_required'
-    && (workOrder.startedAt || workOrder.actualStartTime || !['pending', 'accepted'].includes(workOrder.status))) {
+  if (!['pending', 'accepted', 'in_progress', 'rework_required'].includes(workOrder.status)
+    || (['pending', 'accepted'].includes(workOrder.status) && (workOrder.startedAt || workOrder.actualStartTime))
+    || (!reassign && (workOrder.startedAt || workOrder.actualStartTime || workOrder.status === 'in_progress'))) {
     return fail(res, 409, 'Repair work has started or is under review and cannot be reassigned');
   }
   if (!activeWorkOrder(workOrder)) return fail(res, 409, transitionMessage(workOrder.status, 'assign'));
@@ -623,25 +524,23 @@ const assign = async (req, res, reassign) => {
 
   const assignee = await User.findById(req.body.assigneeId || req.body.assignedTo);
   if (!assignee) return fail(res, 404, 'Repair personnel not found');
+  if (sameId(workOrder.assignedTo, assignee._id)) return fail(res, 409, 'Select a different repair person for reassignment');
   const ineligibility = repairPersonnelIneligibility(assignee, workOrder);
   if (ineligibility) return fail(res, 400, ineligibility);
   const reason = String(req.body.reason || '').trim();
   if (reassign && !reason) return fail(res, 400, 'A reassignment reason is required');
 
+  if (!await repairIncidentAvailable(workOrder)) return fail(res, 409, 'Incident unavailable or awaiting workflow reconciliation');
   const now = new Date();
   const assignmentId = new mongoose.Types.ObjectId();
-  // Provider assignment authorizes the worker immediately; existing repair
-  // progress and correction state remain intact when reassigned.
-  const statusAfterAssignment = workOrder.status === 'pending'
-    ? 'accepted'
-    : workOrder.status;
+  // Staffing creates a pending worker decision, never maintenance authority.
+  const statusAfterAssignment = workOrder.status === 'accepted' && !workOrder.startedAt ? 'pending' : workOrder.status;
   const assignment = {
     _id: assignmentId,
     assignee: assignee._id,
     assignedBy: req.user._id,
     assignedAt: now,
-    status: 'accepted',
-    acceptedAt: now,
+    status: 'pending',
     active: true
   };
   const update = {
@@ -650,9 +549,9 @@ const assign = async (req, res, reassign) => {
       assignedBy: req.user._id,
       assignedAt: now,
       currentAssignment: assignmentId,
-      assignmentState: 'accepted',
+      assignmentState: 'pending',
       status: statusAfterAssignment,
-      acceptedAt: now,
+      acceptedAt: null,
       ...(!reassign && req.body.instructions !== undefined ? { instructions: String(req.body.instructions).trim() } : {})
     },
     $push: {
@@ -700,7 +599,7 @@ const assign = async (req, res, reassign) => {
     _id: workOrder._id,
     version: workOrder.version,
     status: workOrder.status,
-    ...(workOrder.status === 'rework_required' ? {} : { startedAt: null, actualStartTime: null })
+    ...(reassign ? {} : { startedAt: null, actualStartTime: null })
   };
   if (reassign) {
     if (activeAssignment) {
@@ -765,6 +664,8 @@ exports.reassignWorkOrder = asyncHandler(async (req, res) => assign(req, res, tr
 
 exports.acceptWorkOrder = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
+  if (workOrder && req.body?.version !== undefined && Number(req.body.version) !== workOrder.version) return fail(res, 409, 'Work order changed; refresh before continuing');
+  if (workOrder?.maintenanceProtocol === 9) return fail(res, 409, 'New maintenance requires approved work-authorization policy; preparation alone cannot activate work');
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
   if (workOrder.assignmentState !== 'pending'
     || !['pending', 'in_progress', 'rework_required'].includes(workOrder.status)) {
@@ -775,6 +676,7 @@ exports.acceptWorkOrder = asyncHandler(async (req, res) => {
       && entry.active && sameId(entry.assignee, req.user._id)
   );
   if (!assignment) return fail(res, 403, 'You do not have an active assignment for this work order');
+  if (!await repairIncidentAvailable(workOrder)) return fail(res, 409, 'Incident unavailable or awaiting workflow reconciliation');
   const now = new Date();
   // A replacement who accepts an in-progress handoff resumes the same repair;
   // startedAt, progress, evidence, history, and SLA remain untouched.
@@ -834,6 +736,7 @@ exports.declineWorkOrder = asyncHandler(async (req, res) => {
   const notes = String(req.body.notes || '').trim();
   if (reason.length < 2) return fail(res, 400, 'A decline reason is required');
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
+  if (workOrder && req.body?.version !== undefined && Number(req.body.version) !== workOrder.version) return fail(res, 409, 'Work order changed; refresh before continuing');
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
   if (!['pending', 'in_progress', 'rework_required'].includes(workOrder.status)
     || workOrder.assignmentState !== 'pending') {
@@ -844,6 +747,7 @@ exports.declineWorkOrder = asyncHandler(async (req, res) => {
       && entry.active && sameId(entry.assignee, req.user._id)
   );
   if (!assignment) return fail(res, 403, 'You do not have an active assignment for this work order');
+  if (!await repairIncidentAvailable(workOrder)) return fail(res, 409, 'Incident unavailable or awaiting workflow reconciliation');
   const now = new Date();
   const updated = await WorkOrder.findOneAndUpdate(
     {
@@ -915,10 +819,10 @@ exports.declineWorkOrder = asyncHandler(async (req, res) => {
 
 exports.startWorkOrder = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
+  if (workOrder && req.body?.version !== undefined && Number(req.body.version) !== workOrder.version) return fail(res, 409, 'Work order changed; refresh before continuing');
+  if (workOrder?.maintenanceProtocol === 9) return fail(res, 409, 'New maintenance requires approved work-authorization policy; preparation alone cannot activate work');
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
-  if (!['pending', 'accepted', 'rework_required', 'in_progress'].includes(workOrder.status)
-    || !['pending', 'accepted'].includes(workOrder.assignmentState)
-    || (workOrder.status === 'in_progress' && workOrder.assignmentState !== 'pending')) {
+  if (!['accepted', 'rework_required'].includes(workOrder.status) || workOrder.assignmentState !== 'accepted') {
     return fail(res, 409, transitionMessage(workOrder.status, 'start'));
   }
   const assignment = (workOrder.assignments || []).find(
@@ -926,6 +830,7 @@ exports.startWorkOrder = asyncHandler(async (req, res) => {
       && entry.active && sameId(entry.assignee, req.user._id)
   );
   if (!assignment) return fail(res, 403, 'You do not have an active assignment for this work order');
+  if (!await repairIncidentAvailable(workOrder)) return fail(res, 409, 'Incident unavailable or awaiting workflow reconciliation');
   const now = new Date();
   const updated = await WorkOrder.findOneAndUpdate(
     {
@@ -1012,7 +917,10 @@ const validLocation = (location) => {
 
 exports.updateProgress = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
+  if (workOrder && req.body?.version !== undefined && Number(req.body.version) !== workOrder.version) return fail(res, 409, 'Work order changed; refresh before continuing');
+  if (workOrder?.maintenanceProtocol === 9) return fail(res, 409, 'New maintenance requires approved work-authorization policy; preparation alone cannot activate work');
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
+  if (!await repairIncidentAvailable(workOrder)) return fail(res, 409, 'Incident unavailable or awaiting workflow reconciliation');
   if (workOrder.status !== 'in_progress' || workOrder.assignmentState !== 'accepted') {
     return fail(res, 409, transitionMessage(workOrder.status, 'progress'));
   }
@@ -1066,10 +974,10 @@ exports.updateProgress = asyncHandler(async (req, res) => {
           status: nextStatus,
           progressPercent: progress.progressPercent,
           progressStage: progress.stage,
-          ...(evidence.length ? { repairEvidence: evidence } : {}),
           ...(completed ? { readyForCompletionAt: now, actualCompletionTime: now } : {})
         },
         $push: {
+          ...(evidence.length ? { repairEvidence: { $each: evidence } } : {}),
           progressUpdates: {
             _id: progressUpdateId,
             previousPercent: workOrder.progressPercent,
@@ -1105,7 +1013,6 @@ exports.updateProgress = asyncHandler(async (req, res) => {
       return fail(res, 409, 'The repair progress changed. Refresh and try again.');
     }
     uploads = [];
-    if (evidence.length) await cleanupEvidence(workOrder.repairEvidence || []);
     if (completed) await setAvailability(req.user._id, 'available');
     await updateIncidentForWorkOrder({
       incidentId: updated.incident,
@@ -1160,14 +1067,18 @@ exports.updateProgress = asyncHandler(async (req, res) => {
       data: await serializeWorkOrder(updated)
     });
   } catch (error) {
-    await cleanupEvidence(uploads);
+    if (error.name === 'ValidationError' || error.code === 11000) await cleanupEvidence(uploads);
+    else if (uploads.length) logger.error('Repair evidence retained after ambiguous persistence failure; reconciliation required', { workOrderId: workOrder._id });
     throw error;
   }
 });
 
 exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
   const workOrder = await findScopedWorkOrder(req, req.params.id, false);
+  if (workOrder && req.body?.version !== undefined && Number(req.body.version) !== workOrder.version) return fail(res, 409, 'Work order changed; refresh before continuing');
+  if (workOrder?.maintenanceProtocol === 9) return fail(res, 409, 'New maintenance requires approved work-authorization policy; preparation alone cannot activate work');
   if (!workOrder || !sameId(workOrder.assignedTo, req.user._id)) return fail(res, 404, 'Work order not found');
+  if (!await repairIncidentAvailable(workOrder)) return fail(res, 409, 'Incident unavailable or awaiting workflow reconciliation');
   if (workOrder.status !== 'in_progress' || workOrder.assignmentState !== 'accepted') {
     return fail(res, 409, transitionMessage(workOrder.status, 'progress'));
   }
@@ -1183,6 +1094,7 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
       (entry) => getId(entry._id) === requestedProgressUpdateId
     );
     if (!progressUpdate) return fail(res, 404, 'Progress update not found for this work order');
+    if (!sameId(progressUpdate.updatedBy, req.user._id)) return fail(res, 403, 'Evidence may be attached only to your own attributed progress event');
   }
 
   let uploads = [];
@@ -1195,6 +1107,7 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
       ...(progressUpdate ? { progressUpdate: progressUpdate._id } : {})
     }));
     const push = {
+      repairEvidence: { $each: evidence },
       history: workOrderHistoryEntry({
         type: 'evidence_uploaded',
         actor: req.user,
@@ -1213,8 +1126,9 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
     if (progressUpdate) {
       // Keep the durable evidence record and the append-only progress event
       // connected in the same guarded write.
-      // The current photo replaces the previous photo for this progress event.
+      // Append to this worker's event; earlier evidence remains attributable.
       options.arrayFilters = [{ 'progress._id': progressUpdate._id }];
+      push['progressUpdates.$[progress].evidence'] = { $each: evidence.map(entry => entry._id) };
     }
     const updated = await WorkOrder.findOneAndUpdate(
       {
@@ -1225,9 +1139,7 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
         assignmentState: 'accepted',
         status: 'in_progress'
       },
-      { $set: { repairEvidence: evidence,
-        ...(progressUpdate ? { 'progressUpdates.$[progress].evidence': evidence.map((entry) => entry._id) } : {}) },
-      $push: push, $inc: { version: 1 } },
+      { $push: push, $inc: { version: 1 } },
       options
     );
     if (!updated) {
@@ -1235,7 +1147,6 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
       return fail(res, 409, 'The work order changed. Refresh and retry the upload.');
     }
     uploads = [];
-    await cleanupEvidence(workOrder.repairEvidence || []);
     await createAuditLog({
       action: 'repair_evidence_uploaded',
       performedBy: req.user._id,
@@ -1254,7 +1165,8 @@ exports.uploadRepairEvidence = asyncHandler(async (req, res) => {
       data: await Promise.all(evidence.map(safeEvidence))
     });
   } catch (error) {
-    await cleanupEvidence(uploads);
+    if (error.name === 'ValidationError' || error.code === 11000) await cleanupEvidence(uploads);
+    else if (uploads.length) logger.error('Repair evidence retained after ambiguous persistence failure; reconciliation required', { workOrderId: workOrder._id });
     throw error;
   }
 });
@@ -1307,45 +1219,30 @@ exports.reviewCompletedWork = asyncHandler(async (req, res) => {
   if (decision === 'request_correction' && !reason) return fail(res, 400, 'A correction reason is required');
   if (!['accepted', 'request_correction'].includes(decision)) return fail(res, 400, 'Choose accepted or request_correction');
   if (!workOrder.assignedTo) return fail(res, 409, 'Assign Repair Personnel before reviewing completion');
-  const correction = decision === 'request_correction';
-  const nextStatus = correction ? 'rework_required' : 'verified';
-  const updated = await addWorkOrderReview({
-    workOrder, req, stage: 'utility_provider',
-    decision: correction ? 'correction_required' : 'verified', reason: reason || undefined,
-    instructions: instructions || (correction ? reason : undefined), nextStatus,
-    historyType: correction ? 'provider_correction_requested' : 'provider_verified'
-  });
-  if (!updated) return fail(res, 409, 'The work-order review changed. Refresh and try again.');
-  const incidentStatus = correction ? 'rework_required' : 'closed';
-  const events = correction ? ['rework_required'] : ['verified', 'resolved', 'closed'];
-  const incident = await updateIncidentForWorkOrder({
-    incidentId: updated.incident, status: incidentStatus, actor: req.user,
-    events, notes: correction ? (instructions || reason) : 'Responsible Utility Provider verified the repair and closed the report',
-    metadata: { workOrderId: updated._id, decision },
-    fields: correction ? {} : { providerAcceptedBy: req.user._id, providerAcceptedAt: new Date(), finalVerifiedBy: req.user._id, finalVerifiedAt: new Date(), closedAt: new Date(), ...getClosedSlaFields(workOrder.sla) }
-  });
-  if (correction) {
+  if (decision === 'accepted') return fail(res, 409, 'Provider review cannot close an incident while final closure authority is unresolved');
+  return withInspectionMutation(req, res, async () => {
+    const currentIncident = await Incident.findOne({ _id: getId(workOrder.incident), workOrder: workOrder._id, 'routing.responsibleOrganization': req.user.utilityCompany, status: { $in: ['repair_completed', 'provider_review'] } });
+    if (!currentIncident) return fail(res, 409, 'Work order is no longer the current review task');
+    const updated = await addWorkOrderReview({
+      workOrder, req, stage: 'utility_provider', decision: 'correction_required', reason,
+      instructions: instructions || reason, nextStatus: 'rework_required', historyType: 'provider_correction_requested'
+    });
+    if (!updated) return fail(res, 409, 'The work-order review changed. Refresh and try again.');
+    const incident = await updateIncidentForWorkOrder({
+      incidentId: updated.incident, status: 'rework_required', actor: req.user,
+      events: ['rework_required'], notes: instructions || reason,
+      metadata: { workOrderId: updated._id, decision }
+    });
+    if (!incident) throw new Error('Work-order correction requires incident reconciliation');
     await setAvailability(updated.assignedTo, 'assigned');
     await notifyRepairPersonnel(updated, 'Corrective work requested', instructions || reason);
-  } else if (incident) {
-    await setAvailability(updated.assignedTo, 'available');
-    await createNotification({
-      recipient: incident.reporter, type: 'repair_verified', title: 'Your report has been resolved',
-      message: `The responsible provider verified the repair for ${incident.reportNumber}.`,
-      data: { incidentId: incident._id, workOrderId: updated._id, link: `/incidents/${incident._id}` }
+    await createAuditLog({
+      action: 'provider_correction_requested', performedBy: req.user._id,
+      resourceType: 'WorkOrder', resourceId: updated._id, details: { reason, instructions },
+      ipAddress: req.ip, userAgent: req.headers['user-agent']
     });
-  }
-  await createAuditLog({
-    action: correction ? 'provider_correction_requested' : 'provider_completion_accepted',
-    performedBy: req.user._id, resourceType: 'WorkOrder', resourceId: updated._id,
-    details: { reason: reason || undefined, instructions: instructions || undefined },
-    ipAddress: req.ip, userAgent: req.headers['user-agent']
-  });
-  return res.status(200).json({
-    success: true,
-    message: correction ? 'Corrective work sent to Repair Personnel' : 'Repair verified and report resolved',
-    data: await serializeWorkOrder(updated)
-  });
+    return res.status(200).json({ success: true, message: 'Corrective work sent to Repair Personnel', data: await serializeWorkOrder(updated) });
+  }, getId(workOrder.incident));
 });
 
 exports.coordinateCityCorrection = asyncHandler(async (req, res) => {
@@ -1385,67 +1282,7 @@ exports.coordinateCityCorrection = asyncHandler(async (req, res) => {
 });
 
 exports.finalReviewWorkOrder = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'city_engineer') return fail(res, 403, 'Only City Engineering may perform final government verification');
-  const workOrder = await findScopedWorkOrder(req, req.params.id);
-  if (!workOrder || !canReviewFinalWorkOrder(req.user, workOrder)) return fail(res, 404, 'Work order not found');
-  if (workOrder.status !== 'provider_accepted') return fail(res, 409, 'Only Utility Provider-accepted work can receive final verification');
-  const decision = String(req.body.decision || '').trim();
-  const reason = String(req.body.reason || '').trim();
-  if (!['approved', 'return'].includes(decision)) return fail(res, 400, 'Choose approved or return');
-  if (decision === 'return' && !reason) return fail(res, 400, 'A return reason is required');
-  const now = new Date();
-  if (decision === 'return') {
-    const updated = await addWorkOrderReview({
-      workOrder, req, stage: 'city_engineer', decision: 'correction_required', reason,
-      instructions: reason, nextStatus: 'city_correction_required', historyType: 'city_returned'
-    });
-    if (!updated) return fail(res, 409, 'The final review changed. Refresh and try again.');
-    const incident = await updateIncidentForWorkOrder({
-      incidentId: updated.incident, status: 'city_correction_required', actor: req.user,
-      notes: reason, metadata: { workOrderId: updated._id, returnedByCityEngineering: true }
-    });
-    const providerAccounts = incident?.assignedUtility
-      ? [incident.assignedUtility]
-      : await User.find({ role: 'utility_provider', utilityCompany: updated.responsibleOrganization, isActive: true }).select('_id');
-    await Promise.all(providerAccounts.map((recipient) => createNotification({
-      recipient: recipient._id || recipient, type: 'repair_rejected', title: 'City Engineering returned the repair',
-      message: `Work order ${updated.orderNumber} needs corrective work: ${reason}`,
-      data: { incidentId: updated.incident, workOrderId: updated._id, link: `/work-orders/${updated._id}` }, priority: 'high'
-    })));
-    await createAuditLog({
-      action: 'city_engineering_returned_completion', performedBy: req.user._id,
-      resourceType: 'WorkOrder', resourceId: updated._id, details: { reason },
-      ipAddress: req.ip, userAgent: req.headers['user-agent']
-    });
-    return res.status(200).json({ success: true, message: 'Work returned to the Utility Provider for corrective coordination', data: await serializeWorkOrder(updated) });
-  }
-
-  const updated = await addWorkOrderReview({
-    workOrder, req, stage: 'city_engineer', decision: 'verified',
-    reason: reason || undefined, nextStatus: 'verified', historyType: 'city_verified', now
-  });
-  if (!updated) return fail(res, 409, 'The final review changed. Refresh and try again.');
-  const incident = await updateIncidentForWorkOrder({
-    incidentId: updated.incident, status: 'closed', actor: req.user,
-    events: ['verified', 'resolved', 'closed'],
-    notes: reason || 'City Engineering verified the repair and closed the incident',
-    metadata: { workOrderId: updated._id },
-    fields: { finalVerifiedBy: req.user._id, finalVerifiedAt: now, closedAt: now,
-      ...getClosedSlaFields(workOrder.sla, now) }
-  });
-  if (incident?.reporter) {
-    await createNotification({
-      recipient: incident.reporter, type: 'repair_verified', title: 'Your report has been resolved',
-      message: `City Engineering verified the repair for incident ${incident.reportNumber}.`,
-      data: { incidentId: incident._id, workOrderId: updated._id, link: `/incidents/${incident._id}` }
-    });
-  }
-  await createAuditLog({
-    action: 'city_engineering_verified_and_closed', performedBy: req.user._id,
-    resourceType: 'WorkOrder', resourceId: updated._id,
-    details: { incidentId: updated.incident }, ipAddress: req.ip, userAgent: req.headers['user-agent']
-  });
-  return res.status(200).json({ success: true, message: 'Repair verified and incident resolved', data: await serializeWorkOrder(updated) });
+  return res.status(409).json({ success: false, code: 'WORKFLOW_POLICY_REQUIRED', message: 'Use the current inspection workflow. Maintenance authorization and closure policy are not established for this legacy action.' });
 });
 
 exports.getProgress = asyncHandler(async (req, res) => {

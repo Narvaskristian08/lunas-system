@@ -1,4 +1,4 @@
-jest.mock('../models/User', () => ({ findById: jest.fn(), findOneAndUpdate: jest.fn() }));
+jest.mock('../models/User', () => ({ findById: jest.fn(), findOne: jest.fn(), findOneAndUpdate: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(undefined) }));
 jest.mock('../services/accountActivationService', () => ({ createActivation: jest.fn(), deliverActivation: jest.fn() }));
 const User = require('../models/User');
@@ -16,29 +16,30 @@ const invoke = async (handler, request, res) => {
 };
 beforeEach(() => jest.clearAllMocks());
 test.each(['updateRepairPersonnel', 'resendAccountActivation', 'changeAccountStatus'])('%s rejects another organization', async name => {
-  User.findById.mockResolvedValue(target({ repairOrganization: 'Utility B' }));
+  User.findOne.mockResolvedValue(null);
   const res = response(); await invoke(controller[name], req(), res);
-  expect(res.status).toHaveBeenCalledWith(403); expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+  expect(User.findOne).toHaveBeenCalledWith(expect.objectContaining({ repairOrganization: 'Utility A', role: 'repair_personnel' }));
+  expect(res.status).toHaveBeenCalledWith(404); expect(User.findOneAndUpdate).not.toHaveBeenCalled();
 });
 test('editing writes assigned fields with revision checks', async () => {
-  User.findById.mockResolvedValue(target()); User.findOneAndUpdate.mockResolvedValue(target({ __v: 3 }));
+  User.findOne.mockResolvedValue(target()); User.findOneAndUpdate.mockResolvedValue(target({ __v: 3 }));
   await invoke(controller.updateRepairPersonnel, req({ firstName: 'New', middleName: 'Middle', suffix: 'Jr.', lastName: 'Leader',
     phone: '09123456789', repairAccountType: 'team', repairTeam: 'Crew A', organization: 'Injected' }), response());
   expect(User.findOneAndUpdate.mock.calls[0][0]).toEqual({ _id: 'worker', __v: 2 });
   expect(User.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('organization');
 });
 test('stale edits are rejected', async () => {
-  User.findById.mockResolvedValue(target()); const res = response(); await invoke(controller.updateRepairPersonnel, req({ version: 1 }), res);
+  User.findOne.mockResolvedValue(target()); const res = response(); await invoke(controller.updateRepairPersonnel, req({ version: 1 }), res);
   expect(res.status).toHaveBeenCalledWith(409); expect(User.findOneAndUpdate).not.toHaveBeenCalled();
 });
 test('provider can resend a pending invitation with cooldown', async () => {
-  User.findById.mockResolvedValue(target()); User.findOneAndUpdate.mockResolvedValue(target());
+  User.findOne.mockResolvedValue(target()); User.findOneAndUpdate.mockResolvedValue(target());
   createActivation.mockReturnValue({ tokenHash: 'hash', expiresAt: new Date() }); deliverActivation.mockResolvedValue({ delivered: true });
   await invoke(controller.resendAccountActivation, req(), response());
   expect(deliverActivation).toHaveBeenCalled(); expect(User.findOneAndUpdate.mock.calls[0][0]).toHaveProperty('$or');
 });
 test('deactivation revokes sessions and retains account', async () => {
-  User.findById.mockResolvedValue(target({ accountStatus: 'active' })); User.findOneAndUpdate.mockResolvedValue(target({ accountStatus: 'deactivated' }));
+  User.findOne.mockResolvedValue(target({ accountStatus: 'active' })); User.findOneAndUpdate.mockResolvedValue(target({ accountStatus: 'deactivated' }));
   await invoke(controller.changeAccountStatus, req({ status: 'deactivated', reason: 'Left team' }), response());
   expect(User.findOneAndUpdate.mock.calls[0][1].$set).toMatchObject({ accountStatus: 'deactivated', isActive: false, refreshTokens: [], deviceTokens: [] });
 });

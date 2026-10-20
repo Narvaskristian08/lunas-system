@@ -2,21 +2,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 
 void main() {
-  test('all backend work-order statuses have distinct labels and round-trip values', () {
-    const labels = {
-      'pending': 'Pending Assignment', 'accepted': 'Assigned',
-      'in_progress': 'In Progress', 'completed': 'Awaiting Provider Review',
-      'rework_required': 'Needs Correction',
-      'city_correction_required': 'Returned by City Engineering',
-      'provider_accepted': 'Awaiting City Verification', 'verified': 'Closed',
-    };
-    for (final entry in labels.entries) {
-      final status = repairWorkOrderStatusFromJson(entry.key);
-      expect(status, isNot(RepairWorkOrderStatus.unknown));
-      expect(status.apiValue, entry.key);
-      expect(status.label, entry.value);
-    }
-  });
+  test(
+    'all backend work-order statuses have distinct labels and round-trip values',
+    () {
+      const labels = {
+        'pending': 'Pending Assignment',
+        'accepted': 'Assigned',
+        'in_progress': 'In Progress',
+        'completed': 'Awaiting Provider Review',
+        'rework_required': 'Needs Correction',
+        'city_correction_required': 'Returned by City Engineering',
+        'provider_accepted': 'Awaiting City Verification',
+        'verified': 'Closed',
+      };
+      for (final entry in labels.entries) {
+        final status = repairWorkOrderStatusFromJson(entry.key);
+        expect(status, isNot(RepairWorkOrderStatus.unknown));
+        expect(status.apiValue, entry.key);
+        expect(status.label, entry.value);
+      }
+    },
+  );
 
   test('parses the server-safe repair work-order detail response', () {
     final workOrder = RepairWorkOrder.fromJson({
@@ -36,7 +42,10 @@ void main() {
           'description': 'A deep pothole blocks one lane.',
           'location': {
             'coordinates': [120.3333, 16.0433],
-            'address': {'street': 'Rizal Avenue', 'barangay': 'Poblacion Oeste'},
+            'address': {
+              'street': 'Rizal Avenue',
+              'barangay': 'Poblacion Oeste',
+            },
           },
           'images': [
             {'url': 'https://storage.example.test/citizen-image'},
@@ -45,7 +54,11 @@ void main() {
         'currentAssignment': {
           'id': 'assignment-1',
           'status': 'accepted',
-          'assignee': {'id': 'repairer-1', 'firstName': 'Ana', 'lastName': 'Cruz'},
+          'assignee': {
+            'id': 'repairer-1',
+            'firstName': 'Ana',
+            'lastName': 'Cruz',
+          },
         },
         'sla': {
           'deadline': '2026-08-21T12:00:00.000Z',
@@ -75,11 +88,17 @@ void main() {
     expect(workOrder.orderNumber, 'WO-202608-0001');
     expect(workOrder.status, RepairWorkOrderStatus.inProgress);
     expect(workOrder.progressStage, RepairProgressStage.mainRepair);
-    expect(workOrder.location.displayAddress, 'Rizal Avenue, Barangay Poblacion Oeste');
+    expect(
+      workOrder.location.displayAddress,
+      'Rizal Avenue, Barangay Poblacion Oeste',
+    );
     expect(workOrder.currentAssignment?.assignee?.name, 'Ana Cruz');
     expect(workOrder.sla.timeRemaining, '1h 30m');
     expect(workOrder.repairEvidence.single.caption, contains('50 percent'));
-    expect(workOrder.progressUpdates.single.stage, RepairProgressStage.mainRepair);
+    expect(
+      workOrder.progressUpdates.single.stage,
+      RepairProgressStage.mainRepair,
+    );
   });
 
   test('parses the paginated list and scoped dashboard summary', () {
@@ -91,7 +110,11 @@ void main() {
           'reference': 'WO-202608-0002',
           'status': 'pending',
           'progressPercent': 0,
-          'incident': {'location': {'coordinates': [120.3333, 16.0433]}},
+          'incident': {
+            'location': {
+              'coordinates': [120.3333, 16.0433],
+            },
+          },
         },
       ],
       'pagination': {'page': 2, 'limit': 10, 'total': 11, 'pages': 2},
@@ -123,29 +146,37 @@ void main() {
     expect(repairProgressValues.contains(80), isFalse);
   });
 
-  test('legacy pending handoffs can resume before updating progress', () {
-    final workOrder = RepairWorkOrder.fromJson({
-      'id': 'reassigned-work-order',
-      'reference': 'WO-202608-0003',
-      'status': 'in_progress',
-      'assignmentState': 'pending',
-      'progressPercent': 50,
-      'currentAssignment': {'id': 'assignment-2', 'status': 'pending'},
-      'incident': {'location': {'coordinates': [120.3333, 16.0433]}},
-    });
+  test(
+    'pending handoffs require explicit acceptance before repair updates',
+    () {
+      final workOrder = RepairWorkOrder.fromJson({
+        'id': 'reassigned-work-order',
+        'reference': 'WO-202608-0003',
+        'status': 'in_progress',
+        'assignmentState': 'pending',
+        'progressPercent': 50,
+        'currentAssignment': {'id': 'assignment-2', 'status': 'pending'},
+        'incident': {
+          'location': {
+            'coordinates': [120.3333, 16.0433],
+          },
+        },
+      });
 
-    expect(workOrder.isPendingAcceptance, isTrue);
-    expect(workOrder.canStart, isTrue);
-    expect(workOrder.canUpdateProgress, isFalse);
-  });
-  test('assigned and corrective work can start without separate acceptance', () {
+      expect(workOrder.isPendingAcceptance, isTrue);
+      expect(workOrder.canStart, isFalse);
+      expect(workOrder.canUpdateProgress, isFalse);
+    },
+  );
+  test('pending assignments cannot start before separate acceptance', () {
     for (final status in ['pending', 'accepted', 'rework_required']) {
       final workOrder = RepairWorkOrder.fromJson({
-        'id': 'assigned-work-order', 'status': status,
+        'id': 'assigned-work-order',
+        'status': status,
         'assignmentState': 'pending',
         'currentAssignment': {'id': 'assignment-1', 'status': 'pending'},
       });
-      expect(workOrder.canStart, isTrue);
+      expect(workOrder.canStart, isFalse);
       expect(workOrder.canUpdateProgress, isFalse);
     }
   });

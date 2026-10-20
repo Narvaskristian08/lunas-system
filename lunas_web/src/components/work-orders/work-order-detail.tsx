@@ -95,14 +95,14 @@ function AssignmentPanel({
   const hasAssignment = Boolean(workOrder.currentAssignment || workOrder.assignee);
   const isDeclinedHandoff = workOrder.status === "in_progress" && workOrder.assignmentState === "declined";
   const isReassignment = hasAssignment || isDeclinedHandoff;
-  const canChangeAssignment = workOrder.status === "rework_required" || (!workOrder.startedAt && ["pending", "accepted"].includes(workOrder.status));
+  const canChangeAssignment = workOrder.maintenanceProtocol !== 9 && ["pending", "accepted", "in_progress", "rework_required"].includes(workOrder.status);
   const selectedPerson = eligiblePersonnel.find((person) => person.id === assigneeId);
 
   const runAssignment = () => {
     startTransition(async () => {
       const result = isReassignment
-        ? await reassignWorkOrderAction({ workOrderId: workOrder.id, assigneeId, reason })
-        : await assignWorkOrderAction({ workOrderId: workOrder.id, assigneeId, instructions: assignmentInstructions });
+        ? await reassignWorkOrderAction({ workOrderId: workOrder.id, version: workOrder.version, assigneeId, reason })
+        : await assignWorkOrderAction({ workOrderId: workOrder.id, version: workOrder.version, assigneeId, instructions: assignmentInstructions });
       setConfirmReassignment(false);
       onResult(result);
     });
@@ -129,6 +129,8 @@ function AssignmentPanel({
             <StatusBadge tone={assignmentTone(workOrder.assignmentState)}>{assignmentLabel(workOrder.assignmentState)}</StatusBadge>
           </div>
           {workOrder.currentAssignment?.assignedAt ? <p className="mt-3 text-xs text-slate-600">Assigned {formatDateTime(workOrder.currentAssignment.assignedAt)}</p> : null}
+          <p>Recorded maintenance progress: {workOrder.progressPercent}%</p>
+          {workOrder.maintenanceProtocol === 9 ? <p>Work authorization policy is pending for this new work order.</p> : null}
           {workOrder.assignmentState === "pending" && workOrder.status === "in_progress" ? <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950"><span className="font-semibold">Pending reassignment acceptance.</span> Recorded field updates are preserved and new updates are paused until the new assignee accepts.</p> : null}
           {workOrder.currentAssignment?.declineReason ? <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-900"><span className="font-semibold">Declined:</span> {workOrder.currentAssignment.declineReason}</p> : null}
         </div>
@@ -281,7 +283,7 @@ function CompletionReviewPanel({
       <CardHeader
         title={canProviderReview ? "Completion Review" : canCoordinateCorrection ? "Coordinate Corrective Work" : "City Engineering Final Verification"}
         description={canProviderReview
-          ? "Verify the repair and resolve the report, or return it to utility personnel for correction."
+          ? "Completion is recorded. Final approval and closure authority remain pending; correction requests remain available."
           : canCoordinateCorrection
             ? "City Engineering returned this repair. Add instructions for the assigned Utility Personnel before restarting work."
             : "Verify the repair to resolve the incident, or return it to the Utility Provider for correction."}
@@ -293,7 +295,7 @@ function CompletionReviewPanel({
           </label>
           <p id="provider-review-note-help" className="text-xs leading-5 text-slate-500">A note is required when returning the repair for correction.</p>
           <div className="grid gap-2">
-            <Button type="button" loading={pending} onClick={() => setConfirmation({ title: "Verify and Resolve", description: "Verify this completed repair and close the incident.", destructive: false, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason }) })}><ClipboardCheck className="size-4 shrink-0" />Verify and Resolve</Button>
+            <Button type="button" disabled loading={pending} onClick={() => setConfirmation({ title: "Verify and Resolve", description: "Verify this completed repair and close the incident.", destructive: false, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "accepted", reason }) })}><ClipboardCheck className="size-4 shrink-0" />Verify and Resolve</Button>
             <Button type="button" variant="danger" loading={pending} disabled={reason.trim().length < 2} onClick={() => setConfirmation({ title: "Return for Correction", description: "Return this repair to the assigned personnel with the recorded correction instructions.", destructive: true, operation: () => reviewCompletedWorkAction({ workOrderId: workOrder.id, decision: "request_correction", reason, instructions: reason }) })}><Wrench className="size-4 shrink-0" />Return for Correction</Button>
           </div>
         </> : null}
@@ -475,7 +477,7 @@ export function WorkOrderDetail({
 
           <div className="grid min-w-0 gap-5 md:grid-cols-2">
             <EvidenceGallery title="Citizen Evidence" description="Photo submitted with the citizen report." evidence={workOrder.incident?.images ?? []} />
-            <EvidenceGallery title="Repair Field Evidence" description="Latest repair photo submitted for review." evidence={workOrder.evidence} latestOnly />
+            <EvidenceGallery title="Repair Field Evidence" description="Repair evidence retained with its original history." evidence={workOrder.evidence} />
           </div>
           <WorkOrderTimeline workOrder={workOrder} />
         </div>

@@ -62,17 +62,6 @@ const buildIncidentScope = (user) => {
     };
   }
 
-  if (user.role === 'repair_personnel') {
-    const barangay = canonicalizeBarangay(user.barangay);
-    if (!barangay) return { _id: null };
-    return {
-      $or: [
-        { 'jurisdiction.barangay': barangay },
-        { 'jurisdiction.barangay': { $exists: false }, 'location.address.barangay': barangay }
-      ]
-    };
-  }
-
   if (user.role === 'utility_provider') {
     const organization = normalizeText(user.utilityCompany);
     return organization
@@ -102,9 +91,8 @@ const canAccessIncident = (user, incident) => {
     return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
   }
 
-  if (user.role === 'repair_personnel') {
-    return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
-  }
+  // Field roles require an independently resolved current assignment.
+  if (['repair_personnel', 'barangay_tanod'].includes(user.role)) return false;
 
   if (user.role === 'utility_provider') {
     return normalizeText(incident?.routing?.responsibleOrganization)

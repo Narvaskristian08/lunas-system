@@ -1,0 +1,372 @@
+{
+  "default_count": 52,
+  "original_skipped_account_tests": 40,
+  "new_opt_in_system_tests": 12,
+  "native_full_run_skipped": 0,
+  "tests": [
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration native unique indexes exist and concurrent duplicate references have exactly one winner",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration real JWT and database ownership prevent citizen, agency and admin data disclosure",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration competing Tanod assignments persist one current inspection and one notification",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration supported verification, synthetic routing and agency assessment persist without authorizing maintenance",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration missing verified ownership remains routing-pending and exposes no guessed agency",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration native delivery claims permit one attempt and preserve in-app history",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration native SLA polling preserves dates, excludes missing starts and deduplicates alerts",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration real Nodemailer transport delivers only to a loopback SMTP capture",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration synthetic historical repair handoff preserves progress and revokes the previous worker",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration interrupted multi-document workflow retains a durable reconciliation claim",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration native replica-set transaction rollback is supported but not claimed by existing workflows",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/integration/system.integration.test.js",
+      "test": "disposable native MongoDB system integration native reporting traverses >100 records and enforces default-denied export",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 1: citizen registration and existing email OTP still produce an active citizen",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 2–4: public registration rejects privileged role barangay_tanod",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 2–4: public registration rejects privileged role repair_personnel",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 2–4: public registration rejects privileged role barangay_official",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 2–4: public registration rejects privileged role utility_provider",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 2–4: public registration rejects privileged role admin",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 5: citizen cannot create personnel or read admin directory",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 5: repair_personnel cannot create personnel or read admin directory",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 5: barangay_official cannot create personnel or read admin directory",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 5: city_engineer cannot create personnel or read admin directory",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 5: utility_provider cannot create personnel or read admin directory",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization citizen cannot create Repair Personnel accounts",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization repair_personnel cannot create Repair Personnel accounts",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization barangay_official cannot create Repair Personnel accounts",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization city_engineer cannot create Repair Personnel accounts",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization admin cannot create Repair Personnel accounts",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization Utility Provider creates pending personnel in its own organization and sees only its roster",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization Utility Provider personnel creation rejects duplicate email addresses",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization Utility Provider can create a named team represented by its leader",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 6–7,14–15: administrator provisions an approved inactive account with an audited assignment and safe response",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 8: activation hashes the chosen password and consumes the token atomically under concurrent requests",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 8: expired, replayed, and revoked links cannot activate an account; resend replaces the old token",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 9–10: activated Barangay Official stays jurisdiction-scoped and cannot use account administration",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 11: crafted self-profile updates cannot change role, status, approval or jurisdiction",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 12–14: suspension/deactivation revoke access and refresh; reactivation preserves records and never revives old sessions",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization administrator creation and elevation require deployment allowlist; legacy update/archive cannot bypass it",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"role\":\"unknown\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"barangay\":\"Invented barangay\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"isActive\":true}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"password\":\"AccountTest2026!\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"activationTokenHash\":\"crafted\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"role\":\"utility_provider\",\"barangay\":\"\",\"utilityCompany\":\"\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"role\":\"repair_personnel\",\"barangay\":\"\",\"repairOrganization\":\"\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"approvalAuthority\":\"\"}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization server rejects invalid assignments and mass assignment {\"firstName\":{\"$gt\":\"\"}}",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization stale admin updates return conflict and cannot overwrite a later approved jurisdiction",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization deactivating before activation cancels the link; reactivation still requires password setup",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization provider delivery failures leave a recoverable pending account without exposing the link",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization repair transfer removes access to old assignments without deleting work-order history",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    },
+    {
+      "file": "src/controllers/authorizedAccounts.integration.test.js",
+      "test": "authorized personnel provisioning: real MongoDB and HTTP authorization 15: serializers, audit sanitizer, and retention migration preserve history without secret disclosure",
+      "category": "Requires isolated MongoDB",
+      "reason": "Opt-in local URI absent from normal test command",
+      "executed_in_owned_replica_set": true
+    }
+  ]
+}

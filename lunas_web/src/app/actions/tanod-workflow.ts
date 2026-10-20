@@ -9,6 +9,15 @@ function result(error: unknown) {
   return { ok: false, message: "The Tanod workflow service is unavailable. Please try again." };
 }
 
+export async function updateAgencyPreparationAction(incidentId: string, body: { operation: string; expectedVersion: number; outcome?: string; notes?: string; requirements?: string; resources?: string; approach?: string; processType?: string; milestone?: string; remarks?: string; reference?: string; followUpAt?: string }) {
+  await requirePermission("work_orders.manage");
+  try {
+    await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/agency-preparation`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify(body) });
+    revalidatePath(`/work-orders/intake/${incidentId}`); revalidatePath("/work-orders");
+    return { ok: true, message: "Agency preparation recorded. Maintenance authorization remains pending." };
+  } catch (error) { return result(error); }
+}
+
 export async function getTanodPersonnel() {
   await requirePermission("reports.validate");
   const accessToken = await requireAccessToken();
@@ -16,19 +25,19 @@ export async function getTanodPersonnel() {
   return responseData(response) as unknown[];
 }
 
-export async function assignTanodAction(incidentId: string, tanodId: string) {
+export async function assignTanodAction(incidentId: string, tanodId: string, instructions = "") {
   await requirePermission("reports.validate");
   try {
-    const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/tanod-inspections`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ tanodId }) });
+    const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/tanod-inspections`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ tanodId, instructions }) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing");
     return { ok: true, message: response.message ?? "Tanod inspection assigned." };
   } catch (error) { return result(error); }
 }
 
-export async function reviewTanodAction(incidentId: string, inspectionId: string, decision: "approve" | "reject" | "clarification", notes: string) {
+export async function reviewTanodAction(incidentId: string, inspectionId: string, decision: "approve" | "reject" | "clarification", notes: string, expectedVersion?: number, categoryConfirmed = false, recipient: "tanod" | "citizen" = "tanod") {
   await requirePermission("reports.validate");
   try {
-    const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/inspections/${encodeURIComponent(inspectionId)}/review`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ decision, notes }) });
+    const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/inspections/${encodeURIComponent(inspectionId)}/review`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ decision, notes, expectedVersion, categoryConfirmed, recipient }) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing");
     return { ok: true, message: response.message ?? "Tanod verification reviewed." };
   } catch (error) { return result(error); }
@@ -70,4 +79,19 @@ export async function requestAgencyCorrectionAction(incidentId: string, reason: 
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing"); revalidatePath("/work-orders");
     return { ok: true, message: response.message ?? "Correction requested from the agency." };
   } catch (error) { return result(error); }
+}
+
+export async function updateInitialInspectionAction(incidentId: string, inspectionId: string, operation: "reassign" | "category", body: { expectedVersion: number; reason: string; tanodId?: string; category?: string }) {
+  await requirePermission("reports.validate");
+  try {
+    await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/inspections/${encodeURIComponent(inspectionId)}/${operation}`, { accessToken: await requireAccessToken(), method: operation === "category" ? "PATCH" : "POST", body: JSON.stringify(body) });
+    revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing");
+    return { ok: true, message: operation === "category" ? "Category corrected; confirm it before approval." : "Inspection reassigned." };
+  } catch (error) { return result(error); }
+}
+
+export async function getInspectionHistoryAction(incidentId: string) {
+  await requirePermission("reports.validate");
+  const response = await backendRequest<{ data?: Array<Record<string, unknown>> }>(`/incidents/${encodeURIComponent(incidentId)}/inspections`, { accessToken: await requireAccessToken() });
+  return responseData(response) as Array<Record<string, unknown>>;
 }

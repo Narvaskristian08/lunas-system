@@ -80,6 +80,57 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
     }
   }
 
+  Future<void> _respondToClarification(IncidentReport report) async {
+    final controller = TextEditingController();
+    final response = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Respond to clarification'),
+        content: TextField(
+          controller: controller,
+          maxLength: 4000,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Additional information',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (controller.text.trim().length >= 2) {
+                Navigator.pop(dialogContext, controller.text.trim());
+              }
+            },
+            child: const Text('Send response'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (response == null) return;
+    try {
+      await reportService.respondToVerificationClarification(
+        report.id,
+        response,
+        int.tryParse(
+              '${report.verificationClarification?['expectedVersion']}',
+            ) ??
+            -1,
+      );
+      await _load();
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -135,6 +186,19 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (report.status == 'clarification_required' &&
+                      report.verificationClarification?['recipient'] ==
+                          'citizen' &&
+                      report.verificationClarification?['respondedAt'] ==
+                          null) ...[
+                    Text(
+                      'Clarification requested: ${report.verificationClarification?['reason'] ?? "Additional information is required"}',
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _respondToClarification(report),
+                      child: const Text('Respond to clarification'),
+                    ),
+                  ],
                   if (_decisionReason(report) != null) ...[
                     Text(
                       'Official Update',
@@ -164,6 +228,40 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     _LocationReviewCard(location: report.location),
                     const SizedBox(height: AppSpacing.xl),
                   ],
+                  LunasCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(report.currentStatusLabel),
+                        Text(
+                          report.agencyAssignment['organization']?.toString() ??
+                              (report.agencyAssignment['status'] ==
+                                      'under_review'
+                                  ? 'Agency assignment under review'
+                                  : 'Awaiting verified agency assignment'),
+                        ),
+                        if (report.originalCategory != null &&
+                            report.originalCategory != report.category)
+                          Text(
+                            'Original reported category: ${report.originalCategory}',
+                          ),
+                        Text('SLA: ${report.sla['state'] ?? 'not_started'}'),
+                        if (report.sla['startedAt'] != null)
+                          Text(
+                            'Recorded start: ${DateTime.tryParse(report.sla['startedAt'].toString())?.toLocal()}',
+                          ),
+                        if (report.sla['deadline'] != null)
+                          Text(
+                            'Recorded deadline: ${DateTime.tryParse(report.sla['deadline'].toString())?.toLocal()}',
+                          ),
+                        if (report.sla['recordedOutcome'] != null)
+                          Text(
+                            'Historical SLA outcome: ${report.sla['recordedOutcome']}',
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
                   LunasCard(child: ReportWorkflowProgress(report: report)),
                   const SizedBox(height: AppSpacing.xl),
                   if (report.images.isNotEmpty) ...[

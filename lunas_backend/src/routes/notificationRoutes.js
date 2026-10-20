@@ -10,6 +10,9 @@ const {
 const { query } = require('express-validator');
 const { protect } = require('../middleware/auth');
 const { paginationValidation, mongoIdValidation, validate } = require('../middleware/validation');
+router.post('/devices', protect, require('../controllers/pushEnrollmentController').enroll);
+router.post('/devices/remove', protect, require('../controllers/pushEnrollmentController').unenroll);
+router.delete('/devices', protect, require('../controllers/pushEnrollmentController').unenroll);
 
 router.get('/', protect, paginationValidation,
   query('kind').optional().isIn(['update', 'activity', 'alert']),

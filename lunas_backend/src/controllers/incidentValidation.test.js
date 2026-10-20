@@ -46,8 +46,6 @@ jest.mock('../services/slaService', () => ({
 
 const Incident = require('../models/Incident');
 const User = require('../models/User');
-const { createAuditLog } = require('../utils/auditLogger');
-const { createNotification } = require('../services/notificationService');
 const {
   validateIncident,
   confirmIncident,
@@ -105,52 +103,11 @@ describe('sequential incident review workflow', () => {
     User.find.mockReturnValue(queryFor([]));
   });
 
-  test('Barangay validation records the reviewer and forwards without assigning priority or SLA', async () => {
-    const updated = {
-      ...submitted,
-      status: 'barangay_validated',
-      validatedBy: barangayOfficial._id,
-      validatedAt: new Date(),
-      jurisdiction: {
-        barangay: 'Poblacion Oeste',
-        city: 'Dagupan City',
-        confirmedBy: barangayOfficial._id,
-        confirmedAt: new Date()
-      },
-      statusHistory: [{ status: 'barangay_validated', changedAt: new Date() }]
-    };
-    Incident.findOne
-      .mockReturnValueOnce(queryFor(submitted))
-      .mockReturnValueOnce(queryFor(submitted));
-    Incident.findOneAndUpdate.mockReturnValue(queryFor(updated));
-    const req = {
-      params: { id: submitted._id },
-      user: barangayOfficial,
-      body: { notes: 'Evidence and location reviewed' },
-      headers: {},
-      ip: '127.0.0.1'
-    };
+  test('legacy Barangay validation cannot bypass current inspection approval', async () => {
     const res = response();
-
-    await validateIncident(req, res, jest.fn());
-
-    expect(Incident.findOneAndUpdate).toHaveBeenCalledWith(
-      expect.any(Object),
-      expect.objectContaining({
-        $set: expect.objectContaining({ status: 'barangay_validated', validatedBy: barangayOfficial._id }),
-        $push: expect.objectContaining({ statusHistory: expect.objectContaining({ status: 'barangay_validated' }) })
-      }),
-      expect.objectContaining({ new: true })
-    );
-    const update = Incident.findOneAndUpdate.mock.calls[0][1];
-    expect(update.$set).not.toHaveProperty('priority');
-    expect(update.$set).not.toHaveProperty('sla');
-    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'incident_barangay_validated' }));
-    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
-      recipient: submitted.reporter,
-      type: 'incident_validated'
-    }));
-    expect(res.status).toHaveBeenCalledWith(200);
+    await validateIncident({ params: { id: submitted._id }, user: barangayOfficial, body: {} }, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   test('City Engineering can confirm only a barangay-validated incident', async () => {
@@ -282,20 +239,33 @@ test('retired City Engineer role receives an empty scope', async () => {
   expect(Incident.find.mock.calls[0][0].$and).toContainEqual({ _id: null });
 });
 
-  test('returns submitted and clarification-required records only from the assigned barangay queue', async () => {
+  test('returns the current verification and completion-review queue within the assigned barangay', async () => {
     Incident.find.mockReturnValue(queryFor([submitted]));
     Incident.countDocuments.mockResolvedValue(1);
     const res = response();
     await getPendingValidation({ query: {}, user: barangayOfficial }, res, jest.fn());
-    expect(Incident.find).toHaveBeenCalledWith(expect.objectContaining({
-      $and: expect.arrayContaining([expect.objectContaining({
-        status: { $in: ['submitted', 'clarification_required', 'barangay_validated', 'city_confirmed', 'prioritized'] }
-      })])
-    }));
+    const { Query } = require('mingo');
+    const query = new Query(Incident.find.mock.calls[0][0]);
+    const visible = (status, barangay = barangayOfficial.barangay, agencyStatus) => query.test({ status, agencyStatus, jurisdiction: { barangay } });
+    for (const status of ['submitted', 'clarification_required', 'tanod_assigned', 'tanod_in_progress', 'tanod_verified']) expect(visible(status)).toBe(true);
+    expect(visible('provider_assigned', barangayOfficial.barangay, 'work_completed')).toBe(true);
+    for (const status of ['closed', 'resolved', 'rejected', 'in_progress']) expect(visible(status)).toBe(false);
+    expect(visible('submitted', 'Pantal')).toBe(false);
+    expect(Incident.countDocuments).toHaveBeenCalledWith(Incident.find.mock.calls[0][0]);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       success: true,
       pagination: expect.objectContaining({ total: 1 })
     }));
+  });
+
+  test('search intersects workflow eligibility and cannot admit closed records', async () => {
+    Incident.find.mockReturnValue(queryFor([])); Incident.countDocuments.mockResolvedValue(0);
+    await getPendingValidation({ query: { search: 'needle' }, user: barangayOfficial }, response(), jest.fn());
+    const { Query } = require('mingo'); const query = new Query(Incident.find.mock.calls[0][0]);
+    const record = { description: 'needle', jurisdiction: { barangay: barangayOfficial.barangay } };
+    expect(query.test({ ...record, status: 'submitted' })).toBe(true);
+    expect(query.test({ ...record, status: 'closed' })).toBe(false);
+    expect(query.test({ ...record, status: 'submitted', description: 'unrelated' })).toBe(false);
   });
 
   test('does not allow the generic update endpoint to bypass a controlled status transition', async () => {

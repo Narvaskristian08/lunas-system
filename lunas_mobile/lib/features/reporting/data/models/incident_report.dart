@@ -17,13 +17,22 @@ class IncidentReport {
     this.rejectionReason,
     this.duplicateReason,
     this.clarificationReason,
+    this.verificationClarification,
     this.repair,
+    this.statusLabel,
+    this.originalCategory,
+    this.agencyAssignment = const {},
+    this.sla = const {},
   });
 
   final String id;
   final String reportNumber;
   final String category;
   final String description;
+  final String? statusLabel;
+  final String? originalCategory;
+  final Map<String, dynamic> agencyAssignment;
+  final Map<String, dynamic> sla;
   final String status;
   final DateTime? createdAt;
   final IncidentLocation location;
@@ -34,18 +43,23 @@ class IncidentReport {
   final String? rejectionReason;
   final String? duplicateReason;
   final String? clarificationReason;
+  final Map<String, dynamic>? verificationClarification;
   final IncidentRepairSummary? repair;
 
   String get categoryLabel => categoryFromCode(category).label;
 
   /// Citizen-safe operational wording. Personnel, reassignment notes, SLA
   /// internals, and field evidence are deliberately absent from this model.
-  String get currentStatusLabel => status == 'resolved' || status == 'closed'
-      ? 'Resolved · Verified by City Engineering'
-      : repair?.citizenStatusLabel ?? _statusLabel(status);
-  String get statusChipLabel => status == 'resolved' || status == 'closed'
-      ? 'Resolved'
-      : repair?.citizenChipLabel ?? _statusLabel(status);
+  String get currentStatusLabel =>
+      statusLabel ??
+      (status == 'resolved' || status == 'closed'
+          ? 'Resolved'
+          : repair?.citizenStatusLabel ?? _statusLabel(status));
+  String get statusChipLabel =>
+      statusLabel ??
+      (status == 'resolved' || status == 'closed'
+          ? 'Resolved'
+          : repair?.citizenChipLabel ?? _statusLabel(status));
 
   factory IncidentReport.fromJson(Map<String, dynamic> json) {
     final locationValue = _map(json['location']);
@@ -62,6 +76,10 @@ class IncidentReport {
                   json['referenceNumber'] ??
                   'Pending reference')
               .toString(),
+      statusLabel: _text(json['statusLabel']),
+      originalCategory: _text(json['originalCategory']),
+      agencyAssignment: _map(json['agencyAssignment']),
+      sla: _map(json['sla']),
       category: (json['category'] ?? 'other').toString(),
       description: (json['description'] ?? '').toString(),
       status: (json['status'] ?? 'submitted').toString(),
@@ -92,6 +110,9 @@ class IncidentReport {
       rejectionReason: _text(json['rejectionReason']),
       duplicateReason: _text(json['duplicateReason']),
       clarificationReason: _text(json['clarificationReason']),
+      verificationClarification: json['verificationClarification'] is Map
+          ? Map<String, dynamic>.from(json['verificationClarification'] as Map)
+          : null,
       repair: _map(json['repair']).isEmpty
           ? null
           : IncidentRepairSummary.fromJson(_map(json['repair'])),
@@ -411,11 +432,13 @@ class ReportStatusEvent {
     required this.status,
     required this.changedAt,
     this.notes,
+    this.statusLabel,
     this.progressPercent,
     this.repairStage,
     this.event,
   });
 
+  final String? statusLabel;
   final String status;
   final DateTime? changedAt;
   final String? notes;
@@ -424,11 +447,12 @@ class ReportStatusEvent {
   final String? event;
 
   String get citizenLabel {
+    if (statusLabel != null) return statusLabel!;
     if (event == 'work_order_created') return 'Work Order Created';
     if (status == 'completed' ||
         status == 'repair_completed' ||
         status == 'provider_review') {
-      return 'Repair Completed';
+      return 'Repair submitted for review';
     }
     if (status == 'provider_accepted') {
       return 'Repair Approved by Utility Provider';
@@ -439,7 +463,7 @@ class ReportStatusEvent {
     if (status == 'rework_required' || status == 'city_correction_required') {
       return 'Corrective Work Required';
     }
-    if (status == 'verified') return 'Repair Verified by Responsible Provider';
+    if (status == 'verified') return 'Verification recorded';
     if (status == 'resolved' || status == 'closed') return 'Resolved';
     if (progressPercent == 100) return 'Repair Progress Reached 100%';
     if (status == 'barangay_validated') return 'Validated by Barangay Official';
@@ -456,6 +480,7 @@ class ReportStatusEvent {
 
   factory ReportStatusEvent.fromJson(Map<String, dynamic> json) =>
       ReportStatusEvent(
+        statusLabel: _text(json['statusLabel']),
         status: (json['status'] ?? 'submitted').toString(),
         changedAt: _date(json['changedAt'] ?? json['createdAt']),
         notes: json['notes']?.toString(),

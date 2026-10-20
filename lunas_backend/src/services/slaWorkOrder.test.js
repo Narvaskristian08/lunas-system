@@ -21,6 +21,7 @@ jest.mock('./notificationService', () => ({
 }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
 jest.mock('./workOrderService', () => ({
+  validSlaDate: jest.requireActual('./workOrderService').validSlaDate,
   ACTIVE_WORK_ORDER_STATUSES: ['pending', 'accepted', 'in_progress'],
   getApproachingThresholdHours: () => 24,
   getSlaProjection: jest.fn(),
@@ -48,7 +49,7 @@ describe('work-order SLA checking', () => {
       progressPercent: 50,
       progressStage: 'main_repair',
       version: 2,
-      sla: { deadline: new Date('2026-08-19T08:00:00.000Z') }
+      sla: { startedAt: new Date('2026-08-18T00:00:00.000Z'), state: 'active', deadline: new Date('2026-08-19T08:00:00.000Z') }
     };
     WorkOrder.find
       .mockResolvedValueOnce([workOrder])
@@ -86,7 +87,7 @@ describe('work-order SLA checking', () => {
       progressPercent: 75,
       progressStage: 'finishing',
       version: 4,
-      sla: { deadline: new Date('2026-08-18T23:00:00.000Z') }
+      sla: { startedAt: new Date('2026-08-18T00:00:00.000Z'), state: 'active', deadline: new Date('2026-08-18T23:00:00.000Z') }
     };
     WorkOrder.find.mockResolvedValue([workOrder]);
     WorkOrder.findOneAndUpdate.mockResolvedValue(null);

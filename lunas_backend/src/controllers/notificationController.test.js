@@ -56,7 +56,7 @@ describe('notification ownership and read actions', () => {
     await getNotifications(req, res, jest.fn());
 
     expect(Notification.find).toHaveBeenCalledWith({
-      recipient: userId,
+      recipient: userId, dismissedAt: { $exists: false },
       isRead: false
     });
     expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });

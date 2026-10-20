@@ -71,7 +71,7 @@ const buildIncidentTransition = ({
     throw new Error(`Unsupported incident transition: ${currentStatus} -> ${nextStatus}`);
   }
   return {
-    filter: { status: currentStatus },
+    filter: { status: currentStatus, 'inspectionMutation.token': { $exists: false } },
     update: {
       $set: { status: nextStatus, ...fields },
       $push: {
@@ -108,7 +108,7 @@ const buildSubmittedTransition = ({
   }
 
   return {
-    filter: { status: 'submitted' },
+    filter: { status: 'submitted', 'inspectionMutation.token': { $exists: false } },
     update: {
       $set: {
         status: nextStatus,

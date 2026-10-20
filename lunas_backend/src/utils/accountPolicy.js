@@ -1,5 +1,5 @@
 const USER_ROLES = Object.freeze([
-  'citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider', 'admin'
+  'citizen', 'barangay_tanod', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider', 'admin'
 ]);
 const AUTHORIZED_ROLES = Object.freeze(USER_ROLES.filter(role => !['citizen', 'city_engineer'].includes(role)));
 const ACCOUNT_STATUSES = Object.freeze(['pending_activation', 'active', 'suspended', 'deactivated']);
@@ -7,7 +7,7 @@ const ACCOUNT_STATUSES = Object.freeze(['pending_activation', 'active', 'suspend
 // Older documents keep their existing flags until their next lifecycle change.
 const accountStatus = user => user.isArchived ? 'deactivated'
   : user.accountStatus || (user.isActive ? 'active' : 'deactivated');
-const canSignIn = user => Boolean(user && user.role !== 'city_engineer' && user.isActive && !user.isArchived
+const canSignIn = user => Boolean(user && AUTHORIZED_ROLES.concat('citizen').includes(user.role) && user.isActive && !user.isArchived
   && !user.requiresActivation && accountStatus(user) === 'active');
 const canManageAdministrators = actor => actor?.role === 'admin'
   && (process.env.AUTHORIZED_ADMIN_PROVISIONER_IDS || '').split(',')

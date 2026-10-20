@@ -139,9 +139,12 @@ class _RepairProfileScreenState extends State<RepairProfileScreen> {
                       _ProfileDetail(
                         label: 'Account Type',
                         value: switch (user?.repairAccountType) {
-                          'team' => 'Barangay Tanod',
-                          'individual' => 'Barangay Tanod',
-                          _ => 'Utility Personnel / Barangay Tanod',
+                          'team' => 'Repair Team Leader',
+                          'individual' => 'Repair Personnel',
+                          _ =>
+                            auth.isTanod
+                                ? 'Barangay Tanod'
+                                : 'Repair Personnel',
                         },
                       ),
                       if (user?.repairAccountType == 'team')

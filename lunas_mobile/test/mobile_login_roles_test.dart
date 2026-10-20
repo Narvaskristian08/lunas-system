@@ -40,6 +40,7 @@ class FakeAuth extends Fake implements AuthService {
 void main() {
   for (final role in [
     'citizen',
+    'barangay_tanod',
     'repair_personnel',
     'admin',
     'barangay_official',
@@ -52,7 +53,7 @@ void main() {
       final service = FakeAuth(role);
       final controller = AuthController(service);
       addTearDown(controller.dispose);
-      final allowed = role == 'citizen' || role == 'repair_personnel';
+      final allowed = role == 'citizen' || role == 'barangay_tanod' || role == 'repair_personnel';
       expect(
         await controller.login(email: 'test@example.com', password: 'password'),
         allowed,
@@ -67,7 +68,7 @@ void main() {
         expect(controller.user, isNull);
         expect(
           controller.message,
-          contains('only for citizen and repair personnel'),
+          contains('only for citizen and utility personnel'),
         );
       }
     });

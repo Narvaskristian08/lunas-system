@@ -49,7 +49,7 @@ describe('incident transition state machine', () => {
       now
     });
 
-    expect(transition.filter).toEqual({ status: 'submitted' });
+    expect(transition.filter).toEqual({ status: 'submitted', 'inspectionMutation.token': { $exists: false } });
     expect(transition.update.$set).toEqual({ status: 'barangay_validated', validatedBy: 'official-1' });
     expect(transition.update.$push.statusHistory).toEqual(expect.objectContaining({
       status: 'barangay_validated',

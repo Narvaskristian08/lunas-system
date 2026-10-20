@@ -15,6 +15,15 @@ jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: j
 const storage = require('./storageService');
 const originalEnvironment = { ...process.env };
 
+test.each(['../other/key', '/absolute', 'https://other.test/key', 'folder\\key', 'folder\u0001key'])('unsafe persisted signing reference fails closed: %s', async key => {
+  await expect(storage.getSignedUrl(key)).rejects.toThrow('Invalid persisted evidence reference');
+});
+test('oversized configured and explicit signing lifetimes are capped at five minutes', async () => {
+  process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS = '3600';
+  await storage.getSignedUrl('incidents/owner/evidence.webp', 9999);
+  expect(mockGetSignedUrl).toHaveBeenCalledWith(expect.anything(), expect.anything(), { expiresIn: 300 });
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.AWS_REGION = 'ap-southeast-1';

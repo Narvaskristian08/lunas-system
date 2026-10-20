@@ -199,10 +199,10 @@ exports.createIncidentValidation = [
   body('location.address.street').optional().trim().isLength({ max: 160 }),
   dagupanCity('location.address.city', { optional: true }),
   body('location.address.landmark').optional().trim().isLength({ max: 160 }),
-  body('images').optional().isArray({ max: 5 }).withMessage('A maximum of five evidence images is allowed'),
-  body('images.*.url').if((value, { req }) => Array.isArray(req.body.images))
-    .isURL({ protocols: ['https'], require_protocol: true })
-    .withMessage('Evidence image URL must be a secure URL'),
+  body('images').optional().custom(value => {
+    if (!Array.isArray(value) || value.length) throw new Error('Upload managed evidence files; external image references are not accepted');
+    return true;
+  }),
   body().custom((value, { req }) => {
     const uploadedFiles = Array.isArray(req.files)
       ? req.files

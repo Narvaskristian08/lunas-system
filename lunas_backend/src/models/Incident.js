@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { randomBytes } = require('crypto');
 const { INCIDENT_CATEGORY_CODES } = require('../utils/incidentCategories');
 const { INCIDENT_STATES } = require('../services/incidentTransitionService');
 
@@ -18,6 +19,13 @@ const incidentSchema = new mongoose.Schema({
     enum: INCIDENT_CATEGORY_CODES,
     required: [true, 'Category is required']
   },
+  originalCategory: { type: String, enum: INCIDENT_CATEGORY_CODES },
+  originalCategorySource: { type: String, enum: ['reporter', 'legacy_snapshot'] },
+  categoryHistory: [{ previous: String, category: String, reason: String, changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, changedAt: Date }],
+  categoryConfirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  categoryConfirmedAt: Date,
+  verificationClarification: { inspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' }, recipient: { type: String, enum: ['tanod', 'citizen'] }, reason: String, requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, requestedAt: Date, respondedAt: Date },
+  clarificationResponses: [{ inspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' }, response: String, actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, respondedAt: Date }],
   subcategory: {
     type: String,
     enum: ['pothole', 'crack', 'collapse', 'flooding', 'blockage', 'leak', 'outage', 'damage', 'missing', 'other']
@@ -149,14 +157,16 @@ const incidentSchema = new mongoose.Schema({
   },
   agencyStatus: {
     type: String,
-    enum: ['not_routed', 'ready_for_work', 'pending_procurement', 'work_in_progress', 'work_completed', 'correction_required'],
+    enum: ['not_routed', 'ready_for_work', 'pending_procurement', 'work_in_progress', 'work_completed', 'correction_required', 'acknowledged', 'routine_pending_authorization', 'pending_external_processing', 'pending_funding', 'for_bidding', 'bidding_completed', 'awaiting_work_authorization', 'responsibility_review', 'assessment_clarification'],
     default: 'not_routed'
   },
   agencyStatusNote: { type: String, maxlength: 2000 },
+  agencyPreparation: { type: require('./agencyPreparationSchema'), default: undefined },
   agencyStatusUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   agencyStatusUpdatedAt: Date,
   agencyCompletionReportedAt: Date,
   agencyCompletionReportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  inspectionMutation: { token: String, action: String, actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, startedAt: Date },
   initialInspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' },
   completionInspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' },
   assignedUtility: {
@@ -221,7 +231,18 @@ const incidentSchema = new mongoose.Schema({
   },
   // Routing identifies the accountable organization only. It is deliberately
   // distinct from a work-order/repair-personnel assignment.
+  routingAsset: {
+    assetType: String, ownerId: String,
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    verifiedAt: Date, verificationReference: String
+  },
+  routingReview: {
+    outcome: { type: String, enum: ['matched', 'review_required'] },
+    reason: String, evaluatedAt: Date,
+    candidates: [{ ruleId: String, version: Number, agencyId: String, organization: String }]
+  },
   routing: {
+    agencyId: String, ruleId: String, policyVersion: Number,
     responsibleOrganization: { type: String, trim: true, maxlength: 160 },
     responsibleRole: {
       type: String,
@@ -231,6 +252,7 @@ const incidentSchema = new mongoose.Schema({
     routedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     routedAt: Date,
     history: [{
+      agencyId: String, ruleId: String, policyVersion: Number,
       fromOrganization: { type: String, trim: true, maxlength: 160 },
       fromRole: { type: String, enum: ['utility_provider'] },
       toOrganization: { type: String, trim: true, maxlength: 160 },
@@ -298,6 +320,11 @@ incidentSchema.index({ reporter: 1, 'falseReportReview.finding': 1 });
 incidentSchema.index({ reporter: 1, createdAt: -1 });
 incidentSchema.index({ category: 1, createdAt: -1 });
 incidentSchema.index({ createdAt: -1 });
+// Operational reports sort deterministically within the existing jurisdiction scopes.
+// Deployment/index creation requires its normal review; no migration is run here.
+incidentSchema.index({ 'jurisdiction.barangay': 1, createdAt: -1, _id: -1 });
+incidentSchema.index({ 'location.address.barangay': 1, createdAt: -1, _id: -1 });
+incidentSchema.index({ 'routing.responsibleOrganization': 1, createdAt: -1, _id: -1 });
 incidentSchema.index({ status: 1, 'jurisdiction.barangay': 1, createdAt: -1 });
 incidentSchema.index({ status: 1, 'routing.responsibleOrganization': 1, createdAt: -1 });
 incidentSchema.index({ status: 1, category: 1, createdAt: -1 });
@@ -311,8 +338,8 @@ incidentSchema.pre('validate', async function(next) {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const count = await mongoose.model('Incident').countDocuments();
-    this.reportNumber = `LUNAS-${year}${month}-${String(count + 1).padStart(6, '0')}`;
+    // 96 random bits avoid read/count races and reuse after deleted records.
+    this.reportNumber = `LUNAS-${year}${month}-${randomBytes(12).toString('hex').toUpperCase()}`;
   }
   next();
 });

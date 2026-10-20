@@ -14,7 +14,8 @@ interface BackendNotification {
   createdAt?: string;
   isRead?: boolean;
   priority?: string;
-  data?: { incidentId?: string; workOrderId?: string; reportNumber?: string; workOrderNumber?: string; link?: string };
+  data?: { incidentId?: string; workOrderId?: string; reportNumber?: string; workOrderNumber?: string; link?: string; destination?: string };
+  resourceAvailable?: boolean;
 }
 
 function categoryFor(type = ""): NotificationCategory {
@@ -40,7 +41,7 @@ function toNotification(source: BackendNotification, role: string): LunasNotific
   const text = `${source.title ?? ""} ${source.message ?? ""}`;
   const workOrderReference = source.data?.workOrderNumber ?? text.match(/\bWO-[A-Z0-9]+(?:-[A-Z0-9]+)+\b/i)?.[0];
   const reportReference = source.data?.reportNumber ?? text.match(/\b(?:LUNAS|MOCK-WEB|DEMO-QA)-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/i)?.[0];
-  const relatedRecord = workOrderId
+  const relatedRecord = source.resourceAvailable === false ? undefined : workOrderId
     ? { type: "work-order" as const, id: workOrderId, reference: workOrderReference, label: "Work Order", href: `/work-orders/${encodeURIComponent(workOrderId)}`, available: true }
     : incidentId
       ? {
@@ -48,11 +49,9 @@ function toNotification(source: BackendNotification, role: string): LunasNotific
           id: incidentId,
           reference: reportReference,
           label: "Incident",
-          href: ["barangay_official", "city_engineer"].includes(role)
-            ? `/validation-routing/${encodeURIComponent(incidentId)}`
-            : undefined,
-          available: ["barangay_official", "city_engineer"].includes(role),
-          restricted: !["barangay_official", "city_engineer"].includes(role),
+          href: role === "utility_provider" ? `/work-orders/intake/${encodeURIComponent(incidentId)}` : role === "barangay_official" ? `/validation-routing/${encodeURIComponent(incidentId)}` : undefined,
+          available: ["barangay_official", "utility_provider"].includes(role),
+          restricted: !["barangay_official", "utility_provider"].includes(role),
         }
       : undefined;
   return {

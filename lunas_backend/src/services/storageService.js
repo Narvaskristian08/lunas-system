@@ -17,7 +17,10 @@ let supabase = null;
 
 const getBucketName = () => process.env.S3_EVIDENCE_BUCKET || process.env.S3_BUCKET || '';
 const getRegion = () => process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';
-const getSignedUrlExpiry = () => parseInt(process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS, 10) || 3600;
+const getSignedUrlExpiry = () => {
+  const configured = Number(process.env.EVIDENCE_SIGNED_URL_EXPIRE_SECONDS);
+  return Number.isInteger(configured) && configured > 0 ? Math.min(configured, 300) : 300;
+};
 const isLegacyReadEnabled = () => process.env.SUPABASE_MIGRATION_READ_ENABLED === 'true';
 
 const initializeS3 = () => {
@@ -194,6 +197,9 @@ exports.uploadMultipleToStorage = async (files, folder = 'uploads') => {
 };
 
 exports.getSignedUrl = async (filePath, expiresIn = getSignedUrlExpiry()) => {
+  if (typeof filePath !== 'string' || !filePath || filePath.length > 1024 || filePath.startsWith('/')
+    || filePath.includes('\\') || filePath.includes('..') || filePath.includes('://') || Array.from(filePath).some(character => character.charCodeAt(0) < 32)) throw new Error('Invalid persisted evidence reference');
+  expiresIn = Number.isInteger(expiresIn) && expiresIn > 0 ? Math.min(expiresIn, 300) : getSignedUrlExpiry();
   try {
     return await getS3SignedUrl(filePath, expiresIn);
   } catch (error) {

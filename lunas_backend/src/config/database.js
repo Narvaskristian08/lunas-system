@@ -9,7 +9,7 @@ const connectDB = async () => {
 
     // Handle connection events
     mongoose.connection.on('error', (err) => {
-      logger.error('MongoDB connection error:', err);
+      logger.error('MongoDB connection error', { name: err.name, code: err.code });
     });
 
     mongoose.connection.on('disconnected', () => {
@@ -25,7 +25,7 @@ const connectDB = async () => {
 
     return conn;
   } catch (error) {
-    logger.error('Error connecting to MongoDB:', error);
+    logger.error('Error connecting to MongoDB', { name: error.name, code: error.code });
     process.exit(1);
   }
 };

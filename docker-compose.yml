@@ -7,9 +7,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in the root .env file}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the root .env file}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-lunas_db}
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME:?Set a separate application database username}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?Set a URL-safe application password of at least 24 characters}
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+      - ./infra/mongodb/init-app-user.js:/docker-entrypoint-initdb.d/10-app-user.js:ro
     networks:
       - lunas_network
     healthcheck:
@@ -37,7 +40,7 @@ services:
       NODE_ENV: production
       PORT: 5000
       API_VERSION: v1
-      MONGODB_URI: "mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-lunas_db}?authSource=admin"
+      MONGODB_URI: "mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-lunas_db}?authSource=${MONGO_DATABASE:-lunas_db}"
       
       # JWT (load from .env)
       JWT_SECRET: ${JWT_SECRET:?Set a unique JWT_SECRET of at least 32 characters}
@@ -113,9 +116,18 @@ services:
       SLA_LOW: 336
       
       # Rate Limiting
-      RATE_LIMIT_WINDOW_MS: 900000
-      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
-      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-20}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-1000}
+      AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}
+      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-200}
+      AUTH_SENSITIVE_IP_MAX_REQUESTS: ${AUTH_SENSITIVE_IP_MAX_REQUESTS:-60}
+      AUTH_ACCOUNT_MAX_REQUESTS: ${AUTH_ACCOUNT_MAX_REQUESTS:-20}
+      REFRESH_RATE_LIMIT_MAX_REQUESTS: ${REFRESH_RATE_LIMIT_MAX_REQUESTS:-120}
+      SECURITY_ACCOUNT_MAX_REQUESTS: ${SECURITY_ACCOUNT_MAX_REQUESTS:-20}
+      LOGIN_RATE_LIMIT_WINDOW_MS: ${LOGIN_RATE_LIMIT_WINDOW_MS:-900000}
+      LOGIN_RATE_LIMIT_MAX_REQUESTS: ${LOGIN_RATE_LIMIT_MAX_REQUESTS:-10}
+      LOGIN_IP_RATE_LIMIT_MAX_REQUESTS: ${LOGIN_IP_RATE_LIMIT_MAX_REQUESTS:-100}
       
       # File Upload
       MAX_FILE_SIZE: 10485760

@@ -38,6 +38,21 @@ class NotificationService implements NotificationRepository {
 
   final ApiClient _apiClient;
 
+  // Call only with an actual SDK-provided subscription ID after permission/login.
+  Future<void> enrollPush(String subscriptionId, String platform) async {
+    await _apiClient.post(
+      '/notifications/devices',
+      body: {'token': subscriptionId, 'platform': platform},
+    );
+  }
+
+  Future<void> unenrollPush(String subscriptionId) async {
+    await _apiClient.post(
+      '/notifications/devices/remove',
+      body: {'token': subscriptionId},
+    );
+  }
+
   @override
   Future<NotificationPage> getNotifications({
     int page = 1,

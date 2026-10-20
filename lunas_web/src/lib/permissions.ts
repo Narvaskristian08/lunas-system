@@ -2,6 +2,7 @@ import type { BackendUserRole, Permission, UserProfile, UserRole } from "@/types
 
 export const roleLabels: Record<BackendUserRole, UserRole> = {
   citizen: "Citizen",
+  barangay_tanod: "Barangay Tanod",
   repair_personnel: "Utility Personnel",
   barangay_official: "Barangay Official",
   city_engineer: "City Engineer",
@@ -11,6 +12,7 @@ export const roleLabels: Record<BackendUserRole, UserRole> = {
 
 export const rolePermissions: Record<UserRole, Permission[]> = {
   Citizen: [],
+  "Barangay Tanod": [],
   "Utility Personnel": [],
   Admin: ["users.manage", "audit.view", "notifications.view", "profile.manage", "support.create", "support.manage"],
   "Barangay Official": [

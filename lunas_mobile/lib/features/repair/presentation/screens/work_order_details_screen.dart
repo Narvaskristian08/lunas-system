@@ -80,6 +80,76 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
     }
   }
 
+  Future<void> _decideAssignment(bool accept) async {
+    final order = _workOrder;
+    if (_submitting || order == null || !order.isPendingAcceptance) return;
+    setState(() => _submitting = true);
+    var declineReason = '';
+    final reasonKey = GlobalKey<FormFieldState<String>>();
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(accept ? 'Accept assignment?' : 'Decline assignment?'),
+          content: accept
+              ? const Text(
+                  'Accept this assignment without changing earlier progress or starting new work.',
+                )
+              : TextFormField(
+                  key: reasonKey,
+                  validator: (value) => (value?.trim().length ?? 0) < 2
+                      ? 'Enter a decline reason of at least 2 characters.'
+                      : null,
+                  onChanged: (value) => declineReason = value,
+                  maxLength: 500,
+                  decoration: const InputDecoration(
+                    labelText: 'Decline reason',
+                  ),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (accept || reasonKey.currentState?.validate() == true) {
+                  Navigator.pop(dialogContext, true);
+                }
+              },
+              child: Text(accept ? 'Accept' : 'Decline'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      await waitForDataRequest();
+      final updated = accept
+          ? await repairService.accept(order.id, version: order.version)
+          : await repairService.decline(
+              order.id,
+              reason: declineReason,
+              version: order.version,
+            );
+      if (!mounted) return;
+      if (accept) {
+        setState(() => _workOrder = updated);
+      } else {
+        context.go(RepairRoutes.workOrders);
+      }
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (error.isConflict) await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
   Future<void> _startRepair() async {
     final workOrder = _workOrder;
     if (_submitting || workOrder == null || !workOrder.canStart) return;
@@ -196,6 +266,8 @@ class _WorkOrderDetailsScreenState extends State<WorkOrderDetailsScreen>
       bottomActionBar: _ActionBar(
         workOrder: workOrder,
         submitting: _submitting,
+        onAccept: () => _decideAssignment(true),
+        onDecline: () => _decideAssignment(false),
         onStart: _startRepair,
         onProgress: () => context.push(RepairRoutes.progress(workOrder.id)),
       ),
@@ -217,12 +289,16 @@ class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.workOrder,
     required this.submitting,
+    required this.onAccept,
+    required this.onDecline,
     required this.onStart,
     required this.onProgress,
   });
 
   final RepairWorkOrder workOrder;
   final bool submitting;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
   final VoidCallback onStart;
   final VoidCallback onProgress;
 
@@ -230,6 +306,27 @@ class _ActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (workOrder.isReadyForCompletion) {
       return const SizedBox.shrink();
+    }
+    if (workOrder.isPendingAcceptance) {
+      return _ActionContainer(
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: submitting ? null : onDecline,
+                child: const Text('Decline assignment'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: submitting ? null : onAccept,
+                child: const Text('Accept assignment'),
+              ),
+            ),
+          ],
+        ),
+      );
     }
     if (workOrder.canStart) {
       return _ActionContainer(
@@ -686,30 +783,22 @@ class _RepairEvidence extends StatelessWidget {
     if (evidence.isEmpty) {
       return const LunasCard(child: Text('No repair evidence uploaded yet.'));
     }
-    // Uploads are appended by the API. Prefer the newest timestamp and retain
-    // append order when timestamps are equal or unavailable.
-    var latest = evidence.last;
-    for (final item in evidence.reversed) {
-      if (item.uploadedAt != null &&
-          latest.uploadedAt != null &&
-          item.uploadedAt!.isAfter(latest.uploadedAt!)) {
-        latest = item;
-      }
-    }
     return LunasCard(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _FullWidthPhoto(url: latest.url),
-          ),
-          if (latest.caption?.isNotEmpty == true)
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(latest.caption!),
+          for (final item in evidence.reversed) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _FullWidthPhoto(url: item.url),
             ),
+            if (item.caption?.isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(item.caption!),
+              ),
+          ],
         ],
       ),
     );

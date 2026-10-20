@@ -1,56 +1,25 @@
 const Notification = require('../models/Notification');
-const Incident = require('../models/Incident');
+const { notificationResource } = require('../services/notificationAccessService');
 const asyncHandler = require('../middleware/asyncHandler');
 
-const serializeNotifications = async (notifications) => {
-  const values = notifications.map((notification) => (
-    notification.toObject ? notification.toObject() : notification
-  ));
-  const incidentIds = [...new Set(values
-    .map((notification) => notification.data?.incidentId?.toString())
-    .filter(Boolean))];
-  const legacyReportNumbers = [...new Set(values
-    .filter((notification) => !notification.data?.incidentId)
-    .map((notification) => notification.data?.reportNumber)
-    .filter(Boolean))];
-  if (!incidentIds.length && !legacyReportNumbers.length) return values;
-
-  const incidents = await Incident.find({
-    $or: [
-      ...(incidentIds.length ? [{ _id: { $in: incidentIds } }] : []),
-      ...(legacyReportNumbers.length ? [{ reportNumber: { $in: legacyReportNumbers } }] : [])
-    ]
-  })
-    .select('_id reportNumber')
-    .lean();
-  const incidentsById = new Map(
-    incidents.map((incident) => [incident._id.toString(), incident])
-  );
-
-  return values.map((notification) => {
-    const incidentId = notification.data?.incidentId?.toString();
-    const legacyReportNumber = notification.data?.reportNumber;
-    const incident = incidentId
-      ? incidentsById.get(incidentId)
-      : incidents.find((value) => value.reportNumber === legacyReportNumber);
-    if (!incident) return notification;
-    return {
-      ...notification,
-      data: {
-        ...notification.data,
-        incidentId: incident._id,
-        reportNumber: incident.reportNumber
-      }
-    };
-  });
-};
+const serializeNotifications = async (notifications, user) => Promise.all(notifications.map(async record => {
+  const source = record.toObject ? record.toObject() : record;
+  const linked = Boolean(source.data?.incidentId || source.data?.workOrderId || source.data?.reportNumber);
+  const resource = linked ? await notificationResource(user, source.data) : null;
+  return { _id: source._id, id: source._id, type: source.type,
+    title: linked && !resource ? 'Historical notification' : source.title,
+    message: linked && !resource ? 'The linked record is unavailable for your current access.' : source.message,
+    isRead: source.isRead, readAt: source.readAt, createdAt: source.createdAt, priority: source.priority,
+    data: resource || {}, resourceAvailable: Boolean(resource),
+    delivery: { state: source.delivery?.state || 'not_recorded', attempts: source.delivery?.attempts || 0 } };
+}));
 
 // @desc    Get user notifications
 // @route   GET /api/v1/notifications
 // @access  Private
 exports.getNotifications = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, isRead, kind, category, search, dateRange, sort } = req.query;
-  const filter = { recipient: req.user._id };
+  const filter = { recipient: req.user._id, dismissedAt: { $exists: false } };
   if (isRead !== undefined) filter.isRead = isRead === 'true';
   const alerts = ['sla_approaching', 'sla_overdue', 'sla_reminder', 'sla_escalation', 'incident_rejected', 'repair_rejected', 'duplicate_detected', 'work_order_declined'];
   const activity = ['incident_validated', 'work_order_assigned', 'work_order_reassigned', 'work_order_accepted', 'status_update', 'system_announcement'];
@@ -81,7 +50,7 @@ exports.getNotifications = asyncHandler(async (req, res) => {
       ])
     : await Notification.find(filter).sort(sort === 'oldest' ? { createdAt: 1, _id: 1 } : { createdAt: -1, _id: -1 })
         .limit(parseInt(limit)).skip((parseInt(page) - 1) * parseInt(limit));
-  const serializedNotifications = await serializeNotifications(notifications);
+  const serializedNotifications = await serializeNotifications(notifications, req.user);
 
   const total = await Notification.countDocuments(filter);
   const unreadCount = await Notification.countDocuments({ 
@@ -109,7 +78,7 @@ exports.getNotification = asyncHandler(async (req, res) => {
   if (!notification) {
     return res.status(404).json({ success: false, message: 'Notification not found' });
   }
-  const [serialized] = await serializeNotifications([notification]);
+  const [serialized] = await serializeNotifications([notification], req.user);
   return res.status(200).json({ success: true, data: serialized });
 });
 
@@ -130,7 +99,7 @@ exports.markAsRead = asyncHandler(async (req, res) => {
     });
   }
 
-  const [serialized] = await serializeNotifications([notification]);
+  const [serialized] = await serializeNotifications([notification], req.user);
   res.status(200).json({
     success: true,
     data: serialized
@@ -156,10 +125,8 @@ exports.markAllAsRead = asyncHandler(async (req, res) => {
 // @route   DELETE /api/v1/notifications/:id
 // @access  Private
 exports.deleteNotification = asyncHandler(async (req, res) => {
-  const notification = await Notification.findOneAndDelete({
-    _id: req.params.id,
-    recipient: req.user._id
-  });
+  const notification = await Notification.findOneAndUpdate({ _id: req.params.id, recipient: req.user._id },
+    { $set: { dismissedAt: new Date(), isRead: true } }, { new: true });
 
   if (!notification) {
     return res.status(404).json({

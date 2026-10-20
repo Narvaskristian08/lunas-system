@@ -36,7 +36,7 @@ exports.compareRepairImages = async () => ({
  */
 exports.getImageMetadata = async (imageBuffer) => {
   try {
-    const metadata = await sharp(imageBuffer, { failOn: 'error' }).metadata();
+    const metadata = await sharp(imageBuffer, { failOn: 'error', limitInputPixels: 40000000 }).metadata();
 
     return {
       width: metadata.width,
@@ -89,7 +89,7 @@ exports.prepareEvidenceImage = async (imageBuffer) => {
       10
     ) || 82;
 
-    return await sharp(imageBuffer, { failOn: 'error' })
+    return await sharp(imageBuffer, { failOn: 'error', limitInputPixels: 40000000 })
       .rotate()
       .resize(maxWidth, null, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality, effort: 4 })

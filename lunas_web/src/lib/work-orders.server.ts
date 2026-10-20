@@ -133,6 +133,8 @@ export interface WorkOrderSla {
 }
 
 export interface WorkOrder {
+  maintenanceProtocol?: number;
+  version?: number;
   intakeIncidentId?: string;
   id: string;
   reference: string;
@@ -186,6 +188,18 @@ export interface ProviderIncidentWorkOrder {
   assignmentState?: string;
 }
 
+export interface AgencyPreparation {
+  revision: number;
+  organization?: string;
+  acknowledgedAt?: string;
+  outcome?: string;
+  milestone?: string;
+  history: { operation?: string; status?: string; at?: string; remarks?: string; reference?: string; organization?: string; actor?: string }[];
+  assessments?: { notes?: string; requirements?: string; resources?: string; approach?: string; processType?: string }[];
+  externalHistory?: { milestone?: string; previous?: string; at?: string; remarks?: string; reference?: string; followUpAt?: string }[];
+  authorization?: { reference?: string; authorizedAt?: string };
+}
+
 export interface ProviderRoutedIncident {
   id: string;
   reportNumber: string;
@@ -195,6 +209,7 @@ export interface ProviderRoutedIncident {
   status: string;
   agencyStatus?: string;
   agencyStatusNote?: string;
+  agencyPreparation?: AgencyPreparation;
   createdAt?: string;
   routedAt?: string;
   responsibleOrganization?: string;
@@ -445,6 +460,26 @@ function normalizeProviderIncident(value: unknown): ProviderRoutedIncident | nul
     status: asString(source.status) ?? "provider_assigned",
     agencyStatus: asString(source.agencyStatus),
     agencyStatusNote: asString(source.agencyStatusNote),
+    agencyPreparation: source.agencyPreparation && typeof source.agencyPreparation === "object" ? {
+      revision: asNumber(asRecord(source.agencyPreparation).revision) ?? 0,
+      organization: asString(asRecord(source.agencyPreparation).organization),
+      acknowledgedAt: asString(asRecord(source.agencyPreparation).acknowledgedAt),
+      outcome: asString(asRecord(source.agencyPreparation).outcome),
+      milestone: asString(asRecord(source.agencyPreparation).milestone),
+      history: asArray(asRecord(source.agencyPreparation).history).map(value => {
+        const item = asRecord(value);
+        return { operation: asString(item.operation), status: asString(item.status), at: asString(item.at), remarks: asString(item.remarks), reference: asString(item.reference), organization: asString(item.organization), actor: asString(item.actor) };
+      }),
+      assessments: asArray(asRecord(source.agencyPreparation).assessments).map(value => {
+        const item = asRecord(value);
+        return { notes: asString(item.notes), requirements: asString(item.requirements), resources: asString(item.resources), approach: asString(item.approach), processType: asString(item.processType) };
+      }),
+      externalHistory: asArray(asRecord(source.agencyPreparation).externalHistory).map(value => {
+        const item = asRecord(value);
+        return { milestone: asString(item.milestone), previous: asString(item.previous), at: asString(item.at), remarks: asString(item.remarks), reference: asString(item.reference), followUpAt: asString(item.followUpAt) };
+      }),
+      authorization: asRecord(source.agencyPreparation).authorization as AgencyPreparation["authorization"],
+    } : undefined,
     createdAt: asString(source.createdAt),
     routedAt: asString(routing.routedAt),
     responsibleOrganization: asString(routing.responsibleOrganization),
@@ -485,6 +520,8 @@ export function normalizeWorkOrder(value: unknown): WorkOrder | null {
   const progressPercent = asNumber(source.progressPercent) ?? asNumber(source.currentProgress) ?? 0;
   return {
     id,
+    maintenanceProtocol: asNumber(source.maintenanceProtocol),
+    version: asNumber(source.version),
     reference: asString(source.reference) ?? asString(source.orderNumber) ?? `Work order ${id.slice(-6)}`,
     priority: asString(source.priority),
     status: asString(source.status) ?? "pending",

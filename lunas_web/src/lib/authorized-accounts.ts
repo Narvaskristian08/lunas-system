@@ -31,7 +31,8 @@ export interface AuthorizedAccountPage {
 export const accountRoleLabels: Record<AuthorizedAccount["role"], string> = {
   barangay_official: "Barangay Official",
   city_engineer: "City Engineer",
-  repair_personnel: "Utility Personnel",
+  repair_personnel: "Repair Personnel",
+  barangay_tanod: "Barangay Tanod",
   utility_provider: "Utility Provider",
   admin: "Admin",
 };

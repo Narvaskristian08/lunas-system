@@ -27,7 +27,7 @@ describe('notification delivery boundary', () => {
     else process.env.ONESIGNAL_REST_API_KEY = originalRestKey;
   });
 
-  test('looks up the ObjectId recipient before attempting configured push delivery', async () => {
+  test('persists in-app notification without blocking on external delivery', async () => {
     const notification = {
       recipient: '507f191e810c19729de860a1',
       title: 'Assigned',
@@ -44,14 +44,9 @@ describe('notification delivery boundary', () => {
     await expect(notificationService.createNotification({ type: 'work_order_assigned' }))
       .resolves.toBe(notification);
 
-    expect(User.findById).toHaveBeenCalledWith(notification.recipient);
-    expect(select).toHaveBeenCalledWith('deviceTokens');
-    expect(sendPush).toHaveBeenCalledWith(
-      ['player-one'],
-      notification.title,
-      notification.message,
-      notification.data
-    );
+    expect(User.findById).not.toHaveBeenCalled();
+    expect(sendPush).not.toHaveBeenCalled();
+    expect(Notification.create).toHaveBeenCalledWith(expect.objectContaining({ sentVia: ['in_app'] }));
   });
 
   test('keeps the in-app notification when optional push recipient lookup fails', async () => {

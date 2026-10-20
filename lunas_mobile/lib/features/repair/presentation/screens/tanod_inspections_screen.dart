@@ -46,11 +46,12 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
     });
     try {
       final items = await repairService.getMyInspections();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _items = items;
           _loading = false;
         });
+      }
       if (widget.initialInspectionId != null && !_openedInitialInspection) {
         final match = items
             .where((item) => item.id == widget.initialInspectionId)
@@ -63,49 +64,33 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
         }
       }
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = error.message;
           _loading = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error =
               'LUNAS could not load your assigned verifications. Check your connection and try again.';
           _loading = false;
         });
+      }
     }
   }
 
   Future<void> _openInspection(TanodInspection inspection) async {
-    if (inspection.status == 'assigned') {
-      try {
-        await repairService.startInspection(
-          inspection.incidentId ?? '',
-          inspection.id,
-        );
-      } on ApiException catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error.message)));
-        }
-        return;
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Could not start this verification. Please try again.',
-              ),
-            ),
-          );
-        }
-        return;
-      }
+    if (!['assigned', 'in_progress'].contains(inspection.status) ||
+        (inspection.incidentId ?? '').isEmpty) {
+      return;
     }
     if (!mounted) return;
+    var taskVersion = inspection.version;
+    var acknowledged = inspection.acknowledgedAt != null;
+    var started = inspection.status == 'in_progress';
+    String? outcome;
     final findings = TextEditingController();
     EvidenceSelection? selectedEvidence;
     var submitting = false;
@@ -192,6 +177,77 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                   ),
                   const SizedBox(height: 4),
                 ],
+                Text('Category: ${inspection.category ?? "Not recorded"}'),
+                Text(inspection.description ?? ''),
+                if (inspection.instructions?.isNotEmpty == true)
+                  Text('Instructions: ${inspection.instructions}'),
+                Text(
+                  'Physical verification is a manual activity. Photo processing remains subject to the approved privacy service.',
+                ),
+                if (!started)
+                  OutlinedButton(
+                    onPressed: submitting
+                        ? null
+                        : () async {
+                            setSheetState(() {
+                              submitting = true;
+                              formError = null;
+                            });
+                            try {
+                              taskVersion = await repairService
+                                  .inspectionAction(
+                                    inspection.incidentId!,
+                                    inspection.id,
+                                    acknowledged ? 'start' : 'acknowledge',
+                                    taskVersion,
+                                  );
+                              setSheetState(() {
+                                if (acknowledged) {
+                                  started = true;
+                                } else {
+                                  acknowledged = true;
+                                }
+                              });
+                            } on ApiException catch (error) {
+                              setSheetState(() => formError = error.message);
+                            } catch (_) {
+                              setSheetState(
+                                () => formError =
+                                    'The task changed or is unavailable. Refresh before trying again.',
+                              );
+                            } finally {
+                              setSheetState(() => submitting = false);
+                            }
+                          },
+                    child: Text(
+                      acknowledged
+                          ? 'Start field verification'
+                          : 'Acknowledge assignment',
+                    ),
+                  ),
+                DropdownButtonFormField<String>(
+                  initialValue: outcome,
+                  decoration: const InputDecoration(
+                    labelText: 'Verification outcome',
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'verified',
+                      child: Text('Verified'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'not_verified',
+                      child: Text('Not Verified'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'unable_to_verify',
+                      child: Text('Unable to Verify'),
+                    ),
+                  ],
+                  onChanged: submitting
+                      ? null
+                      : (value) => setSheetState(() => outcome = value),
+                ),
                 TextField(
                   controller: findings,
                   maxLines: 4,
@@ -218,8 +274,9 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                           final picked = await evidenceService.pick(
                             ImageSource.camera,
                           );
-                          if (picked != null)
+                          if (picked != null) {
                             setSheetState(() => selectedEvidence = picked);
+                          }
                         },
                         icon: const Icon(Icons.camera_alt_outlined),
                         label: Text(
@@ -236,8 +293,9 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                           final picked = await evidenceService.pick(
                             ImageSource.gallery,
                           );
-                          if (picked != null)
+                          if (picked != null) {
                             setSheetState(() => selectedEvidence = picked);
+                          }
                         },
                         icon: const Icon(Icons.photo_library_outlined),
                         label: const Text('Attach photo'),
@@ -264,92 +322,108 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                   ),
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: () async {
-                    if (findings.text.trim().length < 2) {
-                      setSheetState(
-                        () => formError = 'Please enter your findings.',
-                      );
-                      return;
-                    }
-                    if (selectedEvidence == null) {
-                      setSheetState(
-                        () => formError = 'Please attach a verification photo.',
-                      );
-                      return;
-                    }
-                    final shouldSubmit = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: const Text('Submit Work Verification?'),
-                        content: const Text(
-                          'Are you sure these findings and the attached photo are accurate? This will send the verification to the Barangay Secretary for review.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, false),
-                            child: const Text('Cancel'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            child: const Text('Confirm Submission'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (shouldSubmit != true || !context.mounted) return;
-                    setSheetState(() {
-                      submitting = true;
-                      formError = null;
-                    });
-                    showDialog<void>(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (_) => const AlertDialog(
-                        content: Row(
-                          children: [
-                            SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          if (!started || outcome == null) {
+                            setSheetState(
+                              () => formError =
+                                  'Acknowledge and start the task, then select an outcome.',
+                            );
+                            return;
+                          }
+                          if (findings.text.trim().length < 2) {
+                            setSheetState(
+                              () => formError = 'Please enter your findings.',
+                            );
+                            return;
+                          }
+                          if (selectedEvidence == null) {
+                            setSheetState(
+                              () => formError =
+                                  'Please attach a verification photo.',
+                            );
+                            return;
+                          }
+                          final shouldSubmit = await showDialog<bool>(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
+                              title: const Text('Submit Work Verification?'),
+                              content: const Text(
+                                'Are you sure these findings and the attached photo are accurate? This will send the verification to the Barangay Secretary for review.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, true),
+                                  child: const Text('Confirm Submission'),
+                                ),
+                              ],
                             ),
-                            SizedBox(width: 16),
-                            Expanded(child: Text('Submitting verification…')),
-                          ],
-                        ),
-                      ),
-                    );
-                    try {
-                      await repairService.submitInspection(
-                        incidentId: inspection.incidentId ?? '',
-                        inspectionId: inspection.id,
-                        findings: findings.text,
-                        result: 'verified',
-                        evidence: selectedEvidence,
-                      );
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop();
-                        Navigator.pop(context, true);
-                      }
-                    } on ApiException catch (error) {
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop();
-                        setSheetState(() {
-                          submitting = false;
-                          formError = error.message;
-                        });
-                      }
-                    } catch (_) {
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop();
-                        setSheetState(() {
-                          submitting = false;
-                          formError =
-                              'Verification could not be submitted. Please try again.';
-                        });
-                      }
-                    }
-                  },
+                          );
+                          if (shouldSubmit != true || !context.mounted) return;
+                          setSheetState(() {
+                            submitting = true;
+                            formError = null;
+                          });
+                          showDialog<void>(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const AlertDialog(
+                              content: Row(
+                                children: [
+                                  SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text('Submitting verification…'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                          try {
+                            await repairService.submitInspection(
+                              incidentId: inspection.incidentId ?? '',
+                              inspectionId: inspection.id,
+                              findings: findings.text,
+                              result: outcome!,
+                              expectedVersion: taskVersion,
+                              evidence: selectedEvidence,
+                            );
+                            if (context.mounted) {
+                              Navigator.of(context, rootNavigator: true).pop();
+                              Navigator.pop(context, true);
+                            }
+                          } on ApiException catch (error) {
+                            if (context.mounted) {
+                              Navigator.of(context, rootNavigator: true).pop();
+                              setSheetState(() {
+                                submitting = false;
+                                formError = error.message;
+                              });
+                            }
+                          } catch (_) {
+                            if (context.mounted) {
+                              Navigator.of(context, rootNavigator: true).pop();
+                              setSheetState(() {
+                                submitting = false;
+                                formError =
+                                    'Verification could not be submitted. Please try again.';
+                              });
+                            }
+                          }
+                        },
                   child: submitting
                       ? const SizedBox(
                           height: 20,
@@ -365,14 +439,14 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
       ),
     );
     findings.dispose();
-    if (evidence == true) _load();
+    if (mounted && (evidence == true || acknowledged || started)) _load();
   }
 
   @override
   Widget build(BuildContext context) => RepairPage(
     appBar: const RepairAppBar(
-      title: 'Utility Personnel',
-      subtitle: 'Barangay Tanod inspections',
+      title: 'Barangay Tanod',
+      subtitle: 'Assigned field inspections',
     ),
     selectedNavigationIndex: 1,
     child: _loading
@@ -423,12 +497,24 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                       (item) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: LunasCard(
-                          onTap: item.status == 'submitted'
-                              ? null
-                              : () => _openInspection(item),
+                          onTap:
+                              ['assigned', 'in_progress'].contains(item.status)
+                              ? () => _openInspection(item)
+                              : null,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              if (item.findings?.isNotEmpty == true)
+                                Text(item.findings!),
+                              if (item.result != null)
+                                Text(
+                                  'Outcome: ${item.result!.replaceAll('_', ' ')}',
+                                ),
+                              if (item.inspectionEvidenceUrls.isNotEmpty)
+                                RemoteEvidencePreview(
+                                  url: item.inspectionEvidenceUrls.first,
+                                  height: 180,
+                                ),
                               ReportStatusHeader(
                                 title: item.category ?? 'Citizen report',
                                 status: item.status == 'submitted'
@@ -471,7 +557,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                         ),
                       ),
                     )
-                    .toList(),
+                    ,
               if (_filteredItems.length > 3)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -485,8 +571,9 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
   );
 
   List<TanodInspection> get _filteredItems => _items.where((item) {
-    if (_filter == 'completion')
+    if (_filter == 'completion') {
       return item.type == 'completion' && _needsAction(item);
+    }
     if (_filter == 'submitted') return item.status == 'submitted';
     return item.type != 'completion' && _needsAction(item);
   }).toList();

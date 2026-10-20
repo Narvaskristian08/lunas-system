@@ -22,23 +22,47 @@ class RepairService {
     return data.map(TanodInspection.fromJson).toList(growable: false);
   }
 
-  Future<void> startInspection(String incidentId, String inspectionId) async {
-    await _apiClient.post(
-      '/incidents/$incidentId/inspections/$inspectionId/start',
+  Future<int> inspectionAction(
+    String incidentId,
+    String inspectionId,
+    String action,
+    int expectedVersion,
+  ) async {
+    final payload = await _apiClient.post(
+      '/incidents/$incidentId/inspections/$inspectionId/$action',
+      body: {'expectedVersion': expectedVersion},
     );
+    final data = payload['data'];
+    final version = data is Map ? int.tryParse('${data['version']}') : null;
+    if (version == null) {
+      throw StateError('Refresh the task to obtain its current version');
+    }
+    return version;
   }
+
+  Future<int> startInspection(
+    String incidentId,
+    String inspectionId, {
+    int expectedVersion = 0,
+  }) => inspectionAction(incidentId, inspectionId, 'start', expectedVersion);
 
   Future<void> submitInspection({
     required String incidentId,
     required String inspectionId,
     required String findings,
     required String result,
+    int? expectedVersion,
     EvidenceSelection? evidence,
   }) async {
     final trimmed = findings.trim();
-    if (trimmed.length < 2)
+    if (trimmed.length < 2) {
       throw ArgumentError.value(findings, 'findings', 'Findings are required');
-    final fields = {'findings': trimmed, 'result': result};
+    }
+    final fields = {
+      'findings': trimmed,
+      'result': result,
+      if (expectedVersion != null) 'expectedVersion': '$expectedVersion',
+    };
     if (evidence == null) {
       await _apiClient.post(
         '/incidents/$incidentId/inspections/$inspectionId/submit',

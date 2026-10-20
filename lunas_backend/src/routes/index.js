@@ -22,6 +22,7 @@ router.use('/work-orders', workOrderRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/users', userRoutes);
 router.use('/stats', statsRoutes);
+router.use('/operational-reports', require('./operationalReportRoutes'));
 router.use('/categories', categoryRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/reporting-appeals', reportingAppealRoutes);

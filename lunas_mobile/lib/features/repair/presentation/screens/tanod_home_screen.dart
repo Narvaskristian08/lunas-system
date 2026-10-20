@@ -69,7 +69,7 @@ class _TanodHomeScreenState extends State<TanodHomeScreen> {
     return RepairPage(
       appBar: RepairAppBar(
         title: 'LUNAS',
-        subtitle: 'Utility Personnel / Barangay Tanod',
+        subtitle: 'Barangay Tanod',
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,

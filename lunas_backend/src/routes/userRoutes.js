@@ -28,8 +28,13 @@ router.patch('/authorized/:id/status', protect, authorize('admin'), mongoIdValid
 router.post('/authorized/:id/activation', protect, authorize('admin'), mongoIdValidation,
   accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 
-// Compatibility read route: Utility Personnel are barangay-scoped Tanods now.
-router.get('/repair-personnel', protect, authorize('barangay_official'), tanodWorkflow.listTanodPersonnel);
+// Dedicated Tanod compatibility read stays separate from agency repair staffing.
+router.get('/repair-personnel', protect, authorize('barangay_official', 'utility_provider'), (req, res, next) => req.user.role === 'barangay_official'
+  ? tanodWorkflow.listTanodPersonnel(req, res, next) : require('../controllers/userController').getRepairPersonnel(req, res, next));
+router.post('/repair-personnel', protect, authorize('utility_provider'), accountRules.createRepairPersonnelValidation, validate, accounts.createRepairPersonnel);
+router.put('/repair-personnel/:id', protect, authorize('utility_provider'), mongoIdValidation, accountRules.updateRepairPersonnelValidation, validate, accounts.updateRepairPersonnel);
+router.patch('/repair-personnel/:id/status', protect, authorize('utility_provider'), mongoIdValidation, accountRules.accountStatusValidation, validate, accounts.changeAccountStatus);
+router.post('/repair-personnel/:id/activation', protect, authorize('utility_provider'), mongoIdValidation, accountRules.resendActivationValidation, validate, accounts.resendAccountActivation);
 router.get('/utility-providers', protect, authorize('barangay_official', 'utility_provider'), getUtilityProviderOrganizations);
 
 // Keep an explicit self-service profile endpoint so clients do not need to

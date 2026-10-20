@@ -184,16 +184,16 @@ describe('public citizen registration', () => {
     expect(User.create).not.toHaveBeenCalled();
   });
 
-  test('issues a rotated session pair after valid credentials', async () => {
+  test.each(['citizen', 'barangay_tanod', 'repair_personnel'])('issues a rotated session pair after valid credentials for %s', async (role) => {
     const user = {
       _id: '507f191e810c19729de860aa',
-      role: 'citizen',
+      role,
       isActive: true,
       tokenVersion: 0,
       deviceTokens: [],
       refreshTokens: [],
       comparePassword: jest.fn().mockResolvedValue(true),
-      toPublicJSON: jest.fn(() => ({ id: '507f191e810c19729de860aa', role: 'citizen' })),
+      toPublicJSON: jest.fn(() => ({ id: '507f191e810c19729de860aa', role })),
       save: jest.fn().mockResolvedValue()
     };
     User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
@@ -246,6 +246,72 @@ describe('public citizen registration', () => {
       details: { reason: 'challenge_rejected' }
     }));
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test.each(['barangay_official', 'utility_provider', 'admin'].flatMap(role =>
+    [undefined, 'android', 'ios'].map(platform => [role, platform])))('stored %s role cannot bypass CAPTCHA using platform %s', async (role, platform) => {
+    const user = { _id: '507f191e810c19729de860aa', role, isActive: true,
+      isVerified: true, comparePassword: jest.fn().mockResolvedValue(true) };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    const res = createResponse();
+    await login({ body: { email: 'person@example.test', password: 'Password123!', platform }, headers: {} }, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(issueTokenPair).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Complete the CAPTCHA challenge.' });
+  });
+
+  test.each(['citizen', 'barangay_tanod', 'repair_personnel'])('native %s login retains a CAPTCHA-free contract', async role => {
+    const user = { _id: '507f191e810c19729de860aa', role, isActive: true, isVerified: true,
+      deviceTokens: [], refreshTokens: [], comparePassword: jest.fn().mockResolvedValue(true),
+      save: jest.fn(), toPublicJSON: () => ({ role }) };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    const res = createResponse();
+    await login({ body: { email: 'person@example.test', password: 'Password123!' }, headers: {} }, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(verifyLoginCaptcha).not.toHaveBeenCalled();
+  });
+
+  test.each([true, false])('privileged native-spoofed request checks supplied challenge (valid=%s)', async valid => {
+    const user = { _id: '507f191e810c19729de860aa', role: 'admin', isActive: true, isVerified: true,
+      deviceTokens: [], refreshTokens: [], comparePassword: jest.fn().mockResolvedValue(true),
+      save: jest.fn(), toPublicJSON: () => ({ role: 'admin' }) };
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(user) });
+    verifyLoginCaptcha.mockResolvedValue({ success: valid, unavailable: false });
+    const res = createResponse();
+    await login({ body: { email: 'person@example.test', password: 'Password123!', platform: 'android', captchaToken: 'token' }, headers: {} }, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(valid ? 200 : 400);
+    if (!valid) expect(issueTokenPair).not.toHaveBeenCalled();
+  });
+
+  test.each([null, 'admin', 'citizen'])('invalid native credentials do not advertise account/role (%s)', async role => {
+    User.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue(role
+      ? { role, comparePassword: jest.fn().mockResolvedValue(false) } : null) });
+    const res = createResponse();
+    await login({ body: { email: 'person@example.test', password: 'wrong', platform: 'android' }, headers: {} }, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Invalid credentials' });
+    expect(verifyLoginCaptcha).not.toHaveBeenCalled();
+  });
+
+  test('production ignores the development CAPTCHA bypass flag', async () => {
+    const oldNode = process.env.NODE_ENV, oldBypass = process.env.LUNAS_DISABLE_LOGIN_CAPTCHA;
+    try {
+      process.env.NODE_ENV = 'production'; process.env.LUNAS_DISABLE_LOGIN_CAPTCHA = 'true';
+      let controller, users;
+      jest.isolateModules(() => {
+        controller = require('./authController'); users = require('../models/User');
+      });
+      users.findOne.mockReturnValue({ select: jest.fn().mockResolvedValue({
+        _id: '507f191e810c19729de860aa', role: 'admin', isActive: true, isVerified: true,
+        comparePassword: jest.fn().mockResolvedValue(true)
+      }) });
+      const res = createResponse();
+      await controller.login({ body: { email: 'person@example.test', password: 'Password123!', platform: 'ios' }, headers: {} }, res, jest.fn());
+      expect(res.status).toHaveBeenCalledWith(400);
+    } finally {
+      if (oldNode === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = oldNode;
+      if (oldBypass === undefined) delete process.env.LUNAS_DISABLE_LOGIN_CAPTCHA; else process.env.LUNAS_DISABLE_LOGIN_CAPTCHA = oldBypass;
+    }
   });
 
   test('keeps an authenticated session when the current password is incorrect', async () => {

@@ -1,10 +1,13 @@
+import 'package:lunas_mobile/app/app_services.dart';
+
 /// Paths used by the authenticated repair-personnel workspace.
 abstract final class RepairRoutes {
-  static const dashboard = '/repair';
-  static const workOrders = '/repair/work-orders';
-  static const notifications = '/repair/notifications';
-  static const notificationDetails = '/repair/notifications/details';
-  static const profile = '/repair/profile';
+  static String get dashboard => authController.isTanod ? '/tanod' : '/repair';
+  static String get workOrders =>
+      authController.isTanod ? '/tanod/inspections' : '/repair/work-orders';
+  static String get notifications => '$dashboard/notifications';
+  static String get notificationDetails => '$notifications/details';
+  static String get profile => '$dashboard/profile';
 
   static String workOrder(String id) => '$workOrders/$id';
   static String filteredWorkOrders(String filter) =>

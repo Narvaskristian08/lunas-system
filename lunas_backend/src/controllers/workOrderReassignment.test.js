@@ -95,7 +95,7 @@ const inProgressOrder = (overrides = {}) => ({
   }],
   history: [],
   startedAt: new Date('2026-09-28T02:00:00.000Z'),
-  sla: { deadline, startedAt: new Date('2026-09-27T00:00:00.000Z'), state: 'active' },
+  sla: { deadline, startedAt: new Date('2026-09-27T00:00:00.000Z'), state: 'overdue', isOverdue: true, approachingNotifiedAt: new Date('2026-10-02T12:00:00Z'), overdueNotifiedAt: new Date('2026-10-03T13:00:00Z') },
   version: 8,
   ...overrides
 });
@@ -134,6 +134,7 @@ const mockIncidentAt = (status) => {
 describe('repair-personnel reassignment boundaries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIncidentAt('in_progress');
     WorkOrder.findOne.mockReset();
     WorkOrder.findOneAndUpdate.mockReset();
     WorkOrder.countDocuments.mockResolvedValue(0);
@@ -141,19 +142,18 @@ describe('repair-personnel reassignment boundaries', () => {
     User.findByIdAndUpdate.mockResolvedValue(null);
   });
 
-  test('rejects reassignment after repair starts without changing evidence, progress, or SLA', async () => {
+  test('reassigns in-progress work to a pending replacement without resetting progress or SLA', async () => {
     const workOrder = inProgressOrder();
-    const original = structuredClone(workOrder);
-    WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
+    WorkOrder.findOne.mockReturnValue(queryFor(workOrder)); User.findById.mockResolvedValue(replacementWorker);
+    WorkOrder.findOneAndUpdate.mockResolvedValue({ ...workOrder, assignedTo: replacementWorker._id, assignmentState: 'pending' });
     const res = response();
-    await reassignWorkOrder(requestFor(provider, {
-      assigneeId: replacementWorker._id, reason: 'Emergency coverage change'
-    }), res, jest.fn());
-    expect(res.status).toHaveBeenCalledWith(409);
-    expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
-    expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
-    expect(createNotification).not.toHaveBeenCalled();
-    expect(workOrder).toEqual(original);
+    await reassignWorkOrder(requestFor(provider, { assigneeId: replacementWorker._id, reason: 'Emergency coverage change', version: workOrder.version }), res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(200);
+    const [filter, update] = WorkOrder.findOneAndUpdate.mock.calls[0];
+    expect(filter).toMatchObject({ version: workOrder.version, currentAssignment: oldAssignment._id });
+    expect(update.$set).toMatchObject({ assignmentState: 'pending', status: 'in_progress' });
+    expect(update.$set.assignments[0]).toMatchObject({ active: false, status: 'reassigned' });
+    expect(update.$set).not.toHaveProperty('progressPercent'); expect(update.$set).not.toHaveProperty('sla');
   });
 
   test('lets the replacement accept the pending handoff without restarting the repair', async () => {
@@ -277,7 +277,7 @@ describe('repair-personnel reassignment boundaries', () => {
     expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  test('allows a legacy pending handoff decline but blocks reassignment after work started', async () => {
+  test('preserves in-progress handoff on decline and allows controlled reassignment', async () => {
     const pendingAssignment = {
       _id: '507f191e810c19729de861a2',
       assignee: replacementWorker._id,
@@ -328,8 +328,8 @@ describe('repair-personnel reassignment boundaries', () => {
       reason: 'Assign a crew with the required equipment'
     }), assignRes, jest.fn());
 
-    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledTimes(1);
-    expect(assignRes.status).toHaveBeenCalledWith(409);
+    expect(WorkOrder.findOneAndUpdate).toHaveBeenCalledTimes(2);
+    expect(assignRes.status).toHaveBeenCalledWith(200);
   });
 
   test('returns conflicts when reassignment or acceptance loses an optimistic-concurrency race', async () => {
@@ -380,4 +380,59 @@ describe('repair-personnel reassignment boundaries', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
+});
+
+// Acceptance, progress and reassignment share the same original SLA, including
+// warning acknowledgments. These real controller writes must leave it intact.
+afterEach(() => {
+  for (const [, update] of WorkOrder.findOneAndUpdate.mock.calls) {
+    for (const fields of Object.values(update)) {
+      for (const key of Object.keys(fields || {})) expect(key === 'sla' || key.startsWith('sla.')).toBe(false);
+    }
+  }
+});
+
+
+test.each(['suspended', 'deactivated', 'pending_activation'])('restricted worker %s cannot receive reassignment even with stale active flag', async accountStatus => {
+  jest.clearAllMocks(); const order = inProgressOrder(); WorkOrder.findOne.mockReturnValue(queryFor(order));
+  User.findById.mockResolvedValue({ ...replacementWorker, accountStatus }); const res = response();
+  await reassignWorkOrder(requestFor(provider, { assigneeId: replacementWorker._id, reason: 'Staffing handoff', version: order.version }), res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(400); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+});
+test('stale reassignment and stale acceptance are rejected before writes', async () => {
+  jest.clearAllMocks(); const order = inProgressOrder(); WorkOrder.findOne.mockReturnValue(queryFor(order)); const res = response();
+  await reassignWorkOrder(requestFor(provider, { assigneeId: replacementWorker._id, reason: 'Staffing handoff', version: -1 }), res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(409); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+  await acceptWorkOrder(requestFor(previousWorker, { version: -1 }), response(), jest.fn()); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+});
+test('a held incident claim blocks in-progress reassignment', async () => {
+  jest.clearAllMocks(); const order = inProgressOrder(); WorkOrder.findOne.mockReturnValue(queryFor(order)); User.findById.mockResolvedValue(replacementWorker);
+  Incident.findById.mockReturnValue(queryFor({ status: 'in_progress', inspectionMutation: { token: 'held-claim' } })); const res = response();
+  await reassignWorkOrder(requestFor(provider, { assigneeId: replacementWorker._id, reason: 'Staffing handoff', version: order.version }), res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(409); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+});
+test('concurrent reassignments produce one current worker through work-order version CAS', async () => {
+  jest.clearAllMocks(); let stored = inProgressOrder(); mockIncidentAt('in_progress');
+  WorkOrder.findOne.mockImplementation(() => queryFor(structuredClone(stored))); User.findById.mockResolvedValue(replacementWorker);
+  WorkOrder.findOneAndUpdate.mockImplementation(async (filter, update) => {
+    if (stored.version !== filter.version || String(stored.currentAssignment) !== String(filter.currentAssignment)) return null;
+    stored = { ...stored, ...update.$set, version: stored.version + 1, history: [...(stored.history || []), update.$push.history] }; return stored;
+  });
+  const body = { assigneeId: replacementWorker._id, reason: 'Emergency handoff', version: stored.version }; const first = response(); const second = response();
+  await Promise.all([reassignWorkOrder(requestFor(provider, body), first, jest.fn()), reassignWorkOrder(requestFor(provider, body), second, jest.fn())]);
+  expect([first.status.mock.calls.at(-1)[0], second.status.mock.calls.at(-1)[0]].sort()).toEqual([200, 409]);
+  expect(stored.assignments.filter(item => item.active)).toHaveLength(1); expect(stored.progressPercent).toBe(50); expect(stored.sla.deadline).toEqual(deadline);
+});
+test('former worker cannot submit progress after replacement takes current assignment', async () => {
+  jest.clearAllMocks(); const stored = inProgressOrder({ assignedTo: replacementWorker._id });
+  WorkOrder.findOne.mockImplementation(filter => queryFor(String(filter.assignedTo) === String(stored.assignedTo) ? stored : null)); const res = response();
+  await updateProgress(requestFor(previousWorker, { progressPercent: 75, stage: 'finishing', notes: 'Stale field update', version: stored.version }), res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(404); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+});
+
+test.each(['submitted', 'tanod_verified', 'clarification_required', 'closed'])('incident lifecycle %s cannot be activated through staffing', async status => {
+  jest.clearAllMocks(); const order = inProgressOrder(); WorkOrder.findOne.mockReturnValue(queryFor(order)); User.findById.mockResolvedValue(replacementWorker);
+  Incident.findById.mockReturnValue(queryFor({ status })); const res = response();
+  await reassignWorkOrder(requestFor(provider, { assigneeId: replacementWorker._id, reason: 'Attempted handoff', version: order.version }), res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(409); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
 });

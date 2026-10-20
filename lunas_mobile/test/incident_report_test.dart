@@ -123,7 +123,7 @@ void main() {
       'Repair Completed · Awaiting Utility Provider Review',
     );
     expect(report.statusChipLabel, 'Provider review');
-    expect(report.statusHistory.single.citizenLabel, 'Repair Completed');
+    expect(report.statusHistory.single.citizenLabel, 'Repair submitted for review');
   });
 
   test(

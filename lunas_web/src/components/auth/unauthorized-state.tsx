@@ -4,7 +4,7 @@ import { SystemState } from "@/components/states/system-state";
 import type { UserRole } from "@/types";
 
 export function UnauthorizedState({ role, context }: { role: UserRole; context: string }) {
-  const mobileOnlyRole = role === "Citizen" || role === "Utility Personnel";
+  const mobileOnlyRole = role === "Citizen" || role === "Utility Personnel" || role === "Barangay Tanod";
   return (
     <SystemState
       kind="unauthorized"

@@ -150,10 +150,7 @@ describe('citizen incident reporting', () => {
         },
         priority: 'critical',
         privacyAcknowledged: true,
-        images: [{
-          url: 'https://storage.example/legacy-evidence.jpg',
-          key: 'incidents/another-citizen/private-evidence.jpg'
-        }]
+        images: []
       },
       files: {},
       user: { _id: '507f191e810c19729de860aa', role: 'citizen' },
@@ -175,7 +172,7 @@ describe('citizen incident reporting', () => {
       expect.objectContaining({ status: 'submitted', changedBy: req.user._id })
     ]));
     expect(payload.duplicateCandidates).toEqual([possibleDuplicate]);
-    expect(payload.images[0].key).toBeUndefined();
+    expect(payload.images).toEqual([]);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json.mock.calls[0][0].data).toEqual(expect.objectContaining({
       status: 'submitted',
@@ -433,7 +430,7 @@ const slaQuery = (value) => {
 };
 
 test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
-  'Barangay prioritization prepares the %s SLA without starting the timer (%i hours)', async (priority, hours) => {
+  'legacy prioritization cannot change %s SLA (%i hours) before policy approval', async (priority, _hours) => {
     jest.clearAllMocks();
     const time = new Date('2026-10-02T00:00:00Z');
     jest.useFakeTimers().setSystemTime(time);
@@ -446,12 +443,8 @@ test.each([['critical', 48], ['high', 72], ['medium', 168], ['low', 336]])(
     await updateIncidentPriority({ params: { id: record._id }, body: { priority },
       user: { _id: '507f191e810c19729de860a1', role: 'barangay_official', barangay: 'Poblacion Oeste' }, headers: {} }, res, next);
     expect(next).not.toHaveBeenCalled();
-    const sla = Incident.findOneAndUpdate.mock.calls[0][1].$set.sla;
-    expect(sla.startedAt).toBeUndefined();
-    expect(sla.deadline).toBeUndefined();
-    expect(sla.state).toBe('not_started');
-    expect(sla.targetResolutionTime).toBe(hours);
-    expect(res.status).toHaveBeenCalledWith(200);
+    expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(409);
     jest.useRealTimers();
   }
 );
@@ -487,7 +480,7 @@ test('citizen, official and operational map projections never disclose raw GPS o
 });
 
 
-test.each(['success', 'conflict', 'failure'])('routing creates an unassigned work order and handles %s', async (outcome) => {
+test.each(['success', 'conflict', 'failure'])('legacy routing blocks premature maintenance (%s fixture)', async (outcome) => {
   jest.clearAllMocks();
   const record = { _id: '507f191e810c19729de860a1', status: 'prioritized', priority: 'high', images: [],
     jurisdiction: { barangay: 'Poblacion Oeste', city: 'Dagupan City' } };
@@ -502,11 +495,10 @@ test.each(['success', 'conflict', 'failure'])('routing creates an unassigned wor
   const res = createResponse();
   const next = jest.fn();
   await require('./incidentController').routeIncident({ params: { id: record._id }, body: { responsibleOrganization: 'Water District', responsibleRole: 'utility_provider' }, user: { _id: '507f191e810c19729de860a4', role: 'barangay_official', barangay: 'Poblacion Oeste' }, headers: {} }, res, next);
-  expect(WorkOrder.create).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending', assignmentState: 'unassigned', priority: 'high', sla: expect.objectContaining({ state: 'active', startedAt: expect.any(Date), deadline: expect.any(Date) }) }));
-  expect(Incident.findOneAndUpdate.mock.calls[0][1].$set.workOrder).toBe('507f191e810c19729de860a3');
-  if (outcome !== 'success') expect(WorkOrder.deleteOne).toHaveBeenCalledWith({ _id: '507f191e810c19729de860a3' });
-  if (outcome === 'failure') expect(next).toHaveBeenCalledWith(expect.any(Error));
-  else expect(res.status).toHaveBeenCalledWith(outcome === 'conflict' ? 409 : 200);
+  expect(WorkOrder.create).not.toHaveBeenCalled();
+  expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+  expect(next).not.toHaveBeenCalled();
+  expect(res.status).toHaveBeenCalledWith(409);
 });
 
 
@@ -523,4 +515,36 @@ test.each([
   expect(JSON.stringify(filter)).toContain(JSON.stringify(status));
   expect(Incident.countDocuments).toHaveBeenLastCalledWith(filter);
   expect(query.skip).toHaveBeenCalledWith(20);
+});
+
+test('remote evidence and forged storage ownership are denied before processing', async () => {
+  jest.clearAllMocks();
+  const res = createResponse();
+  await createIncident({ body: { images: [{ url: 'https://external.example/image.jpg', key: 'another-owner' }] } }, res, jest.fn());
+  expect(res.status).toHaveBeenCalledWith(400); expect(Incident.create).not.toHaveBeenCalled();
+  expect(evidenceService.processAndUploadEvidence).not.toHaveBeenCalled();
+});
+
+test.each(['committed', 'rejected', 'uncertain'])('evidence recovery respects %s persistence outcome', async outcome => {
+  jest.clearAllMocks();
+  const images = [{ key: 'owned-private-photo' }];
+  evidenceService.getUploadedEvidenceFiles.mockReturnValue([{ buffer: Buffer.from('synthetic') }]);
+  evidenceService.processAndUploadEvidence.mockResolvedValue({ images });
+  const record = { _id: 'saved-report', reportNumber: 'LUNAS-TEST', status: 'submitted' };
+  if (outcome === 'committed') {
+    Incident.create.mockResolvedValue(record);
+    createAuditLog.mockRejectedValueOnce(new Error('post-commit fault'));
+  } else Incident.create.mockRejectedValue(Object.assign(new Error('write failure'), outcome === 'rejected' ? { name: 'ValidationError' } : {}));
+  const req = { body: { locationIntegrity: { confirmed: true, pinSource: 'manual' }, category: 'road', description: 'A documented infrastructure concern',
+    location: { coordinates: [120.3, 16.1], address: { barangay: 'Pantal', city: 'Dagupan City' } } },
+    user: { _id: 'owner', role: 'citizen' }, headers: {} };
+  const res = createResponse(), next = jest.fn();
+  await createIncident(req, res, next);
+  expect(Incident.create).toHaveBeenCalledTimes(1);
+  expect(evidenceService.processAndUploadEvidence).toHaveBeenCalledTimes(1);
+  if (outcome === 'committed') { expect(res.status).toHaveBeenCalledWith(201); expect(next).not.toHaveBeenCalled(); }
+  else expect(next).toHaveBeenCalled();
+  if (outcome === 'rejected') expect(evidenceService.cleanupEvidence).toHaveBeenCalledWith(images);
+  else expect(evidenceService.cleanupEvidence).not.toHaveBeenCalled();
+  evidenceService.getUploadedEvidenceFiles.mockReturnValue([]);
 });

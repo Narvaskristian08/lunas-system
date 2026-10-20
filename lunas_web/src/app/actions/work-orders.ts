@@ -128,6 +128,7 @@ export async function createWorkOrderAction(input: {
 }
 
 export async function assignWorkOrderAction(input: {
+  version?: number;
   workOrderId: string;
   assigneeId: string;
   instructions?: string;
@@ -139,7 +140,7 @@ export async function assignWorkOrderAction(input: {
     if (!workOrderId || !assigneeId) return { ok: false, message: "Select an eligible repair person before assigning this work order." };
     return mutateWorkOrder(
       `/work-orders/${encodeURIComponent(workOrderId)}/assign`,
-      JSON.stringify({ assigneeId, instructions: safeText(input.instructions, 4000) }),
+      JSON.stringify({ version: input.version, assigneeId, instructions: safeText(input.instructions, 4000) }),
       workOrderId,
       "Utility personnel assigned.",
     );
@@ -149,6 +150,7 @@ export async function assignWorkOrderAction(input: {
 }
 
 export async function reassignWorkOrderAction(input: {
+  version?: number;
   workOrderId: string;
   assigneeId: string;
   reason: string;
@@ -163,7 +165,7 @@ export async function reassignWorkOrderAction(input: {
     }
     return mutateWorkOrder(
       `/work-orders/${encodeURIComponent(workOrderId)}/reassign`,
-      JSON.stringify({ assigneeId, reason }),
+      JSON.stringify({ version: input.version, assigneeId, reason }),
       workOrderId,
       "Work order reassigned.",
     );

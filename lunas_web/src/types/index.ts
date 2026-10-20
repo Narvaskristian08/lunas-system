@@ -1,6 +1,7 @@
 export type UserRole =
   | "Citizen"
   | "Utility Personnel"
+  | "Barangay Tanod"
   | "Admin"
   | "Barangay Official"
   | "City Engineer"
@@ -10,6 +11,7 @@ export type UserRole =
 export type BackendUserRole =
   | "citizen"
   | "repair_personnel"
+  | "barangay_tanod"
   | "barangay_official"
   | "city_engineer"
   | "utility_provider"

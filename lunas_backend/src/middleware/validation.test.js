@@ -123,7 +123,7 @@ describe('request validation', () => {
     ]));
   });
 
-  test('a well-formed JSON report with evidence metadata validates', async () => {
+  test('JSON evidence URLs cannot bypass managed upload validation', async () => {
     const { req, errors } = await runRulesWithRequest(createIncidentValidation, {
       locationIntegrity: { confirmed: true, pinSource: 'manual' },
       category: 'road',
@@ -138,7 +138,7 @@ describe('request validation', () => {
       privacyAcknowledged: true
     });
 
-    expect(errors).toEqual([]);
+    expect(errors).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'images' })]));
     expect(req.body.location.address).toEqual(expect.objectContaining({
       barangay: 'Poblacion Oeste',
       city: 'Dagupan City'

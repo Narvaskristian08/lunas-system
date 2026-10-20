@@ -11,19 +11,14 @@ const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
 const { startSLAMonitor, isSlaAutomationEnabled, getPollingMinutes } = require('./services/slaService');
 const { validateRuntimeConfig } = require('./config/runtime');
+const { createApiLimiter, trustedProxy } = require('./middleware/securityRateLimiter');
 
 const app = express();
 
 // The production container is behind Nginx. Trust only the explicitly
-// configured proxy hop so rate limiting and request IP logging use the client
+// configured proxy addresses so rate limiting and request IP logging use the client
 // address without trusting arbitrary forwarded headers in other environments.
-const configuredTrustProxy = process.env.TRUST_PROXY;
-if (configuredTrustProxy) {
-  app.set(
-    'trust proxy',
-    configuredTrustProxy === 'true' ? true : Number(configuredTrustProxy),
-  );
-}
+app.set('trust proxy', trustedProxy(process.env.TRUST_PROXY));
 
 // Security middleware
 app.use(helmet());
@@ -49,6 +44,9 @@ app.use(cors({
 }));
 
 // Body parsing middleware
+// Limit all API versions, including unknown paths, before parsing payloads.
+// Root liveness/readiness checks intentionally remain outside this budget.
+app.use('/api', createApiLimiter());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
@@ -126,6 +124,7 @@ const startServer = async () => {
       
       // Start SLA monitoring cron job
       startSLAMonitor();
+      require('./services/notificationDeliveryService').startDeliveryMonitor();
 
     });
   } catch (error) {

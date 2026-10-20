@@ -26,7 +26,7 @@ const { runIncidentSlaCheck, runWorkOrderSlaCheck, normalizeTerminalSla,
 const now = new Date('2026-10-02T00:00:00Z');
 const incidentAt = (hours, status = 'provider_review') => ({
   _id: 'incident', reportNumber: 'LUNAS-001', assignedUtility: 'provider', status,
-  sla: { deadline: new Date(now.getTime() + hours * 3600000), state: 'active', escalationLevel: 0 }
+  sla: { startedAt: new Date(now.getTime() - 48 * 3600000), deadline: new Date(now.getTime() + hours * 3600000), state: 'active', escalationLevel: 0 }
 });
 
 beforeEach(() => {
@@ -43,6 +43,16 @@ beforeEach(() => {
   cron.schedule.mockImplementation(() => ({ stop: jest.fn() }));
 });
 afterEach(() => stopSLAMonitor());
+
+test.each([
+  { startedAt: undefined }, { startedAt: new Date('invalid') },
+  { startedAt: new Date(now.getTime() + 3600000) }, { state: 'not_started' }
+])('monitor leaves clocks without a legitimate start unchanged: %j', async changes => {
+  const record = incidentAt(-1); Object.assign(record.sla, changes);
+  Incident.find.mockResolvedValue([record]); WorkOrder.find.mockResolvedValue([record]);
+  await runIncidentSlaCheck(now); await runWorkOrderSlaCheck(now);
+  expect(Incident.findOneAndUpdate).not.toHaveBeenCalled(); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled(); expect(createNotification).not.toHaveBeenCalled();
+});
 
 test.each([24, 12, 6, 2])('incident reminder threshold %i is acknowledged independently', async (hours) => {
   const incident = incidentAt(hours);
@@ -143,7 +153,7 @@ test.each(['rejected', 'duplicate', 'closed'])('terminal %s stops overdue accoun
   expect(fields['sla.state']).toBe(status === 'closed' ? 'breached' : 'cancelled');
   expect(fields['sla.isOverdue']).toBe(false);
   expect(fields).not.toHaveProperty('sla.deadline');
-  expect(WorkOrder.updateMany).toHaveBeenCalledWith({ incident: incident._id }, { $set: fields });
+  expect(WorkOrder.updateMany).not.toHaveBeenCalled(); // No broadcast to historical orders.
   expect(createNotification).not.toHaveBeenCalled();
 });
 
@@ -204,4 +214,49 @@ test('database failures in one monitoring branch do not prevent subsequent check
   Incident.find.mockResolvedValue([]);
   await checkSLAStatus(now);
   expect(WorkOrder.find).toHaveBeenCalledTimes(2);
+});
+
+test.each([undefined, null, 'invalid'])('malformed/missing deadline %s causes no scheduler writes or delivery', async deadline => {
+  const incident = incidentAt(1); incident.sla.deadline = deadline;
+  Incident.find.mockResolvedValue([incident]); WorkOrder.find.mockResolvedValue([incident]);
+  await runIncidentSlaCheck(now); await runWorkOrderSlaCheck(now);
+  expect(Incident.findOneAndUpdate).not.toHaveBeenCalled(); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled(); expect(createNotification).not.toHaveBeenCalled();
+});
+test('lost deadline snapshot prevents stale reminders after an amendment', async () => {
+  const incident = incidentAt(12);
+  Incident.find.mockResolvedValue([incident]); Incident.findOneAndUpdate.mockResolvedValue(null);
+  await runIncidentSlaCheck(now);
+  expect(Incident.findOneAndUpdate.mock.calls[0][0]['sla.deadline']).toEqual(incident.sla.deadline);
+  expect(Incident.findOneAndUpdate.mock.calls[0][0]['inspectionMutation.token']).toEqual({ $exists: false });
+  expect(createNotification).not.toHaveBeenCalled(); expect(Incident.updateOne).not.toHaveBeenCalled();
+});
+test('terminal normalization computes the current order outcome from its own deadline', async () => {
+  const incident = { ...incidentAt(-1, 'closed'), closedAt: now, workOrder: 'current' };
+  const order = { _id: 'current', incident: incident._id, sla: { deadline: new Date('2026-10-03T00:00:00Z'), startedAt: new Date('2026-09-30T00:00:00Z') } };
+  Incident.find.mockResolvedValue([incident]); WorkOrder.find.mockResolvedValue([order]);
+  await normalizeTerminalSla();
+  expect(Incident.updateOne.mock.calls[0][1].$set['sla.state']).toBe('breached');
+  expect(WorkOrder.find.mock.calls[0][0]).toEqual({ _id: 'current', incident: incident._id });
+  expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set['sla.state']).toBe('met');
+  expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.deadline');
+});
+test.each(['cancelled', 'breached'])('projection retains historical %s evidence even with closure dates', state => {
+  const sla = { state, deadline: new Date('2026-10-03T00:00:00Z'), closedAt: now };
+  expect(getSlaProjection(sla, now).state).toBe(state);
+  expect(getClosedSlaFields(sla, now)['sla.state']).toBe(state);
+});
+test('invalid historical deadline is never classified as met', () => {
+  expect(getClosedSlaFields({ deadline: 'invalid' }, now)['sla.state']).toBe('not_started');
+});
+
+test('invalid closure timestamp cannot produce a met outcome or corrupt persisted dates', () => {
+  expect(() => getClosedSlaFields(incidentAt(1).sla, new Date('invalid'))).toThrow('valid authorized closure');
+});
+
+test.each(['met', 'breached', 'cancelled'])('scheduler never reopens terminal SLA %s', async state => {
+  const record = incidentAt(-1); record.sla.state = state;
+  Incident.find.mockResolvedValue([record]); WorkOrder.find.mockResolvedValue([record]);
+  await runIncidentSlaCheck(now); await runWorkOrderSlaCheck(now);
+  expect(Incident.findOneAndUpdate).not.toHaveBeenCalled(); expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+  expect(createNotification).not.toHaveBeenCalled();
 });

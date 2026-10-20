@@ -9,6 +9,13 @@ const {
 } = require('../utils/imageProcessor');
 const logger = require('../utils/logger');
 
+const cleanupKeys = async keys => {
+  const results = await Promise.allSettled(keys.map(key => storageService.deleteFromStorage(key)));
+  const failed = results.filter(result => result.status === 'rejected').length;
+  if (failed) logger.error('Evidence cleanup requires reconciliation', { attempted: keys.length, failed });
+  return { attempted: keys.length, failed };
+};
+
 const clientError = (message) => {
   const error = new Error(message);
   error.statusCode = 400;
@@ -276,7 +283,7 @@ exports.processAndUploadEvidence = async (files, context) => {
       aiAnalysis: mergeAiAnalyses(results.map((result) => result.aiAnalysis))
     };
   } catch (error) {
-    await Promise.allSettled(uploadedKeys.map((key) => storageService.deleteFromStorage(key)));
+    await cleanupKeys(uploadedKeys);
     logger.error(`Incident evidence processing failed: ${error.message}`);
     throw error;
   }
@@ -330,7 +337,7 @@ exports.processAndUploadRepairEvidence = async (files, { workOrderId, uploaderId
     }
     return evidence;
   } catch (error) {
-    await Promise.allSettled(uploadedKeys.map((key) => storageService.deleteFromStorage(key)));
+    await cleanupKeys(uploadedKeys);
     logger.error(`Repair evidence processing failed: ${error.message}`);
     throw error;
   }
@@ -338,7 +345,7 @@ exports.processAndUploadRepairEvidence = async (files, { workOrderId, uploaderId
 
 exports.cleanupEvidence = async (images = []) => {
   const keys = images.map((image) => image.key).filter(Boolean);
-  await Promise.allSettled(keys.map((key) => storageService.deleteFromStorage(key)));
+  return cleanupKeys(keys);
 };
 
 exports.normalizeAiAnalysis = normalizeAiAnalysis;

@@ -82,6 +82,7 @@ const canAccessWorkOrder = (user, workOrder) => {
 const repairPersonnelIneligibility = (personnel, workOrder) => {
   if (!personnel || personnel.role !== REPAIR_PERSONNEL_ROLE) return 'Select a repair personnel account';
   if (!personnel.isActive || personnel.isArchived) return 'This repair personnel account is inactive';
+  if (personnel.requiresActivation || ['pending_activation', 'suspended', 'deactivated'].includes(personnel.accountStatus)) return 'This repair personnel account is not activated or is restricted';
   if (!['available', 'assigned'].includes(personnel.availability)) return 'This repair personnel is off duty or unavailable';
   const organization = normalizeText(personnel.repairOrganization);
   if (!organization || organization !== normalizeText(workOrder.responsibleOrganization)) return 'This repair personnel belongs to another Utility Provider';
@@ -139,8 +140,15 @@ const getApproachingThresholdHours = () => {
   return Number.isFinite(hours) && hours > 0 ? hours : 24;
 };
 
+const validSlaDate = value => {
+  if (Object.prototype.toString.call(value) !== '[object Date]' && (typeof value !== 'string' || !value.trim())) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 const getSlaProjection = (sla = {}, now = new Date()) => {
-  if (sla.closedAt && sla.deadline) {
+  sla = sla || {};
+  if (sla.state !== 'cancelled' && sla.state !== 'breached' && validSlaDate(sla.closedAt) && validSlaDate(sla.deadline)) {
     sla = { ...sla, state: new Date(sla.deadline) < new Date(sla.closedAt) ? 'breached' : 'met' };
   }
   if (['met', 'breached', 'cancelled'].includes(sla.state)) {
@@ -183,13 +191,19 @@ const workOrderHistoryEntry = ({ type, actor, status, progressPercent, stage, no
 });
 
 module.exports = {
+  validSlaDate,
   getApproachingThresholdHours,
-  getClosedSlaFields: (sla, now = new Date()) => ({
-    'sla.state': !sla?.deadline ? 'not_started'
-      : (new Date(sla.deadline) < now ? 'breached' : 'met'),
-    'sla.isOverdue': false,
-    'sla.closedAt': now
-  }),
+  getClosedSlaFields: (sla, now = new Date()) => {
+    const closedAt = validSlaDate(now);
+    if (!closedAt) throw new Error('A valid authorized closure timestamp is required');
+    return {
+      'sla.state': sla?.state === 'cancelled' ? 'cancelled' : sla?.state === 'breached' ? 'breached'
+        : !validSlaDate(sla?.deadline) ? 'not_started'
+          : (validSlaDate(sla.deadline) < closedAt ? 'breached' : 'met'),
+      'sla.isOverdue': false,
+      'sla.closedAt': closedAt
+    };
+  },
   ACTIVE_WORK_ORDER_STATUSES,
   OFFICIAL_WORK_ORDER_ROLES,
   PROGRESS_STAGES,

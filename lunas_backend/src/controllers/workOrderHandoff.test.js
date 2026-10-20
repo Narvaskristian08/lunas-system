@@ -1,5 +1,5 @@
 jest.mock('../models/WorkOrder', () => ({ findOne: jest.fn(), findOneAndUpdate: jest.fn(), countDocuments: jest.fn().mockResolvedValue(0) }));
-jest.mock('../models/Incident', () => ({ findById: jest.fn(), findOneAndUpdate: jest.fn() }));
+jest.mock('../models/Incident', () => ({ findOne: jest.fn(), findById: jest.fn(), findOneAndUpdate: jest.fn(), updateOne: jest.fn() }));
 jest.mock('../models/User', () => ({ find: jest.fn(), findByIdAndUpdate: jest.fn() }));
 jest.mock('../utils/auditLogger', () => ({ createAuditLog: jest.fn().mockResolvedValue(null) }));
 jest.mock('../services/notificationService', () => ({
@@ -68,6 +68,8 @@ describe('Responsible-provider completion handoffs', () => {
     const workOrder = workOrderFixture('completed');
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
     WorkOrder.findOneAndUpdate.mockResolvedValue(workOrderFixture('rework_required'));
+    Incident.findOne.mockResolvedValue({ status: 'provider_review' });
+    Incident.updateOne.mockResolvedValue({ modifiedCount: 1 });
     Incident.findById.mockReturnValue(queryFor({ status: 'provider_review' }));
     Incident.findOneAndUpdate.mockResolvedValue({ _id: workOrder.incident, status: 'rework_required' });
     const res = response();
@@ -143,10 +145,12 @@ describe('Responsible-provider completion handoffs', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  test('Utility Provider approval verifies and closes the report', async () => {
+  test('Utility Provider approval cannot exercise unresolved closure authority', async () => {
     const workOrder = workOrderFixture('completed');
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
     WorkOrder.findOneAndUpdate.mockResolvedValue(workOrderFixture('verified'));
+    Incident.findOne.mockResolvedValue({ status: 'provider_review' });
+    Incident.updateOne.mockResolvedValue({ modifiedCount: 1 });
     Incident.findById.mockReturnValue(queryFor({ status: 'provider_review' }));
     Incident.findOneAndUpdate.mockResolvedValue({
       _id: workOrder.incident,
@@ -164,24 +168,20 @@ describe('Responsible-provider completion handoffs', () => {
       ip: '127.0.0.1'
     }, res, jest.fn());
 
-    const incidentUpdate = Incident.findOneAndUpdate.mock.calls[0][1];
-    expect(incidentUpdate.$push.statusHistory.$each.map((entry) => entry.status))
-      .toEqual(['verified', 'resolved', 'closed']);
-    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).toHaveProperty(['sla.closedAt']);
-    expect(WorkOrder.findOneAndUpdate.mock.calls[0][1].$set).not.toHaveProperty('sla.deadline');
-    expect(incidentUpdate.$set).toHaveProperty('closedAt');
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'Repair verified and report resolved'
-    }));
+    expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(409);
   });
 
-  test.each([['2026-10-03T00:00:00Z', 'met'], ['2026-10-05T00:00:00Z', 'breached']])('Provider closure at %s persists %s on both records and preserves completion history', async (time, outcome) => {
+  test.each([['2026-10-03T00:00:00Z', 'met'], ['2026-10-05T00:00:00Z', 'breached']])('Provider closure at %s leaves the historical %s SLA outcome untouched', async (time, _outcome) => {
     jest.useFakeTimers().setSystemTime(new Date(time));
     const workOrder = workOrderFixture('completed', {
       incident: { _id: '507f191e810c19729de860b1', reportNumber: 'LUNAS-202608-000001' }
     });
     WorkOrder.findOne.mockReturnValue(queryFor(workOrder));
     WorkOrder.findOneAndUpdate.mockResolvedValue(workOrderFixture('verified', { incident: workOrder.incident }));
+    Incident.findOne.mockResolvedValue({ status: 'provider_review' });
+    Incident.updateOne.mockResolvedValue({ modifiedCount: 1 });
     Incident.findById.mockReturnValue(queryFor({ status: 'provider_review' }));
     Incident.findOneAndUpdate.mockResolvedValue({
       _id: '507f191e810c19729de860b1',
@@ -199,24 +199,10 @@ describe('Responsible-provider completion handoffs', () => {
       ip: '127.0.0.1'
     }, res, jest.fn());
 
-    const workOrderUpdate = WorkOrder.findOneAndUpdate.mock.calls[0][1];
-    expect(workOrderUpdate.$set).toMatchObject({ 'sla.state': outcome, 'sla.isOverdue': false, 'sla.closedAt': new Date(time) });
-    expect(workOrderUpdate.$set).not.toHaveProperty('sla.deadline');
-    expect(workOrderUpdate.$set).not.toHaveProperty('actualCompletionTime');
-    const incidentUpdate = Incident.findOneAndUpdate.mock.calls[0][1];
-    expect(incidentUpdate.$set).toMatchObject({ 'sla.state': outcome, 'sla.isOverdue': false });
-    expect(incidentUpdate.$set).not.toHaveProperty('sla.deadline');
-    expect(incidentUpdate.$set).toEqual(expect.objectContaining({
-      status: 'closed',
-      finalVerifiedBy: 'provider-1'
-    }));
-    expect(incidentUpdate.$push.statusHistory.$each.map((entry) => entry.status))
-      .toEqual(['verified', 'resolved', 'closed']);
-    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
-      recipient: 'citizen-1',
-      title: 'Your report has been resolved'
-    }));
-    expect(res.status).toHaveBeenCalledWith(200);
+    expect(WorkOrder.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(workOrder.actualCompletionTime).toEqual(new Date('2026-10-02T00:00:00Z'));
+    expect(res.status).toHaveBeenCalledWith(409);
     jest.useRealTimers();
   });
 });

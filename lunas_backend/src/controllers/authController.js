@@ -374,10 +374,10 @@ exports.resendRegistrationMfa = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/auth/login
 // @access  Public
 exports.login = asyncHandler(async (req, res) => {
-  const { email, password, deviceToken, platform, captchaToken } = req.body;
+  const { email, password, platform, captchaToken } = req.body;
   const normalizedEmail = email.toLowerCase();
 
-  if (platform === 'web' && !loginCaptchaBypassEnabled) {
+  const checkCaptcha = async () => {
     if (!captchaToken) {
       await createAuditLog({
         action: 'login_captcha_failed',
@@ -387,7 +387,8 @@ exports.login = asyncHandler(async (req, res) => {
         details: { reason: 'missing_token' },
         ...auditRequestContext(req, 'web')
       });
-      return res.status(400).json({ success: false, message: 'Complete the CAPTCHA challenge.' });
+      res.status(400).json({ success: false, message: 'Complete the CAPTCHA challenge.' });
+      return false;
     }
     const captcha = await verifyLoginCaptcha({ token: captchaToken, remoteIp: req.ip });
     if (!captcha.success) {
@@ -399,14 +400,18 @@ exports.login = asyncHandler(async (req, res) => {
         details: { reason: captcha.unavailable ? 'provider_unavailable' : 'challenge_rejected' },
         ...auditRequestContext(req, 'web')
       });
-      return res.status(captcha.unavailable ? 503 : 400).json({
+      res.status(captcha.unavailable ? 503 : 400).json({
         success: false,
         message: captcha.unavailable
           ? 'CAPTCHA verification is temporarily unavailable.'
           : 'CAPTCHA verification failed. Please try again.'
       });
+      return false;
     }
-  }
+    return true;
+  };
+  const webChallengeChecked = platform === 'web' && !loginCaptchaBypassEnabled;
+  if (webChallengeChecked && !(await checkCaptcha())) return;
 
   const user = await User.findOne({ email: normalizedEmail })
     .select('+password +refreshTokens +tokenVersion');
@@ -460,13 +465,14 @@ exports.login = asyncHandler(async (req, res) => {
     });
   }
 
-  if (deviceToken && platform) {
-    const existingToken = user.deviceTokens.find((token) => token.token === deviceToken);
-    if (!existingToken) {
-      user.deviceTokens.push({ token: deviceToken, platform });
-    }
-  }
+  // Only stored role + valid credentials establish this requirement. Invalid
+  // credentials keep the same response for every role; native mobile roles
+  // do not acquire a CAPTCHA dependency from this policy.
+  if (!loginCaptchaBypassEnabled && !webChallengeChecked
+    && ['barangay_official', 'utility_provider', 'admin'].includes(user.role)
+    && !(await checkCaptcha())) return;
 
+  // Push enrollment now requires the separate authenticated subscription endpoint.
   user.lastLogin = new Date();
   const tokenPair = issueTokenPair(user);
   addRefreshToken(user, tokenPair, req);
@@ -964,16 +970,14 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/auth/logout
 // @access  Private
 exports.logout = asyncHandler(async (req, res) => {
-  const { deviceToken } = req.body;
   const user = await User.findById(req.user._id).select('+refreshTokens +tokenVersion');
 
   if (user) {
-    if (deviceToken) {
-      user.deviceTokens = user.deviceTokens.filter((token) => token.token !== deviceToken);
-    }
+    user.deviceTokens = [];
     user.refreshTokens = [];
     user.tokenVersion += 1;
     await user.save();
+    await require('../models/PushEnrollment').deleteMany({ account: req.user._id });
   }
 
   await createAuditLog({

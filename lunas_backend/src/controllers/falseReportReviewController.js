@@ -14,8 +14,9 @@ exports.getReview = asyncHandler(async (req, res) => {
   const count = await Incident.countDocuments(combineIncidentFilters(incidentReviewScope(req), {
     reporter: incident.reporter, 'falseReportReview.finding': 'confirmed_fabrication'
   }));
-  const total = await countConfirmedFindings(incident.reporter);
-  res.json({ success: true, data: { review: incident.falseReportReview || null, confirmedFindingsInScope: count, confirmedFindingsTotal: total } });
+  const oversight = req.user.role === 'admin'
+    ? { confirmedFindingsTotal: await countConfirmedFindings(incident.reporter) } : {};
+  res.json({ success: true, data: { review: incident.falseReportReview || null, confirmedFindingsInScope: count, ...oversight } });
 });
 exports.saveReview = asyncHandler(async (req, res) => {
   if (!allowed(req.user)) return res.status(403).json({ success: false, message: 'Review access denied' });

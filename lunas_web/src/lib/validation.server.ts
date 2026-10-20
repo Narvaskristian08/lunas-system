@@ -82,6 +82,9 @@ export interface ValidationIncident {
   id: string;
   reportNumber: string;
   category: string;
+  originalCategory?: string;
+  originalCategorySource?: string;
+  clarificationResponses?: Array<{ response?: string; respondedAt?: string }>;
   subcategory?: string;
   description: string;
   status: string;
@@ -124,7 +127,7 @@ export interface ValidationIncident {
     confirmedAt?: string;
   };
   duplicateCandidateCount: number;
-  initialInspection?: { id?: string; status?: string; findings?: string; result?: string; submittedAt?: string; evidence?: ValidationEvidence[] };
+  initialInspection?: { tanod?: string; version?: number; assignedAt?: string; acknowledgedAt?: string; instructions?: string; id?: string; status?: string; findings?: string; result?: string; submittedAt?: string; evidence?: ValidationEvidence[] };
   completionInspection?: { id?: string; status?: string; findings?: string; result?: string; submittedAt?: string; evidence?: ValidationEvidence[] };
   duplicateCandidates: DuplicateCandidate[];
   history: ValidationHistoryEntry[];
@@ -328,6 +331,9 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
   return {
     id,
     reportNumber: asString(source.reportNumber) ?? `Report ${id.slice(-6)}`,
+    originalCategory: asString(source.originalCategory),
+    originalCategorySource: asString(source.originalCategorySource),
+    clarificationResponses: asArray(source.clarificationResponses).map(value => { const item = asRecord(value); return { response: asString(item.response), respondedAt: asString(item.respondedAt) }; }),
     category: asString(source.category) ?? "Uncategorized",
     subcategory: asString(source.subcategory),
     description: asString(source.description) ?? "No description provided.",
@@ -412,7 +418,7 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       routedAt: asString(routing.routedAt),
       routedBy: asString(routing.routedBy),
     } : undefined,
-    initialInspection: (() => { const value = asRecord(source.initialInspection); return Object.keys(value).length ? { id: normalizedId(value), status: asString(value.status), findings: asString(value.findings), result: asString(value.result), submittedAt: asString(value.submittedAt), evidence: asArray(value.evidence).map(normalizeEvidence) } : undefined; })(),
+    initialInspection: (() => { const value = asRecord(source.initialInspection); return Object.keys(value).length ? { tanod: asString(value.tanod), version: asNumber(value.version), assignedAt: asString(value.assignedAt), acknowledgedAt: asString(value.acknowledgedAt), instructions: asString(value.instructions), id: normalizedId(value), status: asString(value.status), findings: asString(value.findings), result: asString(value.result), submittedAt: asString(value.submittedAt), evidence: asArray(value.evidence).map(normalizeEvidence) } : undefined; })(),
     completionInspection: (() => { const value = asRecord(source.completionInspection); return Object.keys(value).length ? { id: normalizedId(value), status: asString(value.status), findings: asString(value.findings), result: asString(value.result), submittedAt: asString(value.submittedAt), evidence: asArray(value.evidence).map(normalizeEvidence) } : undefined; })(),
     sla: normalizeSla(source.sla),
     workOrder: (() => {
@@ -634,32 +640,4 @@ export async function getAgencyExceptions(): Promise<{ incidents: unknown[]; age
   const accessToken = await requireAccessToken();
   const payload = responseData(await backendRequest<unknown>("/incidents/agency-exceptions", { accessToken })) as { incidents?: unknown[]; agencies?: string[] };
   return { incidents: Array.isArray(payload?.incidents) ? payload.incidents : [], agencies: Array.isArray(payload?.agencies) ? payload.agencies.filter((value): value is string => typeof value === "string") : [] };
-}
-
-export async function getBarangayReports(period: "daily" | "weekly" | "monthly" = "monthly"): Promise<unknown[]> {
-  const accessToken = await requireAccessToken();
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(start.getDate() - (period === "daily" ? 1 : period === "weekly" ? 7 : 30));
-  const formatDate = (value: Date) => value.toISOString().slice(0, 10);
-  const query = new URLSearchParams({ limit: "100", sortBy: "-createdAt", from: formatDate(start), to: formatDate(end) });
-  const payload = responseData(await backendRequest<unknown>(`/incidents?${query.toString()}`, { accessToken }));
-  if (Array.isArray(payload)) return payload;
-  const value = payload as { data?: unknown[] };
-  return Array.isArray(value?.data) ? value.data : [];
-}
-
-// The incident endpoint applies the authenticated provider's organization
-// scope in the backend, so agency reports never include another agency's data.
-export async function getAgencyReports(period: "daily" | "weekly" | "monthly" = "monthly"): Promise<unknown[]> {
-  const accessToken = await requireAccessToken();
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(start.getDate() - (period === "daily" ? 1 : period === "weekly" ? 7 : 30));
-  const formatDate = (value: Date) => value.toISOString().slice(0, 10);
-  const query = new URLSearchParams({ limit: "100", sortBy: "-createdAt", from: formatDate(start), to: formatDate(end) });
-  const payload = responseData(await backendRequest<unknown>(`/incidents?${query.toString()}`, { accessToken }));
-  if (Array.isArray(payload)) return payload;
-  const value = payload as { data?: unknown[] };
-  return Array.isArray(value?.data) ? value.data : [];
 }

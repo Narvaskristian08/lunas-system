@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
   idempotencyKey: String,
+  dismissedAt: Date,
+  delivery: {
+    state: { type: String, enum: ['pending', 'processing', 'retry', 'provider_accepted', 'not_configured', 'no_devices', 'suppressed', 'permanent_failure'], default: 'pending' },
+    attempts: { type: Number, default: 0 }, nextAttemptAt: Date, attemptedAt: Date,
+    providerAcceptedAt: Date, failureCode: String
+  },
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

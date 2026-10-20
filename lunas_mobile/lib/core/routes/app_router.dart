@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/barangay_picker_screen.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,8 @@ import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_
 import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/tanod_inspections_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/tanod_home_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/repair_dashboard_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/assigned_work_orders_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/category_picker_screen.dart';
@@ -58,8 +61,6 @@ final GoRouter appRouter = GoRouter(
       '/reset-password',
     };
     final isPublic = publicLocations.contains(location);
-    final isCitizenLocation = isCitizenWorkspaceLocation(location);
-    final isRepairLocation = isRepairWorkspaceLocation(location);
     switch (authController.status) {
       case AuthStatus.initializing:
         return location == '/splash' ? null : '/splash';
@@ -89,16 +90,12 @@ final GoRouter appRouter = GoRouter(
             location == '/role-unavailable') {
           return home;
         }
-        // Mobile exposes only Citizen and Repair Personnel workspaces. This
+        // Mobile exposes independent Citizen, Tanod and Repair workspaces. This
         // is a presentation guard; the backend remains authoritative for
         // access and every API request.
-        if (authController.isCitizen) {
-          return isCitizenLocation ? null : home;
-        }
-        if (authController.isRepairPersonnel) {
-          return isRepairLocation ? null : home;
-        }
-        return '/role-unavailable';
+        return mobileWorkspaceAllows(authController.user!.role, location)
+            ? null
+            : home;
     }
   },
   routes: [
@@ -258,12 +255,36 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
-    GoRoute(path: '/repair', builder: (_, _) => const TanodHomeScreen()),
+    GoRoute(path: '/tanod', builder: (_, _) => const TanodHomeScreen()),
     GoRoute(
-      path: '/repair/work-orders',
+      path: '/tanod/inspections',
       builder: (_, state) => TanodInspectionsScreen(
         initialFilter: state.uri.queryParameters['filter'],
         initialInspectionId: state.uri.queryParameters['inspectionId'],
+      ),
+    ),
+    GoRoute(
+      path: '/tanod/notifications',
+      builder: (_, _) => const NotificationsScreen(repairWorkspace: true),
+    ),
+    GoRoute(
+      path: '/tanod/notifications/details',
+      builder: (_, state) => NotificationDetailsScreen(
+        repairWorkspace: true,
+        item: state.extra is NotificationData
+            ? state.extra as NotificationData
+            : null,
+      ),
+    ),
+    GoRoute(
+      path: '/tanod/profile',
+      builder: (_, _) => const RepairProfileScreen(),
+    ),
+    GoRoute(path: '/repair', builder: (_, _) => const RepairDashboardScreen()),
+    GoRoute(
+      path: '/repair/work-orders',
+      builder: (_, state) => AssignedWorkOrdersScreen(
+        initialFilter: state.uri.queryParameters['filter'],
       ),
     ),
     GoRoute(
@@ -312,6 +333,9 @@ bool isCitizenWorkspaceLocation(String location) =>
     location.startsWith('/notifications/') ||
     location == '/reports' ||
     location.startsWith('/reports/');
+
+bool isTanodWorkspaceLocation(String location) =>
+    location == '/tanod' || location.startsWith('/tanod/');
 
 bool isRepairWorkspaceLocation(String location) =>
     location == '/repair' || location.startsWith('/repair/');

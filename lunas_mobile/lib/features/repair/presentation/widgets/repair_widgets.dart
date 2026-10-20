@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/app/app_services.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/utils/display_labels.dart';
@@ -171,10 +172,10 @@ class RepairBottomNavigation extends StatelessWidget {
           selectedIcon: Icon(Icons.home_rounded, size: 22),
           label: 'Home',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.assignment_outlined, size: 22),
-          selectedIcon: Icon(Icons.assignment_rounded, size: 22),
-          label: 'Work Verification',
+        NavigationDestination(
+          icon: const Icon(Icons.assignment_outlined, size: 22),
+          selectedIcon: const Icon(Icons.assignment_rounded, size: 22),
+          label: authController.isTanod ? 'Inspections' : 'Work Orders',
         ),
         NavigationDestination(
           icon: _notificationIcon(Icons.notifications_outlined),

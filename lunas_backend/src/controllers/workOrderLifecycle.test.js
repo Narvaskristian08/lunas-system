@@ -33,7 +33,7 @@ const response = () => {
 describe('Utility Provider work-order creation', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  test('creates an unassigned primary work order from a Utility Provider-routed incident', async () => {
+  test('routing alone cannot authorize primary work-order creation', async () => {
     const incident = {
       _id: '507f191e810c19729de860b1',
       status: 'provider_assigned',
@@ -81,21 +81,10 @@ describe('Utility Provider work-order creation', () => {
 
     await createWorkOrder(req, res, jest.fn());
 
-    expect(WorkOrder.create).toHaveBeenCalledWith(expect.objectContaining({
-      incident: incident._id,
-      status: 'pending',
-      assignmentState: 'unassigned',
-      progressPercent: 0,
-      progressStage: 'assigned',
-      responsibleOrganization: 'Dagupan Water District'
-    }));
-    expect(Incident.findOneAndUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: incident._id, status: 'provider_assigned' }),
-      expect.objectContaining({ $set: expect.objectContaining({ workOrder: workOrder._id }) }),
-      { new: true }
-    );
-    expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'work_order_created' }));
-    expect(res.status).toHaveBeenCalledWith(201);
+    expect(WorkOrder.create).not.toHaveBeenCalled();
+    expect(Incident.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(createAuditLog).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(409);
   });
 
   test('does not create a work order if a primary work order already exists', async () => {
@@ -145,9 +134,9 @@ describe('Utility Provider work-order creation', () => {
 
     expect(WorkOrder.findOne).not.toHaveBeenCalled();
     expect(WorkOrder.create).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      message: 'Only the assigned Utility Provider organization may create a work order'
+      code: 'WORKFLOW_POLICY_REQUIRED'
     }));
   });
 });

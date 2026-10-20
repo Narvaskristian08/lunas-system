@@ -107,6 +107,8 @@ const reviewSchema = new mongoose.Schema({
 }, { _id: true });
 
 const workOrderSchema = new mongoose.Schema({
+  // Absent on historical orders; set only on genuinely new document validation.
+  maintenanceProtocol: { type: Number, enum: [9] },
   orderNumber: {
     type: String,
     unique: true,
@@ -211,6 +213,7 @@ workOrderSchema.index({ 'assignments.assignee': 1, 'assignments.active': 1 });
 // Counting existing documents is not safe when two officials create work
 // orders at the same time. The unique index remains the database backstop.
 workOrderSchema.pre('validate', async function(next) {
+  if (this.isNew) this.maintenanceProtocol = 9;
   if (!this.orderNumber) {
     const date = new Date();
     const year = date.getFullYear();

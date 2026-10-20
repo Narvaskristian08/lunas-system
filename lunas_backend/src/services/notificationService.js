@@ -17,7 +17,7 @@ const initializeOneSignal = () => {
       );
       logger.info('OneSignal initialized successfully');
     } catch (error) {
-      logger.error('OneSignal initialization error:', error);
+      logger.error('OneSignal initialization unavailable');
     }
   }
 };
@@ -65,7 +65,7 @@ const normalizeNotificationData = async (data = {}) => {
   } catch (error) {
     // Preserve the original relationship if enrichment is temporarily
     // unavailable. Notification creation must not block the workflow.
-    logger.warn(`Report notification enrichment skipped: ${error.message}`);
+    logger.warn('Report notification enrichment unavailable');
   }
 
   delete normalized.reportId;
@@ -80,35 +80,15 @@ const normalizeNotificationData = async (data = {}) => {
 exports.createNotification = async (notificationData) => {
   try {
     const data = await normalizeNotificationData(notificationData.data);
-    const notification = await Notification.create({ ...notificationData, data });
+    const notification = await Notification.create({ ...notificationData, data, sentVia: ['in_app'] });
     
-    // Notification.recipient is normally an ObjectId, not a populated User.
-    // Resolve device tokens only when push delivery is configured, while the
-    // persisted in-app notification remains durable even if lookup/delivery
-    // is unavailable.
-    if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY && notification.recipient) {
-      try {
-        const recipient = await User.findById(notification.recipient).select('deviceTokens');
-        const playerIds = (recipient?.deviceTokens || []).map((device) => device.token).filter(Boolean);
-        if (playerIds.length) {
-          await exports.sendPushNotification(
-            playerIds,
-            notification.title,
-            notification.message,
-            notification.data
-          );
-        }
-      } catch (error) {
-        logger.warn(`Push recipient lookup skipped: ${error.message}`);
-      }
-    }
-
+    // External delivery is a separate persisted, bounded worker operation.
     return notification;
   } catch (error) {
     if (error.code === 11000 && notificationData.idempotencyKey) {
-      return Notification.findOne({ idempotencyKey: notificationData.idempotencyKey });
+      return Notification.findOne({ idempotencyKey: notificationData.idempotencyKey, recipient: notificationData.recipient });
     }
-    logger.error('Notification creation error:', error);
+    logger.error('Notification persistence unavailable');
     throw error;
   }
 };
@@ -128,7 +108,7 @@ exports.sendPushNotification = async (playerIds, title, body, data = {}) => {
 
   if (!oneSignalClient || !playerIds || playerIds.length === 0) {
     logger.warn('Push notification skipped: OneSignal not configured or no player IDs');
-    return;
+    return { state: 'not_configured' };
   }
 
   try {
@@ -146,14 +126,12 @@ exports.sendPushNotification = async (playerIds, title, body, data = {}) => {
     };
 
     const response = await oneSignalClient.createNotification(notification);
-    logger.info(`Push notifications sent via OneSignal: ${response.body.recipients} recipients`);
-    
-    if (response.body.errors) {
-      logger.warn('OneSignal errors:', response.body.errors);
-    }
+    const invalidTokens = response.body?.errors?.invalid_player_ids || [];
+    if (response.body?.id && Number(response.body?.recipients) > 0) return { state: 'provider_accepted', invalidTokens };
+    return { state: 'permanent_failure', failureCode: 'provider_rejected', invalidTokens };
   } catch (error) {
-    logger.error('Push notification error:', error);
-    // Don't throw - notification service should be non-blocking
+    const status = Number(error.statusCode || error.status);
+    return { state: !status || status === 429 || status >= 500 ? 'retry' : 'permanent_failure', failureCode: !status ? 'transport_error' : `provider_${status}` };
   }
 };
 
@@ -167,20 +145,8 @@ exports.sendPushNotification = async (playerIds, title, body, data = {}) => {
  * @returns {Promise<Array>} Created notifications
  */
 exports.sendBulkNotifications = async (userIds, type, title, message, data = {}) => {
-  try {
-    const notifications = await Promise.all(userIds.map(async userId => ({
-      recipient: userId,
-      type,
-      title,
-      message,
-      data: await normalizeNotificationData(data)
-    })));
+  return Promise.all(userIds.map(recipient => exports.createNotification({ recipient, type, title, message, data })));
 
-    return await Notification.insertMany(notifications);
-  } catch (error) {
-    logger.error('Bulk notification error:', error);
-    throw error;
-  }
 };
 
 /**
@@ -193,33 +159,8 @@ exports.sendBulkNotifications = async (userIds, type, title, message, data = {})
  * @returns {Promise<void>}
  */
 exports.sendToRole = async (role, type, title, message, data = {}) => {
-  if (!oneSignalClient) {
-    initializeOneSignal();
-  }
-
-  if (!oneSignalClient) {
-    logger.warn('Push notification skipped: OneSignal not configured');
-    return;
-  }
-
-  try {
-    const notification = {
-      contents: { en: message },
-      headings: { en: title },
-      filters: [
-        { field: 'tag', key: 'role', relation: '=', value: role }
-      ],
-      data: {
-        ...data,
-        type: 'lunas_notification'
-      }
-    };
-
-    const response = await oneSignalClient.createNotification(notification);
-    logger.info(`Push notification sent to role '${role}': ${response.body.recipients} recipients`);
-  } catch (error) {
-    logger.error('Role notification error:', error);
-  }
+  const users = await User.find({ role, isActive: true, isArchived: { $ne: true } }).select('_id');
+  return exports.sendBulkNotifications(users.map(user => user._id), type, title, message, data);
 };
 
 /**
@@ -232,35 +173,9 @@ exports.sendToRole = async (role, type, title, message, data = {}) => {
  * @returns {Promise<void>}
  */
 exports.sendToBarangay = async (barangay, type, title, message, data = {}) => {
-  if (!oneSignalClient) {
-    initializeOneSignal();
-  }
-
-  if (!oneSignalClient) {
-    logger.warn('Push notification skipped: OneSignal not configured');
-    return;
-  }
-
-  try {
-    const notification = {
-      contents: { en: message },
-      headings: { en: title },
-      filters: [
-        { field: 'tag', key: 'barangay', relation: '=', value: barangay }
-      ],
-      data: {
-        ...data,
-        type: 'lunas_notification'
-      }
-    };
-
-    const response = await oneSignalClient.createNotification(notification);
-    logger.info(`Push notification sent to barangay '${barangay}': ${response.body.recipients} recipients`);
-  } catch (error) {
-    logger.error('Barangay notification error:', error);
-  }
+  const users = await User.find({ barangay, isActive: true, isArchived: { $ne: true } }).select('_id');
+  return exports.sendBulkNotifications(users.map(user => user._id), type, title, message, data);
 };
-
 /**
  * Notification templates for common events
  */

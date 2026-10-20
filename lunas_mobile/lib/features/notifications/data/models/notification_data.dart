@@ -13,6 +13,8 @@ class NotificationData {
     required this.color,
     required this.kind,
     this.type = 'status_update',
+    this.resourceAvailable = true,
+    this.inspectionId,
     this.incidentId,
     this.workOrderId,
     this.reportNumber,
@@ -21,6 +23,8 @@ class NotificationData {
     this.createdAt,
   });
 
+  final bool resourceAvailable;
+  final String? inspectionId;
   final String id;
   final String type;
   final String title;
@@ -50,6 +54,8 @@ class NotificationData {
       (json['createdAt'] ?? json['sentAt'] ?? '').toString(),
     )?.toLocal();
     return NotificationData(
+      resourceAvailable: json['resourceAvailable'] != false,
+      inspectionId: _text(data['inspectionId']),
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       type: type,
       title: (json['title'] ?? 'LUNAS Update').toString(),
@@ -119,7 +125,7 @@ Color _colorFor(String type) => switch (_kindFor(type)) {
 };
 
 String _relativeTime(DateTime? createdAt) {
-  if (createdAt == null) return 'Just now';
+  if (createdAt == null) return 'Time unavailable';
   final difference = DateTime.now().difference(createdAt);
   if (difference.inMinutes < 1) return 'Just now';
   if (difference.inHours < 1) return '${difference.inMinutes} min';

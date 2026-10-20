@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { USER_ROLES, ACCOUNT_STATUSES, accountStatus } = require('../utils/accountPolicy');
+const { canonicalizeBarangay } = require('../data/dagupanBarangays');
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -84,8 +85,14 @@ const userSchema = new mongoose.Schema({
   },
   barangay: {
     type: String,
+    validate: {
+      validator: function(value) {
+        return this.role !== 'barangay_tanod' || Boolean(value && canonicalizeBarangay(value) === value);
+      },
+      message: 'Tanods require a canonical assigned barangay'
+    },
     required: function() {
-      return this.role === 'barangay_official' || (this.role === 'repair_personnel' && !this.repairOrganization);
+      return ['barangay_official', 'barangay_tanod'].includes(this.role);
     }
   },
   utilityCompany: {

@@ -33,6 +33,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
       throw new Error('ACCOUNT_TEST_MONGODB_URI must be a local server URI with no database or credentials');
     }
     process.env.JWT_SECRET = 'isolated-account-test-access-secret';
+    process.env.TURNSTILE_SECRET_KEY = 'synthetic-captcha-verifier-only';
     process.env.JWT_REFRESH_SECRET = 'isolated-account-test-refresh-secret';
     process.env.REGISTRATION_MFA_SECRET = 'isolated-account-test-mfa-secret';
     process.env.AUTH_RATE_LIMIT_MAX_REQUESTS = '10000';
@@ -105,16 +106,16 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
   });
   test.each(['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider'])('5: %s cannot create personnel or read admin directory', async role => {
     const { token } = await actor(role);
-    await call('post', '/users/authorized', token).send(approved).expect(403);
-    await call('get', '/users/authorized', token).expect(403);
-    await call('put', `/users/${admin.id}`, token).send({ role: 'admin' }).expect(403);
+    await call('post', '/users/authorized', token).send(approved).expect(role === 'city_engineer' ? 401 : 403);
+    await call('get', '/users/authorized', token).expect(role === 'city_engineer' ? 401 : 403);
+    await call('put', `/users/${admin.id}`, token).send({ role: 'admin' }).expect(role === 'city_engineer' ? 401 : 403);
   });
   test.each(['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'admin'])('%s cannot create Repair Personnel accounts', async role => {
     const { token } = await actor(role);
     await call('post', '/users/repair-personnel', token).send({
       firstName: 'Repair', lastName: 'Worker', email: `worker-${role}@example.test`, phone: approved.phone,
       position: 'Field Technician'
-    }).expect(403);
+    }).expect(role === 'city_engineer' ? 401 : 403);
   });
   test('Utility Provider creates pending personnel in its own organization and sees only its roster', async () => {
     const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
@@ -188,7 +189,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     expect(user.password).not.toBe(password);
     expect(await bcrypt.compare(password, user.password)).toBe(true);
     expect(await AuditLog.countDocuments({ action: 'account_activation_completed' })).toBe(1);
-    const login = await request(app).post('/auth/login').send({ email: approved.email, password }).expect(200);
+    const login = await request(app).post('/auth/login').send({ email: approved.email, password, platform: 'web', captchaToken: 'synthetic-captcha' }).expect(200);
     await call('get', '/users/me', login.body.data.accessToken).expect(200);
   });
   test('8: expired, replayed, and revoked links cannot activate an account; resend replaces the old token', async () => {
@@ -210,7 +211,8 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
       reporter: admin._id, category: 'road', description: 'Test infrastructure report', location: { type: 'Point', coordinates: [120.33, 16.04], address: { barangay } } })));
     await call('get', `/incidents/${reports[0].id}`, access).expect(200);
     await call('get', `/incidents/${reports[1].id}`, access).expect(404);
-    await call('post', `/incidents/${reports[1].id}/validate`, access).send({ priority: 'high' }).expect(404);
+    await call('post', `/incidents/${reports[1].id}/validate`, access).send({ priority: 'high' }).expect(409);
+    expect((await Incident.findById(reports[1].id)).status).toBe('submitted');
     await call('post', '/users/authorized', access).send(approved).expect(403);
     await call('get', '/users/authorized', access).expect(403);
     const { user: outside } = await actor('barangay_official', { barangay: 'Lucao' });
@@ -229,7 +231,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
   });
   test('12–14: suspension/deactivation revoke access and refresh; reactivation preserves records and never revives old sessions', async () => {
     const { account, token } = await provision(); await activate(token);
-    const login = await request(app).post('/auth/login').send({ email: approved.email, password }).expect(200);
+    const login = await request(app).post('/auth/login').send({ email: approved.email, password, platform: 'web', captchaToken: 'synthetic-captcha' }).expect(200);
     const { accessToken, refreshToken } = login.body.data;
     const historical = await Incident.create({ reportNumber: 'HISTORY', reporter: admin._id, validatedBy: account.id,
       category: 'road', description: 'Historical validated action', location: { type: 'Point', coordinates: [120.33, 16.04], address: { barangay: 'Pantal' } } });

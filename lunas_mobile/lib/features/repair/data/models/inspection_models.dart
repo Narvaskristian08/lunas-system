@@ -11,11 +11,18 @@ class TanodInspection {
     this.address,
     this.latitude,
     this.longitude,
+    this.version = 0,
+    this.acknowledgedAt,
+    this.instructions,
     this.findings,
     this.result,
     this.incidentImageUrls = const [],
+    this.inspectionEvidenceUrls = const [],
   });
 
+  final int version;
+  final String? acknowledgedAt;
+  final String? instructions;
   final String id;
   final String type;
   final String status;
@@ -30,6 +37,7 @@ class TanodInspection {
   final String? findings;
   final String? result;
   final List<String> incidentImageUrls;
+  final List<String> inspectionEvidenceUrls;
 
   factory TanodInspection.fromJson(Object? value) {
     final json = value is Map
@@ -44,11 +52,12 @@ class TanodInspection {
     final address = location['address'] is Map
         ? Map<String, dynamic>.from(location['address'] as Map)
         : <String, dynamic>{};
-    final incidentImageUrls = (incident['images'] is List ? incident['images'] as List : const [])
-        .whereType<Map>()
-        .map((image) => image['url']?.toString() ?? '')
-        .where((url) => url.startsWith('http'))
-        .toList(growable: false);
+    final incidentImageUrls =
+        (incident['images'] is List ? incident['images'] as List : const [])
+            .whereType<Map>()
+            .map((image) => image['url']?.toString() ?? '')
+            .where((url) => url.startsWith('http'))
+            .toList(growable: false);
     return TanodInspection(
       id: '${json['id'] ?? json['_id'] ?? ''}',
       type: '${json['type'] ?? 'initial'}',
@@ -73,9 +82,18 @@ class TanodInspection {
               (location['coordinates'] as List).length > 1
           ? double.tryParse('${(location['coordinates'] as List)[1]}')
           : null,
+      version: int.tryParse('${json['version'] ?? 0}') ?? 0,
+      acknowledgedAt: json['acknowledgedAt']?.toString(),
+      instructions: json['instructions']?.toString(),
       findings: json['findings']?.toString(),
       result: json['result']?.toString(),
       incidentImageUrls: incidentImageUrls,
+      inspectionEvidenceUrls:
+          (json['evidence'] is List ? json['evidence'] as List : const [])
+              .whereType<Map>()
+              .map((image) => image['url']?.toString() ?? '')
+              .where((url) => url.startsWith('http'))
+              .toList(growable: false),
     );
   }
 }
