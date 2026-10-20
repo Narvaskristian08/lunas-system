@@ -11,5 +11,5 @@ export default async function TanodAccountsPage({ searchParams }: { searchParams
   const message = typeof params.created === "string" ? `Tanod account created${params.warning ? "; activation email was not delivered" : " and invitation sent"}.` : undefined;
   let tanods: TanodAccount[] = [];
   try { tanods = await getTanodAccounts(); } catch { /* The page can still show the creation action if the roster is temporarily unavailable. */ }
-  return <div className="mx-auto max-w-4xl"><TanodAccountManager tanods={tanods} barangay={viewer.barangay} message={message} error={error} /></div>;
+  return <div className="mx-auto w-full max-w-7xl"><TanodAccountManager tanods={tanods} barangay={viewer.barangay} message={message} error={error} /></div>;
 }

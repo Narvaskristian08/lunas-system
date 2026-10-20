@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { MapPin, Plus, ShieldCheck, UserRound } from "lucide-react";
+import { Mail, MapPin, Phone, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { createTanodAction } from "@/app/actions/authorized-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Modal } from "@/components/ui/modal";
 
 const inputClass = "mt-2 min-h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-slate-50/60 px-3 py-2.5 text-sm font-normal text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-brand-600 focus:bg-white focus:ring-3 focus:ring-sky-200/60";
 const labelClass = "block min-w-0 text-sm font-medium text-slate-700";
@@ -13,7 +11,6 @@ const labelClass = "block min-w-0 text-sm font-medium text-slate-700";
 type Tanod = { id: string; firstName?: string; middleName?: string; lastName?: string; email?: string; phone?: string; accountStatus?: string; isActive?: boolean; createdAt?: string };
 
 export function TanodAccountManager({ tanods, barangay, message, error }: { tanods: Tanod[]; barangay?: string; message?: string; error?: string }) {
-  const [open, setOpen] = useState(false);
   return <div className="space-y-6">
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -21,24 +18,31 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
         <h1 className="mt-1 text-3xl font-bold text-slate-950">Tanod Accounts</h1>
         <p className="mt-2 text-slate-600">Utility Personnel assigned to {barangay}.</p>
       </div>
-      <Button onClick={() => setOpen(true)}><Plus className="size-4" aria-hidden="true" />Create Tanod Account</Button>
     </div>
     {message ? <p role={error ? "alert" : "status"} className={`rounded-xl border p-4 text-sm ${error ? "border-red-200 bg-red-50 text-red-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</p> : null}
-    <Card>
-      <CardHeader title={`${tanods.length} Tanod account${tanods.length === 1 ? "" : "s"}`} description="Only accounts assigned to your barangay are shown." />
+    <div className="grid items-start gap-6 xl:grid-cols-2">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader title={`${tanods.length} Tanod account${tanods.length === 1 ? "" : "s"}`} description="Personnel assigned to your barangay." />
       {tanods.length ? <div className="divide-y divide-slate-200">
-        {tanods.map((tanod) => <div key={tanod.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
-          <div>
-            <p className="font-semibold text-slate-950">{[tanod.firstName, tanod.middleName, tanod.lastName].filter(Boolean).join(" ")}</p>
-            <p className="text-sm text-slate-600">{tanod.email || "No email"} · {tanod.phone || "No phone"}</p>
+        {tanods.map((tanod) => <div key={tanod.id} className="flex items-start gap-3 p-5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><UserRound className="size-5" aria-hidden="true" /></div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="min-w-0 break-words font-semibold text-slate-950">{[tanod.firstName, tanod.middleName, tanod.lastName].filter(Boolean).join(" ")}</p>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${tanod.accountStatus === "active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{tanod.accountStatus === "active" ? "Active" : "Pending activation"}</span>
+            </div>
+            <div className="mt-3 space-y-1.5 text-sm text-slate-600">
+              <p className="flex items-start gap-2"><Mail className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden="true" /><span className="min-w-0 break-all">{tanod.email || "No email"}</span></p>
+              <p className="flex items-center gap-2"><Phone className="size-4 shrink-0 text-slate-400" aria-hidden="true" />{tanod.phone || "No phone"}</p>
+            </div>
           </div>
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tanod.accountStatus === "active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{tanod.accountStatus === "active" ? "Active" : "Pending activation"}</span>
         </div>)}
-      </div> : <p className="p-5 text-sm text-slate-600">No Tanod accounts have been created for this barangay.</p>}
+      </div> : <div className="p-6 text-center"><UserRound className="mx-auto mb-3 size-8 text-slate-400" aria-hidden="true" /><p className="font-medium text-slate-800">No Tanod accounts yet</p><p className="mt-1 text-sm text-slate-500">Add your first Tanod using the account form.</p></div>}
     </Card>
 
-    {open ? <Modal open={open} title="Create Barangay Tanod" size="compact" onClose={() => setOpen(false)}>
-      <form action={createTanodAction} className="space-y-6">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader title="Create Barangay Tanod" description="Add personnel assigned to your barangay." />
+      <form action={createTanodAction} aria-label="Create Barangay Tanod" className="space-y-5 p-5 sm:p-6">
         <div className="flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50 p-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-700 shadow-sm">
             <ShieldCheck className="size-5" aria-hidden="true" />
@@ -84,10 +88,11 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
         </fieldset>
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-end">
-          <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button type="reset" variant="secondary">Clear form</Button>
           <Button type="submit"><Plus className="size-4" aria-hidden="true" />Create Tanod Account</Button>
         </div>
       </form>
-    </Modal> : null}
+    </Card>
+    </div>
   </div>;
 }

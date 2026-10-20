@@ -844,30 +844,36 @@ counts from the local Docker database for the fixture citizen. No backend workfl
 closure authority, or incident data was changed. No new unit test was added
 for this layout; large-text/dark-mode acceptance remains pending.
 
-### Tanod account creation layout (2026-10-20)
+### Tanod account workspace layout (2026-10-20)
 
-`lunas_web/src/components/validation/tanod-account-manager.tsx` now uses the
-shared `ui/modal.tsx` dialog for creation, with focus containment/restoration,
-Escape handling and viewport-bounded scrolling. A barangay assignment panel
-precedes Personal details and Contact details fieldsets. Required markers,
-optional-name labels, example placeholders, contact-format hints, consistent
-inputs and responsive action buttons replace the undifferentiated field grid.
-Name/contact fields use two columns on wider screens and one on phones.
-Autocomplete attributes are supplied for names and contact details. The phone
-HTML pattern now uses literal single regex escapes (rather than doubled JSX
-attribute escapes), matching its documented `09XXXXXXXXX` / `+639XXXXXXXXX`
-formats. The server action, role/barangay assignment, field names, required
-fields, length limits, and backend authorization are retained.
+`lunas_web/src/components/validation/tanod-account-manager.tsx` presents the
+account directory and creation form together, replacing the sparse list and
+modal-only creation flow. The page wrapper in
+`src/app/(protected)/validation-routing/tanods/page.tsx` uses a wider `max-w-7xl`
+container. At desktop widths the directory and form use two equal columns;
+below the `xl` breakpoint they stack. Account rows separate name/status,
+email and phone, with icons and wrapping for long names/addresses. No filler
+records or artificial minimum-height sections are used.
 
-Verification: TypeScript and targeted ESLint passed; phone-pattern checks
-accepted both documented formats and rejected short/non-numeric samples.
-Production web build and all 27 existing Playwright tests passed
-(`cd lunas_web && npm run test:e2e`; isolated API fixtures). These are regression
-checks, not a dedicated end-to-end Tanod creation/activation test. Docker web rebuilt and started successfully; `/api/health` on port 3001
-returned `ready` with backend `reachable`. Browser discovery returned no connected session, so the new form
-has not had interactive visual inspection here. No real account was created
-for this layout check; activation delivery and live provisioning remain outside
-this verification boundary.
+The redundant header Create button is removed; account creation is available
+through the submit button at the bottom of the inline form. The removal
+passed targeted ESLint, TypeScript and the Docker production rebuild; web
+readiness still reports backend reachable. The form retains its barangay assignment panel,
+Personal details/Contact details fieldsets, required markers, optional labels,
+placeholders, autocomplete and phone-format hints. Clear form uses the native
+reset action. Phone validation accepts `09XXXXXXXXX` / `+639XXXXXXXXX`.
+The server action, role/barangay assignment, field names, required fields,
+length limits and backend authorization remain unchanged. The earlier shared
+modal treatment has been superseded by this inline workspace.
+
+TypeScript and targeted ESLint checks passed. Production web build and all 27 existing Playwright tests passed
+(`cd lunas_web && npm run test:e2e`, using isolated API fixtures). Docker web
+rebuilt/started successfully; `/api/health` on port 3001 returned `ready` with
+backend `reachable`. These are regression/readiness checks, not dedicated
+acceptance of every Tanod-page width or provisioning action.
+No real account was created for this layout check. Browser discovery in this
+session had no connected browser; live visual review, actual account
+provisioning and activation delivery remain unverified.
 
 ### Local Dagupan fixtures (optional, isolated data only)
 
