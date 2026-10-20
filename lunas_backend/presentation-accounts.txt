@@ -1,0 +1,39 @@
+LUNAS PRESENTATION ACCOUNTS
+===========================
+LOCAL DEMO ONLY — synthetic accounts, not real government identities.
+Use only with a local MongoDB database and ALLOW_DEMO_SEED=true.
+
+Default password for every account: LunasLocal2026!
+Override with DAGUPAN_SEED_PASSWORD before running the seeder.
+
+ADMIN
+-----
+dagupan.admin@lunas.test                 Local Administrator
+
+CITIZEN
+-------
+dagupan.citizen@lunas.test               Local Citizen
+
+BARANGAY OFFICIALS
+------------------
+Email format: dagupan.barangay-<barangay-slug>@lunas.test
+One account is created for every canonical Dagupan barangay.
+Example: dagupan.barangay-poblacion-oeste@lunas.test
+
+TANOD / UTILITY PERSONNEL
+-------------------------
+Email format: dagupan.tanod-<barangay-slug>@lunas.test
+One account is created for every canonical Dagupan barangay.
+Example: dagupan.tanod-poblacion-oeste@lunas.test
+
+AGENCY / UTILITY PROVIDERS
+-------------------------
+dagupan.provider-city-maintenance@lunas.test   Dagupan City Engineering Office
+dagupan.provider-decorp@lunas.test             Dagupan Electric Corporation (DECORP)
+dagupan.provider-dcwd@lunas.test               Dagupan City Water District / Pamana Water Dagupan
+dagupan.provider-dpwh@lunas.test               DPWH - Dagupan National Infrastructure
+
+SEED COMMAND
+------------
+ALLOW_DEMO_SEED=true MONGODB_URI=mongodb://localhost:27017/lunas_db npm run seed:presentation
+Add -- --replace to replace presentation reports and refresh seeded account fields.
