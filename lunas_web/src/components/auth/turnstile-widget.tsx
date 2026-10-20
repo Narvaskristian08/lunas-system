@@ -64,10 +64,14 @@ export function TurnstileWidget({
   }, [clearToken, onVerificationChange, siteKey]);
 
   useEffect(() => {
-    if (!widgetIdRef.current || !window.turnstile) return;
-    window.turnstile.reset(widgetIdRef.current);
-    clearToken();
-  }, [clearToken, resetKey]);
+    const retryTimer = window.setInterval(renderWidget, 250);
+    renderWidget();
+    if (widgetIdRef.current && window.turnstile) {
+      window.turnstile.reset(widgetIdRef.current);
+      clearToken();
+    }
+    return () => window.clearInterval(retryTimer);
+  }, [clearToken, renderWidget, resetKey]);
 
   if (!siteKey) {
     return (
@@ -82,7 +86,7 @@ export function TurnstileWidget({
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
-        onReady={renderWidget}
+        onLoad={renderWidget}
       />
       <p className="text-xs leading-5 text-slate-600">
         Cloudflare security checks run automatically. Most people will not need to do anything.
