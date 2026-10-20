@@ -796,6 +796,54 @@ returned `ready` with backend `reachable`, and `/login` returned HTTP 200. Revie
 and phone widths as a follow-up; automated suite coverage does not certify every
 filter/page combination.
 
+### Mobile bottom navigation preview (2026-10-20)
+
+`lunas_mobile/lib/core/widgets/lunas_navigation_bar.dart` supplies a shared
+bottom-navigation surface with a subtle top border/shadow, a 76px bar plus
+padding and system-safe area, soft blue selected indicator, blue selected icon,
+bolder 11px active labels, and always-visible labels. Citizen navigation in
+`features/citizen/presentation/widgets/citizen_bottom_navigation.dart` retains
+five tabs: Home, Reports, Maps, Notifications, Profile. Tanod navigation in
+`features/repair/presentation/widgets/repair_widgets.dart` retains four:
+Home, Work Verification, Notifications, Profile. Existing destination routes,
+selected-tab behavior, form/detail navigation visibility, and Tanod unread
+badges remain in place. No new citizen badge data fetching or tab-state
+persistence was added by this visual change.
+
+Scoped `flutter analyze` on these three files passed with no issues. Existing
+`flutter test test/repair_dashboard_layout_test.dart
+test/repair_profile_account_test.dart` passed three tests; these cover existing
+layout/profile behavior, not every navigation path. The Docker-connected debug
+APK build passed (9.5-second incremental Gradle build). The updated LUNAS Docker APK installed successfully on the USB Infinix and
+launched with the existing citizen session preserved. A device screenshot of
+the Citizen Home screen confirmed all five labels fit and the selected Home
+icon/label and blue indicator are visible. The same shared surface is wired
+into Tanod navigation; its four-tab appearance was not separately captured
+with a live Tanod session. User acceptance of the new appearance is pending. Full role navigation and large-text accessibility still
+need device acceptance checks.
+
+### Citizen dashboard summary cards (2026-10-20)
+
+`lunas_mobile/lib/features/citizen/presentation/screens/citizen_dashboard_screen.dart`
+now shows equal-width Active Reports and Resolved cards side by side above
+Report an Issue. Blue and green treatments, status icons, large counts and
+short descriptions distinguish the cards. Each opens the corresponding
+`/reports?filter=active` or `/reports?filter=resolved` view. Counts come from
+separate paginated `getMyReportsPage(limit: 1, filter: ...)` totals fetched in
+parallel with recent reports; they are not inferred from the five recent
+items. A failed initial count remains unavailable (an em dash), rather than
+claiming zero. Existing backend citizen scopes and definitions are reused:
+resolved means `resolved`/`closed`; agency `work_completed` awaiting final
+verification stays active.
+
+Scoped Flutter analysis passed with no issues; the Docker-connected debug APK
+build passed (8.8-second incremental Gradle build). The updated APK installed and launched successfully on the USB Infinix.
+A device screenshot confirmed both cards fit side by side above Report an
+Issue and showed Active Reports **2**, Resolved **1**, matching read-only
+counts from the local Docker database for the fixture citizen. No backend workflow state,
+closure authority, or incident data was changed. No new unit test was added
+for this layout; large-text/dark-mode acceptance remains pending.
+
 ### Local Dagupan fixtures (optional, isolated data only)
 
 Current role update (2026-10-20): Tanods are now `utility_personnel`, superseding earlier notes below about deferred Tanod seeding. Converted all 31 existing `barangay_tanod` demo accounts in place; preserved IDs, barangays and inspection references, revoked sessions and recorded `role_changed` audits. The database has 68 accounts: Admin 1, citizen 1, barangay official 31, Utility Personnel 31 and agency provider 4, with no repair personnel or legacy City Engineer accounts.

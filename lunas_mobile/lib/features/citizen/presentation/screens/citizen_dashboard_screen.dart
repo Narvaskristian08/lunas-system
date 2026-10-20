@@ -1,4 +1,3 @@
-import 'package:lunas_mobile/core/theme/app_colors.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_submitted_dialog.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
@@ -31,6 +30,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
   String? _error;
   List<IncidentReport> _reports = const [];
   int? _activeTotal;
+  int? _resolvedTotal;
 
   @override
   void initState() {
@@ -85,25 +85,37 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
       }
     }
 
-    Future<void> loadTotal() async {
+    Future<void> loadTotal(String filter) async {
       try {
         final result = await reportService.getMyReportsPage(
           limit: 1,
-          filter: 'active',
+          filter: filter,
         );
-        if (mounted) setState(() => _activeTotal = result.total);
+        if (mounted) {
+          setState(() {
+            if (filter == 'active') {
+              _activeTotal = result.total;
+            } else {
+              _resolvedTotal = result.total;
+            }
+          });
+        }
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not refresh the active report count.'),
+            SnackBar(
+              content: Text('Could not refresh the $filter report count.'),
             ),
           );
         }
       }
     }
 
-    await Future.wait([loadRecent(), loadTotal()]);
+    await Future.wait([
+      loadRecent(),
+      loadTotal('active'),
+      loadTotal('resolved'),
+    ]);
     if (mounted) setState(() => _loading = false);
   }
 
@@ -142,7 +154,36 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 const SizedBox(height: AppSpacing.xs),
                 const Text('Report local issues and track their progress.'),
                 const SizedBox(height: AppSpacing.xl),
-                _ActiveReportSummary(active: _activeTotal),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _ReportSummaryCard(
+                          title: 'Active Reports',
+                          count: _activeTotal,
+                          subtitle: 'Under review or repair',
+                          icon: Icons.pending_actions_rounded,
+                          color: const Color(0xFF0055A4),
+                          background: const Color(0xFFE8F0FF),
+                          filter: 'active',
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _ReportSummaryCard(
+                          title: 'Resolved',
+                          count: _resolvedTotal,
+                          subtitle: 'Verified and completed',
+                          icon: Icons.task_alt_rounded,
+                          color: const Color(0xFF18734B),
+                          background: const Color(0xFFE8F5EE),
+                          filter: 'resolved',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.md),
                 _ReportCallout(
                   restriction: user?.reportingRestriction,
@@ -277,58 +318,77 @@ class _ReportCallout extends StatelessWidget {
   }
 }
 
-class _ActiveReportSummary extends StatelessWidget {
-  const _ActiveReportSummary({required this.active});
-  final int? active;
+class _ReportSummaryCard extends StatelessWidget {
+  const _ReportSummaryCard({
+    required this.title,
+    required this.count,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.background,
+    required this.filter,
+  });
+
+  final String title;
+  final int? count;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final Color background;
+  final String filter;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => context.go('/reports?filter=active'),
-        borderRadius: AppRadius.card,
-        child: Ink(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE1EAFF),
-            borderRadius: AppRadius.card,
-            border: Border.all(color: const Color(0xFFD1DDF7)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Active Reports',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      active == 0
-                          ? 'No reports awaiting review or repair.'
-                          : 'Reports still being reviewed or repaired.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      label: '$title: ${count ?? "unavailable"}. View reports.',
+      onTap: () => context.go('/reports?filter=$filter'),
+      excludeSemantics: true,
+      child: Material(
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.surfaceContainerHigh
+            : background,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.card,
+          side: BorderSide(color: color.withValues(alpha: .15)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.go('/reports?filter=$filter'),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  count?.toString() ?? '—',
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
                 ),
-              ),
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColorsLight.info,
-                child: Text(
-                  active?.toString() ?? '—',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontSize: 24,
-                    height: 1,
-                    color: Colors.white,
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

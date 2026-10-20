@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_navigation_bar.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:lunas_mobile/core/utils/display_labels.dart';
@@ -151,10 +152,8 @@ class RepairBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      indicatorColor: Theme.of(context).colorScheme.primary,
+    return LunasNavigationBar(
       selectedIndex: selectedIndex,
-      height: 64,
       onDestinationSelected: (index) {
         if (index == selectedIndex) return;
         final route = switch (index) {

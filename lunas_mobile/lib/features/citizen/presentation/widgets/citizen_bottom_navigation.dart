@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/core/widgets/lunas_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -39,13 +40,10 @@ class CitizenBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final path = GoRouterState.of(context).uri.path;
     final selectedIndex = _selectedIndexFor(path);
-    return NavigationBar(
+    return LunasNavigationBar(
       selectedIndex: selectedIndex,
-      height: 64,
-      indicatorColor: theme.colorScheme.primary,
       onDestinationSelected: (index) {
         if (index == selectedIndex) return;
         context.go(_destinations[index].route);
