@@ -2,7 +2,7 @@ const { body, query } = require('express-validator');
 const { AUTHORIZED_ROLES, ACCOUNT_STATUSES } = require('../utils/accountPolicy');
 const { canonicalizeBarangay, isValidBarangay } = require('../utils/validators');
 
-const PROFILE_FIELDS = ['firstName', 'lastName', 'phone', 'personnelId', 'position', 'organization', 'role',
+const PROFILE_FIELDS = ['firstName', 'middleName', 'suffix', 'lastName', 'phone', 'personnelId', 'position', 'organization', 'role',
   'barangay', 'utilityCompany', 'repairOrganization', 'repairTeam', 'approvalAuthority', 'approvalReference'];
 const onlyFields = fields => body().custom(value => {
   if (!value || typeof value !== 'object' || Array.isArray(value)
@@ -45,6 +45,11 @@ const profileRules = [
 exports.createAccountValidation = [
   onlyFields([...PROFILE_FIELDS, 'email']),
   body('email').isString().bail().isEmail().normalizeEmail(), ...profileRules
+];
+exports.updateTanodValidation = [
+  onlyFields(['firstName', 'middleName', 'suffix', 'lastName', 'phone']),
+  text('firstName', 80), text('middleName', 80, true), text('suffix', 20, true), text('lastName', 80),
+  body('phone').isString().bail().trim().matches(/^(\+639|09)\d{9}$/).withMessage('Valid Philippine phone number is required')
 ];
 exports.createRepairPersonnelValidation = [
   onlyFields(['firstName', 'middleName', 'suffix', 'lastName', 'email', 'phone', 'repairTeam', 'repairAccountType']),

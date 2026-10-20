@@ -52,3 +52,18 @@ export async function createTanodAction(form: FormData): Promise<void> {
     redirect("/validation-routing/tanods?error=The%20account%20service%20is%20unavailable.%20Try%20again%20later.");
   }
 }
+
+export async function updateTanodAction(id: string, form: FormData): Promise<void> {
+  const viewer = await requirePermission("reports.validate");
+  if (viewer.backendRole !== "barangay_official" || !viewer.barangay) redirect("/validation-routing/tanods?error=Only%20Barangay%20Officials%20can%20edit%20Tanod%20accounts.");
+  const accessToken = await requireAccessToken();
+  const body = Object.fromEntries(["firstName", "middleName", "suffix", "lastName", "phone"].map((field) => [field, String(form.get(field) ?? "").trim()]));
+  try {
+    await backendRequest(`/users/tanods/${id}`, { accessToken, method: "PATCH", body: JSON.stringify(body) });
+    revalidatePath("/validation-routing/tanods");
+    redirect("/validation-routing/tanods?updated=1");
+  } catch (error) {
+    if (isBackendApiError(error) && error.status < 500) { const payload = error.payload as { errors?: Array<{ message?: string }> } | undefined; redirect(`/validation-routing/tanods?error=${encodeURIComponent(payload?.errors?.[0]?.message || error.message)}`); }
+    redirect("/validation-routing/tanods?error=The account service is unavailable. Try again later.");
+  }
+}

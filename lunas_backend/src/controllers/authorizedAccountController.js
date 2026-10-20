@@ -188,6 +188,19 @@ exports.createTanod = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: { account: serializeAccount(user), delivery }, message: delivery.delivered ? 'Tanod account created. Activation email sent.' : 'Tanod account created. Activation email was not delivered; configure delivery and resend.' });
 });
 
+exports.updateTanod = asyncHandler(async (req, res) => {
+  const before = await targetAccount(req, res);
+  if (!before || before.role !== 'utility_personnel' || before.barangay !== req.user.barangay || !checkActor(req, res, before)) return;
+  const user = await User.findOneAndUpdate(
+    { _id: before._id, role: 'utility_personnel', barangay: req.user.barangay },
+    { $set: { firstName: req.body.firstName, middleName: req.body.middleName || '', suffix: req.body.suffix || '', lastName: req.body.lastName, phone: req.body.phone }, $inc: { __v: 1 } },
+    { new: true, runValidators: true }
+  );
+  if (!user) return conflict(res);
+  await audit(req, user, 'user_updated', serializeAccount(before), serializeAccount(user), { editorRole: req.user.role });
+  res.json({ success: true, data: { account: serializeAccount(user) }, message: 'Tanod details updated.' });
+});
+
 exports.updateRepairPersonnel = asyncHandler(async (req, res) => {
   const before = await targetAccount(req, res);
   if (!before || !checkActor(req, res, before)) return;
