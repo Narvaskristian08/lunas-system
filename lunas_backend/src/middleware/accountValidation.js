@@ -19,7 +19,7 @@ const text = (key, max, optional = false) => {
 const profileRules = [
   text('firstName', 80), text('lastName', 80),
   body('phone').custom((value, { req }) => {
-    if (req.body.role !== 'repair_personnel') return true;
+    if (req.body.role !== 'utility_personnel') return true;
     if (typeof value !== 'string' || !/^(\+639|09)\d{9}$/.test(value.trim())) throw new Error('Valid Philippine phone number is required');
     return true;
   }),
@@ -33,9 +33,9 @@ const profileRules = [
   text('approvalAuthority', 160), text('approvalReference', 500),
   body().custom(value => {
     if (value.role === 'barangay_official' && !value.barangay) throw new Error('Barangay officials require an assigned barangay');
-    if (value.role === 'repair_personnel' && !value.barangay) throw new Error('Utility Personnel require an assigned barangay');
+    if (value.role === 'utility_personnel' && !value.barangay) throw new Error('Utility Personnel require an assigned barangay');
     if (value.role === 'utility_provider' && !value.utilityCompany) throw new Error('Utility providers require an assigned utility company');
-    if (!['barangay_official', 'repair_personnel'].includes(value.role) && value.barangay) throw new Error('This role uses city or organization scope, not a barangay assignment');
+    if (!['barangay_official', 'utility_personnel'].includes(value.role) && value.barangay) throw new Error('This role uses city or organization scope, not a barangay assignment');
     if (value.role !== 'utility_provider' && value.utilityCompany) throw new Error('Utility company applies only to utility providers');
     if (value.repairOrganization || value.repairTeam) throw new Error('Provider repair staffing is no longer managed in LUNAS');
     return true;

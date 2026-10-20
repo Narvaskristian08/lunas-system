@@ -36,8 +36,9 @@ class RepairService {
     EvidenceSelection? evidence,
   }) async {
     final trimmed = findings.trim();
-    if (trimmed.length < 2)
+    if (trimmed.length < 2) {
       throw ArgumentError.value(findings, 'findings', 'Findings are required');
+    }
     final fields = {'findings': trimmed, 'result': result};
     if (evidence == null) {
       await _apiClient.post(

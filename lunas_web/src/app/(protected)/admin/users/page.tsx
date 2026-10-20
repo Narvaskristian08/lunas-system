@@ -11,7 +11,7 @@ export default async function AuthorizedAccountsPage({ searchParams }: {
   const filters = await searchParams;
   const search = (filters.search || "").slice(0, 100);
   const query = new URLSearchParams({ search, page: /^\d+$/.test(filters.page || "") ? filters.page! : "1" });
-  const role = ["admin", "barangay_official", "utility_provider", "repair_personnel"].includes(filters.role || "") ? filters.role! : "";
+  const role = ["admin", "barangay_official", "utility_provider", "utility_personnel"].includes(filters.role || "") ? filters.role! : "";
   const status = ["pending_activation", "active", "suspended", "deactivated"].includes(filters.status || "") ? filters.status! : "";
   const organization = (filters.organization || "").slice(0, 160);
   for (const [key, value] of Object.entries({ role, status, organization })) if (value) query.set(key, value);

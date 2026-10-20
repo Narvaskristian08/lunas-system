@@ -21,10 +21,7 @@ import 'package:lunas_mobile/features/notifications/presentation/screens/notific
 import 'package:lunas_mobile/features/notifications/presentation/screens/notification_details_screen.dart';
 import 'package:lunas_mobile/features/notifications/presentation/widgets/notification_widgets.dart';
 import 'package:lunas_mobile/features/profile/presentation/screens/citizen_profile_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_profile_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/repair_work_order_location_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/update_repair_progress_screen.dart';
-import 'package:lunas_mobile/features/repair/presentation/screens/work_order_details_screen.dart';
+import 'package:lunas_mobile/features/repair/presentation/screens/utility_personnel_profile_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/tanod_inspections_screen.dart';
 import 'package:lunas_mobile/features/repair/presentation/screens/tanod_home_screen.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
@@ -59,7 +56,6 @@ final GoRouter appRouter = GoRouter(
     };
     final isPublic = publicLocations.contains(location);
     final isCitizenLocation = isCitizenWorkspaceLocation(location);
-    final isRepairLocation = isRepairWorkspaceLocation(location);
     switch (authController.status) {
       case AuthStatus.initializing:
         return location == '/splash' ? null : '/splash';
@@ -89,14 +85,12 @@ final GoRouter appRouter = GoRouter(
             location == '/role-unavailable') {
           return home;
         }
-        // Mobile exposes only Citizen and Repair Personnel workspaces. This
-        // is a presentation guard; the backend remains authoritative for
-        // access and every API request.
+        // Presentation guards supplement the backend authorization checks.
         if (authController.isCitizen) {
           return isCitizenLocation ? null : home;
         }
-        if (authController.isRepairPersonnel) {
-          return isRepairLocation ? null : home;
+        if (authController.isUtilityPersonnel) {
+          return isUtilityWorkspaceLocation(location) ? null : home;
         }
         return '/role-unavailable';
     }
@@ -267,23 +261,6 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/repair/work-orders/:id/progress',
-      builder: (_, state) => UpdateRepairProgressScreen(
-        workOrderId: state.pathParameters['id'] ?? '',
-      ),
-    ),
-    GoRoute(
-      path: '/repair/work-orders/:id/location',
-      builder: (_, state) => RepairWorkOrderLocationScreen(
-        workOrderId: state.pathParameters['id'] ?? '',
-      ),
-    ),
-    GoRoute(
-      path: '/repair/work-orders/:id',
-      builder: (_, state) =>
-          WorkOrderDetailsScreen(workOrderId: state.pathParameters['id'] ?? ''),
-    ),
-    GoRoute(
       path: '/repair/notifications',
       builder: (_, _) => const NotificationsScreen(repairWorkspace: true),
     ),
@@ -298,7 +275,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/repair/profile',
-      builder: (_, _) => const RepairProfileScreen(),
+      builder: (_, _) => const UtilityPersonnelProfileScreen(),
     ),
   ],
   errorBuilder: (_, state) =>
@@ -313,8 +290,13 @@ bool isCitizenWorkspaceLocation(String location) =>
     location == '/reports' ||
     location.startsWith('/reports/');
 
-bool isRepairWorkspaceLocation(String location) =>
-    location == '/repair' || location.startsWith('/repair/');
+bool isUtilityWorkspaceLocation(String location) => const {
+  '/repair',
+  '/repair/work-orders',
+  '/repair/profile',
+  '/repair/notifications',
+  '/repair/notifications/details',
+}.contains(location);
 
 class _MissingRouteDataScreen extends StatelessWidget {
   const _MissingRouteDataScreen({required this.message});

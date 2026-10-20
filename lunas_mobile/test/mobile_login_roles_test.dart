@@ -41,6 +41,7 @@ void main() {
   for (final role in [
     'citizen',
     'repair_personnel',
+    'utility_personnel',
     'admin',
     'barangay_official',
     'city_engineer',
@@ -52,7 +53,7 @@ void main() {
       final service = FakeAuth(role);
       final controller = AuthController(service);
       addTearDown(controller.dispose);
-      final allowed = role == 'citizen' || role == 'repair_personnel';
+      final allowed = role == 'citizen' || role == 'utility_personnel';
       expect(
         await controller.login(email: 'test@example.com', password: 'password'),
         allowed,
@@ -67,7 +68,7 @@ void main() {
         expect(controller.user, isNull);
         expect(
           controller.message,
-          contains('only for citizen and repair personnel'),
+          contains('only for citizen and utility personnel'),
         );
       }
     });

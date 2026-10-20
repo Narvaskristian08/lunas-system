@@ -29,28 +29,15 @@ test.describe("engineering maintenance workspace", () => {
     requested.length = 0;
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-engineer" }), url: baseURL!, httpOnly: true }]);
   });
-  test("cards and tabs open separate review and verification queues", async ({ page }) => {
+  test("retired City Engineer sessions cannot open operational queues", async ({ page }) => {
     await page.goto("/work-orders");
-    await expect(page.getByRole("heading", { name: "Maintenance", exact: true })).toBeVisible();
-    const sidebar = page.getByRole("navigation", { name: "Primary Navigation" });
-    await expect(sidebar.getByRole("link", { name: "Maintenance", exact: true })).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Pending Validation" })).toHaveCount(0);
-    await page.getByRole("link", { name: "Awaiting Review 3", exact: true }).click();
-    await expect(page).toHaveURL(/view=review/);
-    await expect(page.getByRole("heading", { name: "Barangay-Validated Incident Queue" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Awaiting Review 3", exact: true })).toHaveAttribute("aria-current", "page");
-    await page.getByRole("link", { name: "Awaiting Verification 1", exact: true }).click();
-    await expect(page.getByRole("link", { name: "Awaiting Verification 1", exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(page).toHaveURL(/view=verification/);
-    await expect.poll(() => requested.some(path => path.startsWith("/api/v1/work-orders?") && path.includes("status=provider_accepted"))).toBe(true);
-    await expect(page.getByLabel("Repair Status", { exact: true })).toHaveCount(0);
-    await page.goto("/validation-routing");
-    await expect(page).toHaveURL(/work-orders\?view=review/);
+    await expect(page.getByRole("heading", { name: "Session expired", exact: true })).toBeVisible();
+    expect(requested.some(path => path.startsWith("/api/v1/work-orders?"))).toBe(false);
   });
-  test("provider navigation retains work orders and has no engineering tabs", async ({ page, context, baseURL }) => {
+  test("provider navigation opens Agency Reports without retired engineering tabs", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-provider" }), url: baseURL!, httpOnly: true }]);
     await page.goto("/work-orders");
-    await expect(page.getByRole("heading", { name: "Work Orders", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Agency Reports", exact: true, level: 1 })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Maintenance views" })).toHaveCount(0);
   });
 });

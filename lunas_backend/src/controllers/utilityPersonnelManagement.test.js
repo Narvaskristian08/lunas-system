@@ -6,17 +6,17 @@ const controller = require('./authorizedAccountController');
 const { createActivation, deliverActivation } = require('../services/accountActivationService');
 const { validationResult } = require('express-validator');
 const rules = require('../middleware/accountValidation');
-const target = (changes = {}) => ({ _id: 'worker', role: 'repair_personnel', repairOrganization: 'Utility A', __v: 2,
+const target = (changes = {}) => ({ _id: 'worker', role: 'utility_personnel', barangay: 'Pantal', __v: 2,
   requiresActivation: true, accountStatus: 'pending_activation', toPublicJSON: () => ({}), ...changes });
-const req = (body = {}) => ({ user: { _id: 'provider', role: 'utility_provider', utilityCompany: 'Utility A' },
+const req = (body = {}) => ({ user: { _id: 'provider', role: 'barangay_official', barangay: 'Pantal' },
   params: { id: 'worker' }, body: { version: 2, ...body }, headers: {} });
 const response = () => { const res = { status: jest.fn(), json: jest.fn() }; res.status.mockReturnValue(res); return res; };
 const invoke = async (handler, request, res) => {
   await new Promise((resolve, reject) => { res.json.mockImplementation(resolve); handler(request, res, reject); });
 };
 beforeEach(() => jest.clearAllMocks());
-test.each(['updateRepairPersonnel', 'resendAccountActivation', 'changeAccountStatus'])('%s rejects another organization', async name => {
-  User.findById.mockResolvedValue(target({ repairOrganization: 'Utility B' }));
+test.each(['updateRepairPersonnel', 'resendAccountActivation', 'changeAccountStatus'])('%s rejects another barangay', async name => {
+  User.findById.mockResolvedValue(target({ barangay: 'Lucao' }));
   const res = response(); await invoke(controller[name], req(), res);
   expect(res.status).toHaveBeenCalledWith(403); expect(User.findOneAndUpdate).not.toHaveBeenCalled();
 });
@@ -31,7 +31,7 @@ test('stale edits are rejected', async () => {
   User.findById.mockResolvedValue(target()); const res = response(); await invoke(controller.updateRepairPersonnel, req({ version: 1 }), res);
   expect(res.status).toHaveBeenCalledWith(409); expect(User.findOneAndUpdate).not.toHaveBeenCalled();
 });
-test('provider can resend a pending invitation with cooldown', async () => {
+test('Secretary can resend a pending invitation with cooldown', async () => {
   User.findById.mockResolvedValue(target()); User.findOneAndUpdate.mockResolvedValue(target());
   createActivation.mockReturnValue({ tokenHash: 'hash', expiresAt: new Date() }); deliverActivation.mockResolvedValue({ delivered: true });
   await invoke(controller.resendAccountActivation, req(), response());

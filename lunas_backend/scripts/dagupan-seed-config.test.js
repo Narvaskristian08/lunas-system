@@ -1,14 +1,17 @@
 const { accountDefinitions, ORGANIZATIONS, requireLocalSeedEnvironment } = require('./dagupan-seed-config');
 const { DAGUPAN_BARANGAYS } = require('../src/data/dagupanBarangays');
-test('local accounts cover all canonical barangays and matching provider/repair organizations', () => {
+test('local accounts cover barangays and agencies without retired demo accounts', () => {
   const accounts = accountDefinitions('LocalTest2026!');
-  expect(accounts).toHaveLength(42);
-  expect(new Set(accounts.map(account => account.email)).size).toBe(42);
+  expect(accounts).toHaveLength(68);
+  expect(new Set(accounts.map(account => account.email)).size).toBe(68);
+  expect(accounts.some(account => ['repair_personnel', 'city_engineer'].includes(account.role))).toBe(false);
+  expect(accounts.some(account => /(?:repair-|engineer@)/.test(account.email))).toBe(false);
   expect(accounts.filter(account => account.role === 'barangay_official').map(account => account.barangay)).toEqual(DAGUPAN_BARANGAYS);
+  expect(accounts.filter(account => account.role === 'utility_personnel').map(account => account.barangay)).toEqual(DAGUPAN_BARANGAYS);
   for (const org of ORGANIZATIONS) {
     const provider = accounts.find(account => account.utilityCompany === org.name);
-    const repair = accounts.find(account => account.repairOrganization === org.name);
-    expect(provider.expertise).toEqual(repair.expertise);
+    expect(provider.role).toBe('utility_provider');
+    expect(provider.expertise).toEqual(org.expertise);
   }
   expect(ORGANIZATIONS.find(org => org.code === 'dcwd').expertise).toEqual(['water']);
 });

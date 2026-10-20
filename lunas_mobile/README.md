@@ -1,7 +1,7 @@
 ﻿# LUNAS Mobile
 
 The LUNAS mobile app is the Flutter client for citizen reporting and the
-repair/maintenance personnel workflow.
+Utility Personnel (Tanod) verification workflow.
 It uses the LUNAS backend as the source of truth: it does not generate demo
 incidents, make local workflow decisions, or bypass backend role and
 jurisdiction checks.
@@ -41,33 +41,19 @@ do not have operational screens in the Flutter mobile app:
 | City Engineering (`utility_provider`) | Web-only message | Organization-scoped provider workspace |
 | `utility_provider` | Web-only message | Allowed |
 | `admin` | Web-only message | Allowed |
-| `repair_personnel` | Repair dashboard and field workflow | If applicable |
+| `utility_personnel` | Tanod verification workspace | Mobile only |
+| `repair_personnel` | Unavailable (retired mobile workspace) | Backend policy |
 | Other roles | Unavailable | Backend policy |
 
 Validation, routing, assignment, SLA, verification, and administration remain
 backend/web responsibilities. The mobile client intentionally does not expose
 their queues, dashboards, decisions, or deep links.
 
-### Repair / maintenance personnel
-An authenticated `repair_personnel` account starts at `/repair`. The server
-scopes every dashboard count, list record, detail record, and action to the
-current personnel assignment. The mobile workspace supports live work-order
-summary/list/detail, accept/decline/start actions, append-only progress at
-`25`, `50`, `75`, or `100`, explicit optional field location, and JPG/PNG
-field evidence while repair is in progress.
+### Utility Personnel / Tanod verification
 
-Citizens also see only the server-provided high-level repair state on their
-own reports: assigned for repair, in progress, 25/50/75% progress, or 100%
-awaiting verification. Personnel details, reassignment notes, field evidence,
-and internal SLA notes are not shown in that citizen view.
+The `utility_personnel` role uses the Tanod home, initial/final inspection queue, notifications and profile. It can start assigned inspections and submit findings/evidence for Secretary review. Existing `/repair` and `/repair/work-orders` URLs are compatibility paths for these inspection screens, not repair work-order management.
 
-At `100%`, the app records only that the repair is ready for formal completion
-verification. It has no verification, approval, closure, AI-quality, or fake
-completion route, and it never starts background personnel location tracking.
-
-The live repair routes are `/repair`, `/repair/work-orders`,
-`/repair/work-orders/:id`, and the ID-scoped `start`, `progress`, `evidence`,
-and `location` routes beneath that work order.
+Legacy `repair_personnel` accounts no longer have mobile access. The repair dashboard, assigned work-order list, work-order details, progress/evidence submission and work-location screens and routes were removed on 2026-10-20. The shared profile was retained as `utility_personnel_profile_screen.dart`. Citizen reporting and citizen repair-status transparency remain.
 
 ## Architecture and key locations
 
@@ -82,7 +68,7 @@ lib/
     auth/                               Citizen authentication and role policy
     reporting/                          Citizen report creation and report history
     maps/                               Map picker, GPS, and reverse geocoding
-    repair/                             Repair models, API service, and field workflow
+    repair/                             Tanod screens and shared legacy-named helpers
 test/                                   Unit and widget tests
 ```
 
@@ -203,16 +189,9 @@ configuration. Do not include service secrets in a mobile build.
 - A 100% repair update does not appear as final resolution. The responsible provider
   must verify completion first.
 
-## Repair Personnel workflow
+## Utility Personnel workflow
 
-- Authorized accounts are provisioned through the Admin web account process;
-  there is no public privileged-role picker.
-- Repair Personnel see assigned work only, and can review instructions, accept
-  or decline assignment, start work, update progress, attach supporting
-  evidence, submit final post-maintenance evidence with completion, and review
-  provider correction instructions/history.
-- Completion awaits the responsible Utility Provider final
-  verification. It never closes the Citizen's report by itself.
+Provision `utility_personnel` accounts with their assigned barangay through the approved account process. Personnel view their assigned inspections, start verification and submit findings/evidence; the Secretary reviews submissions separately. Agency maintenance actions remain outside this mobile workspace.
 
 ## API and security
 
@@ -330,28 +309,14 @@ storage environment before signing off the applicable mobile work.
   workflows remain available through the backend/Web Command Center.
 - [ ] Confirm the mobile client has no official queue, decision, or management route.
 
-### Repair personnel workflow (75%)
+### Utility Personnel verification
 
-- [ ] Sign in as an active `repair_personnel` account and verify it opens
-  `/repair`; it must not reach citizen or official routes.
-- [ ] Verify the dashboard summary and task list contain only server-assigned
-  work orders for that account, including pagination and status filtering.
-- [ ] Open a work order and verify incident evidence, incident map pin,
-  assignment state, SLA deadline/warning, repair evidence, and progress history
-  match the server response.
-- [ ] Accept a pending assignment, then start it; verify a stale action receives
-  a conflict and the client reloads the current record.
-- [ ] Decline a pending assignment without a reason (must fail), then with a
-  reason (must persist and remove it from the assignee's active list).
-- [ ] Record an allowed next milestone with its required stage; confirm the app
-  rejects a lower/equal or non-discrete percentage before claiming success.
-- [ ] Add a field location only through an explicit progress action and verify
-  denying permission does not block the update.
-- [ ] Upload a valid JPG/PNG image while repair is in progress; verify it
-  appears from the server after refresh and a failed upload is not presented as
-  successful.
-- [ ] Record `100%` with a meaningful note and verify the app shows only the
-  ready-for-completion state, with no verify, approve, or close control.
+- [ ] Sign in as `utility_personnel` and verify the Tanod home and inspection queue.
+- [ ] Confirm only assigned inspections from the account's barangay appear.
+- [ ] Start an inspection, submit findings/evidence and verify separate Secretary review.
+- [ ] Verify inspection notification links open the verification queue.
+- [ ] Verify legacy work-order detail/progress/location URLs do not open repair screens.
+- [ ] Verify `repair_personnel` login and restored sessions are rejected.
 
 ### Authorization, privacy, and resilience
 

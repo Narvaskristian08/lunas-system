@@ -34,8 +34,8 @@ class AuthController extends ChangeNotifier {
   bool get registrationCompleted => _registrationCompleted;
   RegistrationMfaChallenge? get pendingRegistration => _pendingRegistration;
   bool get isCitizen => _user?.isCitizen == true;
-  bool get isRepairPersonnel =>
-      _user != null && isRepairPersonnelRole(_user!.role);
+  bool get isUtilityPersonnel =>
+      _user != null && isUtilityPersonnelRole(_user!.role);
   String? get workspaceHomePath =>
       _user == null ? null : mobileWorkspaceHome(_user!.role);
 

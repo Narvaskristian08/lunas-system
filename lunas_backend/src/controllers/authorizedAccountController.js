@@ -21,9 +21,9 @@ const audit = (req, user, action, before, after, details = {}) => createAuditLog
 const denied = (res, message, status = 403) => res.status(status).json({ success: false, message });
 const conflict = res => denied(res, 'Account changed. Refresh and try again.', 409);
 const checkActor = (req, res, target, role = target?.role) => {
-  if (req.user?.role === 'barangay_official' && target?.role === 'repair_personnel'
+  if (req.user?.role === 'barangay_official' && target?.role === 'utility_personnel'
     && !target.isArchived && req.user.barangay
-    && target.barangay === req.user.barangay && role === 'repair_personnel') return true;
+    && target.barangay === req.user.barangay && role === 'utility_personnel') return true;
   // Compatibility for legacy provider-worker records while the migration runs.
   if (req.user?.role === 'utility_provider' && target?.role === 'repair_personnel'
     && !target.isArchived && req.user.utilityCompany
@@ -52,10 +52,10 @@ const targetAccount = async (req, res) => {
 };
 const approvedFields = (input, actor) => ({
   firstName: input.firstName, lastName: input.lastName,
-  ...(input.role === 'repair_personnel' ? { phone: input.phone } : {}),
+  ...(input.role === 'utility_personnel' ? { phone: input.phone } : {}),
   personnelId: input.personnelId || '', position: input.position, organization: input.organization,
   role: input.role,
-  barangay: ['barangay_official', 'repair_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
+  barangay: ['barangay_official', 'utility_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
   utilityCompany: input.role === 'utility_provider' ? input.utilityCompany : undefined,
   repairOrganization: input.role === 'repair_personnel' ? input.repairOrganization : undefined,
   repairTeam: input.role === 'repair_personnel' ? input.repairTeam || '' : undefined,
@@ -168,6 +168,26 @@ exports.createRepairPersonnel = asyncHandler(async (req, res) => {
   });
 });
 
+exports.createTanod = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'barangay_official') return denied(res, 'Only Barangay Officials may create Tanod accounts');
+  if (req.body.role !== 'utility_personnel') return denied(res, 'Tanod accounts must use the Utility Personnel role', 400);
+  if (req.body.barangay !== req.user.barangay) return denied(res, 'A Tanod must belong to your barangay', 403);
+  if (await User.exists({ email: req.body.email })) return denied(res, 'An account already uses this email', 409);
+  const activation = createActivation();
+  const barangay = req.user.barangay;
+  const user = await User.create({
+    firstName: req.body.firstName, lastName: req.body.lastName, middleName: req.body.middleName || '', suffix: req.body.suffix || '',
+    email: req.body.email, phone: req.body.phone, role: 'utility_personnel', barangay, organization: `Barangay ${barangay}`,
+    position: 'Barangay Tanod / Utility Personnel', availability: 'available', accountStatus: 'pending_activation', requiresActivation: true,
+    isActive: false, isVerified: false, activationTokenHash: activation.tokenHash, activationExpiresAt: activation.expiresAt, activationSentAt: new Date(),
+    approval: { authority: `${req.user.firstName} ${req.user.lastName}`, reference: `Created by Barangay Official: ${barangay}`, recordedBy: req.user._id, recordedAt: new Date() }
+  });
+  await audit(req, user, 'authorized_account_created', null, { role: user.role, barangay, organization: user.organization, accountStatus: user.accountStatus }, { creatorRole: req.user.role });
+  const delivery = await deliverActivation(user, activation);
+  await audit(req, user, 'account_activation_sent', undefined, undefined, delivery);
+  res.status(201).json({ success: true, data: { account: serializeAccount(user), delivery }, message: delivery.delivered ? 'Tanod account created. Activation email sent.' : 'Tanod account created. Activation email was not delivered; configure delivery and resend.' });
+});
+
 exports.updateRepairPersonnel = asyncHandler(async (req, res) => {
   const before = await targetAccount(req, res);
   if (!before || !checkActor(req, res, before)) return;
@@ -210,7 +230,7 @@ exports.updateAuthorizedAccount = asyncHandler(async (req, res) => {
     if (fields[key] === undefined) { unset[key] = 1; delete fields[key]; }
   }
   if (before.role !== req.body.role) {
-    if (req.body.role === 'repair_personnel') fields.availability = 'available';
+    if (req.body.role === 'utility_personnel') fields.availability = 'available';
     else unset.availability = 1;
   }
   const user = await User.findOneAndUpdate(revisionFilter(before), {

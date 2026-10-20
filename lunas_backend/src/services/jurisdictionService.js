@@ -62,7 +62,7 @@ const buildIncidentScope = (user) => {
     };
   }
 
-  if (user.role === 'repair_personnel') {
+  if (user.role === 'utility_personnel') {
     const barangay = canonicalizeBarangay(user.barangay);
     if (!barangay) return { _id: null };
     return {
@@ -102,7 +102,7 @@ const canAccessIncident = (user, incident) => {
     return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
   }
 
-  if (user.role === 'repair_personnel') {
+  if (user.role === 'utility_personnel') {
     return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
   }
 
