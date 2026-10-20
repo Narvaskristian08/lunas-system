@@ -1,4 +1,5 @@
 "use client";
+import { philippineDeadlineInput, philippineDeadlineIso } from "@/lib/agency-schedule";
 import { categoryLabel } from "@/lib/category-label";
 
 /* Signed private evidence URLs are dynamic and intentionally not passed to Next image optimization. */
@@ -50,7 +51,7 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
   const [agencyStatus, setAgencyStatus] = useState(incident.agencyStatus ?? "ready_for_work");
   const [agencyPriority, setAgencyPriority] = useState(incident.priority ?? "");
   const [agencyNote, setAgencyNote] = useState("");
-  const [slaDeadline, setSlaDeadline] = useState(incident.sla.deadline ? new Date(incident.sla.deadline).toISOString().slice(0, 16) : "");
+  const [slaDeadline, setSlaDeadline] = useState(incident.sla.deadline ? philippineDeadlineInput(incident.sla.deadline) : "");
   const [agencyMessage, setAgencyMessage] = useState<string>();
   const [statusToConfirm, setStatusToConfirm] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -75,7 +76,7 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
     setAgencyStatus(status);
     setStatusToConfirm(undefined);
     startTransition(async () => {
-      const response = await updateAgencyStatusAction(incident.id, status, agencyNote, agencyPriority, slaDeadline);
+      const response = await updateAgencyStatusAction(incident.id, status, agencyNote, agencyPriority, deadlineLocked ? undefined : slaDeadline);
       setAgencyMessage(response.message);
     });
   };
@@ -164,12 +165,12 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
                   <label className="block text-sm font-semibold text-slate-900">Agency priority<select value={agencyPriority} onChange={(event) => setAgencyPriority(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required><option value="">Select priority</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
                   <p className="mt-2 text-xs leading-5 text-slate-500">The agency sets priority during Ready for Work. The Secretary does not set it.</p>
                 </div> : <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"><p className="font-semibold text-slate-900">Ready for Work details</p><p className="mt-1 text-slate-700">Agency priority: <span className="font-semibold">{agencyPriority ? titleCase(agencyPriority) : "Not recorded"}</span></p><p className="mt-1 text-xs text-slate-500">This priority was recorded during the first step.</p></div>}
-                {selectedStatus === "pending_procurement" || selectedStatus === "work_in_progress" || selectedStatus === "work_completed" ? <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"><label className="block font-semibold text-slate-900">Agency SLA deadline<input type="datetime-local" value={slaDeadline} onChange={(event) => setSlaDeadline(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required readOnly={deadlineLocked} disabled={deadlineLocked} /></label><p className="mt-2 text-xs text-slate-500">{deadlineLocked ? "This deadline was recorded during Pending Procurement/Bidding and can no longer be changed." : "Enter the deadline manually. LUNAS will save the date you provide before moving to the next step."}</p>{incident.sla.deadline && !slaDeadline ? <p className="mt-1 text-slate-700">Saved deadline: <span className="font-semibold">{formatDateTime(incident.sla.deadline)}</span></p> : null}{incident.sla.targetResolutionTime ? <p className="mt-1 text-xs text-slate-500">Target: {incident.sla.targetResolutionTime} hours</p> : null}</div> : null}
+                {selectedStatus === "pending_procurement" || selectedStatus === "work_in_progress" || selectedStatus === "work_completed" ? <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"><label className="block font-semibold text-slate-900">Agency SLA deadline (Philippine time)<input type="datetime-local" value={slaDeadline} onChange={(event) => setSlaDeadline(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required readOnly={deadlineLocked} disabled={deadlineLocked} /></label><p className="mt-2 text-xs text-slate-500">{deadlineLocked ? "This deadline was recorded during Pending Procurement/Bidding and can no longer be changed." : "Enter the deadline manually. LUNAS will save the date you provide before moving to the next step."}</p>{incident.sla.deadline && !slaDeadline ? <p className="mt-1 text-slate-700">Saved deadline: <span className="font-semibold">{formatDateTime(incident.sla.deadline)}</span></p> : null}{incident.sla.targetResolutionTime ? <p className="mt-1 text-xs text-slate-500">Target: {incident.sla.targetResolutionTime} hours</p> : null}</div> : null}
                 <div className="mt-2 space-y-1 text-xs">
                   <p className="font-semibold text-brand-700">Current step: {currentStatus.label}</p>
                   <p className="font-semibold text-slate-600">Next step: {nextStepLabel}</p>
                 </div>
-                {agencyStatuses.slice(0, currentOrder).map((status) => <div key={status.value} className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"><p className="font-semibold text-slate-900">{status.label}</p>{status.value === "ready_for_work" ? <p className="mt-1 text-slate-700">Agency priority: <span className="font-semibold">{agencyPriority ? titleCase(agencyPriority) : "Not recorded"}</span></p> : null}{status.value === "pending_procurement" ? <p className="mt-1 text-slate-700">Deadline: <span className="font-semibold">{slaDeadline ? formatDateTime(slaDeadline) : incident.sla.deadline ? formatDateTime(incident.sla.deadline) : "Not recorded"}</span></p> : null}<p className="mt-1 text-xs text-slate-500">Completed step</p></div>)}
+                {agencyStatuses.slice(0, currentOrder).map((status) => <div key={status.value} className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"><p className="font-semibold text-slate-900">{status.label}</p>{status.value === "ready_for_work" ? <p className="mt-1 text-slate-700">Agency priority: <span className="font-semibold">{agencyPriority ? titleCase(agencyPriority) : "Not recorded"}</span></p> : null}{status.value === "pending_procurement" ? <p className="mt-1 text-slate-700">Deadline: <span className="font-semibold">{slaDeadline ? formatDateTime(philippineDeadlineIso(slaDeadline) ?? slaDeadline) : incident.sla.deadline ? formatDateTime(incident.sla.deadline) : "Not recorded"}</span></p> : null}<p className="mt-1 text-xs text-slate-500">Completed step</p></div>)}
                 <div className="mt-3 rounded-xl border border-brand-200 bg-brand-50 p-4">
                   <p className="text-sm font-semibold text-slate-900">{currentStatus.label}</p>
                   <p className="mt-1 text-xs text-slate-600">{currentStatus.description}</p>

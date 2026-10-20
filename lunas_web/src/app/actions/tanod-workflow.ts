@@ -1,5 +1,6 @@
 "use server";
 
+import { philippineDeadlineIso } from "@/lib/agency-schedule";
 import { revalidatePath } from "next/cache";
 import { backendRequest, isBackendApiError, responseData } from "@/lib/api/backend.server";
 import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
@@ -37,7 +38,9 @@ export async function reviewTanodAction(incidentId: string, inspectionId: string
 export async function updateAgencyStatusAction(incidentId: string, status: string, note: string, priority?: string, slaDeadline?: string) {
   await requirePermission("work_orders.manage");
   try {
-    const body = { status, note, priority, ...(slaDeadline ? { slaDeadline } : {}) };
+    const deadline = slaDeadline ? philippineDeadlineIso(slaDeadline) : undefined;
+    if (slaDeadline && !deadline) return { ok: false, message: "Enter a valid agency deadline in Philippine time." };
+    const body = { status, note, priority, ...(deadline ? { slaDeadline: deadline } : {}) };
     const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/agency-status`, { accessToken: await requireAccessToken(), method: "PATCH", body: JSON.stringify(body) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/work-orders"); revalidatePath("/dashboard");
     return { ok: true, message: response.message ?? "Agency status updated." };

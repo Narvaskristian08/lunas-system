@@ -1,3 +1,4 @@
+const { getAgencySchedule } = require('../services/agencyScheduleService');
 const { getSlaProjection } = require('../services/workOrderService');
 const Incident = require('../models/Incident');
 const WorkOrder = require('../models/WorkOrder');
@@ -174,6 +175,7 @@ const serializeIncidentForCitizen = async (incident) => {
     images,
     status: source.status,
     agencyStatus: source.agencyStatus,
+    agencySchedule: getAgencySchedule(source),
     agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
     createdAt: source.createdAt,
     updatedAt: source.updatedAt,
@@ -298,6 +300,7 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       routedAt: source.routing.routedAt
     } : undefined,
     agencyStatus: source.agencyStatus,
+    agencySchedule: getAgencySchedule(source),
     agencyStatusNote: source.agencyStatusNote,
     agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
     initialInspection: source.initialInspection && typeof source.initialInspection === 'object' ? {

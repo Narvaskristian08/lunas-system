@@ -1,3 +1,4 @@
+import 'agency_schedule.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/core/utils/display_labels.dart';
 
@@ -18,6 +19,7 @@ class IncidentReport {
     this.duplicateReason,
     this.clarificationReason,
     this.repair,
+    this.agencySchedule,
   });
 
   final String id;
@@ -35,6 +37,7 @@ class IncidentReport {
   final String? duplicateReason;
   final String? clarificationReason;
   final IncidentRepairSummary? repair;
+  final AgencySchedule? agencySchedule;
 
   String get categoryLabel => categoryFromCode(category).label;
 
@@ -92,6 +95,9 @@ class IncidentReport {
       rejectionReason: _text(json['rejectionReason']),
       duplicateReason: _text(json['duplicateReason']),
       clarificationReason: _text(json['clarificationReason']),
+      agencySchedule: _map(json['agencySchedule']).isEmpty
+          ? null
+          : AgencySchedule.fromJson(_map(json['agencySchedule'])),
       repair: _map(json['repair']).isEmpty
           ? null
           : IncidentRepairSummary.fromJson(_map(json['repair'])),

@@ -1,3 +1,4 @@
+import { normalizeAgencySchedule, type AgencySchedule } from "@/lib/agency-schedule";
 import "server-only";
 
 import { backendRequest, responseData } from "@/lib/api/backend.server";
@@ -87,6 +88,7 @@ export interface ValidationIncident {
   status: string;
   agencyStatus?: string;
   agencyStatusNote?: string;
+  agencySchedule?: AgencySchedule;
   priority?: ValidationPriority;
   createdAt?: string;
   updatedAt?: string;
@@ -405,6 +407,7 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       ?? asString(asRecord(asRecord(source.location).address).barangay),
     responsibleOrganization: asString(source.responsibleOrganization),
     agencyStatus: asString(source.agencyStatus),
+    agencySchedule: normalizeAgencySchedule(source.agencySchedule),
     agencyStatusNote: asString(source.agencyStatusNote),
     routing: Object.keys(routing).length ? {
       responsibleOrganization: asString(routing.responsibleOrganization),

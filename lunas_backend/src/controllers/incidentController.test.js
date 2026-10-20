@@ -524,3 +524,16 @@ test.each([
   expect(Incident.countDocuments).toHaveBeenLastCalledWith(filter);
   expect(query.skip).toHaveBeenCalledWith(20);
 });
+
+test('citizen and official schedules expose the same safe deadline data without SLA internals', async () => {
+  const source = { _id: 'schedule-report', status: 'provider_assigned', agencyStatus: 'work_in_progress',
+    sla: { deadline: new Date('2026-10-23T08:00:00Z'), escalationLevel: 7, internalNote: 'private' },
+    statusHistory: [{ status: 'work_in_progress', changedAt: new Date('2026-10-20T08:00:00Z'), notes: 'private', changedBy: 'private-actor' }], images: [] };
+  const citizen = await serializeIncidentForCitizen(source);
+  const official = await serializeIncidentForOfficial(source);
+  expect(citizen.agencySchedule.deadline).toBe(official.agencySchedule.deadline);
+  expect(citizen.agencySchedule.startedAt).toBe(official.agencySchedule.startedAt);
+  expect(citizen.agencySchedule.durationMilliseconds).toBe(259200000);
+  expect(Object.keys(citizen.agencySchedule).sort()).toEqual(['state', 'asOf', 'deadline', 'startedAt', 'stoppedAt', 'durationMilliseconds', 'remainingMilliseconds'].sort());
+  expect(citizen).not.toHaveProperty('sla');
+});

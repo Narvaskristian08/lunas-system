@@ -1,5 +1,6 @@
 "use client";
 
+import { AgencyScheduleCard } from "@/components/validation/agency-schedule-card";
 import { categoryLabel } from "@/lib/category-label";
 
 /* Signed private evidence URLs are dynamic and intentionally not passed to Next image optimization. */
@@ -375,6 +376,7 @@ export function ValidationReview({ viewer, incident, utilityProviders = [], tano
         <StatusBadge tone={statusTone(incident.status)}>{titleCase(incident.status)}</StatusBadge>
       </div>
       <WorkflowProgress incident={incident} />
+      {isBarangay ? <AgencyScheduleCard schedule={incident.agencySchedule} /> : null}
 
       {message ? <div role="status" className="mb-5 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"><CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />{message}</div> : null}
       {error ? <div role="alert" className="mb-5 flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-950"><AlertTriangle className="size-5 shrink-0" aria-hidden="true" />{error}</div> : null}
