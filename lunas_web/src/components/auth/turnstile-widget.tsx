@@ -8,8 +8,8 @@ type TurnstileApi = {
     sitekey: string;
     action: string;
     theme: "auto";
-    size: "flexible";
-    appearance: "interaction-only";
+    size: "normal";
+    appearance: "always";
     responseField: false;
     callback: (token: string) => void;
     "expired-callback": () => void;
@@ -48,10 +48,11 @@ export function TurnstileWidget({
       sitekey: siteKey,
       action: "login",
       theme: "auto",
-      size: "flexible",
-      // Cloudflare Managed mode stays out of the way for normal users and
-      // only shows a simple checkbox when its risk checks need confirmation.
-      appearance: "interaction-only",
+      // Use the stable, explicit widget layout. The flexible interaction-only
+      // mode can load a Cloudflare challenge iframe whose browser-side CSP
+      // blocks its font/style fallback on some deployments and browsers.
+      size: "normal",
+      appearance: "always",
       responseField: false,
       callback: (nextToken) => {
         setToken(nextToken);

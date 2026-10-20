@@ -1,5 +1,7 @@
 # LUNAS implementation audit and developer handoff
 
+**QA update — 2026-10-21 (Asia/Manila):** Updated the web Cloudflare Turnstile widget to use the explicit `normal`/`always` layout after the flexible interaction-only challenge produced site-wide browser CSP, font parsing and adapter errors. `npm run lint` passes in `lunas_web`; live Turnstile verification remains untested and requires a configured site key/domain.
+
 **QA update — 2026-10-20 (Asia/Manila):** [Current mobile/web/backend QA report](QA_REPORT_2026-10-20.md) records 53 passing backend suites / 453 tests with isolated MongoDB coverage, 78 passing mobile tests and clean analysis, and 27 passing Chromium web tests after updating retired-role fixtures. Android compilation/installation, live mobile/web sign-in and private object-store retrieval passed. Fixed Secretary queue search dropping its stage filter and finalization accepting a stale/unrelated completion inspection. Dependency audits still report critical/high findings; full multi-client evidence/inspection acceptance, external delivery and active-reviewer correction UI remain unverified. These dated results supersede earlier audit environment/test counts only at the stated boundaries; they do not certify production readiness or resolve institutional policy.
 
 ## 1 — LUNAS Project Overview
