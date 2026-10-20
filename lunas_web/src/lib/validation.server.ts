@@ -630,6 +630,15 @@ export async function getTanodPersonnel(): Promise<Array<{ id: string; firstName
     .filter((value) => value.id);
 }
 
+export async function getTanodAccounts(): Promise<Array<{ id: string; firstName?: string; middleName?: string; lastName?: string; email?: string; phone?: string; accountStatus?: string; isActive?: boolean; createdAt?: string }>> {
+  const accessToken = await requireAccessToken();
+  const payload = responseData(await backendRequest<unknown>("/users/repair-personnel", { accessToken })) as unknown;
+  const values = Array.isArray(payload) ? payload : (payload as { data?: unknown[] })?.data || [];
+  return values.filter((value): value is Record<string, unknown> => Boolean(value && typeof value === "object")).map((value) => ({
+    id: String(value.id || ""), firstName: typeof value.firstName === "string" ? value.firstName : undefined, middleName: typeof value.middleName === "string" ? value.middleName : undefined, lastName: typeof value.lastName === "string" ? value.lastName : undefined, email: typeof value.email === "string" ? value.email : undefined, phone: typeof value.phone === "string" ? value.phone : undefined, accountStatus: typeof value.accountStatus === "string" ? value.accountStatus : undefined, isActive: Boolean(value.isActive), createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined
+  })).filter((value) => value.id);
+}
+
 export async function getAgencyExceptions(): Promise<{ incidents: unknown[]; agencies: string[] }> {
   const accessToken = await requireAccessToken();
   const payload = responseData(await backendRequest<unknown>("/incidents/agency-exceptions", { accessToken })) as { incidents?: unknown[]; agencies?: string[] };

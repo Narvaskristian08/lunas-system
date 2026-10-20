@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { backendRequest, isBackendApiError } from "@/lib/api/backend.server";
 import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
 
@@ -32,5 +33,22 @@ export async function manageAccountAction(operation: "create" | "edit" | "status
       return { ok: false, message: payload?.errors?.[0]?.message || error.message };
     }
     return { ok: false, message: "The account service is unavailable. Refresh to check the account before retrying." };
+  }
+}
+
+export async function createTanodAction(form: FormData): Promise<void> {
+  const viewer = await requirePermission("reports.validate");
+  if (viewer.backendRole !== "barangay_official" || !viewer.barangay) redirect("/validation-routing/tanods?error=Only%20Barangay%20Officials%20can%20create%20Tanod%20accounts.");
+  const accessToken = await requireAccessToken();
+  const body = { firstName: String(form.get("firstName") ?? "").trim(), lastName: String(form.get("lastName") ?? "").trim(), middleName: String(form.get("middleName") ?? "").trim(), suffix: String(form.get("suffix") ?? "").trim(), email: String(form.get("email") ?? "").trim(), phone: String(form.get("phone") ?? "").trim(), role: "utility_personnel", barangay: viewer.barangay, organization: `Barangay ${viewer.barangay}`, position: "Barangay Tanod / Utility Personnel", approvalAuthority: `${viewer.firstName} ${viewer.lastName}`, approvalReference: `Created by Barangay Official: ${viewer.barangay}` };
+  try {
+    const response = await backendRequest<{ data?: { delivery?: { delivered?: boolean } } }>("/users/tanods", { accessToken, method: "POST", body: JSON.stringify(body) });
+    revalidatePath("/validation-routing/tanods"); revalidatePath("/validation-routing");
+    const warning = response.data?.data?.delivery?.delivered === false;
+    revalidatePath("/validation-routing/tanods");
+    redirect(`/validation-routing/tanods?created=1${warning ? "&warning=1" : ""}`);
+  } catch (error) {
+    if (isBackendApiError(error) && error.status < 500) { const payload = error.payload as { errors?: Array<{ message?: string }> } | undefined; redirect(`/validation-routing/tanods?error=${encodeURIComponent(payload?.errors?.[0]?.message || error.message)}`); }
+    redirect("/validation-routing/tanods?error=The%20account%20service%20is%20unavailable.%20Try%20again%20later.");
   }
 }

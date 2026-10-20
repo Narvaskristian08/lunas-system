@@ -168,6 +168,26 @@ exports.createRepairPersonnel = asyncHandler(async (req, res) => {
   });
 });
 
+exports.createTanod = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'barangay_official') return denied(res, 'Only Barangay Officials may create Tanod accounts');
+  if (req.body.role !== 'utility_personnel') return denied(res, 'Tanod accounts must use the Utility Personnel role', 400);
+  if (req.body.barangay !== req.user.barangay) return denied(res, 'A Tanod must belong to your barangay', 403);
+  if (await User.exists({ email: req.body.email })) return denied(res, 'An account already uses this email', 409);
+  const activation = createActivation();
+  const barangay = req.user.barangay;
+  const user = await User.create({
+    firstName: req.body.firstName, lastName: req.body.lastName, middleName: req.body.middleName || '', suffix: req.body.suffix || '',
+    email: req.body.email, phone: req.body.phone, role: 'utility_personnel', barangay, organization: `Barangay ${barangay}`,
+    position: 'Barangay Tanod / Utility Personnel', availability: 'available', accountStatus: 'pending_activation', requiresActivation: true,
+    isActive: false, isVerified: false, activationTokenHash: activation.tokenHash, activationExpiresAt: activation.expiresAt, activationSentAt: new Date(),
+    approval: { authority: `${req.user.firstName} ${req.user.lastName}`, reference: `Created by Barangay Official: ${barangay}`, recordedBy: req.user._id, recordedAt: new Date() }
+  });
+  await audit(req, user, 'authorized_account_created', null, { role: user.role, barangay, organization: user.organization, accountStatus: user.accountStatus }, { creatorRole: req.user.role });
+  const delivery = await deliverActivation(user, activation);
+  await audit(req, user, 'account_activation_sent', undefined, undefined, delivery);
+  res.status(201).json({ success: true, data: { account: serializeAccount(user), delivery }, message: delivery.delivered ? 'Tanod account created. Activation email sent.' : 'Tanod account created. Activation email was not delivered; configure delivery and resend.' });
+});
+
 exports.updateRepairPersonnel = asyncHandler(async (req, res) => {
   const before = await targetAccount(req, res);
   if (!before || !checkActor(req, res, before)) return;

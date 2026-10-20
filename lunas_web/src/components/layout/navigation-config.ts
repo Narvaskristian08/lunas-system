@@ -32,6 +32,7 @@ export const navigationGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { label: "Pending Validation", href: "/validation-routing", icon: ClipboardCheck, permission: "reports.view", hiddenForRoles: ["city_engineer"] },
       { label: "Barangay Reports", href: "/validation-routing/reports", icon: ClipboardCheck, permission: "reports.view", visibleForRoles: ["barangay_official"] },
+      { label: "Tanod Accounts", href: "/validation-routing/tanods", icon: UserRound, permission: "reports.validate", visibleForRoles: ["barangay_official"] },
       { label: "Work Orders", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view", hiddenForRoles: ["city_engineer"] },
       { label: "Agency Reports", href: "/work-orders/reports", icon: ClipboardList, permission: "work_orders.view", visibleForRoles: ["utility_provider"] },
       { label: "Maintenance", href: "/work-orders", icon: ClipboardList, permission: "work_orders.view", visibleForRoles: ["city_engineer"] },

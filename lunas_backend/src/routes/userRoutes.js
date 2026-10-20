@@ -30,6 +30,7 @@ router.post('/authorized/:id/activation', protect, authorize('admin'), mongoIdVa
 
 // Compatibility read route: Utility Personnel are barangay-scoped Tanods now.
 router.get('/repair-personnel', protect, authorize('barangay_official'), tanodWorkflow.listTanodPersonnel);
+router.post('/tanods', protect, authorize('barangay_official'), accountRules.createAccountValidation, validate, accounts.createTanod);
 router.get('/utility-providers', protect, authorize('barangay_official', 'utility_provider'), getUtilityProviderOrganizations);
 
 // Keep an explicit self-service profile endpoint so clients do not need to
