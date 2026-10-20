@@ -424,7 +424,7 @@ exports.login = asyncHandler(async (req, res) => {
 
     return res.status(401).json({
       success: false,
-      message: 'Invalid credentials'
+      message: 'Wrong email or password used.'
     });
   }
 

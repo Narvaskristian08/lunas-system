@@ -44,7 +44,7 @@ interface PasswordChangePayload {
 }
 
 const safeFailures: Record<AuthFailureCode, string> = {
-  INVALID_CREDENTIALS: "The email or password is incorrect. Check your details and try again.",
+  INVALID_CREDENTIALS: "Wrong email or password used. Check your details and try again.",
   UNVERIFIED: "This account still needs verification before it can sign in.",
   SUSPENDED: "This account is temporarily suspended. Contact your system administrator.",
   DEACTIVATED: "This account is no longer active. Contact your system administrator.",
