@@ -844,6 +844,31 @@ counts from the local Docker database for the fixture citizen. No backend workfl
 closure authority, or incident data was changed. No new unit test was added
 for this layout; large-text/dark-mode acceptance remains pending.
 
+### Tanod account creation layout (2026-10-20)
+
+`lunas_web/src/components/validation/tanod-account-manager.tsx` now uses the
+shared `ui/modal.tsx` dialog for creation, with focus containment/restoration,
+Escape handling and viewport-bounded scrolling. A barangay assignment panel
+precedes Personal details and Contact details fieldsets. Required markers,
+optional-name labels, example placeholders, contact-format hints, consistent
+inputs and responsive action buttons replace the undifferentiated field grid.
+Name/contact fields use two columns on wider screens and one on phones.
+Autocomplete attributes are supplied for names and contact details. The phone
+HTML pattern now uses literal single regex escapes (rather than doubled JSX
+attribute escapes), matching its documented `09XXXXXXXXX` / `+639XXXXXXXXX`
+formats. The server action, role/barangay assignment, field names, required
+fields, length limits, and backend authorization are retained.
+
+Verification: TypeScript and targeted ESLint passed; phone-pattern checks
+accepted both documented formats and rejected short/non-numeric samples.
+Production web build and all 27 existing Playwright tests passed
+(`cd lunas_web && npm run test:e2e`; isolated API fixtures). These are regression
+checks, not a dedicated end-to-end Tanod creation/activation test. Docker web rebuilt and started successfully; `/api/health` on port 3001
+returned `ready` with backend `reachable`. Browser discovery returned no connected session, so the new form
+has not had interactive visual inspection here. No real account was created
+for this layout check; activation delivery and live provisioning remain outside
+this verification boundary.
+
 ### Local Dagupan fixtures (optional, isolated data only)
 
 Current role update (2026-10-20): Tanods are now `utility_personnel`, superseding earlier notes below about deferred Tanod seeding. Converted all 31 existing `barangay_tanod` demo accounts in place; preserved IDs, barangays and inspection references, revoked sessions and recorded `role_changed` audits. The database has 68 accounts: Admin 1, citizen 1, barangay official 31, Utility Personnel 31 and agency provider 4, with no repair personnel or legacy City Engineer accounts.
