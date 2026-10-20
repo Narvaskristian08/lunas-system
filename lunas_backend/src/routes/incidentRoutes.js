@@ -69,7 +69,7 @@ router.get('/location-policy', protect, (req, res) => res.json({
 }));
 router.get('/tanod-personnel', protect, authorize('barangay_official'), tanodWorkflow.listTanodPersonnel);
 router.get('/agency-exceptions', protect, authorize('barangay_official'), tanodWorkflow.listAgencyExceptions);
-router.get('/my-inspections', protect, authorize('repair_personnel'), tanodWorkflow.listMyInspections);
+router.get('/my-inspections', protect, authorize('utility_personnel'), tanodWorkflow.listMyInspections);
 router.get('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate,
   require('../controllers/falseReportReviewController').getReview);
 router.post('/:id/false-report-review', protect, authorize('barangay_official', 'city_engineer', 'admin'), mongoIdValidation, validate,
@@ -123,9 +123,9 @@ router.post('/:id/agency-correction', protect, authorize('barangay_official'), m
 router.post('/:id/complete', protect, authorize('barangay_official'), mongoIdValidation,
   body('inspectionId').isMongoId(), body('notes').optional().isString().isLength({ max: 2000 }), validate,
   tanodWorkflow.completeIncident);
-router.post('/:id/inspections/:inspectionId/start', protect, authorize('repair_personnel'), mongoIdValidation,
+router.post('/:id/inspections/:inspectionId/start', protect, authorize('utility_personnel'), mongoIdValidation,
   tanodWorkflow.startInspection);
-router.post('/:id/inspections/:inspectionId/submit', protect, authorize('repair_personnel'), mongoIdValidation,
+router.post('/:id/inspections/:inspectionId/submit', protect, authorize('utility_personnel'), mongoIdValidation,
   uploadMultiple('evidence', 5), body('findings').isString().isLength({ min: 2, max: 4000 }),
   body('result').optional().isIn(['verified', 'not_verified', 'unable_to_verify']), validate,
   tanodWorkflow.submitInspection);

@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: function() { return this.role === 'repair_personnel'; },
+    required: function() { return ['utility_personnel', 'repair_personnel'].includes(this.role); },
     trim: true
   },
   password: {
@@ -85,7 +85,7 @@ const userSchema = new mongoose.Schema({
   barangay: {
     type: String,
     required: function() {
-      return this.role === 'barangay_official' || (this.role === 'repair_personnel' && !this.repairOrganization);
+      return ['barangay_official', 'utility_personnel'].includes(this.role) || (this.role === 'repair_personnel' && !this.repairOrganization);
     }
   },
   utilityCompany: {
@@ -121,7 +121,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['available', 'assigned', 'unavailable', 'off_duty'],
     default: function() {
-      return this.role === 'repair_personnel' ? 'available' : undefined;
+      return ['utility_personnel', 'repair_personnel'].includes(this.role) ? 'available' : undefined;
     }
   },
   profileImage: String,
@@ -263,7 +263,7 @@ userSchema.methods.toPublicJSON = function() {
       configured: Boolean(this.recoveryEmail),
       verified: Boolean(this.recoveryEmail && this.recoveryEmailVerifiedAt)
     },
-    phone: ['citizen', 'repair_personnel'].includes(this.role) ? this.phone : undefined,
+    phone: ['citizen', 'utility_personnel', 'repair_personnel'].includes(this.role) ? this.phone : undefined,
     role: this.role,
     address: this.address,
     barangay: this.barangay,

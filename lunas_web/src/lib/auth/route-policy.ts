@@ -6,7 +6,7 @@ import type { BackendUserRole, Permission } from "@/types";
 export function workspaceRedirect(path: string, search: string, role: BackendUserRole): string | null {
   const query = new URLSearchParams(search);
   const landing = role === "admin" ? "/admin/users" : "/dashboard";
-  if (["citizen", "repair_personnel"].includes(role)) {
+  if (["citizen", "utility_personnel", "repair_personnel"].includes(role)) {
     return path === "/unauthorized" ? null : "/unauthorized?platform=mobile";
   }
   if (path === "/") return landing;

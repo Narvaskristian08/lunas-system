@@ -9,7 +9,7 @@ const ORGANIZATIONS = Object.freeze([
 const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const email = code => `dagupan.${code}@lunas.test`;
 const fixtureEmails = {
-  admin: email('admin'), engineer: email('engineer'), citizen: email('citizen'),
+  admin: email('admin'), citizen: email('citizen'),
   barangay: email('barangay-poblacion-oeste')
 };
 function accountDefinitions(password) {
@@ -18,13 +18,12 @@ function accountDefinitions(password) {
     approval: { authority: 'Local development seed', reference: 'Synthetic local account; not an officially provisioned government account.' } };
   const accounts = [
     { firstName: 'Local', lastName: 'Administrator', email: fixtureEmails.admin, role: 'admin', legacyEmail: 'demo.admin@lunas.test' },
-    { firstName: 'Local', lastName: 'City Engineer', email: fixtureEmails.engineer, role: 'utility_provider', organization: 'Dagupan City Engineering Office', utilityCompany: 'Dagupan City Engineering Office', expertise: ['road', 'drainage', 'streetlight'], legacyEmail: 'demo.engineer@lunas.test' },
     { firstName: 'Local', lastName: 'Citizen', email: fixtureEmails.citizen, role: 'citizen', legacyEmail: 'demo.citizen@lunas.test' },
     ...DAGUPAN_BARANGAYS.map(barangay => ({ firstName: barangay, lastName: 'Official', email: email(`barangay-${slug(barangay)}`),
       role: 'barangay_official', barangay, organization: `Barangay ${barangay}`, position: 'Local barangay account',
       ...(barangay === 'Poblacion Oeste' ? { legacyEmail: 'demo.barangay@lunas.test' } : {}) })),
     ...DAGUPAN_BARANGAYS.map((barangay, index) => ({
-      firstName: `Tanod ${barangay}`, lastName: 'Utility Personnel', email: email(`tanod-${slug(barangay)}`), role: 'repair_personnel',
+      firstName: `Tanod ${barangay}`, lastName: 'Utility Personnel', email: email(`tanod-${slug(barangay)}`), role: 'utility_personnel',
       phone: `0998000${String(index + 1).padStart(4, '0')}`, barangay, organization: `Barangay ${barangay}`,
       position: 'Barangay Tanod / Utility Personnel', availability: 'available'
     })),

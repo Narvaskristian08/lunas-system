@@ -2,6 +2,7 @@ import type { BackendUserRole, Permission, UserProfile, UserRole } from "@/types
 
 export const roleLabels: Record<BackendUserRole, UserRole> = {
   citizen: "Citizen",
+  utility_personnel: "Utility Personnel",
   repair_personnel: "Utility Personnel",
   barangay_official: "Barangay Official",
   city_engineer: "City Engineer",

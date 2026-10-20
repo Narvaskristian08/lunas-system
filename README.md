@@ -651,6 +651,21 @@ Tasks are pending recommendations, not changes implemented by this audit. Accept
 
 ## 15 — Development Setup
 
+### Local startup verification — 2026-10-20 (Asia/Manila)
+
+Mobile lint cleanup (2026-10-20): added braces to conditional statements in `lunas_mobile/lib/features/repair/data/services/repair_service.dart` and `lunas_mobile/lib/features/repair/presentation/screens/tanod_inspections_screen.dart`, and removed an unnecessary `.toList()` inside a widget spread. Formatted both files with `dart format`; `flutter analyze` from `lunas_mobile/` passed with **No issues found**. These are lint-only changes; device workflows were not rerun for this cleanup.
+
+Ran `./scripts/local-up.ps1` using the existing ignored `.env.local`, `docker-compose.yml` and `docker-compose.local.yml`. Backend, web and AI images built successfully (including the web production build/TypeScript check). Compose reported MongoDB, backend, web and AI healthy; RustFS was running and bucket initialization exited successfully. `http://localhost:5000/health/ready` and `http://localhost:3000/api/health` both returned HTTP 200. Existing data volumes were retained; no fixture seeds were run.
+
+Mobile launched on Android 16 emulator `emulator-5554` against `http://10.0.2.2:5000/api/v1`. Debug compilation succeeded, but Android rejected installation for insufficient internal storage (about 382 MB available); cache trimming did not recover space. The smaller profile APK (32 MB) installed and launched successfully with these commands from `lunas_mobile/`:
+
+```powershell
+flutter build apk --profile --target-platform android-x64 --dart-define=LUNAS_API_BASE_URL=http://10.0.2.2:5000/api/v1
+flutter run --profile -d emulator-5554 --use-application-binary=build/app/outputs/flutter-apk/app-profile.apk --dart-define=LUNAS_API_BASE_URL=http://10.0.2.2:5000/api/v1
+```
+
+This verifies local build/startup only, not login, evidence uploads, model quality or the full workflow. Email delivery settings remain unconfigured. Backend dependency installation reported 10 vulnerabilities (7 moderate, 1 high, 2 critical); Flutter warned about future Gradle/AGP/Kotlin support. Next priorities are restoring emulator storage for debug/hot reload, reviewing dependency findings, configuring test email delivery and exercising scoped mobile/API/storage workflows. Earlier audit limitations describe that audit run and are not superseded beyond the checks recorded here.
+
 Use Node 22 as in Docker, npm with lockfiles, a local MongoDB `lunas_db`, compatible Flutter/Dart and Python runtime dependencies. Avoid real credentials in documentation, source and screenshots. Read [backend setup](lunas_backend/README.md), [web setup](lunas_web/README.md), [mobile setup](lunas_mobile/README.md), [AI setup](lunas_ai/README.md), [account provisioning](ACCOUNT_PROVISIONING.md), [Docker setup](DOCKER_SETUP.md), [deployment guide](DEPLOYMENT_GUIDE.md), [AWS runbook](infra/aws/README.md) and [Netlify/AWS guide](NETLIFY_AWS_DEPLOYMENT.md); reconcile their older workflow/storage/map/privacy claims against this audit.
 
 ### Individual services
@@ -671,14 +686,30 @@ AWS-connected deployment uses root `.env.example` → `.env`, production S3/regi
 
 ### Local Dagupan fixtures (optional, isolated data only)
 
-The fixture design has 42 synthetic local accounts: 31 barangay officials, four organization providers and four matching repair accounts, plus Admin, City Engineering provider and citizen. [Local account directory](LOCAL_DAGUPAN_ACCOUNTS.md) contains controlled test identifiers; passwords are not repeated here. These are not official government or provider accounts. No seed command was executed by this audit.
+Current role update (2026-10-20): Tanods are now `utility_personnel`, superseding earlier notes below about deferred Tanod seeding. Converted all 31 existing `barangay_tanod` demo accounts in place; preserved IDs, barangays and inspection references, revoked sessions and recorded `role_changed` audits. The database has 68 accounts: Admin 1, citizen 1, barangay official 31, Utility Personnel 31 and agency provider 4, with no repair personnel or legacy City Engineer accounts.
+
+Implementation: `src/utils/accountPolicy.js`, `src/models/User.js`, `src/middleware/accountValidation.js` and `src/controllers/authorizedAccountController.js` under `lunas_backend/` support the distinct account role. `tanodWorkflowController.js`, `incidentRoutes.js` and `jurisdictionService.js` use it for barangay/assignment-scoped inspections; start/submit also match the incident URL and assigned barangay. The role cannot use repair work-order or Secretary decision routes. Web types, role maps, admin forms and mobile-only access policy recognize it. Flutter `auth_role_policy.dart`, `auth_controller.dart` and `app_router.dart` admit Utility Personnel to existing Tanod screens without enabling legacy repair detail/progress routes. Existing `/repair` URLs remain compatibility paths, not the stored role name.
+
+Seeding: `dagupan-seed-config.js` defines all 68 accounts, including Tanods directly as `utility_personnel`. The completed one-off account-conversion scripts have been removed. Ordinary `seed:dagupan` preserves existing accounts and does not migrate legacy roles; the existing local accounts were converted earlier. `migrate-tanod-workflow.js` remains a separate incident-state migration and no longer changes account roles.
+
+Checks: four targeted Jest suites passed 16 tests (`scripts/dagupan-seed-config.test.js`, `src/utils/utilityPersonnelRole.test.js`, `src/controllers/tanodRole.test.js`, `src/services/jurisdictionService.test.js`); backend lint passed. Web `npx.cmd tsc --noEmit` and Docker production build passed. Flutter `flutter test test/auth_role_policy_test.dart` passed four tests; profile APK compilation passed. Local migration converted 31 records; repeat migration and ordinary seeding converted zero and recreated no retired accounts. Authenticated local API checks returned 200 for Utility Personnel inspection listing and Secretary same-barangay personnel listing, and 403 for Utility Personnel repair work orders/Secretary queue and agency-provider inspection listing. The inspection list was empty: these checks do not certify the full inspection journey, uploads or institutional policies. Next priority: an isolated live inspection journey with cross-barangay and stale-assignment checks.
+
+Local demo account cleanup (2026-10-20, user requested): permanently deleted the four `dagupan.repair-{city-maintenance,dcwd,decorp,dpwh}@lunas.test` accounts and legacy `dagupan.engineer@lunas.test` from Docker `lunas_db`, superseding the earlier archive operation. No accounts remain for those five identifiers. Other records, including historical references to deleted IDs and the earlier archive audit entries, were retained; legacy fixture details may therefore have missing populated users until explicitly refreshed.
+
+The web seed creates 24 agency-owned incident snapshots without personnel assignments or work orders. Existing snapshots/orders were preserved; they may still reference deleted demo IDs until explicitly refreshed.
+
+Script cleanup (2026-10-20): removed the completed one-off account helpers (`convert-demo-tanods.js`, `remove-retired-demo-accounts.js` and `demo-account-maintenance.js`) and redundant account-maintenance npm commands. Removed their imports, conversion calls and counters from `seed-dagupan-data.js` and `migrate-tanod-workflow.js`. No replacement helper was added. Current seed definitions create only supported demo accounts. Older databases with legacy Tanod roles now require an explicit migration rather than automatic conversion during seeding. Distinct report/evidence/storage/incident migration scripts remain. No database mutations or Docker rebuilds were performed for this source cleanup.
+
+Validation: backend `npm.cmd run lint` passed; `npx.cmd --no-install jest scripts/dagupan-seed-config.test.js src/utils/utilityPersonnelRole.test.js --runInBand --coverage=false` passed two suites/four tests. Both affected script entry points imported successfully without connecting to the database. Source search found no remaining deleted-helper imports or conversion counters; `git diff --check` passed. Live seeding was not rerun.
+
+[Local account directory](LOCAL_DAGUPAN_ACCOUNTS.md) contains synthetic test identifiers, not official government/provider accounts. Passwords are not repeated here.
 
 ```powershell
 docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:dagupan
 docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -e ALLOW_DEMO_SEED=true -e DEMO_SEED_DOCKER=true backend npm run seed:web
 ```
 
-`seed:dagupan` creates 31 submitted synthetic reports, one per canonical barangay, covering five mobile categories; coordinates are placeholders, not verified boundaries. Ordinary reruns preserve existing accounts/fixtures. `seed:web` creates 24 workflow snapshots and 10 linked orders; these are illustrative states, not actual approvals or evidence of workflow correctness. The seed scripts reject external Mongo hosts and non-local `lunas_db` use; Docker additionally requires the explicit seed flag.
+`seed:dagupan` creates 31 submitted synthetic reports, one per canonical barangay, covering five mobile categories; coordinates are placeholders, not verified boundaries. Ordinary reruns preserve existing accounts/fixtures. `seed:web` creates 24 incident snapshots and no linked work orders; these are illustrative states, not actual approvals or evidence of workflow correctness. The seed scripts reject external Mongo hosts and non-local `lunas_db` use; Docker additionally requires the explicit seed flag.
 
 Preserve the existing reset procedure for authorized disposable fixtures: backup first; `npm run seed:dagupan -- --replace` changes local fixture credentials/metadata, revokes their refresh tokens and replaces only marked `DEMO-QA-*`, `MOCK-WEB-*`, `DAGUPAN-LOCAL-*` fixtures and linked records, retaining non-fixture data and historical bucket objects. `npm run seed:web -- --refresh` refreshes web fixtures only. **These mutate data and are not audit verification commands.** Do not run against real records. City Engineering account conversion, account-retention and storage migrations likewise require separately reviewed backups/data authorization.
 

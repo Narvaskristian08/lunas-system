@@ -21,9 +21,9 @@ const audit = (req, user, action, before, after, details = {}) => createAuditLog
 const denied = (res, message, status = 403) => res.status(status).json({ success: false, message });
 const conflict = res => denied(res, 'Account changed. Refresh and try again.', 409);
 const checkActor = (req, res, target, role = target?.role) => {
-  if (req.user?.role === 'barangay_official' && target?.role === 'repair_personnel'
+  if (req.user?.role === 'barangay_official' && target?.role === 'utility_personnel'
     && !target.isArchived && req.user.barangay
-    && target.barangay === req.user.barangay && role === 'repair_personnel') return true;
+    && target.barangay === req.user.barangay && role === 'utility_personnel') return true;
   // Compatibility for legacy provider-worker records while the migration runs.
   if (req.user?.role === 'utility_provider' && target?.role === 'repair_personnel'
     && !target.isArchived && req.user.utilityCompany
@@ -52,10 +52,10 @@ const targetAccount = async (req, res) => {
 };
 const approvedFields = (input, actor) => ({
   firstName: input.firstName, lastName: input.lastName,
-  ...(input.role === 'repair_personnel' ? { phone: input.phone } : {}),
+  ...(input.role === 'utility_personnel' ? { phone: input.phone } : {}),
   personnelId: input.personnelId || '', position: input.position, organization: input.organization,
   role: input.role,
-  barangay: ['barangay_official', 'repair_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
+  barangay: ['barangay_official', 'utility_personnel'].includes(input.role) ? input.barangay || undefined : undefined,
   utilityCompany: input.role === 'utility_provider' ? input.utilityCompany : undefined,
   repairOrganization: input.role === 'repair_personnel' ? input.repairOrganization : undefined,
   repairTeam: input.role === 'repair_personnel' ? input.repairTeam || '' : undefined,
@@ -210,7 +210,7 @@ exports.updateAuthorizedAccount = asyncHandler(async (req, res) => {
     if (fields[key] === undefined) { unset[key] = 1; delete fields[key]; }
   }
   if (before.role !== req.body.role) {
-    if (req.body.role === 'repair_personnel') fields.availability = 'available';
+    if (req.body.role === 'utility_personnel') fields.availability = 'available';
     else unset.availability = 1;
   }
   const user = await User.findOneAndUpdate(revisionFilter(before), {

@@ -2,6 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 
 void main() {
+  test('Utility Personnel use the Tanod workspace with a distinct role', () {
+    expect(isSupportedMobileRole('utility_personnel'), isTrue);
+    expect(isUtilityPersonnelRole('utility_personnel'), isTrue);
+    expect(isRepairPersonnelRole('utility_personnel'), isFalse);
+    expect(mobileWorkspaceHome('utility_personnel'), '/repair');
+    expect(isSupportedMobileRole('barangay_tanod'), isFalse);
+  });
   test('citizens and repair personnel receive the supported mobile homes', () {
     expect(mobileWorkspaceHome('citizen'), '/citizen');
     expect(isSupportedMobileRole('citizen'), isTrue);

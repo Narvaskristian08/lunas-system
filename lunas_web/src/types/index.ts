@@ -9,6 +9,7 @@ export type UserRole =
 /** Roles sent by the current Express API. Keep these separate from display labels. */
 export type BackendUserRole =
   | "citizen"
+  | "utility_personnel"
   | "repair_personnel"
   | "barangay_official"
   | "city_engineer"

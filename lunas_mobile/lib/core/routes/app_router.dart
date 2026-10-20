@@ -89,11 +89,18 @@ final GoRouter appRouter = GoRouter(
             location == '/role-unavailable') {
           return home;
         }
-        // Mobile exposes only Citizen and Repair Personnel workspaces. This
+        // Mobile exposes Citizen, Utility Personnel and legacy repair workspaces. This
         // is a presentation guard; the backend remains authoritative for
         // access and every API request.
         if (authController.isCitizen) {
           return isCitizenLocation ? null : home;
+        }
+        if (authController.isUtilityPersonnel) {
+          const utilityLocations = {
+            '/repair', '/repair/work-orders', '/repair/profile',
+            '/repair/notifications', '/repair/notifications/details',
+          };
+          return utilityLocations.contains(location) ? null : home;
         }
         if (authController.isRepairPersonnel) {
           return isRepairLocation ? null : home;

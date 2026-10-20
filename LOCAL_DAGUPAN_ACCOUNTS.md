@@ -11,16 +11,17 @@ Default local password: `LunasLocal2026!`. Override with `DAGUPAN_SEED_PASSWORD`
 - **Dagupan City Water District / Pamana Water Dagupan**: water.
 - **DPWH - Dagupan National Infrastructure**: road, drainage.
 
-Both City Engineering accounts use `utility_provider` with the same organization scope; the separate City Engineer reviewer role is retired. DPWH is an ownership-dependent routing option; the responsible district must be confirmed for each actual asset. Category coverage is a local routing configuration, not a verified maintenance agreement.
+The City Engineering provider uses `utility_provider`; the separate legacy City Engineer and four repair accounts were permanently deleted from the local demo on 2026-10-20. DPWH is an ownership-dependent routing option; the responsible district must be confirmed for each actual asset. Category coverage is a local routing configuration, not a verified maintenance agreement.
 
 Sources: [DECORP](https://decorp.com.ph/), [DCWD/Pamana FAQs](https://dcwd.gov.ph/services/faqs/), [Dagupan drainage coordination](https://www.dagupan.gov.ph/category/press-release/). Barangays come from `lunas_backend/src/data/dagupanBarangays.js`.
+
+The current seed creates 68 accounts: Admin, citizen, 31 barangay officials, 31 Utility Personnel (Tanods) and four agency providers. It never creates repair personnel or the legacy engineer account. Tanod logins are `dagupan.tanod-<barangay-slug>@lunas.test`, using each barangay suffix listed below. Their stored role is `utility_personnel`. All 31 existing Tanods were converted in place on 2026-10-20 with sessions revoked and IDs retained.
 
 ## Login identifiers
 
 | Role | Assignment | Email |
 | --- | --- | --- |
 | admin | Citywide test account | dagupan.admin@lunas.test |
-| utility_provider | Dagupan City Engineering Office | dagupan.engineer@lunas.test |
 | citizen | Citywide test account | dagupan.citizen@lunas.test |
 | barangay_official | Bacayao Norte | dagupan.barangay-bacayao-norte@lunas.test |
 | barangay_official | Bacayao Sur | dagupan.barangay-bacayao-sur@lunas.test |
@@ -54,10 +55,6 @@ Sources: [DECORP](https://decorp.com.ph/), [DCWD/Pamana FAQs](https://dcwd.gov.p
 | barangay_official | Tapuac | dagupan.barangay-tapuac@lunas.test |
 | barangay_official | Tebeng | dagupan.barangay-tebeng@lunas.test |
 | utility_provider | Dagupan City Engineering Office | dagupan.provider-city-maintenance@lunas.test |
-| repair_personnel | Dagupan City Engineering Office | dagupan.repair-city-maintenance@lunas.test |
 | utility_provider | Dagupan Electric Corporation (DECORP) | dagupan.provider-decorp@lunas.test |
-| repair_personnel | Dagupan Electric Corporation (DECORP) | dagupan.repair-decorp@lunas.test |
 | utility_provider | Dagupan City Water District / Pamana Water Dagupan | dagupan.provider-dcwd@lunas.test |
-| repair_personnel | Dagupan City Water District / Pamana Water Dagupan | dagupan.repair-dcwd@lunas.test |
 | utility_provider | DPWH - Dagupan National Infrastructure | dagupan.provider-dpwh@lunas.test |
-| repair_personnel | DPWH - Dagupan National Infrastructure | dagupan.repair-dpwh@lunas.test |

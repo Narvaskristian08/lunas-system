@@ -46,11 +46,12 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
     });
     try {
       final items = await repairService.getMyInspections();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _items = items;
           _loading = false;
         });
+      }
       if (widget.initialInspectionId != null && !_openedInitialInspection) {
         final match = items
             .where((item) => item.id == widget.initialInspectionId)
@@ -63,18 +64,20 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
         }
       }
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = error.message;
           _loading = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error =
               'LUNAS could not load your assigned verifications. Check your connection and try again.';
           _loading = false;
         });
+      }
     }
   }
 
@@ -218,8 +221,9 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                           final picked = await evidenceService.pick(
                             ImageSource.camera,
                           );
-                          if (picked != null)
+                          if (picked != null) {
                             setSheetState(() => selectedEvidence = picked);
+                          }
                         },
                         icon: const Icon(Icons.camera_alt_outlined),
                         label: Text(
@@ -236,8 +240,9 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                           final picked = await evidenceService.pick(
                             ImageSource.gallery,
                           );
-                          if (picked != null)
+                          if (picked != null) {
                             setSheetState(() => selectedEvidence = picked);
+                          }
                         },
                         icon: const Icon(Icons.photo_library_outlined),
                         label: const Text('Attach photo'),
@@ -418,60 +423,58 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                   ),
                 )
               else
-                ..._filteredItems
-                    .map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: LunasCard(
-                          onTap: item.status == 'submitted'
-                              ? null
-                              : () => _openInspection(item),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ReportStatusHeader(
-                                title: item.category ?? 'Citizen report',
-                                status: item.status == 'submitted'
-                                    ? 'Sent to Secretary'
-                                    : 'Needs verification',
-                                leading: Icon(
-                                  categoryIcon(item.category ?? ''),
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                item.reportNumber ?? 'Report',
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${item.type == 'completion' ? 'Final work verification' : 'Initial work verification'} · ${item.barangay ?? 'Barangay'}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              if (item.description?.isNotEmpty == true) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  item.description!,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                              if (item.status != 'submitted') ...[
-                                const SizedBox(height: 12),
-                                FilledButton.icon(
-                                  onPressed: () => _openInspection(item),
-                                  icon: const Icon(Icons.camera_alt_outlined),
-                                  label: const Text('Open Work Verification'),
-                                ),
-                              ],
-                            ],
+                ..._filteredItems.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: LunasCard(
+                      onTap: item.status == 'submitted'
+                          ? null
+                          : () => _openInspection(item),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ReportStatusHeader(
+                            title: item.category ?? 'Citizen report',
+                            status: item.status == 'submitted'
+                                ? 'Sent to Secretary'
+                                : 'Needs verification',
+                            leading: Icon(
+                              categoryIcon(item.category ?? ''),
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Text(
+                            item.reportNumber ?? 'Report',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.type == 'completion' ? 'Final work verification' : 'Initial work verification'} · ${item.barangay ?? 'Barangay'}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          if (item.description?.isNotEmpty == true) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              item.description!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                          if (item.status != 'submitted') ...[
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                              onPressed: () => _openInspection(item),
+                              icon: const Icon(Icons.camera_alt_outlined),
+                              label: const Text('Open Work Verification'),
+                            ),
+                          ],
+                        ],
                       ),
-                    )
-                    .toList(),
+                    ),
+                  ),
+                ),
               if (_filteredItems.length > 3)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -485,8 +488,9 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
   );
 
   List<TanodInspection> get _filteredItems => _items.where((item) {
-    if (_filter == 'completion')
+    if (_filter == 'completion') {
       return item.type == 'completion' && _needsAction(item);
+    }
     if (_filter == 'submitted') return item.status == 'submitted';
     return item.type != 'completion' && _needsAction(item);
   }).toList();
