@@ -54,7 +54,7 @@ test.describe("workspace redirects and operational layouts", () => {
     await expect(page.getByRole("heading", { name: "Authorized Accounts", exact: true })).toBeVisible();
   });
 
-  for (const role of ["admin", "barangay_official", "city_engineer", "utility_provider"]) {
+  for (const role of ["admin", "barangay_official", "utility_provider"]) {
     test(`${role} landing, alias and restricted routes redirect without client errors`, async ({ page, context, baseURL }) => {
       const errors: string[] = [];
       page.on("pageerror", error => errors.push(error.message));
@@ -73,17 +73,10 @@ test.describe("workspace redirects and operational layouts", () => {
     });
   }
 
-  test("engineering dashboard puts linked review queues before geography", async ({ page, context, baseURL }) => {
+  test("retired City Engineer cannot enter the dashboard", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-city_engineer" }), url: baseURL!, httpOnly: true }]);
     await page.goto("/dashboard");
-    const review = page.getByRole("link", { name: "Awaiting Review: 3. Open queue." });
-    await expect(review).toBeVisible();
-    await expect(page.getByRole("link", { name: "Awaiting Verification: 2. Open queue." })).toHaveAttribute("href", "/work-orders?view=verification");
-    await expect(page.getByRole("link", { name: "Overdue: 1. Open queue." })).toHaveAttribute("href", "/work-orders?view=orders&slaState=overdue");
-    const geography = page.getByRole("heading", { name: "Reports by Barangay" });
-    expect((await review.boundingBox())!.y).toBeLessThan((await geography.boundingBox())!.y);
-    await review.click();
-    await expect(page).toHaveURL(/view=review/);
+    await expect(page.getByRole("heading", { name: "Session expired", exact: true })).toBeVisible();
   });
 
   test("an intake incident with an existing work order opens that order", async ({ page, context, baseURL }) => {
@@ -98,13 +91,9 @@ test.describe("workspace redirects and operational layouts", () => {
 
   test("phone work orders and accounts expose status and actions in cards", async ({ page, context, baseURL }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-city_engineer" }), url: baseURL!, httpOnly: true }]);
-    await page.goto("/work-orders?view=verification");
-    const cards = page.getByRole("list", { name: "Work-order register" });
-    await expect(cards).toBeVisible();
-    await expect(cards.getByText("Status / Priority")).toBeVisible();
-    await expect(cards.getByText("Deadline", { exact: true })).toBeVisible();
-    await expect(cards.getByRole("link", { name: "WO-202610-001", exact: true })).toBeVisible();
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-utility_provider" }), url: baseURL!, httpOnly: true }]);
+    await page.goto("/work-orders");
+    await expect(page.getByRole("heading", { name: "Agency Reports", exact: true, level: 1 })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-admin" }), url: baseURL!, httpOnly: true }]);
     await page.goto("/admin/users");

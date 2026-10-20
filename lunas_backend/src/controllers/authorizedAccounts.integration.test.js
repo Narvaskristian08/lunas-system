@@ -78,7 +78,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
   async function actor(role, overrides = {}) {
     const user = await User.create({ firstName: 'Test', lastName: 'Actor', email: `${role}-actor@example.test`,
       phone: '09123456789', password, role, isActive: true, isVerified: true,
-      barangay: role === 'barangay_official' ? 'Pantal' : undefined,
+      barangay: ['barangay_official', 'utility_personnel'].includes(role) ? 'Pantal' : undefined,
       repairOrganization: role === 'repair_personnel' ? 'Dagupan Water District' : undefined,
       utilityCompany: role === 'utility_provider' ? 'Utility A' : undefined, ...overrides });
     return { user, token: createAccessToken(user) };
@@ -103,64 +103,32 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await request(app).post('/auth/register').send({ ...approved, password, role }).expect(400);
     expect(await User.countDocuments({ email: approved.email })).toBe(0);
   });
-  test.each(['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider'])('5: %s cannot create personnel or read admin directory', async role => {
+  test.each(['citizen', 'utility_personnel', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider'])('5: %s cannot create personnel or read admin directory', async role => {
     const { token } = await actor(role);
-    await call('post', '/users/authorized', token).send(approved).expect(403);
-    await call('get', '/users/authorized', token).expect(403);
-    await call('put', `/users/${admin.id}`, token).send({ role: 'admin' }).expect(403);
+    await call('post', '/users/authorized', token).send(approved).expect(role === 'city_engineer' ? 401 : 403);
+    await call('get', '/users/authorized', token).expect(role === 'city_engineer' ? 401 : 403);
+    await call('put', `/users/${admin.id}`, token).send({ role: 'admin' }).expect(role === 'city_engineer' ? 401 : 403);
   });
-  test.each(['citizen', 'repair_personnel', 'barangay_official', 'city_engineer', 'admin'])('%s cannot create Repair Personnel accounts', async role => {
+  test.each(['citizen', 'utility_personnel', 'repair_personnel', 'barangay_official', 'city_engineer', 'utility_provider', 'admin'])('%s cannot use retired repair provisioning', async role => {
     const { token } = await actor(role);
     await call('post', '/users/repair-personnel', token).send({
-      firstName: 'Repair', lastName: 'Worker', email: `worker-${role}@example.test`, phone: approved.phone,
-      position: 'Field Technician'
-    }).expect(403);
+      firstName: 'Repair', lastName: 'Worker', email: 'retired@example.test', phone: approved.phone
+    }).expect(404);
+    expect(await User.countDocuments({ email: 'retired@example.test' })).toBe(0);
   });
-  test('Utility Provider creates pending personnel in its own organization and sees only its roster', async () => {
-    const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
-    await User.create({ firstName: 'Outside', lastName: 'Worker', email: 'outside-worker@example.test', phone: approved.phone,
-      password, role: 'repair_personnel', repairOrganization: 'Other Utility', position: 'Technician', isActive: true, isVerified: true });
-
-    const validPayload = {
-      firstName: 'Assigned', lastName: 'Worker', email: 'assigned-worker@example.test', phone: approved.phone,
-      repairAccountType: 'team', repairTeam: 'Road Team',
-    };
-    await call('post', '/users/repair-personnel', token).send({
-      ...validPayload, organization: 'Forged Organization', role: 'admin', repairOrganization: 'Forged Organization'
-    }).expect(400);
-    const result = await call('post', '/users/repair-personnel', token).send(validPayload).expect(201);
-    expect(result.body.data.account).toMatchObject({
-      email: 'assigned-worker@example.test', role: 'repair_personnel', repairOrganization: 'Dagupan Water District',
-      organization: 'Dagupan Water District', accountStatus: 'pending_activation', isActive: false,
-      requiresActivation: true
-    });
-    expect(JSON.stringify(result.body)).not.toMatch(/activationToken|password|refreshTokens/);
-    const created = await User.findOne({ email: 'assigned-worker@example.test' }).select('+activationTokenHash');
-    expect(created.repairOrganization).toBe('Dagupan Water District');
-    expect(created.activationTokenHash).toBeDefined();
-
+  test('admin provisions Utility Personnel; Secretary directory stays barangay scoped', async () => {
+    const payload = { ...approved, role: 'utility_personnel', email: 'tanod@example.test' };
+    const result = await call('post', '/users/authorized').send(payload).expect(201);
+    expect(result.body.data.account).toMatchObject({ role: 'utility_personnel', barangay: 'Pantal', accountStatus: 'pending_activation' });
+    await call('post', '/users/authorized').send(payload).expect(409);
+    await actor('utility_personnel', { email: 'pantal-tanod@example.test', barangay: 'Pantal' });
+    await actor('utility_personnel', { email: 'lucao-tanod@example.test', barangay: 'Lucao' });
+    const { token } = await actor('barangay_official', { barangay: 'Pantal' });
     const roster = await call('get', '/users/repair-personnel', token).expect(200);
     expect(roster.body.data).toHaveLength(1);
-    expect(roster.body.data[0]).toMatchObject({ email: 'assigned-worker@example.test', accountStatus: 'pending_activation' });
-    expect(roster.body.data[0].email).not.toBe('outside-worker@example.test');
-  });
-  test('Utility Provider personnel creation rejects duplicate email addresses', async () => {
-    const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
-    const payload = { firstName: 'Assigned', lastName: 'Worker', email: 'duplicate-worker@example.test', phone: approved.phone };
-    await call('post', '/users/repair-personnel', token).send(payload).expect(201);
-    await call('post', '/users/repair-personnel', token).send(payload).expect(409);
-  });
-  test('Utility Provider can create a named team represented by its leader', async () => {
-    const { token } = await actor('utility_provider', { utilityCompany: 'Dagupan Water District' });
-    const payload = { firstName: 'Team', lastName: 'Leader', email: 'crew-leader@example.test', phone: approved.phone,
-      repairAccountType: 'team', repairTeam: 'Water Crew A' };
-    await call('post', '/users/repair-personnel', token).send({ ...payload, repairTeam: '   ' }).expect(400);
-    await call('post', '/users/repair-personnel', token).send({ ...payload, repairAccountType: 'invalid' }).expect(400);
-    const result = await call('post', '/users/repair-personnel', token).send(payload).expect(201);
-    expect(result.body.data.account).toMatchObject({ repairAccountType: 'team', repairTeam: 'Water Crew A',
-      firstName: 'Team', lastName: 'Leader', role: 'repair_personnel', repairOrganization: 'Dagupan Water District' });
-    const roster = await call('get', '/users/repair-personnel', token).expect(200);
-    expect(roster.body.data.find(person => person.email === payload.email)).toMatchObject({ repairAccountType: 'team', repairTeam: 'Water Crew A' });
+    expect(roster.body.data[0]).toMatchObject({ role: 'utility_personnel', barangay: 'Pantal', email: 'pantal-tanod@example.test' });
+    const { token: providerToken } = await actor('utility_provider');
+    await call('get', '/users/repair-personnel', providerToken).expect(403);
   });
   test('6–7,14–15: administrator provisions an approved inactive account with an audited assignment and safe response', async () => {
     const { account, token, body } = await provision();
@@ -291,16 +259,52 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     expect(result.body.data.account.accountStatus).toBe('pending_activation');
     expect(JSON.stringify(result.body)).not.toMatch(/token|password/i);
   });
-  test('repair transfer removes access to old assignments without deleting work-order history', async () => {
-    const { user, token } = await actor('repair_personnel', { barangay: 'Pantal' });
-    const incident = await Incident.create({ reportNumber: 'TRANSFER', reporter: admin._id, category: 'road', description: 'Test repair transfer history', location: { type: 'Point', coordinates: [120.33, 16.04], address: { barangay: 'Pantal' } } });
-    const order = await WorkOrder.create({ incident: incident.id, responsibleOrganization: 'Dagupan Water District', responsibleRole: 'utility_provider', priority: 'high', jurisdiction: { barangay: 'Pantal' }, createdBy: admin.id, assignedTo: user.id, assignmentState: 'pending' });
-    await call('get', `/work-orders/${order.id}`, token).expect(200);
-    const update = await call('put', `/users/authorized/${user.id}`).send(updatePayload({ version: user.__v }, { role: 'repair_personnel', barangay: 'Lucao', repairOrganization: 'Dagupan Water District' })).expect(200);
+  test('Utility Personnel transfer revokes old sessions and removes old barangay incident access', async () => {
+    const { user, token } = await actor('utility_personnel', { barangay: 'Pantal' });
+    const incident = await Incident.create({ reportNumber: 'TRANSFER', reporter: admin._id, category: 'road', description: 'Test Tanod transfer history', location: { type: 'Point', coordinates: [120.33, 16.04], address: { barangay: 'Pantal' } } });
+    const { canAccessIncident } = require('../services/jurisdictionService');
+    expect(canAccessIncident(user, incident)).toBe(true);
+    const update = await call('put', `/users/authorized/${user.id}`).send(updatePayload({ version: user.__v }, { role: 'utility_personnel', barangay: 'Lucao' })).expect(200);
     expect(update.body.data.barangay).toBe('Lucao');
-    const refreshed = await User.findById(user.id).select('+tokenVersion');
-    await call('get', `/work-orders/${order.id}`, createAccessToken(refreshed)).expect(404);
-    expect(await WorkOrder.countDocuments({ _id: order.id, assignedTo: user.id })).toBe(1);
+    await call('get', '/users/me', token).expect(401);
+    const refreshed = await User.findById(user.id);
+    expect(canAccessIncident(refreshed, incident)).toBe(false);
+    expect(await Incident.countDocuments({ _id: incident.id })).toBe(1);
+  });
+  test('Tanod verification, agency progress and current final inspection preserve role and scope gates', async () => {
+    const Inspection = require('../models/Inspection');
+    const citizen = await actor('citizen');
+    const secretary = await actor('barangay_official', { barangay: 'Pantal' });
+    const tanod = await actor('utility_personnel', { barangay: 'Pantal' });
+    const outside = await actor('utility_personnel', { email: 'outside-tanod@example.test', barangay: 'Lucao' });
+    const provider = await actor('utility_provider', { utilityCompany: 'Dagupan City Engineering Office' });
+    const otherProvider = await actor('utility_provider', { email: 'outside-provider@example.test', utilityCompany: 'Other Agency' });
+    const report = await Incident.create({ reportNumber: 'QA-TANOD', reporter: citizen.user._id, category: 'road', description: 'Synthetic isolated inspection journey', location: { type: 'Point', coordinates: [120.33, 16.04], address: { barangay: 'Pantal' } } });
+    const base = `/incidents/${report.id}`;
+    await call('post', `${base}/tanod-inspections`, secretary.token).send({ tanodId: outside.user.id }).expect(400);
+    const assigned = await call('post', `${base}/tanod-inspections`, secretary.token).send({ tanodId: tanod.user.id }).expect(201);
+    const initialId = assigned.body.data._id;
+    await call('post', `${base}/inspections/${initialId}/start`, outside.token).expect(404);
+    await call('post', `${base}/inspections/${initialId}/start`, tanod.token).expect(200);
+    await call('post', `${base}/inspections/${initialId}/submit`, tanod.token).send({ findings: 'Verified road damage at the assigned site', result: 'verified' }).expect(200);
+    await call('post', `${base}/inspections/${initialId}/review`, tanod.token).send({ decision: 'approve' }).expect(403);
+    await call('post', `${base}/inspections/${initialId}/review`, secretary.token).send({ decision: 'approve' }).expect(200);
+    await call('patch', `${base}/agency-status`, otherProvider.token).send({ status: 'work_in_progress', priority: 'high' }).expect(404);
+    await call('patch', `${base}/agency-status`, provider.token).send({ status: 'work_completed', priority: 'high' }).expect(409);
+    await call('patch', `${base}/agency-status`, provider.token).send({ status: 'work_in_progress', priority: 'high', slaDeadline: new Date(Date.now() + 72 * 3600000).toISOString() }).expect(200);
+    await call('patch', `${base}/agency-status`, provider.token).send({ status: 'work_completed' }).expect(200);
+    const completion = await call('post', `${base}/completion-inspections`, secretary.token).send({ tanodId: tanod.user.id }).expect(201);
+    const completionId = completion.body.data._id;
+    await call('post', `${base}/inspections/${completionId}/submit`, tanod.token).send({ findings: 'Completion verified on site', result: 'verified' }).expect(200);
+    // An unrelated URL or superseded inspection must never close the report.
+    await call('post', `/incidents/${new mongoose.Types.ObjectId()}/complete`, secretary.token).send({ inspectionId: completionId }).expect(404);
+    await Incident.updateOne({ _id: report.id }, { $unset: { completionInspection: '' } });
+    await call('post', `${base}/complete`, secretary.token).send({ inspectionId: completionId }).expect(409);
+    expect((await Inspection.findById(completionId)).status).toBe('submitted');
+    await Incident.updateOne({ _id: report.id }, { $set: { completionInspection: completionId } });
+    await call('post', `${base}/complete`, secretary.token).send({ inspectionId: completionId }).expect(200);
+    expect((await Incident.findById(report.id)).status).toBe('closed');
+    await call('post', `${base}/complete`, secretary.token).send({ inspectionId: completionId }).expect(404);
   });
   test('15: serializers, audit sanitizer, and retention migration preserve history without secret disclosure', async () => {
     const { account, token } = await provision();

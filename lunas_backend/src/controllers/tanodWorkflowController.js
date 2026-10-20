@@ -247,10 +247,14 @@ exports.completeIncident = asyncHandler(async (req, res) => {
   // The route is /incidents/:id/complete and the web client sends the
   // completion inspection ID in the request body.
   const inspectionId = req.body.inspectionId || req.params.inspectionId;
-  const inspection = await Inspection.findOne({ _id: inspectionId, type: 'completion', status: 'submitted' });
+  const inspection = await Inspection.findOne({ _id: inspectionId, incident: req.params.id, type: 'completion', status: 'submitted' });
   if (!inspection || inspection.secretary.toString() !== req.user._id.toString() || req.user.role !== 'barangay_official') return res.status(404).json({ success: false, message: 'Completion inspection not found' });
   const incident = await Incident.findOne({ _id: inspection.incident, ...buildIncidentScope(req.user) });
-  if (!incident || inspection.result !== 'verified') return res.status(409).json({ success: false, message: 'Completion inspection must be verified before closing' });
+  if (!incident || inspection.result !== 'verified'
+    || String(incident.completionInspection) !== String(inspection._id)
+    || incident.agencyStatus !== 'work_completed') {
+    return res.status(409).json({ success: false, message: 'Current completion inspection must be verified after agency completion before closing' });
+  }
   inspection.status = 'approved'; inspection.reviewedAt = new Date(); inspection.reviewedBy = req.user._id; inspection.reviewNotes = req.body.notes || ''; await inspection.save();
   appendHistory(incident, 'closed', req.user, 'Secretary approved final Tanod verification; incident completed', { inspectionId: inspection._id }); incident.finalVerifiedBy = req.user._id; incident.finalVerifiedAt = new Date(); incident.closedAt = new Date(); await incident.save();
   await notify(incident.reporter, incident, 'Report completed', `Report ${incident.reportNumber} has been verified and completed.`, 'incident_completed');

@@ -91,7 +91,7 @@ void main() {
     expect(item.workOrderId, _workOrderId);
     expect(
       notificationDestination(item, repairWorkspace: true),
-      '/repair/work-orders/$_workOrderId',
+      '/repair/work-orders',
     );
     expect(
       notificationDestination(item, repairWorkspace: false),
@@ -100,14 +100,23 @@ void main() {
   });
 
   test(
-    'citizen and repair notification routes stay in separate workspaces',
+    'citizen and Utility Personnel notification routes stay in separate workspaces',
     () {
-      expect(isRepairWorkspaceLocation('/repair/notifications'), isTrue);
+      expect(isUtilityWorkspaceLocation('/repair/notifications'), isTrue);
       expect(
-        isRepairWorkspaceLocation('/repair/notifications/details'),
+        isUtilityWorkspaceLocation('/repair/notifications/details'),
         isTrue,
       );
-      expect(isRepairWorkspaceLocation('/notifications'), isFalse);
+      expect(isUtilityWorkspaceLocation('/notifications'), isFalse);
+      expect(isUtilityWorkspaceLocation('/repair/work-orders/legacy'), isFalse);
+      expect(
+        isUtilityWorkspaceLocation('/repair/work-orders/legacy/progress'),
+        isFalse,
+      );
+      expect(
+        isUtilityWorkspaceLocation('/repair/work-orders/legacy/location'),
+        isFalse,
+      );
       expect(isCitizenWorkspaceLocation('/notifications/details'), isTrue);
       expect(isCitizenWorkspaceLocation('/repair/notifications'), isFalse);
     },
@@ -204,11 +213,14 @@ void main() {
     await tester.tap(find.text('Mark All as Read'));
     await tester.pumpAndSettle();
     expect(repository.markAllCalls, 1);
-    expect(find.text('Stay updated on your work orders.'), findsOneWidget);
+    expect(
+      find.text('Stay updated on your assigned verifications.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
-    'opening a repair notification marks it read and stays repair-only',
+    'opening a Utility Personnel notification marks it read in its workspace',
     (tester) async {
       final repository = _FakeNotifications(
         pages: {
@@ -240,7 +252,7 @@ void main() {
 
       expect(repository.markedRead, ['notification-1']);
       expect(find.byType(BottomSheet), findsOneWidget);
-      expect(find.text('View Assigned Work'), findsOneWidget);
+      expect(find.text('View Work Verification'), findsOneWidget);
       expect(router.state.uri.path, '/repair/notifications');
       Navigator.of(tester.element(find.byType(BottomSheet))).pop();
       await tester.pumpAndSettle();
@@ -249,26 +261,27 @@ void main() {
     },
   );
 
-  testWidgets('repair detail without a work order has no report action', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _app(
-        NotificationDetailsScreen(
-          repairWorkspace: true,
-          item: _item(workOrderId: null, incidentId: _incidentId),
+  testWidgets(
+    'unlinked Utility Personnel notification has no verification action',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(
+          NotificationDetailsScreen(
+            repairWorkspace: true,
+            item: _item(workOrderId: null, incidentId: null),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        'This notification is not linked to an accessible assigned work order.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('View Report'), findsNothing);
-    expect(find.text('View Assigned Work'), findsNothing);
-  });
+      expect(
+        find.text(
+          'This notification is not linked to an accessible work verification.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('View Report'), findsNothing);
+      expect(find.text('View Work Verification'), findsNothing);
+    },
+  );
 }

@@ -16,7 +16,7 @@ test.describe("notification inbox state and responsive layout", () => {
       const path = url.pathname.replace("/api/v1", "");
       res.setHeader("Content-Type", "application/json");
       const send = (data: unknown) => res.end(JSON.stringify({ success: true, data }));
-      if (path === "/users/me") return send({ id: "engineer", role: "city_engineer", firstName: "Test", lastName: "Engineer", email: "test@example.test", isActive: true });
+      if (path === "/users/me") return send({ id: "engineer", role: "utility_provider", utilityCompany: "Water District", firstName: "Test", lastName: "Engineer", email: "test@example.test", isActive: true });
       if (path === "/notifications" && req.method === "GET") {
         if (failList) { res.statusCode = 503; return res.end(JSON.stringify({ success: false, message: "Unavailable" })); }
         const filtered = items.filter(item => !url.searchParams.has("isRead") || String(item.isRead) === url.searchParams.get("isRead"));

@@ -289,13 +289,29 @@ test('retired City Engineer role receives an empty scope', async () => {
     await getPendingValidation({ query: {}, user: barangayOfficial }, res, jest.fn());
     expect(Incident.find).toHaveBeenCalledWith(expect.objectContaining({
       $and: expect.arrayContaining([expect.objectContaining({
-        status: { $in: ['submitted', 'clarification_required', 'barangay_validated', 'city_confirmed', 'prioritized'] }
+        $or: [
+          { status: { $in: ['submitted', 'clarification_required', 'tanod_assigned', 'tanod_in_progress', 'tanod_verified', 'barangay_validated', 'city_confirmed', 'prioritized'] } },
+          { status: 'provider_assigned', agencyStatus: 'work_completed' }
+        ]
       })])
     }));
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       success: true,
       pagination: expect.objectContaining({ total: 1 })
     }));
+  });
+
+  test('queue search preserves both eligible-stage and barangay filters', async () => {
+    Incident.find.mockReturnValue(queryFor([]));
+    Incident.countDocuments.mockResolvedValue(0);
+    await getPendingValidation({ query: { search: 'road' }, user: barangayOfficial }, response(), jest.fn());
+    const criteria = Incident.find.mock.calls[0][0];
+    const query = JSON.stringify(criteria);
+    expect(query).toContain('tanod_verified');
+    expect(query).toContain('work_completed');
+    expect(query).toContain('Poblacion Oeste');
+    expect(query).toContain('road');
+    expect(criteria.$and[1].$and).toHaveLength(2);
   });
 
   test('does not allow the generic update endpoint to bypass a controlled status transition', async () => {

@@ -9,14 +9,16 @@ import 'package:lunas_mobile/features/auth/presentation/widgets/auth_scope.dart'
 import 'package:lunas_mobile/features/profile/presentation/utils/phone_number_formatter.dart';
 import 'package:lunas_mobile/features/profile/presentation/widgets/profile_widgets.dart';
 
-class RepairProfileScreen extends StatefulWidget {
-  const RepairProfileScreen({super.key});
+class UtilityPersonnelProfileScreen extends StatefulWidget {
+  const UtilityPersonnelProfileScreen({super.key});
 
   @override
-  State<RepairProfileScreen> createState() => _RepairProfileScreenState();
+  State<UtilityPersonnelProfileScreen> createState() =>
+      _UtilityPersonnelProfileScreenState();
 }
 
-class _RepairProfileScreenState extends State<RepairProfileScreen> {
+class _UtilityPersonnelProfileScreenState
+    extends State<UtilityPersonnelProfileScreen> {
   @override
   void initState() {
     super.initState();

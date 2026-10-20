@@ -41,7 +41,7 @@ test.describe("location integrity review with isolated API fixtures", () => {
     finding = ""; version = 0; history = [];
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-official" }), url: baseURL!, httpOnly: true, sameSite: "Lax" }]);
   });
-  test("neutral discrepancy and explanation are visible; documented finding can be corrected", async ({ page, context, baseURL }) => {
+  test("documents a finding with neutral location evidence and rejects the retired reviewer", async ({ page, context, baseURL }) => {
     await page.goto("/validation-routing/home");
     await expect(page.locator("#main-content").getByText("Location Differs from Current GPS — Verification Required")).toBeVisible();
     await expect(page.locator("#main-content").getByText(/Citizen Explanation: Photo Taken Earlier/)).toBeVisible();
@@ -55,20 +55,12 @@ test.describe("location integrity review with isolated API fixtures", () => {
     await record.getByRole("button", { name: "Continue to Record Finding" }).click();
     await record.getByRole("button", { name: "Confirm Reviewed Decision" }).click();
     await expect(count).toHaveText(/1\s*\/\s*3/);
-    // Barangay documents the initial finding; City Engineering corrects it.
+    // Correction by the retired City Engineer role is intentionally unavailable.
+    // A dedicated active-role correction UI still needs separate coverage.
     await expect(page.getByRole("button", { name: "Correct Finding", exact: true })).toHaveCount(0);
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-engineer" }), url: baseURL!, httpOnly: true }]);
     await page.goto("/validation-routing/home");
-    await page.getByRole("button", { name: "Correct Finding", exact: true }).click();
-    const correction = page.getByRole("dialog", { name: "Correct False-Report Finding", exact: true });
-    await correction.getByLabel("Correction Reason").fill("The inspection record referenced the wrong site; this finding was erroneous.");
-    await correction.getByLabel("Evidence or Documented Decision Reference").fill("Correction 124");
-    await correction.getByRole("button", { name: "Continue to Correction" }).click();
-    await correction.getByRole("button", { name: "Confirm Reviewed Decision" }).click();
-    await expect(count).toHaveText(/0\s*\/\s*3/);
-    await page.getByText("View review history (2)", { exact: true }).click();
-    await expect(page.locator("#main-content").getByText(/^Finding Corrected ·/)).toBeVisible();
-    await expect(page.locator("#main-content").getByText("Inspection 123", { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Session expired", exact: true })).toBeVisible();
   });
   test("matching and missing GPS use neutral labels", async ({ page }) => {
     await page.goto("/validation-routing/matching");

@@ -850,12 +850,12 @@ exports.getPendingValidation = asyncHandler(async (req, res) => {
   }
   if (search) {
     const safeSearch = escapeRegex(search).slice(0, 100);
-    filter.$or = [
+    filter = combineIncidentFilters(filter, { $or: [
       { reportNumber: { $regex: safeSearch, $options: 'i' } },
       { description: { $regex: safeSearch, $options: 'i' } },
       { 'location.address.street': { $regex: safeSearch, $options: 'i' } },
       { 'location.address.barangay': { $regex: safeSearch, $options: 'i' } }
-    ];
+    ] });
   }
   if (from || to) {
     filter.createdAt = {};

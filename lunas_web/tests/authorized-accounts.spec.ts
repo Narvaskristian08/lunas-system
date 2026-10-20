@@ -22,7 +22,7 @@ test.describe("authorized account screens", () => {
       const send = (data: unknown, message = "Account updated") => res.end(JSON.stringify({ success: true, data, message }));
       if (path === "/users/me") return send({ id: adminId, firstName: "Test", lastName: "Administrator", email: "admin@example.test", role: req.headers.authorization?.includes("citizen") ? "citizen" : "admin", isActive: true, isVerified: true });
       if (path === "/notifications") return send([]);
-      if (path === "/users/authorized" && req.method === "GET") return send({ accounts, pagination: { page: 1, limit: 20, total: accounts.length, pages: 1 }, roles: ["barangay_official", "city_engineer", "repair_personnel", "utility_provider", "admin"], barangays: ["Pantal", "Lucao"], canManageAdministrators: false });
+      if (path === "/users/authorized" && req.method === "GET") return send({ accounts, pagination: { page: 1, limit: 20, total: accounts.length, pages: 1 }, roles: ["barangay_official", "utility_personnel", "utility_provider", "admin"], barangays: ["Pantal", "Lucao"], canManageAdministrators: false });
       if (path === "/users/authorized" && req.method === "POST") {
         accounts.push({ ...input, id: "507f191e810c19729de860b1", accountStatus: "pending_activation", version: 0, requiresActivation: true, approval: { authority: input.approvalAuthority, reference: input.approvalReference } });
         return send({}, "Account created. Activation email sent.");
