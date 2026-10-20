@@ -20,6 +20,7 @@ class IncidentReport {
     this.clarificationReason,
     this.repair,
     this.agencySchedule,
+    this.agencyStatus,
   });
 
   final String id;
@@ -38,6 +39,17 @@ class IncidentReport {
   final String? clarificationReason;
   final IncidentRepairSummary? repair;
   final AgencySchedule? agencySchedule;
+  final String? agencyStatus;
+
+  String? get agencyStatusLabel => switch (agencyStatus) {
+    'not_routed' => 'Not yet routed to an agency',
+    'ready_for_work' => 'Ready for work',
+    'pending_procurement' => 'Pending procurement / bidding',
+    'work_in_progress' => 'Work in progress',
+    'work_completed' => 'Work completed',
+    'correction_required' => 'Correction required',
+    _ => null,
+  };
 
   String get categoryLabel => categoryFromCode(category).label;
 
@@ -95,6 +107,7 @@ class IncidentReport {
       rejectionReason: _text(json['rejectionReason']),
       duplicateReason: _text(json['duplicateReason']),
       clarificationReason: _text(json['clarificationReason']),
+      agencyStatus: _text(json['agencyStatus']),
       agencySchedule: _map(json['agencySchedule']).isEmpty
           ? null
           : AgencySchedule.fromJson(_map(json['agencySchedule'])),

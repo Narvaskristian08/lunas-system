@@ -2,6 +2,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
 
 void main() {
+  test(
+    'agency status parses recorded stages without inventing unknown stages',
+    () {
+      for (final entry in {
+        'not_routed': 'Not yet routed to an agency',
+        'ready_for_work': 'Ready for work',
+        'pending_procurement': 'Pending procurement / bidding',
+        'work_in_progress': 'Work in progress',
+        'work_completed': 'Work completed',
+        'correction_required': 'Correction required',
+      }.entries) {
+        final report = IncidentReport.fromJson({'agencyStatus': entry.key});
+        expect(report.agencyStatus, entry.key);
+        expect(report.agencyStatusLabel, entry.value);
+      }
+      expect(IncidentReport.fromJson({}).agencyStatusLabel, isNull);
+      expect(
+        IncidentReport.fromJson({
+          'agencyStatus': 'future_stage',
+        }).agencyStatusLabel,
+        isNull,
+      );
+    },
+  );
   test('flags a saved non-Dagupan location for review', () {
     final report = IncidentReport.fromJson({
       '_id': 'legacy-location',
