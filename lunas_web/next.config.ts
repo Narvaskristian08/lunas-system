@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   output: 'standalone', // Enable for Docker deployment
+  async redirects() {
+    return [{
+      source: "/validation-routing/exceptions",
+      destination: "/validation-routing/reports",
+      permanent: false,
+    }];
+  },
 };
 
 export default nextConfig;

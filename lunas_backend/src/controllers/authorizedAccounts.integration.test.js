@@ -125,8 +125,12 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await actor('utility_personnel', { email: 'lucao-tanod@example.test', barangay: 'Lucao' });
     const { token } = await actor('barangay_official', { barangay: 'Pantal' });
     const roster = await call('get', '/users/repair-personnel', token).expect(200);
-    expect(roster.body.data).toHaveLength(1);
-    expect(roster.body.data[0]).toMatchObject({ role: 'utility_personnel', barangay: 'Pantal', email: 'pantal-tanod@example.test' });
+    expect(roster.body.data).toHaveLength(2);
+    expect(roster.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ role: 'utility_personnel', barangay: 'Pantal', email: 'pantal-tanod@example.test', accountStatus: 'active' }),
+      expect.objectContaining({ role: 'utility_personnel', barangay: 'Pantal', email: 'tanod@example.test', accountStatus: 'pending_activation', isActive: false })
+    ]));
+    expect(roster.body.data.every(person => person.barangay === 'Pantal')).toBe(true);
     const { token: providerToken } = await actor('utility_provider');
     await call('get', '/users/repair-personnel', providerToken).expect(403);
   });
@@ -288,6 +292,8 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await call('post', `${base}/inspections/${initialId}/start`, tanod.token).expect(200);
     await call('post', `${base}/inspections/${initialId}/submit`, tanod.token).send({ findings: 'Verified road damage at the assigned site', result: 'verified' }).expect(200);
     await call('post', `${base}/inspections/${initialId}/review`, tanod.token).send({ decision: 'approve' }).expect(403);
+    await call('post', `/incidents/${new mongoose.Types.ObjectId()}/inspections/${initialId}/review`, secretary.token).send({ decision: 'approve' }).expect(404);
+    expect((await Inspection.findById(initialId)).status).toBe('submitted');
     await call('post', `${base}/inspections/${initialId}/review`, secretary.token).send({ decision: 'approve' }).expect(200);
     await call('patch', `${base}/agency-status`, otherProvider.token).send({ status: 'work_in_progress', priority: 'high' }).expect(404);
     await call('patch', `${base}/agency-status`, provider.token).send({ status: 'work_completed', priority: 'high' }).expect(409);

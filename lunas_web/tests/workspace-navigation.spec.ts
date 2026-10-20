@@ -79,6 +79,16 @@ test.describe("workspace redirects and operational layouts", () => {
     await expect(page.getByRole("heading", { name: "Session expired", exact: true })).toBeVisible();
   });
 
+  test("Secretary legacy exceptions URL redirects to reports without a client error", async ({ page, context, baseURL }) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-barangay_official" }), url: baseURL!, httpOnly: true }]);
+    await page.goto("/validation-routing/exceptions?period=weekly");
+    await expect(page).toHaveURL(/\/validation-routing\/reports\?period=weekly$/);
+    await expect(page.getByRole("heading", { name: "Barangay Reports", exact: true, level: 1 })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test("an intake incident with an existing work order opens that order", async ({ page, context, baseURL }) => {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));

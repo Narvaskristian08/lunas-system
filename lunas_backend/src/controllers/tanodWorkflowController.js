@@ -133,7 +133,7 @@ exports.submitInspection = asyncHandler(async (req, res) => {
 });
 
 exports.reviewInspection = asyncHandler(async (req, res) => {
-  const inspection = await Inspection.findById(req.params.inspectionId);
+  const inspection = await Inspection.findOne({ _id: req.params.inspectionId, incident: req.params.id });
   if (!inspection || inspection.secretary.toString() !== req.user._id.toString() || req.user.role !== 'barangay_official') return res.status(404).json({ success: false, message: 'Inspection not found' });
   if (inspection.status !== 'submitted') return res.status(409).json({ success: false, message: 'Inspection is not waiting for review' });
   const approve = req.body.decision === 'approve';
