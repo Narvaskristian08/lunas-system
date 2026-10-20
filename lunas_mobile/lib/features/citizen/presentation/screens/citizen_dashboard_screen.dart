@@ -1,3 +1,4 @@
+import 'package:lunas_mobile/features/reporting/presentation/widgets/agency_schedule_card.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_submitted_dialog.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
@@ -439,6 +440,11 @@ class _ReportListCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         ReportWorkflowProgress(report: report),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Divider(height: 1),
+        ),
+        AgencyScheduleCard(schedule: report.agencySchedule, compact: true),
         if (report.location.needsReview) ...[
           const SizedBox(height: AppSpacing.xs),
           _LocationReviewNotice(compact: true),
