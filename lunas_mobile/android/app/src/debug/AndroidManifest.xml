@@ -6,7 +6,7 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="LUNAS Docker"
+        android:label="Lunas"
         android:networkSecurityConfig="@xml/local_network_security_config"
         tools:replace="android:label" />
 </manifest>

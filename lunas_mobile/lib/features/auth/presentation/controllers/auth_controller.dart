@@ -196,6 +196,15 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  String _authenticationErrorMessage(String message) {
+    final normalized = message.toLowerCase();
+    if (normalized.contains('invalid credentials') ||
+        normalized.contains('wrong email or password')) {
+      return 'Wrong email or password used.';
+    }
+    return message;
+  }
+
   Future<bool> resendRegistrationMfa() async {
     final challenge = _pendingRegistration;
     if (challenge == null) return false;
@@ -249,7 +258,7 @@ class AuthController extends ChangeNotifier {
       _status = AuthStatus.authenticated;
       return true;
     } on ApiException catch (error) {
-      _message = error.message;
+      _message = _authenticationErrorMessage(error.message);
       return false;
     } on FormatException catch (error) {
       _message = error.message;

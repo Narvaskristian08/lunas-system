@@ -21,3 +21,5 @@ runs/
 
 # Local database snapshots before fixture replacement.
 /.local-backups/
+.vercel
+.env*.local

@@ -1,17 +1,4 @@
-.git
-.next
-node_modules
-lunas_backend
-lunas_ai
-mobile
-infra
-android
-ios
-coverage
-runs
-logs
-*.log
-*.zip
-*.tar.gz
-terraform.tfstate
-terraform.tfstate.backup
+# Vercel project root is the repository, but the Next.js app lives in lunas_web.
+*
+!lunas_web
+!lunas_web/**
