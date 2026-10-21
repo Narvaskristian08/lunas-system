@@ -1,3 +1,4 @@
+import { loadPeriodReports } from "@/lib/report-export.server";
 import { normalizeAgencySchedule, type AgencySchedule } from "@/lib/agency-schedule";
 import "server-only";
 
@@ -648,30 +649,11 @@ export async function getAgencyExceptions(): Promise<{ incidents: unknown[]; age
   return { incidents: Array.isArray(payload?.incidents) ? payload.incidents : [], agencies: Array.isArray(payload?.agencies) ? payload.agencies.filter((value): value is string => typeof value === "string") : [] };
 }
 
-export async function getBarangayReports(period: "daily" | "weekly" | "monthly" = "monthly"): Promise<unknown[]> {
-  const accessToken = await requireAccessToken();
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(start.getDate() - (period === "daily" ? 1 : period === "weekly" ? 7 : 30));
-  const formatDate = (value: Date) => value.toISOString().slice(0, 10);
-  const query = new URLSearchParams({ limit: "100", sortBy: "-createdAt", from: formatDate(start), to: formatDate(end) });
-  const payload = responseData(await backendRequest<unknown>(`/incidents?${query.toString()}`, { accessToken }));
-  if (Array.isArray(payload)) return payload;
-  const value = payload as { data?: unknown[] };
-  return Array.isArray(value?.data) ? value.data : [];
+// Both lists and downloads use the same backend-enforced scope and complete period data.
+export async function getBarangayReports(period: "daily" | "weekly" | "monthly" = "monthly") {
+  return loadPeriodReports(period);
 }
 
-// The incident endpoint applies the authenticated provider's organization
-// scope in the backend, so agency reports never include another agency's data.
-export async function getAgencyReports(period: "daily" | "weekly" | "monthly" = "monthly"): Promise<unknown[]> {
-  const accessToken = await requireAccessToken();
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(start.getDate() - (period === "daily" ? 1 : period === "weekly" ? 7 : 30));
-  const formatDate = (value: Date) => value.toISOString().slice(0, 10);
-  const query = new URLSearchParams({ limit: "100", sortBy: "-createdAt", from: formatDate(start), to: formatDate(end) });
-  const payload = responseData(await backendRequest<unknown>(`/incidents?${query.toString()}`, { accessToken }));
-  if (Array.isArray(payload)) return payload;
-  const value = payload as { data?: unknown[] };
-  return Array.isArray(value?.data) ? value.data : [];
+export async function getAgencyReports(period: "daily" | "weekly" | "monthly" = "monthly") {
+  return loadPeriodReports(period);
 }
