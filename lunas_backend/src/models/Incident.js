@@ -155,6 +155,11 @@ const incidentSchema = new mongoose.Schema({
   agencyStatusNote: { type: String, maxlength: 2000 },
   agencyStatusUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   agencyStatusUpdatedAt: Date,
+  agencyProgressPercent: { type: Number, min: 0, max: 100, default: 0 },
+  initialVerifier: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  completionVerifier: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  procurementRequired: Boolean,
+  expectedTimeline: { type: String, maxlength: 2000 },
   agencyCompletionReportedAt: Date,
   agencyCompletionReportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   initialInspection: { type: mongoose.Schema.Types.ObjectId, ref: 'Inspection' },
@@ -285,7 +290,8 @@ const incidentSchema = new mongoose.Schema({
   rejectionReason: String,
   notes: String
 }, {
-  timestamps: true
+  timestamps: true,
+  optimisticConcurrency: true
 });
 
 // Geospatial index for location queries

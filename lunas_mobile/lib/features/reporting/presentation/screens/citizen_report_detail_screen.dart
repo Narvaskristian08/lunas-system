@@ -1,4 +1,5 @@
 import 'package:lunas_mobile/features/reporting/presentation/widgets/agency_schedule_card.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/maintenance_progress.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -166,6 +167,7 @@ class _CitizenReportDetailScreenState extends State<CitizenReportDetailScreen>
                     const SizedBox(height: AppSpacing.xl),
                   ],
                   LunasCard(child: ReportWorkflowProgress(report: report)),
+                  MaintenanceProgress(tracking: report.maintenance),
                   const SizedBox(height: AppSpacing.md),
                   AgencyScheduleCard(schedule: report.agencySchedule),
                   const SizedBox(height: AppSpacing.xl),

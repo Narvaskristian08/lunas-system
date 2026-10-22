@@ -1,4 +1,5 @@
 import { loadPeriodReports } from "@/lib/report-export.server";
+import { reportAnchor, reportRange } from "@/lib/report-export";
 import { normalizeAgencySchedule, type AgencySchedule } from "@/lib/agency-schedule";
 import "server-only";
 
@@ -650,10 +651,10 @@ export async function getAgencyExceptions(): Promise<{ incidents: unknown[]; age
 }
 
 // Both lists and downloads use the same backend-enforced scope and complete period data.
-export async function getBarangayReports(period: "daily" | "weekly" | "monthly" = "monthly") {
-  return loadPeriodReports(period);
+export async function getBarangayReports(period: "daily" | "weekly" | "monthly" = "monthly", date?: string) {
+  return loadPeriodReports(period, reportRange(period, reportAnchor(date)));
 }
 
-export async function getAgencyReports(period: "daily" | "weekly" | "monthly" = "monthly") {
-  return loadPeriodReports(period);
+export async function getAgencyReports(period: "daily" | "weekly" | "monthly" = "monthly", date?: string) {
+  return loadPeriodReports(period, reportRange(period, reportAnchor(date)));
 }

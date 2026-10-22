@@ -1,4 +1,5 @@
 import 'package:lunas_mobile/features/reporting/presentation/widgets/agency_schedule_card.dart';
+import 'package:lunas_mobile/features/reporting/presentation/widgets/maintenance_progress.dart';
 import 'package:lunas_mobile/core/theme/app_radius.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_submitted_dialog.dart';
 import 'package:lunas_mobile/core/widgets/quiet_data_refresh.dart';
@@ -440,6 +441,7 @@ class _ReportListCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         ReportWorkflowProgress(report: report),
+        MaintenanceProgress(tracking: report.maintenance, compact: true),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Divider(height: 1),

@@ -74,3 +74,13 @@ test('City Engineering provider accounts cannot access another organization', ()
   expect(canAccessIncident(provider, { routing: { responsibleOrganization: 'DECORP' } })).toBe(false);
   expect(canAccessIncident(provider, { routing: { responsibleOrganization: provider.utilityCompany } })).toBe(true);
 });
+
+test('Utility Personnel general reads require current assignment and barangay', () => {
+  const user = { _id: 'tanod', role: 'utility_personnel', barangay: 'Pantal' };
+  const incident = { location: { address: { barangay: 'Pantal' } } };
+  expect(canAccessIncident(user, incident)).toBe(false);
+  expect(canAccessIncident(user, { ...incident, initialVerifier: 'tanod' })).toBe(true);
+  expect(canAccessIncident(user, { ...incident, completionVerifier: 'other' })).toBe(false);
+  expect(canAccessIncident(user, { initialVerifier: 'tanod', jurisdiction: { barangay: 'Bonuan Gueset' } })).toBe(false);
+  expect(buildIncidentScope(user).$and[0]).toEqual({ $or: [{ initialVerifier: 'tanod' }, { completionVerifier: 'tanod' }] });
+});

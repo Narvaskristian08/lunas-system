@@ -11,14 +11,11 @@ const {
   getDuplicateCandidates,
   getIncidentSLA,
   updateIncident,
-  validateIncident,
   confirmIncident,
   requestIncidentClarification,
   rejectIncident,
   markDuplicateIncident,
-  updateIncidentPriority,
   updateIncidentJurisdiction,
-  routeIncident,
   getNearbyIncidents,
   getBarangays,
 } = require('../controllers/incidentController');
@@ -51,6 +48,7 @@ const { uploadMultiple } = require('../middleware/upload');
 
 const officialValidationRoles = OFFICIAL_VALIDATION_ROLES;
 const validationDecisionRoles = VALIDATION_DECISION_ROLES;
+const requireInspectionWorkflow = (_req, res) => res.status(409).json({ success: false, message: 'Use Tanod inspection and Secretary review. Priority and deadline belong to the agency.' });
 
 // These routes must precede /:id so Express does not treat "my" or "nearby"
 // as an ObjectId.
@@ -85,7 +83,10 @@ router.get(
 );
 
 router.route('/')
-  .get(protect, paginationValidation, validate, getIncidents)
+  .get(protect, paginationValidation,
+    query('from').optional().matches(/^\d{4}-\d{2}-\d{2}$/).isISO8601({ strict: true }),
+    query('to').optional().matches(/^\d{4}-\d{2}-\d{2}$/).isISO8601({ strict: true }),
+    query('timezone').optional().isIn(['UTC', 'Asia/Manila']), validate, getIncidents)
   .post(
     protect,
     authorize('citizen'),
@@ -117,6 +118,10 @@ router.post('/:id/completion-inspections', protect, authorize('barangay_official
 router.patch('/:id/agency-status', protect, authorize('utility_provider'), mongoIdValidation,
   body('status').isIn(['ready_for_work', 'pending_procurement', 'work_in_progress', 'work_completed']),
   body('priority').optional().isIn(['critical', 'high', 'medium', 'low']),
+  body('progressPercent').optional().isInt({ min: 0, max: 100 }).toInt(),
+  body('procurementRequired').optional().isBoolean().toBoolean(),
+  body('expectedTimeline').optional().isString().trim().isLength({ max: 2000 }),
+  body('slaDeadline').optional().isISO8601(),
   body('note').optional().isString().isLength({ max: 2000 }), validate, tanodWorkflow.updateAgencyStatus);
 router.post('/:id/agency-correction', protect, authorize('barangay_official'), mongoIdValidation,
   body('reason').isString().trim().isLength({ min: 2, max: 2000 }), validate, tanodWorkflow.requestAgencyCorrection);
@@ -155,7 +160,7 @@ router.post(
   mongoIdValidation,
   validateIncidentDecisionValidation,
   validate,
-  validateIncident
+  requireInspectionWorkflow
 );
 router.post(
   '/:id/confirm',
@@ -200,7 +205,7 @@ router.patch(
   mongoIdValidation,
   updatePriorityValidation,
   validate,
-  updateIncidentPriority
+  requireInspectionWorkflow
 );
 router.patch(
   '/:id/jurisdiction',
@@ -218,7 +223,7 @@ router.post(
   mongoIdValidation,
   routeIncidentValidation,
   validate,
-  routeIncident
+  tanodWorkflow.resolveAgencyRouting
 );
 
 // Deletion is intentionally not exposed. Rejection, duplicate decisions and

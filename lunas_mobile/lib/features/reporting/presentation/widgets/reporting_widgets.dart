@@ -9,17 +9,24 @@ int reportWorkflowStep(IncidentReport report) {
   if (status == 'closed' || status == 'resolved') {
     return 5;
   }
+  if (report.agencyStatus == 'work_completed') return 4;
+  if (report.agencyStatus == 'correction_required' ||
+      report.agencyStatus == 'work_in_progress' ||
+      report.agencyStatus == 'pending_procurement' ||
+      report.agencyStatus == 'ready_for_work') {
+    return 3;
+  }
   if (status.contains('completion') || status == 'agency_completed') {
     return 4;
   }
-  if (status == 'tanod_verified' ||
-      status == 'provider_assigned' ||
+  if (status == 'provider_assigned' ||
       status == 'prioritized' ||
       status == 'barangay_validated') {
     return 3;
   }
   if (status == 'tanod_assigned' ||
       status == 'tanod_in_progress' ||
+      status == 'tanod_verified' ||
       status == 'tanod_rejected' ||
       status == 'clarification_required') {
     return 2;
@@ -42,6 +49,13 @@ class ReportWorkflowProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (report.status == 'rejected' || report.status == 'duplicate') {
+      return Text(
+        report.status == 'rejected'
+            ? 'Report rejected after review'
+            : 'Report recorded as a duplicate',
+      );
+    }
     final step = reportWorkflowStep(report);
     final theme = Theme.of(context);
     return Semantics(

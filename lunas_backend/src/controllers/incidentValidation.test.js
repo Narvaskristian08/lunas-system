@@ -35,6 +35,7 @@ jest.mock('../services/evidenceService', () => ({
 }));
 jest.mock('../services/storageService', () => ({ getEvidenceUrl: jest.fn() }));
 jest.mock('../services/slaService', () => ({
+  getSLAHours: jest.fn(priority => ({ critical: 48, high: 72, medium: 168, low: 336 }[priority])),
   initializeIncidentSLA: jest.fn((priority, startedAt) => ({
     targetResolutionTime: priority === 'high' ? 72 : 168,
     startedAt,

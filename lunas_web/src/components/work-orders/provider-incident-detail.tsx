@@ -16,6 +16,8 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { priorityTone, titleCase } from "@/components/work-orders/work-order-ui";
 import type { ProviderRoutedIncident } from "@/lib/work-orders.server";
 import { formatDateTime } from "@/lib/utils";
+import { MaintenanceProgress } from "@/components/work-orders/maintenance-progress";
+import { useRouter } from "next/navigation";
 
 function address(incident: ProviderRoutedIncident) {
   return [incident.location.address.street, incident.location.address.barangay, incident.location.address.city]
@@ -48,11 +50,16 @@ const nextAgencyStatus = (status: string) => {
 };
 
 export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedIncident }) {
+  const router = useRouter();
   const [agencyStatus, setAgencyStatus] = useState(incident.agencyStatus ?? "ready_for_work");
   const [agencyPriority, setAgencyPriority] = useState(incident.priority ?? "");
   const [agencyNote, setAgencyNote] = useState("");
+  const [progressPercent, setProgressPercent] = useState(incident.agencyStatus === "correction_required" ? 0 : incident.maintenance?.progressPercent ?? 0);
+  const [procurementRequired, setProcurementRequired] = useState(incident.procurementRequired ?? false);
+  const [expectedTimeline, setExpectedTimeline] = useState(incident.expectedTimeline ?? "");
   const [slaDeadline, setSlaDeadline] = useState(incident.sla.deadline ? philippineDeadlineInput(incident.sla.deadline) : "");
   const [agencyMessage, setAgencyMessage] = useState<string>();
+  const [agencyOk, setAgencyOk] = useState(false);
   const [statusToConfirm, setStatusToConfirm] = useState<string>();
   const [pending, startTransition] = useTransition();
   const [longitude, latitude] = incident.location.coordinates;
@@ -65,19 +72,23 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
 
   const selectedStatus = agencyStatus === "correction_required" ? "work_in_progress" : normalizeAgencyStatus(agencyStatus);
   const currentStatus = agencyStatuses.find((status) => status.value === selectedStatus) ?? agencyStatuses[0];
-  const nextStatus = nextAgencyStatus(agencyStatus);
+  const nextStatus = agencyStatus === "ready_for_work" && !procurementRequired ? "work_in_progress" : nextAgencyStatus(agencyStatus);
   const currentOrder = agencyStatusOrder[selectedStatus as keyof typeof agencyStatusOrder] ?? 0;
   const deadlineLocked = currentOrder > agencyStatusOrder.pending_procurement;
   const nextStepLabel = nextStatus
     ? agencyStatuses.find((status) => status.value === nextStatus)?.label
     : "Final verification";
+  const suggestedHours = incident.slaTargets?.[agencyPriority] ?? incident.sla.targetResolutionTime;
 
   const applyAgencyStatus = (status: string) => {
-    setAgencyStatus(status);
     setStatusToConfirm(undefined);
     startTransition(async () => {
-      const response = await updateAgencyStatusAction(incident.id, status, agencyNote, agencyPriority, deadlineLocked ? undefined : slaDeadline);
+      const response = await updateAgencyStatusAction(incident.id, status, agencyNote, agencyPriority, deadlineLocked ? undefined : slaDeadline,
+        status === "work_in_progress" ? Math.min(99, progressPercent) : status === "work_completed" ? 100 : undefined,
+        ["ready_for_work", "pending_procurement"].includes(agencyStatus) ? procurementRequired : undefined, expectedTimeline);
       setAgencyMessage(response.message);
+      setAgencyOk(response.ok);
+      if (response.ok) { setAgencyStatus(status); router.refresh(); }
     });
   };
 
@@ -96,11 +107,12 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
           {incident.priority ? <Badge tone={priorityTone(incident.priority)}>{titleCase(incident.priority)}</Badge> : null}
           <StatusBadge tone="information">{titleCase(incident.status)}</StatusBadge>
         </div>
-        <p className="mt-1.5 text-sm text-slate-600">Review the City-routed incident before creating its single primary work order.</p>
+        <p className="mt-1.5 text-sm text-slate-600">Review the approved incident and record agency assessment and maintenance updates.</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.8fr)]">
         <main className="space-y-5">
+          <MaintenanceProgress tracking={incident.maintenance} />
           <Card className="overflow-hidden">
             <CardHeader title="Incident Details" description="The report is read-only at the Utility Provider handoff." />
             <div className="space-y-5 p-5">
@@ -162,10 +174,13 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
                   })}
                 </div>
                 {selectedStatus === "ready_for_work" ? <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                  <label className="mb-3 block text-sm font-semibold"><input type="checkbox" checked={procurementRequired} onChange={event => setProcurementRequired(event.target.checked)} className="mr-2" />External procurement / bidding is required</label>
                   <label className="block text-sm font-semibold text-slate-900">Agency priority<select value={agencyPriority} onChange={(event) => setAgencyPriority(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required><option value="">Select priority</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
                   <p className="mt-2 text-xs leading-5 text-slate-500">The agency sets priority during Ready for Work. The Secretary does not set it.</p>
                 </div> : <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"><p className="font-semibold text-slate-900">Ready for Work details</p><p className="mt-1 text-slate-700">Agency priority: <span className="font-semibold">{agencyPriority ? titleCase(agencyPriority) : "Not recorded"}</span></p><p className="mt-1 text-xs text-slate-500">This priority was recorded during the first step.</p></div>}
-                {selectedStatus === "pending_procurement" || selectedStatus === "work_in_progress" || selectedStatus === "work_completed" ? <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"><label className="block font-semibold text-slate-900">Agency SLA deadline (Philippine time)<input type="datetime-local" value={slaDeadline} onChange={(event) => setSlaDeadline(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required readOnly={deadlineLocked} disabled={deadlineLocked} /></label><p className="mt-2 text-xs text-slate-500">{deadlineLocked ? "This deadline was recorded during Pending Procurement/Bidding and can no longer be changed." : "Enter the deadline manually. LUNAS will save the date you provide before moving to the next step."}</p>{incident.sla.deadline && !slaDeadline ? <p className="mt-1 text-slate-700">Saved deadline: <span className="font-semibold">{formatDateTime(incident.sla.deadline)}</span></p> : null}{incident.sla.targetResolutionTime ? <p className="mt-1 text-xs text-slate-500">Target: {incident.sla.targetResolutionTime} hours</p> : null}</div> : null}
+                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"><label className="block font-semibold text-slate-900">Agency SLA deadline (Philippine time)<input type="datetime-local" value={slaDeadline} onChange={(event) => setSlaDeadline(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required readOnly={deadlineLocked} disabled={deadlineLocked} /></label><p className="mt-2 text-xs text-slate-500">{deadlineLocked ? "The agency deadline is locked after work starts." : "Enter the agency-approved deadline before starting physical work."}</p>{suggestedHours ? <p className="mt-1 text-xs text-slate-500">Suggested target: {suggestedHours} hours. The agency decides the deadline.</p> : null}</div>
+                <label className="mt-3 block text-sm font-semibold">Expected timeline<textarea value={expectedTimeline} onChange={event => setExpectedTimeline(event.target.value)} maxLength={2000} required className="mt-1 w-full rounded-lg border p-2" placeholder="Planned work and expected completion" /></label>
+                {selectedStatus === "work_in_progress" ? <div className="mt-3 space-y-2"><label className="block text-sm font-semibold">Physical repair progress (%)<input type="number" min={incident.agencyStatus === "correction_required" ? 0 : incident.maintenance?.progressPercent ?? 0} max={99} value={progressPercent} onChange={event => setProgressPercent(Number(event.target.value))} className="mt-1 w-full rounded-lg border p-2" /></label><Button type="button" disabled={pending} onClick={() => applyAgencyStatus("work_in_progress")}>Save repair progress</Button></div> : null}
                 <div className="mt-2 space-y-1 text-xs">
                   <p className="font-semibold text-brand-700">Current step: {currentStatus.label}</p>
                   <p className="font-semibold text-slate-600">Next step: {nextStepLabel}</p>
@@ -174,13 +189,13 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
                 <div className="mt-3 rounded-xl border border-brand-200 bg-brand-50 p-4">
                   <p className="text-sm font-semibold text-slate-900">{currentStatus.label}</p>
                   <p className="mt-1 text-xs text-slate-600">{currentStatus.description}</p>
-                  {nextStatus ? <Button type="button" className="mt-3 w-full" disabled={pending || (!agencyPriority && !incident.priority) || (selectedStatus === "pending_procurement" && !slaDeadline)} onClick={() => setStatusToConfirm(nextStatus)}>Continue to Next Step</Button> : <p className="mt-3 text-xs font-semibold text-emerald-700">Agency status recorded as work completed.</p>}
+                  {nextStatus ? <Button type="button" className="mt-3 w-full" disabled={pending || (!agencyPriority && !incident.priority) || (["ready_for_work", "pending_procurement"].includes(selectedStatus) && nextStatus === "work_in_progress" && (!slaDeadline || !expectedTimeline.trim()))} onClick={() => setStatusToConfirm(nextStatus)}>Continue to Next Step</Button> : <p className="mt-3 text-xs font-semibold text-emerald-700">Agency status recorded as work completed.</p>}
                   {!agencyPriority && !incident.priority ? <p className="mt-2 text-xs text-amber-800">Select an agency priority before moving to the next step.</p> : null}
                   {selectedStatus === "pending_procurement" && !slaDeadline ? <p className="mt-2 text-xs text-amber-800">Enter the SLA deadline before moving to Work in Progress.</p> : null}
                 </div>
               </fieldset>
               <textarea value={agencyNote} onChange={(event) => setAgencyNote(event.target.value)} maxLength={2000} rows={4} placeholder="Agency update or external reference" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
-              {agencyMessage ? <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{agencyMessage}</p> : null}
+              {agencyMessage ? <p role="status" className={`rounded-xl border p-3 text-sm ${agencyOk ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-900"}`}>{agencyMessage}</p> : null}
             </div>
           </Card>
         </aside>

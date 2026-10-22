@@ -25,7 +25,7 @@ const inspectionSchema = new mongoose.Schema({
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reviewNotes: { type: String, maxlength: 2000 },
   version: { type: Number, default: 0 }
-}, { timestamps: true });
+}, { timestamps: true, optimisticConcurrency: true });
 
 inspectionSchema.index({ incident: 1, type: 1, createdAt: -1 });
 inspectionSchema.index({ tanod: 1, status: 1, createdAt: -1 });

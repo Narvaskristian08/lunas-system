@@ -7,7 +7,7 @@ import { reportRange } from "../src/lib/report-export";
 
 test.describe("workspace report exports", () => {
   let server: Server;
-  const requests: Array<{ token: string; page: number; from: string | null; to: string | null }> = [];
+  const requests: Array<{ token: string; page: number; from: string | null; to: string | null; timezone: string | null }> = [];
   test.beforeAll(async () => {
     server = createServer((req, res) => {
       const url = new URL(req.url!, "http://localhost");
@@ -21,7 +21,7 @@ test.describe("workspace report exports", () => {
       if (path === "/incidents") {
         const page = Number(url.searchParams.get("page"));
         const limit = Number(url.searchParams.get("limit"));
-        requests.push({ token, page, from: url.searchParams.get("from"), to: url.searchParams.get("to") });
+        requests.push({ token, page, from: url.searchParams.get("from"), to: url.searchParams.get("to"), timezone: url.searchParams.get("timezone") });
         if (token.includes("failure") && page === 2) { res.statusCode = 503; return res.end(JSON.stringify({ message: "Fixture service unavailable" })); }
         const reports = token.includes("empty") ? [] : Array.from({ length: 101 }, (_, index) => ({
           _id: String(index + 1).padStart(24, "0"), reportNumber: `${role === "utility_provider" ? "AGENCY" : "BARANGAY"}-${index + 1}`,
@@ -69,17 +69,20 @@ test.describe("workspace report exports", () => {
       const descriptionColumn = role === "utility_provider" ? 6 : 5;
       expect(sheet.getRow(8).getCell(descriptionColumn).type).toBe(3); // ExcelJS text, not formula.
       expect(workbook.getWorksheet("Summary")!.getCell("B5").value).toBe(101);
+      expect(workbook.getWorksheet("Summary")!.getColumn(1).values).toContain("Road Damage");
       await page.goto(`${basePath}/export?period=monthly&format=print`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(role === "utility_provider" ? "Agency Activity Report" : "Barangay Incident Report");
+      await expect(page.getByRole("table", { name: "Incidents by category" }).getByRole("row", { name: "Road Damage 101", exact: true })).toBeVisible();
       await expect(page.getByRole("cell", { name: `${prefix}-101`, exact: true })).toBeVisible();
       await expect(page.getByRole("cell", { name: /<script>window.exportInjected/ })).toBeVisible();
       expect(await page.evaluate(() => "exportInjected" in window)).toBe(false);
       await page.emulateMedia({ media: "print" });
       await expect(page.getByRole("button", { name: "Print / Save as PDF" })).toBeHidden();
-      expect(await page.locator("thead").evaluate(element => getComputedStyle(element).display)).toBe("table-header-group");
+      expect(await page.locator(".table-wrap thead").evaluate(element => getComputedStyle(element).display)).toBe("table-header-group");
       await page.pdf({ path: testInfo.outputPath(`${prefix.toLowerCase()}-report.pdf`), preferCSSPageSize: true, printBackground: true });
       await page.screenshot({ path: testInfo.outputPath(`${prefix.toLowerCase()}-print-preview.png`) });
       expect(requests.filter(request => request.token === token && request.page === 2).length).toBeGreaterThanOrEqual(4);
+      expect(requests.filter(request => request.token === token).every(request => request.timezone === "Asia/Manila")).toBe(true);
       expect(requests.filter(request => request.token === token).every(request => request.from === reportRange("monthly").from && request.to === reportRange("monthly").to)).toBe(true);
     });
   }
@@ -93,6 +96,17 @@ test.describe("workspace report exports", () => {
     }
     await page.goto("/validation-routing/reports/export?format=print&period=daily");
     await expect(page.getByRole("cell", { name: "No reports matched this reporting period." })).toBeVisible();
+  });
+
+  test("historical calendar month selection reaches every export request", async ({ context, baseURL }) => {
+    const token = "export-barangay_official-historical";
+    await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: token }), url: baseURL!, httpOnly: true }]);
+    const response = await context.request.get("/validation-routing/reports/export?format=csv&period=monthly&date=2024-02-18");
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toContain('"2024-02-01","2024-02-29"');
+    const matching = requests.filter(request => request.token === token);
+    expect(matching.length).toBe(2);
+    expect(matching.every(request => request.from === "2024-02-01" && request.to === "2024-02-29" && request.timezone === "Asia/Manila")).toBe(true);
   });
 
   test("export formats preserve workspace access restrictions", async ({ context, baseURL }) => {

@@ -8,6 +8,11 @@ const errorHandler = (err, req, res, _next) => {
   logger.error('Request failed', { name: err.name, code: err.code });
 
   // Mongoose bad ObjectId
+  if (err.name === 'VersionError') {
+    error = { message: 'This record changed during your update. Refresh before trying again.', statusCode: 409 };
+  }
+
+  // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = 'Resource not found';
     error = { message, statusCode: 404 };

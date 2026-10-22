@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { backendRequest, responseData, BackendApiError } from "@/lib/api/backend.server";
 import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
-import { readReportPeriod, reportRange, reportCsv, reportHtml, reportTitle, reportColumns, reportCells, reportSummary, reportDate, type ExportReport, type ReportDocument, type ReportKind, type ReportPeriod } from "@/lib/report-export";
+import { readReportPeriod, reportAnchor, reportCategorySummary, reportRange, reportCsv, reportHtml, reportTitle, reportColumns, reportCells, reportSummary, reportDate, type ExportReport, type ReportDocument, type ReportKind, type ReportPeriod } from "@/lib/report-export";
 
 export async function loadPeriodReports(period: ReportPeriod, range = reportRange(period)): Promise<ExportReport[]> {
   const accessToken = await requireAccessToken();
@@ -11,7 +11,7 @@ export async function loadPeriodReports(period: ReportPeriod, range = reportRang
   const limit = 100;
   let expectedTotal: number | undefined;
   for (let page = 1; page <= 100; page++) {
-    const query = new URLSearchParams({ ...range, limit: String(limit), page: String(page), sortBy: "-createdAt" });
+    const query = new URLSearchParams({ ...range, timezone: "Asia/Manila", limit: String(limit), page: String(page), sortBy: "-createdAt" });
     const response = await backendRequest<ExportReport[] | { incidents?: ExportReport[]; data?: ExportReport[]; pagination?: { total?: number } }>(`/incidents?${query}`, { accessToken, signal: AbortSignal.timeout(15000) });
     const payload = responseData(response);
     const rows = Array.isArray(payload) ? payload : payload.incidents ?? payload.data;
@@ -52,7 +52,7 @@ async function reportWorkbook(document: ReportDocument) {
   });
   const columns = reportColumns(document.kind);
   const lastColumn = columns.length;
-  ["LUNAS", reportTitle(document.kind), document.organization, `${document.from} to ${document.to} (inclusive UTC dates)`, `Generated ${reportDate(document.generatedAt)} PHT · ${document.reports.length} reports`].forEach((line, index) => {
+  ["LUNAS", reportTitle(document.kind), document.organization, `${document.from} to ${document.to} (inclusive Philippine dates)`, `Generated ${reportDate(document.generatedAt)} PHT · ${document.reports.length} reports`].forEach((line, index) => {
     const row = index + 1;
     sheet.mergeCells(row, 1, row, lastColumn);
     const cell = sheet.getCell(row, 1);
@@ -85,7 +85,7 @@ async function reportWorkbook(document: ReportDocument) {
   const summary = workbook.addWorksheet("Summary");
   summary.columns = [{ width: 32 }, { width: 70 }];
   const counts = reportSummary(document.reports);
-  [["LUNAS", reportTitle(document.kind)], ["Organization", document.organization], ["Period (UTC dates)", `${document.from} to ${document.to}`], ["Generated (PHT)", reportDate(document.generatedAt)], ["Total reports", counts.total], ["Open reports", counts.open], ["Resolved / closed", counts.closed], ["Rejected / duplicate", counts.excluded], ["Scope", "Records available to the authenticated workspace at export time."]].forEach(values => {
+  [["LUNAS", reportTitle(document.kind)], ["Organization", document.organization], ["Period (Philippine dates)", `${document.from} to ${document.to}`], ["Generated (PHT)", reportDate(document.generatedAt)], ["Total reports", counts.total], ["Open reports", counts.open], ["Resolved / closed", counts.closed], ["Rejected / duplicate", counts.excluded], ["Scope", "Records available to the authenticated workspace at export time."], ["Category", "Total incidents"], ...reportCategorySummary(document.reports).map(row => [row.label, row.total])].forEach(values => {
     const row = summary.addRow(values);
     row.getCell(1).font = { bold: true, color: { argb: "FF164E9E" } };
     row.alignment = { wrapText: true, vertical: "top" };
@@ -103,7 +103,7 @@ export async function exportPeriodReport(request: Request, kind: ReportKind) {
   if (!["csv", "xlsx", "print"].includes(format)) return new Response("Unsupported export format.", { status: 400, headers });
   try {
     const generatedAt = new Date().toISOString();
-    const range = reportRange(period, new Date(generatedAt));
+    const range = reportRange(period, reportAnchor(params.get("date")) ?? new Date(generatedAt));
     const document: ReportDocument = { kind, period, organization: viewer.organization || (kind === "agency" ? "Authorized agency" : "Assigned barangay"), ...range, generatedAt, reports: await loadPeriodReports(period, range) };
     const filename = `lunas-${kind}-reports-${period}-${document.to}`;
     if (format === "print") {

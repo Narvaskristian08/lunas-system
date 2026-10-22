@@ -34,6 +34,7 @@ const { createAuditLog } = require('../utils/auditLogger');
 const { findPossibleDuplicateCandidates } = require('../services/duplicateDetectionService');
 const evidenceService = require('../services/evidenceService');
 const {
+  getIncidents,
   createIncident,
   getBarangays,
   getIncident,
@@ -44,6 +45,18 @@ const {
   updateIncidentPriority,
   getIncidentSLA
 } = require('./incidentController');
+
+test.each([
+  ['Asia/Manila', '2026-10-21T16:00:00.000Z', '2026-10-22T15:59:59.999Z'],
+  ['UTC', '2026-10-22T00:00:00.000Z', '2026-10-22T23:59:59.999Z']
+])('period filtering honors %s without dropping organization scope', async (timezone, from, to) => {
+  const query = { populate: jest.fn().mockReturnThis(), sort: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(), skip: jest.fn().mockResolvedValue([]) };
+  Incident.find.mockReturnValue(query); Incident.countDocuments.mockResolvedValue(0);
+  const res = { status: jest.fn().mockReturnThis(), json: jest.fn() }; const next = jest.fn();
+  await getIncidents({ user: { role: 'utility_provider', utilityCompany: 'Agency' }, query: { from: '2026-10-22', to: '2026-10-22', timezone } }, res, next);
+  expect(next).not.toHaveBeenCalled();
+  expect(Incident.find).toHaveBeenCalledWith({ $and: [{ 'routing.responsibleOrganization': 'Agency' }, { createdAt: { $gte: new Date(from), $lte: new Date(to) } }] });
+});
 
 const createResponse = () => {
   const response = {};

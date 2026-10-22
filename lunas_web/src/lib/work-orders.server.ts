@@ -195,6 +195,10 @@ export interface ProviderRoutedIncident {
   status: string;
   agencyStatus?: string;
   agencyStatusNote?: string;
+  procurementRequired?: boolean;
+  expectedTimeline?: string;
+  slaTargets?: Record<string, number>;
+  maintenance?: import("@/components/work-orders/maintenance-progress").MaintenanceTracking;
   createdAt?: string;
   routedAt?: string;
   responsibleOrganization?: string;
@@ -445,6 +449,10 @@ function normalizeProviderIncident(value: unknown): ProviderRoutedIncident | nul
     status: asString(source.status) ?? "provider_assigned",
     agencyStatus: asString(source.agencyStatus),
     agencyStatusNote: asString(source.agencyStatusNote),
+    procurementRequired: typeof source.procurementRequired === "boolean" ? source.procurementRequired : undefined,
+    expectedTimeline: asString(source.expectedTimeline),
+    slaTargets: source.slaTargets as Record<string, number> | undefined,
+    maintenance: source.maintenance as ProviderRoutedIncident["maintenance"],
     createdAt: asString(source.createdAt),
     routedAt: asString(routing.routedAt),
     responsibleOrganization: asString(routing.responsibleOrganization),

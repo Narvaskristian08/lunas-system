@@ -1,4 +1,5 @@
 import 'agency_schedule.dart';
+import 'maintenance_tracking.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/core/utils/display_labels.dart';
 
@@ -21,6 +22,7 @@ class IncidentReport {
     this.repair,
     this.agencySchedule,
     this.agencyStatus,
+    this.maintenance,
   });
 
   final String id;
@@ -40,6 +42,7 @@ class IncidentReport {
   final IncidentRepairSummary? repair;
   final AgencySchedule? agencySchedule;
   final String? agencyStatus;
+  final MaintenanceTracking? maintenance;
 
   String? get agencyStatusLabel => switch (agencyStatus) {
     'not_routed' => 'Not yet routed to an agency',
@@ -56,11 +59,11 @@ class IncidentReport {
   /// Citizen-safe operational wording. Personnel, reassignment notes, SLA
   /// internals, and field evidence are deliberately absent from this model.
   String get currentStatusLabel => status == 'resolved' || status == 'closed'
-      ? 'Resolved · Verified by City Engineering'
-      : repair?.citizenStatusLabel ?? _statusLabel(status);
+      ? 'Completed · Accepted by the Barangay Secretary'
+      : agencyStatusLabel ?? repair?.citizenStatusLabel ?? _statusLabel(status);
   String get statusChipLabel => status == 'resolved' || status == 'closed'
       ? 'Resolved'
-      : repair?.citizenChipLabel ?? _statusLabel(status);
+      : agencyStatusLabel ?? repair?.citizenChipLabel ?? _statusLabel(status);
 
   factory IncidentReport.fromJson(Map<String, dynamic> json) {
     final locationValue = _map(json['location']);
@@ -108,6 +111,9 @@ class IncidentReport {
       duplicateReason: _text(json['duplicateReason']),
       clarificationReason: _text(json['clarificationReason']),
       agencyStatus: _text(json['agencyStatus']),
+      maintenance: _map(json['maintenance']).isEmpty
+          ? null
+          : MaintenanceTracking.fromJson(_map(json['maintenance'])),
       agencySchedule: _map(json['agencySchedule']).isEmpty
           ? null
           : AgencySchedule.fromJson(_map(json['agencySchedule'])),
@@ -506,7 +512,13 @@ int? _int(Object? value) =>
 DateTime? _date(Object? value) =>
     value == null ? null : DateTime.tryParse(value.toString())?.toLocal();
 
-String _statusLabel(String value) => humanizeCodeLabel(value);
+String _statusLabel(String value) => switch (value) {
+  'tanod_assigned' => 'Field inspection assigned',
+  'tanod_in_progress' => 'Field inspection in progress',
+  'tanod_verified' => 'Findings submitted for Secretary review',
+  'clarification_required' => 'Clarification required',
+  _ => humanizeCodeLabel(value),
+};
 
 /// Collapses repeated display milestones without changing backend history.
 List<ReportStatusEvent> visibleReportHistory(List<ReportStatusEvent> events) {

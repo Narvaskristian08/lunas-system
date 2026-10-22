@@ -1,4 +1,5 @@
 const { getAgencySchedule } = require('../services/agencyScheduleService');
+const { getMaintenanceTracking } = require('../services/maintenanceTrackingService');
 const { getSlaProjection } = require('../services/workOrderService');
 const Incident = require('../models/Incident');
 const WorkOrder = require('../models/WorkOrder');
@@ -9,7 +10,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const storageService = require('../services/storageService');
 const { createNotification, notificationTemplates } = require('../services/notificationService');
 const { findPossibleDuplicateCandidates } = require('../services/duplicateDetectionService');
-const { initializeIncidentSLA } = require('../services/slaService');
+const { initializeIncidentSLA, getSLAHours } = require('../services/slaService');
 const {
   buildIncidentScope,
   combineIncidentFilters,
@@ -175,6 +176,7 @@ const serializeIncidentForCitizen = async (incident) => {
     images,
     status: source.status,
     agencyStatus: source.agencyStatus,
+    maintenance: getMaintenanceTracking(source),
     agencySchedule: getAgencySchedule(source),
     agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
     createdAt: source.createdAt,
@@ -300,6 +302,10 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
       routedAt: source.routing.routedAt
     } : undefined,
     agencyStatus: source.agencyStatus,
+    maintenance: getMaintenanceTracking(source),
+    procurementRequired: source.procurementRequired,
+    expectedTimeline: source.expectedTimeline,
+    slaTargets: Object.fromEntries(['critical', 'high', 'medium', 'low'].map(priority => [priority, getSLAHours(priority)])),
     agencySchedule: getAgencySchedule(source),
     agencyStatusNote: source.agencyStatusNote,
     agencyStatusUpdatedAt: source.agencyStatusUpdatedAt,
@@ -558,8 +564,9 @@ exports.getIncidents = asyncHandler(async (req, res) => {
   if (category) filter.category = category;
   if (from || to) {
     filter.createdAt = {};
-    if (from) filter.createdAt.$gte = new Date(`${from}T00:00:00.000Z`);
-    if (to) filter.createdAt.$lte = new Date(`${to}T23:59:59.999Z`);
+    const zone = req.query.timezone === 'Asia/Manila' ? '+08:00' : 'Z';
+    if (from) filter.createdAt.$gte = new Date(`${from}T00:00:00.000${zone}`);
+    if (to) filter.createdAt.$lte = new Date(`${to}T23:59:59.999${zone}`);
   }
   if (barangay && !['barangay_official', 'citizen'].includes(req.user.role)) {
     filter['location.address.barangay'] = barangay;

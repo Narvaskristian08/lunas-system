@@ -19,7 +19,6 @@ const {
   getWorkOrderSLA,
   getApproachingDeadlineWorkOrders,
   getOverdueWorkOrders,
-  reviewCompletedWork,
   coordinateCityCorrection,
   finalReviewWorkOrder
 } = require('../controllers/workOrderController');
@@ -84,7 +83,7 @@ router.post(
   uploadRepairEvidence
 );
 router.post('/:id/provider-review', protect, authorize('utility_provider'), mongoIdValidation,
-  providerWorkOrderReviewValidation, validate, reviewCompletedWork);
+  providerWorkOrderReviewValidation, validate, (_req, res) => res.status(409).json({ success: false, message: 'Final acceptance requires Secretary review of the current final Tanod inspection' }));
 router.post('/:id/coordinate-correction', protect, authorize('utility_provider'), mongoIdValidation,
   providerCorrectionValidation, validate, coordinateCityCorrection);
 router.post('/:id/final-review', protect, authorize('city_engineer'), mongoIdValidation,

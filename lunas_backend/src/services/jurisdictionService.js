@@ -66,9 +66,9 @@ const buildIncidentScope = (user) => {
     const barangay = canonicalizeBarangay(user.barangay);
     if (!barangay) return { _id: null };
     return {
-      $or: [
-        { 'jurisdiction.barangay': barangay },
-        { 'jurisdiction.barangay': { $exists: false }, 'location.address.barangay': barangay }
+      $and: [
+        { $or: [{ initialVerifier: user._id }, { completionVerifier: user._id }] },
+        { $or: [{ 'jurisdiction.barangay': barangay }, { 'jurisdiction.barangay': { $exists: false }, 'location.address.barangay': barangay }] }
       ]
     };
   }
@@ -103,7 +103,8 @@ const canAccessIncident = (user, incident) => {
   }
 
   if (user.role === 'utility_personnel') {
-    return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay);
+    return getIncidentBarangay(incident) === canonicalizeBarangay(user.barangay)
+      && [incident.initialVerifier, incident.completionVerifier].some(id => id && asId(id) === asId(user._id));
   }
 
   if (user.role === 'utility_provider') {

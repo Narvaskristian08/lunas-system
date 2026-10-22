@@ -274,6 +274,8 @@ function CompletionReviewPanel({
     startTransition(async () => onResult(await operation()));
   };
 
+  if (isProvider && workOrder.status === "completed") return <Card><CardHeader title="Awaiting final Barangay verification" /><p className="p-5 text-sm text-slate-600">Record Work Completed on the agency report. The Secretary assigns final field verification and decides whether to accept completion or request correction.</p></Card>;
+
   if (!canProviderReview && !canCoordinateCorrection && !canFinalReview) return null;
 
   return (

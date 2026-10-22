@@ -20,7 +20,8 @@ test('Utility Personnel have a distinct validated barangay role without repair d
 test('Utility Personnel stay in their barangay and cannot acquire repair work-order scope', () => {
   const user = { _id: 'tanod', role: 'utility_personnel', barangay: 'Pantal' };
   expect(buildIncidentScope(user)).not.toEqual({ _id: null });
-  expect(canAccessIncident(user, { location: { address: { barangay: 'Pantal' } } })).toBe(true);
+  expect(canAccessIncident(user, { location: { address: { barangay: 'Pantal' } } })).toBe(false);
+  expect(canAccessIncident(user, { initialVerifier: 'tanod', location: { address: { barangay: 'Pantal' } } })).toBe(true);
   expect(canAccessIncident(user, { location: { address: { barangay: 'Lucao' } } })).toBe(false);
   expect(buildIncidentScope({ ...user, barangay: '' })).toEqual({ _id: null });
   expect(buildWorkOrderScope(user)).toEqual({ _id: null });

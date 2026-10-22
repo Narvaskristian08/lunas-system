@@ -35,12 +35,12 @@ export async function reviewTanodAction(incidentId: string, inspectionId: string
   } catch (error) { return result(error); }
 }
 
-export async function updateAgencyStatusAction(incidentId: string, status: string, note: string, priority?: string, slaDeadline?: string) {
+export async function updateAgencyStatusAction(incidentId: string, status: string, note: string, priority?: string, slaDeadline?: string, progressPercent?: number, procurementRequired?: boolean, expectedTimeline?: string) {
   await requirePermission("work_orders.manage");
   try {
     const deadline = slaDeadline ? philippineDeadlineIso(slaDeadline) : undefined;
     if (slaDeadline && !deadline) return { ok: false, message: "Enter a valid agency deadline in Philippine time." };
-    const body = { status, note, priority, ...(deadline ? { slaDeadline: deadline } : {}) };
+    const body = { status, note, priority, progressPercent, procurementRequired, expectedTimeline, ...(deadline ? { slaDeadline: deadline } : {}) };
     const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/agency-status`, { accessToken: await requireAccessToken(), method: "PATCH", body: JSON.stringify(body) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/work-orders"); revalidatePath("/dashboard");
     return { ok: true, message: response.message ?? "Agency status updated." };
