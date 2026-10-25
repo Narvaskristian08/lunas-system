@@ -9,7 +9,9 @@ int reportWorkflowStep(IncidentReport report) {
   if (status == 'closed' || status == 'resolved') {
     return 5;
   }
-  if (status.contains('completion') || status == 'agency_completed') {
+  if (report.agencyStatus == 'work_completed' ||
+      status.contains('completion') ||
+      status == 'agency_completed') {
     return 4;
   }
   if (status == 'tanod_verified' ||
