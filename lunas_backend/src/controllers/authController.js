@@ -103,6 +103,17 @@ const recoveryEmailMaxAttempts = Math.max(
   parseInt(process.env.RECOVERY_EMAIL_MAX_ATTEMPTS, 10) || 5
 );
 
+// Older seeded provider records may contain the retired `other` expertise
+// value.  Normalize that legacy data before a login save runs Mongoose
+// validators, so a valid account is not locked out by an unrelated field.
+const SUPPORTED_EXPERTISE = new Set(['road', 'drainage', 'electrical', 'water', 'gas', 'streetlight']);
+const normalizeExpertise = user => {
+  const original = Array.isArray(user.expertise) ? user.expertise : [];
+  const normalized = original.filter(value => SUPPORTED_EXPERTISE.has(value));
+  if (normalized.length !== original.length) user.expertise = normalized;
+  return normalized.length !== original.length;
+};
+
 // @desc    Register a citizen account
 // @route   POST /api/v1/auth/register
 // @access  Public
@@ -467,6 +478,10 @@ exports.login = asyncHandler(async (req, res) => {
     }
   }
 
+  // Repair legacy seeded records as part of the successful authenticated
+  // write. This preserves the account and removes only unsupported expertise
+  // values; it does not alter role, organization, assignments or history.
+  normalizeExpertise(user);
   user.lastLogin = new Date();
   const tokenPair = issueTokenPair(user);
   addRefreshToken(user, tokenPair, req);
