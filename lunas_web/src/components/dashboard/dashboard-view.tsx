@@ -33,9 +33,9 @@ function dashboardCopy(viewer: UserProfile) {
   }
   if (viewer.backendRole === "barangay_official") {
     return {
-      eyebrow: `${viewer.organization} · Barangay Review`,
-      title: "Barangay Review Dashboard",
-      description: "Review citizen reports assigned to your Barangay and forward validated incidents to City Engineering.",
+      eyebrow: `${viewer.organization} · Infrastructure Committee Review`,
+      title: "Infrastructure Committee Dashboard",
+      description: "Review citizen reports assigned to your barangay and forward validated incidents to City Engineering.",
       recordsTitle: "Reports Awaiting Review",
       recordsDescription: "Only reports in your assigned Barangay are shown here.",
     };

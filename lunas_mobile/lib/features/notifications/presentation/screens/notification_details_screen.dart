@@ -148,7 +148,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                             const _DetailRow(
                               icon: Icons.engineering_outlined,
                               label: 'Work Verification',
-                              value: 'Linked Tanod inspection',
+                              value: 'Linked Committee Staff inspection',
                             ),
                           if (!repairWorkspace &&
                               resolvedItem.incidentId != null)

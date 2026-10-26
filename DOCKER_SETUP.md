@@ -93,3 +93,23 @@ The demo seeder intentionally accepts only a local hostname (`localhost`,
 `127.0.0.1`, or `::1`) and database `lunas_db`. Run it from the host using a
 local MongoDB URI as described in the root README; the container's internal
 hostname `mongodb` is deliberately rejected by this guard.
+
+### Seeded account terminology migration
+
+Existing local seeded accounts can be updated in place without changing their
+IDs, credentials, role identifiers, barangay assignments, activation state or
+incident history. The migration is dry-run by default and rejects production or
+non-`lunas_db` MongoDB URIs. After the Compose stack is running, execute the
+dry run first:
+
+```bash
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml exec -T \
+  -e ALLOW_ROLE_TERMINOLOGY_MIGRATION=true \
+  -e ROLE_TERMINOLOGY_MIGRATION_CONFIRM=LUNAS-LOCAL-ROLE-TERMINOLOGY \
+  -e ROLE_TERMINOLOGY_MIGRATION_DOCKER=true \
+  backend node scripts/migrate-role-terminology.js
+```
+
+Review the counts, then append `--apply` to the same command to update only
+the local seeded display metadata. Repeating the command is idempotent; a
+second run should report zero changed accounts.

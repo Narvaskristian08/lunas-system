@@ -7,7 +7,7 @@ import { requireAccessToken, requirePermission } from "@/lib/auth/dal.server";
 
 function result(error: unknown) {
   if (isBackendApiError(error) && error.status < 500) return { ok: false, message: error.message };
-  return { ok: false, message: "The Tanod workflow service is unavailable. Please try again." };
+  return { ok: false, message: "The Committee Staff workflow service is unavailable. Please try again." };
 }
 
 export async function getTanodPersonnel() {
@@ -22,7 +22,7 @@ export async function assignTanodAction(incidentId: string, tanodId: string) {
   try {
     const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/tanod-inspections`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ tanodId }) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing");
-    return { ok: true, message: response.message ?? "Tanod inspection assigned." };
+    return { ok: true, message: response.message ?? "Committee Staff inspection assigned." };
   } catch (error) { return result(error); }
 }
 
@@ -31,7 +31,7 @@ export async function reviewTanodAction(incidentId: string, inspectionId: string
   try {
     const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/inspections/${encodeURIComponent(inspectionId)}/review`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ decision, notes }) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing");
-    return { ok: true, message: response.message ?? "Tanod verification reviewed." };
+    return { ok: true, message: response.message ?? "Committee Staff verification reviewed." };
   } catch (error) { return result(error); }
 }
 
@@ -52,7 +52,7 @@ export async function assignCompletionTanodAction(incidentId: string, tanodId: s
   try {
     const response = await backendRequest(`/incidents/${encodeURIComponent(incidentId)}/completion-inspections`, { accessToken: await requireAccessToken(), method: "POST", body: JSON.stringify({ tanodId }) });
     revalidatePath(`/validation-routing/${incidentId}`); revalidatePath("/validation-routing");
-    return { ok: true, message: response.message ?? "Final Tanod verification assigned." };
+    return { ok: true, message: response.message ?? "Final Committee Staff verification assigned." };
   } catch (error) { return result(error); }
 }
 

@@ -2,7 +2,7 @@ export type UserRole =
   | "Citizen"
   | "Utility Personnel"
   | "Admin"
-  | "Barangay Official"
+  | "Infrastructure Committee"
   | "City Engineer"
   | "Utility Provider";
 

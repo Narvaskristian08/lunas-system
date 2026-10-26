@@ -8,5 +8,6 @@ module.exports = {
   SLAConfig: require('./SLAConfig'),
   Notification: require('./Notification'),
   AuditLog: require('./AuditLog'),
-  SystemConfig: require('./SystemConfig')
+  SystemConfig: require('./SystemConfig'),
+  DailyReportQuota: require('./DailyReportQuota')
 };

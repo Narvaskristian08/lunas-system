@@ -21,8 +21,8 @@ CITIZEN
 -------
 dagupan.citizen@lunas.test               Local Citizen
 
-BARANGAY OFFICIALS
-------------------
+INFRASTRUCTURE COMMITTEE
+------------------------
 dagupan.barangay-bacayao-norte@lunas.test
 dagupan.barangay-bacayao-sur@lunas.test
 dagupan.barangay-barangay-ii@lunas.test
@@ -55,8 +55,8 @@ dagupan.barangay-tambac@lunas.test
 dagupan.barangay-tapuac@lunas.test
 dagupan.barangay-tebeng@lunas.test
 
-TANOD / UTILITY PERSONNEL
--------------------------
+COMMITTEE STAFF / UTILITY PERSONNEL
+-----------------------------------
 dagupan.tanod-bacayao-norte@lunas.test
 dagupan.tanod-bacayao-sur@lunas.test
 dagupan.tanod-barangay-ii@lunas.test
@@ -99,4 +99,4 @@ dagupan.provider-dpwh@lunas.test               DPWH - Dagupan National Infrastru
 SEED COMMAND
 ------------
 ALLOW_DEMO_SEED=true MONGODB_URI=mongodb://localhost:27017/lunas_db npm run seed:presentation
-Add -- --replace to replace presentation reports and refresh seeded account fields.
+Add -- --replace to replace presentation reports and refresh only seeded display fields; existing account IDs, credentials, sessions and permissions are preserved.

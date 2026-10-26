@@ -12,6 +12,7 @@ const notificationSchema = new mongoose.Schema({
     enum: [
       'incident_submitted',
       'incident_validated',
+      'incident_clarification_requested',
       'incident_rejected',
       'incident_routed',
       'verification_update',

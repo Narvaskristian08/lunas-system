@@ -19,13 +19,13 @@ function accountDefinitions(password) {
   const accounts = [
     { firstName: 'Local', lastName: 'Administrator', email: fixtureEmails.admin, role: 'admin', legacyEmail: 'demo.admin@lunas.test' },
     { firstName: 'Local', lastName: 'Citizen', email: fixtureEmails.citizen, role: 'citizen', legacyEmail: 'demo.citizen@lunas.test' },
-    ...DAGUPAN_BARANGAYS.map(barangay => ({ firstName: barangay, lastName: 'Official', email: email(`barangay-${slug(barangay)}`),
-      role: 'barangay_official', barangay, organization: `Barangay ${barangay}`, position: 'Local barangay account',
+    ...DAGUPAN_BARANGAYS.map(barangay => ({ firstName: 'Infrastructure Committee', lastName: barangay, email: email(`barangay-${slug(barangay)}`),
+      role: 'barangay_official', barangay, organization: `Barangay ${barangay}`, position: 'Barangay Infrastructure Committee',
       ...(barangay === 'Poblacion Oeste' ? { legacyEmail: 'demo.barangay@lunas.test' } : {}) })),
     ...DAGUPAN_BARANGAYS.map((barangay, index) => ({
-      firstName: `Tanod ${barangay}`, lastName: 'Utility Personnel', email: email(`tanod-${slug(barangay)}`), role: 'utility_personnel',
+      firstName: `Committee Staff ${barangay}`, lastName: 'Utility Personnel', email: email(`tanod-${slug(barangay)}`), role: 'utility_personnel',
       phone: `0998000${String(index + 1).padStart(4, '0')}`, barangay, organization: `Barangay ${barangay}`,
-      position: 'Barangay Tanod / Utility Personnel', availability: 'available'
+      position: 'Barangay Committee Staff / Utility Personnel', availability: 'available'
     })),
     ...ORGANIZATIONS.map((org) => ({
       firstName: org.code.toUpperCase(), lastName: 'Provider', email: email(`provider-${org.code}`), role: 'utility_provider',

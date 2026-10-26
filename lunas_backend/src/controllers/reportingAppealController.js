@@ -58,7 +58,7 @@ const requireBarangayOfficial = (req, res) => {
   res.status(403).json({
     success: false,
     code: 'REPORTING_APPEALS_BARANGAY_ONLY',
-    message: 'Reporting appeals are handled by the assigned Barangay Official.'
+    message: 'Reporting appeals are handled by the assigned Infrastructure Committee.'
   });
   return false;
 };

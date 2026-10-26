@@ -25,9 +25,11 @@ async function removeLegacyFixtures() {
   await Incident.deleteMany({ _id: { $in: ids } });
   return { reports: ids.length, workOrders: orderIds.length };
 }
-async function removeSeededAccounts() {
-  const result = await User.deleteMany({ email: /^(?:demo\.|dagupan\.)[^@]+@lunas\.test$/i });
-  return result.deletedCount || 0;
+function syncSeededDisplayMetadata(account, definition, migrateEmail) {
+  for (const field of ['firstName', 'lastName', 'organization', 'position']) {
+    if (definition[field] !== undefined) account[field] = definition[field];
+  }
+  if (migrateEmail) account.email = definition.email;
 }
 async function seed() {
   const uri = requireLocalSeedEnvironment();
@@ -39,7 +41,6 @@ async function seed() {
   await mongoose.connect(uri);
   try {
     const replacing = process.argv.includes('--replace');
-    const accountsRemoved = replacing ? await removeSeededAccounts() : 0;
     const removed = replacing ? await removeLegacyFixtures() : { reports: 0, workOrders: 0 };
     let migrated = 0;
     for (const { legacyEmail, ...definition } of definitions) {
@@ -49,15 +50,16 @@ async function seed() {
         if (account) migrated++;
       }
       if (!account) await User.create(definition);
-      else if (account.email === legacyEmail || process.argv.includes('--replace')) {
-        // Keep IDs so non-fixture reports and audit references remain valid.
-        account.set(definition);
-        account.set({ refreshTokens: [], repairTeam: undefined });
-        await account.save();
+      else if (account.email === legacyEmail || replacing) {
+        // Keep the account ID, password hash, sessions, assignments and
+        // permissions. Only synthetic display metadata is refreshed. A legacy
+        // email is canonicalized to avoid creating a duplicate seed account.
+        syncSeededDisplayMetadata(account, definition, account.email === legacyEmail);
+        await account.save({ validateModifiedOnly: true });
       }
     }
     if (process.argv.includes('--accounts-only')) {
-      console.log(JSON.stringify({ accounts: definitions.length, accountsRemoved, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: 0, accountsOnly: true }));
+      console.log(JSON.stringify({ accounts: definitions.length, accountsRecreated: 0, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: 0, accountsOnly: true }));
       return;
     }
     const citizen = await User.findOne({ email: fixtureEmails.citizen });
@@ -78,8 +80,8 @@ async function seed() {
       });
       created++;
     }
-    console.log(JSON.stringify({ accounts: definitions.length, accountsRemoved, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: created }));
+    console.log(JSON.stringify({ accounts: definitions.length, accountsRecreated: 0, legacyAccountsMigrated: migrated, fixturesRemoved: removed, reportsCreated: created }));
   } finally { await mongoose.disconnect(); }
 }
 if (require.main === module) seed().catch(error => { console.error(error.message); process.exitCode = 1; });
-module.exports = { seed, removeLegacyFixtures };
+module.exports = { seed, removeLegacyFixtures, syncSeededDisplayMetadata };

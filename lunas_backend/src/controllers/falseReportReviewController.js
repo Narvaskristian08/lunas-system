@@ -29,7 +29,7 @@ exports.saveReview = asyncHandler(async (req, res) => {
   const incident = await Incident.findOne(scope(req));
   if (!incident) return notFound(res);
   if (finding === 'confirmed_fabrication' && req.user.role !== 'barangay_official') {
-    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official can record an initial finding' });
+    return res.status(403).json({ success: false, message: 'Only the assigned Infrastructure Committee member can record an initial finding' });
   }
   if (finding === 'corrected' && !['city_engineer', 'admin'].includes(req.user.role)) {
     return res.status(403).json({ success: false, message: 'Only City Engineering or Admin can correct a finding' });

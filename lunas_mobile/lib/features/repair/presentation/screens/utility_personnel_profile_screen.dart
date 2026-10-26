@@ -141,9 +141,9 @@ class _UtilityPersonnelProfileScreenState
                       _ProfileDetail(
                         label: 'Account Type',
                         value: switch (user?.repairAccountType) {
-                          'team' => 'Barangay Tanod',
-                          'individual' => 'Barangay Tanod',
-                          _ => 'Utility Personnel / Barangay Tanod',
+                          'team' => 'Barangay Committee Staff',
+                          'individual' => 'Barangay Committee Staff',
+                          _ => 'Utility Personnel / Committee Staff',
                         },
                       ),
                       if (user?.repairAccountType == 'team')
@@ -186,7 +186,7 @@ class _UtilityPersonnelProfileScreenState
                     builder: (dialogContext) => LunasConfirmationDialog(
                       title: const Text('Utility Personnel Account'),
                       content: const Text(
-                        'Your account details are managed by your Barangay Secretary. Contact the Secretary to request corrections.',
+                        'Your account details are managed by your Barangay Infrastructure Committee. Contact the Infrastructure Committee to request corrections.',
                       ),
                       actions: [
                         FilledButton(
@@ -216,7 +216,7 @@ class _UtilityPersonnelProfileScreenState
                               ),
                               const SizedBox(height: AppSpacing.xxs),
                               Text(
-                                'Contact your Barangay Secretary to request corrections.',
+                                'Contact your Barangay Infrastructure Committee to request corrections.',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],

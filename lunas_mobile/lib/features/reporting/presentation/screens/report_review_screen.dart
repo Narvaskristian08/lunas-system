@@ -15,15 +15,18 @@ import 'package:lunas_mobile/core/widgets/lunas_card.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/evidence_preview.dart';
 import 'package:lunas_mobile/features/reporting/data/models/reporting_restriction.dart';
+import 'package:lunas_mobile/features/reporting/data/models/daily_report_limit.dart';
 
 class ReportReviewScreen extends StatefulWidget {
   const ReportReviewScreen({
     required this.draft,
     this.policyLoader,
+    this.dailyLimitLoader,
     this.submitReport,
     super.key,
   });
   final Future<LocationPolicy> Function()? policyLoader;
+  final Future<DailyReportLimit> Function()? dailyLimitLoader;
   final Future<IncidentReport> Function(CitizenReportDraft)? submitReport;
   final CitizenReportDraft draft;
 
@@ -51,6 +54,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   void initState() {
     super.initState();
     _loadPolicy();
+    _loadDailyReportLimit();
     _comparisonTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted && !_submitting) _updateReview(() {});
     });
@@ -79,6 +83,22 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     }
   }
 
+  DailyReportLimit? _dailyReportLimit;
+  bool _loadingDailyReportLimit = true;
+
+  Future<void> _loadDailyReportLimit() async {
+    try {
+      final limit = await (widget.dailyLimitLoader ??
+          reportService.getDailyReportLimit)();
+      if (mounted) setState(() => _dailyReportLimit = limit);
+    } catch (_) {
+      // A missing allowance must not prevent a report. The backend remains
+      // authoritative when the user submits.
+    } finally {
+      if (mounted) setState(() => _loadingDailyReportLimit = false);
+    }
+  }
+
   @override
   void dispose() {
     _comparisonTimer?.cancel();
@@ -103,6 +123,13 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       _updateReview(
         () => _error =
             'Confirm that the selected pin is the actual damage location.',
+      );
+      return;
+    }
+    if (_dailyReportLimit?.isExhausted == true) {
+      _updateReview(
+        () => _error =
+            'You have reached the daily limit of 3 reports. You can submit another report tomorrow.',
       );
       return;
     }
@@ -160,6 +187,12 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
             );
             _error = null;
           } else {
+            if (error.code == 'DAILY_REPORT_LIMIT_REACHED') {
+              final raw = error.data?['dailyReportLimit'];
+              _dailyReportLimit = DailyReportLimit.fromJson(
+                raw is Map ? Map<String, dynamic>.from(raw) : null,
+              );
+            }
             _error = error.message;
           }
         });
@@ -435,6 +468,13 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                             ),
                           ],
                         ),
+                        if (_dailyReportLimit != null) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          _DailyReportLimitCard(limit: _dailyReportLimit!),
+                        ] else if (_loadingDailyReportLimit) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          const Text('Checking today\'s report allowance...'),
+                        ],
                         if (_error != null) ...[
                           const SizedBox(height: AppSpacing.sm),
                           Text(
@@ -456,7 +496,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                             LunasButton(
                               label: 'Submit Report',
                               isLoading: _submitting,
-                              onPressed: _submitting || _loadingPolicy
+                              onPressed:
+                                  _submitting ||
+                                      _loadingPolicy ||
+                                      _dailyReportLimit?.isExhausted == true
                                   ? null
                                   : _submit,
                             ),
@@ -499,11 +542,15 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               ? Icons.rate_review_outlined
               : null,
           isLoading: _submitting,
-          onPressed: _submitting || _loadingPolicy
-              ? null
-              : _reportingRestriction?.isBlocked == true
-              ? () => context.push('/reports/appeal')
-              : _openConfirmation,
+          onPressed:
+              _submitting ||
+                      _loadingPolicy ||
+                      (_dailyReportLimit?.isExhausted == true &&
+                          _reportingRestriction?.isBlocked != true)
+                  ? null
+                  : _reportingRestriction?.isBlocked == true
+                  ? () => context.push('/reports/appeal')
+                  : _openConfirmation,
         ),
       ),
     ),
@@ -541,6 +588,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 const SizedBox(height: AppSpacing.md),
                 if (_reportingRestriction?.isBlocked == true) ...[
                   _ReportingBlockedCard(restriction: _reportingRestriction!),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                if (_dailyReportLimit != null) ...[
+                  _DailyReportLimitCard(limit: _dailyReportLimit!),
                   const SizedBox(height: AppSpacing.md),
                 ],
                 LunasCard(
@@ -626,6 +677,51 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       ),
     ),
   );
+}
+
+class _DailyReportLimitCard extends StatelessWidget {
+  const _DailyReportLimitCard({required this.limit});
+
+  final DailyReportLimit limit;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return LunasCard(
+      color: limit.isExhausted ? colors.errorContainer : colors.primaryContainer,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            limit.isExhausted
+                ? Icons.schedule_outlined
+                : Icons.assignment_outlined,
+            color: limit.isExhausted ? colors.onErrorContainer : colors.primary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  limit.remainingLabel,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  limit.isExhausted
+                      ? limit.resetLabel
+                      : 'Reports are counted when successfully created.',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ConfirmationRow extends StatelessWidget {

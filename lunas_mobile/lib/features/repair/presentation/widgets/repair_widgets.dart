@@ -14,7 +14,7 @@ import 'package:lunas_mobile/features/repair/data/models/repair_models.dart';
 import 'package:lunas_mobile/features/reporting/data/models/category_option.dart';
 import 'package:lunas_mobile/features/repair/routes/repair_routes.dart';
 
-/// Shared components for the authenticated Utility Personnel / Barangay Tanod workspace.
+/// Shared components for the authenticated Utility Personnel / Committee Staff workspace.
 /// Data and workflow actions are supplied by the API-backed inspection screens.
 class RepairAppBar extends StatelessWidget implements PreferredSizeWidget {
   const RepairAppBar({
@@ -139,6 +139,16 @@ class RepairBottomNavigation extends StatelessWidget {
   final int selectedIndex;
   final int notificationUnreadCount;
 
+  // Keep this list aligned with the destinations below. Committee Staff has
+  // no camera destination; photo capture remains available only inside the
+  // authorized work-verification evidence flow.
+  static const _routes = <String>[
+    RepairRoutes.dashboard,
+    RepairRoutes.workOrders,
+    RepairRoutes.notifications,
+    RepairRoutes.profile,
+  ];
+
   Widget _notificationIcon(IconData icon) {
     final child = Icon(icon, size: 22);
     if (notificationUnreadCount <= 0) return child;
@@ -156,13 +166,8 @@ class RepairBottomNavigation extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) {
         if (index == selectedIndex) return;
-        final route = switch (index) {
-          0 => RepairRoutes.dashboard,
-          1 => RepairRoutes.workOrders,
-          2 => RepairRoutes.notifications,
-          _ => RepairRoutes.profile,
-        };
-        context.go(route);
+        if (index < 0 || index >= _routes.length) return;
+        context.go(_routes[index]);
       },
       destinations: [
         const NavigationDestination(

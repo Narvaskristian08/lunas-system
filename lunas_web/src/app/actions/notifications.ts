@@ -12,6 +12,7 @@ interface BackendNotification {
   title?: string;
   message?: string;
   createdAt?: string;
+  sentAt?: string;
   isRead?: boolean;
   priority?: string;
   data?: { incidentId?: string; workOrderId?: string; reportNumber?: string; workOrderNumber?: string; link?: string };
@@ -61,7 +62,7 @@ function toNotification(source: BackendNotification, role: string): LunasNotific
     title: source.title ?? "LUNAS notification",
     message: source.message ?? "",
     fullMessage: source.message ?? "",
-    timestamp: source.createdAt ?? new Date(0).toISOString(),
+    timestamp: source.createdAt ?? source.sentAt ?? new Date(0).toISOString(),
     read: Boolean(source.isRead),
     severity: severityFor(source.priority),
     source: "LUNAS",

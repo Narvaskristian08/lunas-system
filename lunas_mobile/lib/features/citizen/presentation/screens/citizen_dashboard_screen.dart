@@ -16,6 +16,7 @@ import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart
 import 'package:lunas_mobile/features/reporting/presentation/widgets/report_status_timeline.dart';
 import 'package:lunas_mobile/features/reporting/presentation/widgets/reporting_widgets.dart';
 import 'package:lunas_mobile/features/reporting/data/models/reporting_restriction.dart';
+import 'package:lunas_mobile/features/reporting/data/models/daily_report_limit.dart';
 
 class CitizenDashboardScreen extends StatefulWidget {
   const CitizenDashboardScreen({this.submittedReport, super.key});
@@ -32,6 +33,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
   List<IncidentReport> _reports = const [];
   int? _activeTotal;
   int? _resolvedTotal;
+  DailyReportLimit? _dailyReportLimit;
 
   @override
   void initState() {
@@ -112,10 +114,21 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
       }
     }
 
+    Future<void> loadDailyLimit() async {
+      try {
+        final limit = await reportService.getDailyReportLimit();
+        if (mounted) setState(() => _dailyReportLimit = limit);
+      } catch (_) {
+        // The API remains authoritative if the display endpoint is unavailable.
+        if (mounted) setState(() => _dailyReportLimit = null);
+      }
+    }
+
     await Future.wait([
       loadRecent(),
       loadTotal('active'),
       loadTotal('resolved'),
+      loadDailyLimit(),
     ]);
     if (mounted) setState(() => _loading = false);
   }
@@ -188,6 +201,7 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
                 const SizedBox(height: AppSpacing.md),
                 _ReportCallout(
                   restriction: user?.reportingRestriction,
+                  dailyLimit: _dailyReportLimit,
                   onCreate: () => context.push(
                     user?.reportingRestriction.isBlocked == true
                         ? '/reports/appeal'
@@ -253,15 +267,22 @@ class _CitizenDashboardScreenState extends State<CitizenDashboardScreen>
 }
 
 class _ReportCallout extends StatelessWidget {
-  const _ReportCallout({required this.onCreate, this.restriction});
+  const _ReportCallout({
+    required this.onCreate,
+    this.restriction,
+    this.dailyLimit,
+  });
   final VoidCallback onCreate;
   final ReportingRestriction? restriction;
+  final DailyReportLimit? dailyLimit;
 
   @override
   Widget build(BuildContext context) {
     final blocked = restriction?.isBlocked == true;
+    final limitReached = dailyLimit?.isExhausted == true;
+    final disabled = blocked || limitReached;
     return GestureDetector(
-      onTap: onCreate,
+      onTap: disabled ? null : onCreate,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
@@ -278,7 +299,11 @@ class _ReportCallout extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    blocked ? 'Report submission paused' : 'Report an Issue',
+                    blocked
+                        ? 'Report submission paused'
+                        : limitReached
+                        ? 'Daily report limit reached'
+                        : 'Report an Issue',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -288,7 +313,10 @@ class _ReportCallout extends StatelessWidget {
                   Text(
                     blocked
                         ? 'You can appeal the current reporting restriction.'
-                        : 'Report a local infrastructure concern.',
+                        : limitReached
+                        ? dailyLimit!.resetLabel
+                        : dailyLimit?.remainingLabel ??
+                              'Report a local infrastructure concern.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: .9),
                     ),
@@ -299,9 +327,13 @@ class _ReportCallout extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             IconButton.filledTonal(
               tooltip: 'Start a report',
-              onPressed: onCreate,
+              onPressed: disabled ? null : onCreate,
               icon: Icon(
-                blocked ? Icons.rate_review_outlined : Icons.add_rounded,
+                blocked
+                    ? Icons.rate_review_outlined
+                    : limitReached
+                    ? Icons.schedule_outlined
+                    : Icons.add_rounded,
                 size: 24,
               ),
               style: IconButton.styleFrom(

@@ -24,6 +24,11 @@ jest.mock('../services/notificationService', () => ({
       type: 'duplicate_detected',
       title: 'Report marked duplicate',
       message: `${reportNumber}: ${reason}`
+    })),
+    incidentClarificationRequested: jest.fn((reportNumber, reason) => ({
+      type: 'incident_clarification_requested',
+      title: 'Incident returned for clarification',
+      message: `${reportNumber}: ${reason}`
     }))
   }
 }));
@@ -221,6 +226,36 @@ describe('sequential incident review workflow', () => {
       expect.objectContaining({ new: true })
     );
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('clarification notification is limited to active officials in the incident barangay', async () => {
+    const req = {
+      params: { id: submitted._id },
+      user: cityEngineer,
+      body: { reason: 'Please confirm the exact street location.' },
+      headers: {},
+      ip: '127.0.0.1'
+    };
+    const validated = { ...submitted, status: 'barangay_validated' };
+    const recipient = { _id: '507f191e810c19729de860c3' };
+    Incident.findOne.mockReturnValueOnce(queryFor(validated));
+    Incident.findOneAndUpdate.mockReturnValue(queryFor({ ...validated, status: 'clarification_required' }));
+    User.find.mockReturnValueOnce(queryFor([recipient]));
+    const res = response();
+
+    await requestIncidentClarification(req, res, jest.fn());
+
+    expect(User.find).toHaveBeenCalledWith({
+      role: 'barangay_official',
+      barangay: 'Poblacion Oeste',
+      isActive: true,
+      isArchived: { $ne: true }
+    });
+    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
+      recipient: recipient._id,
+      type: 'incident_clarification_requested',
+      data: expect.objectContaining({ incidentId: submitted._id, link: `/validation-routing/${submitted._id}` })
+    }));
   });
 
   test('requires a real rejection reason before reading or changing the report', async () => {

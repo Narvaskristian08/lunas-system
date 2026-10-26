@@ -21,6 +21,7 @@ const {
   routeIncident,
   getNearbyIncidents,
   getBarangays,
+  getDailyReportLimit,
 } = require('../controllers/incidentController');
 const { createWorkOrder } = require('../controllers/workOrderController');
 const { protect, authorize } = require('../middleware/auth');
@@ -63,6 +64,7 @@ router.get(
   getNearbyIncidents
 );
 router.get('/my', protect, authorize('citizen'), paginationValidation, query('reportView').optional().isIn(['all', 'active', 'resolved', 'in_progress']), query('search').optional().isString().bail().trim().isLength({ max: 100 }), validate, getMyIncidents);
+router.get('/daily-limit', protect, authorize('citizen'), getDailyReportLimit);
 router.get('/barangays', protect, getBarangays);
 router.get('/location-policy', protect, (req, res) => res.json({
   success: true, data: require('../services/locationIntegrityService').getLocationPolicy()

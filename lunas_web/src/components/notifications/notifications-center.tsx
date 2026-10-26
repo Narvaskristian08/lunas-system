@@ -99,6 +99,20 @@ function NotificationsWorkspace({ initialNotificationId }: { initialNotification
     return () => { window.clearTimeout(timer); invalidateRequest(); };
   }, [load, revision, invalidateRequest]);
 
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") reloadInbox();
+    };
+    const timer = window.setInterval(refreshIfVisible, 30_000);
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
+  }, [reloadInbox]);
+
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const visiblePage = page;
   const visible = items;

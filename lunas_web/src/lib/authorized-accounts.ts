@@ -29,7 +29,7 @@ export interface AuthorizedAccountPage {
   canManageAdministrators: boolean;
 }
 export const accountRoleLabels: Record<AuthorizedAccount["role"], string> = {
-  barangay_official: "Barangay Official",
+  barangay_official: "Infrastructure Committee",
   city_engineer: "City Engineer",
   utility_personnel: "Utility Personnel",
   repair_personnel: "Utility Personnel",

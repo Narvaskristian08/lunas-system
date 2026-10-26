@@ -264,16 +264,19 @@ const updateIncidentForWorkOrder = async ({ incidentId, status, actor, notes, me
   );
 };
 
-const notify = async (recipient, template, workOrder) => {
+const notify = async (recipient, template, workOrder, options = {}) => {
   if (!recipient) return;
   try {
+    const recipientId = recipient._id || recipient;
     await createNotification({
-      recipient: recipient._id || recipient,
+      recipient: recipientId,
       ...template,
+      idempotencyKey: options.idempotencyKey
+        || `work-order:${workOrder._id}:version:${workOrder.version ?? 'unknown'}:recipient:${recipientId}:type:${template.type}`,
       data: {
         incidentId: workOrder.incident && workOrder.incident._id ? workOrder.incident._id : workOrder.incident,
         workOrderId: workOrder._id,
-        link: '/work-orders/' + workOrder._id
+        link: options.link || '/work-orders/' + workOrder._id
       }
     });
   } catch (error) {
@@ -1329,11 +1332,10 @@ exports.reviewCompletedWork = asyncHandler(async (req, res) => {
     await notifyRepairPersonnel(updated, 'Corrective work requested', instructions || reason);
   } else if (incident) {
     await setAvailability(updated.assignedTo, 'available');
-    await createNotification({
-      recipient: incident.reporter, type: 'repair_verified', title: 'Your report has been resolved',
-      message: `The responsible provider verified the repair for ${incident.reportNumber}.`,
-      data: { incidentId: incident._id, workOrderId: updated._id, link: `/incidents/${incident._id}` }
-    });
+    await notify(incident.reporter, {
+      type: 'repair_verified', title: 'Your report has been resolved',
+      message: `The responsible provider verified the repair for ${incident.reportNumber}.`
+    }, updated, { link: `/incidents/${incident._id}` });
   }
   await createAuditLog({
     action: correction ? 'provider_correction_requested' : 'provider_completion_accepted',
@@ -1407,11 +1409,11 @@ exports.finalReviewWorkOrder = asyncHandler(async (req, res) => {
     const providerAccounts = incident?.assignedUtility
       ? [incident.assignedUtility]
       : await User.find({ role: 'utility_provider', utilityCompany: updated.responsibleOrganization, isActive: true }).select('_id');
-    await Promise.all(providerAccounts.map((recipient) => createNotification({
-      recipient: recipient._id || recipient, type: 'repair_rejected', title: 'City Engineering returned the repair',
+    await Promise.all(providerAccounts.map((recipient) => notify(recipient, {
+      type: 'repair_rejected', title: 'City Engineering returned the repair',
       message: `Work order ${updated.orderNumber} needs corrective work: ${reason}`,
-      data: { incidentId: updated.incident, workOrderId: updated._id, link: `/work-orders/${updated._id}` }, priority: 'high'
-    })));
+      priority: 'high'
+    }, updated)));
     await createAuditLog({
       action: 'city_engineering_returned_completion', performedBy: req.user._id,
       resourceType: 'WorkOrder', resourceId: updated._id, details: { reason },
@@ -1434,11 +1436,10 @@ exports.finalReviewWorkOrder = asyncHandler(async (req, res) => {
       ...getClosedSlaFields(workOrder.sla, now) }
   });
   if (incident?.reporter) {
-    await createNotification({
-      recipient: incident.reporter, type: 'repair_verified', title: 'Your report has been resolved',
-      message: `City Engineering verified the repair for incident ${incident.reportNumber}.`,
-      data: { incidentId: incident._id, workOrderId: updated._id, link: `/incidents/${incident._id}` }
-    });
+    await notify(incident.reporter, {
+      type: 'repair_verified', title: 'Your report has been resolved',
+      message: `City Engineering verified the repair for incident ${incident.reportNumber}.`
+    }, updated, { link: `/incidents/${incident._id}` });
   }
   await createAuditLog({
     action: 'city_engineering_verified_and_closed', performedBy: req.user._id,

@@ -19,6 +19,14 @@ const inputClass = "mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-w
 type AccessAction = "active" | "suspended" | "deactivated" | "activation";
 const actionLabels: Record<AccessAction, string> = { active: "Reactivate", suspended: "Suspend", deactivated: "Deactivate", activation: "Send activation email" };
 
+function displayPosition(position?: string) {
+  return position
+    ?.replaceAll("Barangay Secretary", "Barangay Infrastructure Committee")
+    .replaceAll("Secretary", "Infrastructure Committee")
+    .replaceAll("Barangay Tanod", "Barangay Committee Staff")
+    .replaceAll("Tanod", "Committee Staff");
+}
+
 export function AdminConsole({ data, viewerId, search, filters }: { data: AuthorizedAccountPage; viewerId: string; search: string; filters: { role: string; status: string; organization: string } }) {
   const router = useRouter();
   const [selected, setSelected] = useState<AuthorizedAccount | "new" | null>(null);
@@ -146,12 +154,12 @@ function AccountForm({ account, data, readOnly, onSaved, onBusyChange }: { accou
       {account ? <div className="text-sm"><p className="font-medium">Email</p><p className="mt-3">{account.email}</p></div> : field("email", "Email", "", true, 254, "email")}
       {role === "utility_personnel" && field("phone", "Contact number", account?.phone, true, 13, "tel")}
       {field("personnelId", "Employee / personnel ID (if applicable)", account?.personnelId, false, 80)}
-      {field("position", "Position / designation", account?.position, true, 120)}
+      {field("position", "Position / designation", displayPosition(account?.position), true, 120)}
       {field("organization", "Office / organization", account?.organization)}
       <label className="text-sm font-medium">System role *<select name="role" value={role} onChange={event => setRole(event.target.value as AuthorizedAccount["role"])} className={inputClass}>{roles.map(value => <option key={value} value={value}>{accountRoleLabels[value]}</option>)}</select></label>
       {["barangay_official", "utility_personnel"].includes(role) && <label className="text-sm font-medium">Assigned barangay *<select name="barangay" className={inputClass} defaultValue={account?.barangay || ""} required><option value="">Select barangay</option>{data.barangays.map(value => <option key={value}>{value}</option>)}</select></label>}
       {role === "utility_provider" && field("utilityCompany", "Assigned utility company", account?.utilityCompany)}
-      {role === "utility_personnel" ? <p className="text-sm leading-6 text-slate-600">This account is a Barangay Tanod / Utility Personnel account. It can inspect reports only within the assigned barangay.</p> : null}
+      {role === "utility_personnel" ? <p className="text-sm leading-6 text-slate-600">This account is a Barangay Committee Staff / Utility Personnel account. It can inspect reports only within the assigned barangay.</p> : null}
       {field("approvalAuthority", "Approved By / Approving Authority", account?.approval?.authority)}
       <label className="text-sm font-medium md:col-span-2">Approval reference / remarks *<textarea className={inputClass} name="approvalReference" required maxLength={500} defaultValue={account?.approval?.reference || ""} placeholder="Reference or remarks confirming the offline authorization" /></label>
     </fieldset>

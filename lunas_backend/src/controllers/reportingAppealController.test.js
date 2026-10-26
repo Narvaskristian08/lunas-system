@@ -73,7 +73,7 @@ test('citizen can submit one text/reference appeal while reporting is blocked', 
   expect(res.status).toHaveBeenCalledWith(201);
 });
 
-test('Barangay Official approval clears the reporting block', async () => {
+test('Infrastructure Committee approval clears the reporting block', async () => {
   const appeal = {
     _id: '507f191e810c19729de860ab',
     reporter: '507f191e810c19729de860aa',

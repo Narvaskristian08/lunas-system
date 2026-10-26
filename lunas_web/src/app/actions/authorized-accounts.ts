@@ -38,9 +38,9 @@ export async function manageAccountAction(operation: "create" | "edit" | "status
 
 export async function createTanodAction(form: FormData): Promise<void> {
   const viewer = await requirePermission("reports.validate");
-  if (viewer.backendRole !== "barangay_official" || !viewer.barangay) redirect("/validation-routing/tanods?error=Only%20Barangay%20Officials%20can%20create%20Tanod%20accounts.");
+  if (viewer.backendRole !== "barangay_official" || !viewer.barangay) redirect("/validation-routing/tanods?error=Only%20Barangay%20Infrastructure%20Committee%20members%20can%20create%20Committee%20Staff%20accounts.");
   const accessToken = await requireAccessToken();
-  const body = { firstName: String(form.get("firstName") ?? "").trim(), lastName: String(form.get("lastName") ?? "").trim(), middleName: String(form.get("middleName") ?? "").trim(), suffix: String(form.get("suffix") ?? "").trim(), email: String(form.get("email") ?? "").trim(), phone: String(form.get("phone") ?? "").trim(), role: "utility_personnel", barangay: viewer.barangay, organization: `Barangay ${viewer.barangay}`, position: "Barangay Tanod / Utility Personnel", approvalAuthority: `${viewer.firstName} ${viewer.lastName}`, approvalReference: `Created by Barangay Official: ${viewer.barangay}` };
+  const body = { firstName: String(form.get("firstName") ?? "").trim(), lastName: String(form.get("lastName") ?? "").trim(), middleName: String(form.get("middleName") ?? "").trim(), suffix: String(form.get("suffix") ?? "").trim(), email: String(form.get("email") ?? "").trim(), phone: String(form.get("phone") ?? "").trim(), role: "utility_personnel", barangay: viewer.barangay, organization: `Barangay ${viewer.barangay}`, position: "Barangay Committee Staff / Utility Personnel", approvalAuthority: `${viewer.firstName} ${viewer.lastName}`, approvalReference: `Created by Barangay Infrastructure Committee: ${viewer.barangay}` };
   try {
     const response = await backendRequest<{ data?: { delivery?: { delivered?: boolean } } }>("/users/tanods", { accessToken, method: "POST", body: JSON.stringify(body) });
     revalidatePath("/validation-routing/tanods"); revalidatePath("/validation-routing");

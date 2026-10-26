@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 import { createSessionValue } from "../src/lib/auth/session-crypto";
 import { SESSION_COOKIE_NAME } from "../src/lib/auth/constants";
 
-test.describe("Secretary agency schedule", () => {
+test.describe("Infrastructure Committee agency schedule", () => {
   let server: Server;
   test.beforeAll(async () => {
     server = createServer((req, res) => {

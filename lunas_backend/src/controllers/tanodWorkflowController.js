@@ -52,14 +52,14 @@ const notify = async (recipient, incident, title, message, type) => {
 };
 
 exports.listTanodPersonnel = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'barangay_official') return res.status(403).json({ success: false, message: 'Only Barangay Secretaries may select Utility Personnel' });
+  if (req.user.role !== 'barangay_official') return res.status(403).json({ success: false, message: 'Only Barangay Infrastructure Committee members may select Committee Staff' });
   const users = await User.find({ role: { $in: ['utility_personnel', 'repair_personnel'] }, barangay: req.user.barangay, isArchived: { $ne: true } })
     .select('firstName middleName suffix lastName email phone barangay role availability accountStatus isActive requiresActivation createdAt').sort({ createdAt: -1 });
   res.json({ success: true, data: users.map((user) => ({ id: user._id, firstName: user.firstName, middleName: user.middleName, suffix: user.suffix, lastName: user.lastName, email: user.email, phone: user.phone, barangay: user.barangay, role: 'utility_personnel', availability: user.availability, accountStatus: user.accountStatus || (user.isActive ? 'active' : 'pending_activation'), isActive: user.isActive, requiresActivation: user.requiresActivation, createdAt: user.createdAt })) });
 });
 
 exports.listAgencyExceptions = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'barangay_official') return res.status(403).json({ success: false, message: 'Only Barangay Secretaries may view routing exceptions' });
+  if (req.user.role !== 'barangay_official') return res.status(403).json({ success: false, message: 'Only Barangay Infrastructure Committee members may view routing exceptions' });
   const incidents = await Incident.find({ ...buildIncidentScope(req.user), status: 'tanod_verified', agencyStatus: 'not_routed', 'routing.responsibleOrganization': { $exists: false } })
     .populate('initialInspection completionInspection', 'findings result evidence submittedAt').sort({ updatedAt: -1 });
   const providers = await User.find({ role: 'utility_provider', isActive: true, isArchived: { $ne: true } }).select('utilityCompany organization').lean();
@@ -69,12 +69,12 @@ exports.listAgencyExceptions = asyncHandler(async (req, res) => {
 exports.assignInitialInspection = asyncHandler(async (req, res) => {
   const incident = await loadIncident(req, ['barangay_official']);
   if (!incident || !sameBarangay(incident, req.user)) return res.status(404).json({ success: false, message: 'Report not found in your barangay' });
-  if (!['submitted', 'clarification_required', 'tanod_rejected'].includes(incident.status)) return res.status(409).json({ success: false, message: 'This report is not waiting for Tanod inspection' });
+  if (!['submitted', 'clarification_required', 'tanod_rejected'].includes(incident.status)) return res.status(409).json({ success: false, message: 'This report is not waiting for Committee Staff inspection' });
   const tanod = await User.findOne({ _id: req.body.tanodId, role: { $in: ['utility_personnel', 'repair_personnel'] }, barangay: req.user.barangay, isActive: true, isArchived: { $ne: true } });
-  if (!tanod) return res.status(400).json({ success: false, message: 'Select an active Utility Personnel account from your barangay' });
+  if (!tanod) return res.status(400).json({ success: false, message: 'Select an active Committee Staff account from your barangay' });
   const inspection = await Inspection.create({ incident: incident._id, type: 'initial', barangay: req.user.barangay, secretary: req.user._id, tanod: tanod._id, status: 'assigned' });
   incident.initialInspection = inspection._id;
-  appendHistory(incident, 'tanod_assigned', req.user, 'Initial Tanod inspection assigned', { inspectionId: inspection._id });
+  appendHistory(incident, 'tanod_assigned', req.user, 'Initial Committee Staff inspection assigned', { inspectionId: inspection._id });
   await incident.save();
   await notify(tanod._id, incident, 'New report inspection', `Report ${incident.reportNumber} needs barangay verification.`, 'inspection_assigned');
   await createAuditLog({ action: 'tanod_inspection_assigned', performedBy: req.user._id, resourceType: 'Incident', resourceId: incident._id, details: { inspectionId: inspection._id, tanodId: tanod._id, type: 'initial' } });
@@ -101,7 +101,7 @@ exports.startInspection = asyncHandler(async (req, res) => {
   inspection.version += 1;
   await inspection.save();
   const incident = await Incident.findById(inspection.incident);
-  if (incident && incident.status === 'tanod_assigned') { appendHistory(incident, 'tanod_in_progress', req.user, 'Tanod started inspection', { inspectionId: inspection._id }); await incident.save(); }
+  if (incident && incident.status === 'tanod_assigned') { appendHistory(incident, 'tanod_in_progress', req.user, 'Committee Staff started inspection', { inspectionId: inspection._id }); await incident.save(); }
   res.json({ success: true, data: inspection });
 });
 
@@ -128,7 +128,7 @@ exports.submitInspection = asyncHandler(async (req, res) => {
   inspection.version += 1;
   await inspection.save();
   const incident = await Incident.findById(inspection.incident);
-  if (incident) { appendHistory(incident, 'tanod_verified', req.user, 'Tanod submitted inspection findings', { inspectionId: inspection._id, result: inspection.result }); await incident.save(); await notify(inspection.secretary, incident, 'Tanod verification submitted', `Report ${incident.reportNumber} is ready for your review.`, 'inspection_submitted'); }
+  if (incident) { appendHistory(incident, 'tanod_verified', req.user, 'Committee Staff submitted inspection findings', { inspectionId: inspection._id, result: inspection.result }); await incident.save(); await notify(inspection.secretary, incident, 'Committee Staff verification submitted', `Report ${incident.reportNumber} is ready for your review.`, 'inspection_submitted'); }
   res.json({ success: true, data: inspection });
 });
 
@@ -145,10 +145,10 @@ exports.reviewInspection = asyncHandler(async (req, res) => {
   if (approve) {
     const agency = categoryAgency(incident.category);
     incident.agencyStatus = agency ? 'ready_for_work' : 'not_routed';
-    incident.routing = agency ? { responsibleOrganization: agency, responsibleRole: 'utility_provider', reason: 'Automatic category routing after Secretary approval', routedBy: req.user._id, routedAt: new Date(), history: [] } : undefined;
-    appendHistory(incident, agency ? 'provider_assigned' : 'tanod_verified', req.user, agency ? 'Secretary approved verification; report automatically routed to agency' : 'Secretary approved verification; agency mapping required', { agency, automaticRouting: Boolean(agency) });
+    incident.routing = agency ? { responsibleOrganization: agency, responsibleRole: 'utility_provider', reason: 'Automatic category routing after Infrastructure Committee approval', routedBy: req.user._id, routedAt: new Date(), history: [] } : undefined;
+    appendHistory(incident, agency ? 'provider_assigned' : 'tanod_verified', req.user, agency ? 'Infrastructure Committee approved verification; report automatically routed to agency' : 'Infrastructure Committee approved verification; agency mapping required', { agency, automaticRouting: Boolean(agency) });
   } else {
-    appendHistory(incident, inspection.status, req.user, req.body.notes || 'Secretary did not approve Tanod verification', { inspectionId: inspection._id });
+    appendHistory(incident, inspection.status, req.user, req.body.notes || 'Infrastructure Committee did not approve Committee Staff verification', { inspectionId: inspection._id });
   }
   await incident.save();
   if (approve && incident.routing?.responsibleOrganization) {
@@ -236,9 +236,9 @@ exports.assignCompletionInspection = asyncHandler(async (req, res) => {
   const incident = await loadIncident(req, ['barangay_official']);
   if (!incident || !sameBarangay(incident, req.user) || incident.agencyStatus !== 'work_completed') return res.status(409).json({ success: false, message: 'Only agency-completed reports can receive final verification' });
   const tanod = await User.findOne({ _id: req.body.tanodId, role: { $in: ['utility_personnel', 'repair_personnel'] }, barangay: req.user.barangay, isActive: true, isArchived: { $ne: true } });
-  if (!tanod) return res.status(400).json({ success: false, message: 'Select an active Utility Personnel account from your barangay' });
+  if (!tanod) return res.status(400).json({ success: false, message: 'Select an active Committee Staff account from your barangay' });
   const inspection = await Inspection.create({ incident: incident._id, type: 'completion', barangay: req.user.barangay, secretary: req.user._id, tanod: tanod._id });
-  incident.completionInspection = inspection._id; appendHistory(incident, 'tanod_assigned', req.user, 'Final Tanod inspection assigned', { inspectionId: inspection._id, type: 'completion' }); await incident.save();
+  incident.completionInspection = inspection._id; appendHistory(incident, 'tanod_assigned', req.user, 'Final Committee Staff inspection assigned', { inspectionId: inspection._id, type: 'completion' }); await incident.save();
   await notify(tanod._id, incident, 'Final verification assigned', `Verify the completed work for report ${incident.reportNumber}.`, 'completion_inspection_assigned');
   res.status(201).json({ success: true, data: inspection });
 });
@@ -256,7 +256,7 @@ exports.completeIncident = asyncHandler(async (req, res) => {
     return res.status(409).json({ success: false, message: 'Current completion inspection must be verified after agency completion before closing' });
   }
   inspection.status = 'approved'; inspection.reviewedAt = new Date(); inspection.reviewedBy = req.user._id; inspection.reviewNotes = req.body.notes || ''; await inspection.save();
-  appendHistory(incident, 'closed', req.user, 'Secretary approved final Tanod verification; incident completed', { inspectionId: inspection._id }); incident.finalVerifiedBy = req.user._id; incident.finalVerifiedAt = new Date(); incident.closedAt = new Date(); await incident.save();
+  appendHistory(incident, 'closed', req.user, 'Infrastructure Committee approved final Committee Staff verification; incident completed', { inspectionId: inspection._id }); incident.finalVerifiedBy = req.user._id; incident.finalVerifiedAt = new Date(); incident.closedAt = new Date(); await incident.save();
   await notify(incident.reporter, incident, 'Report completed', `Report ${incident.reportNumber} has been verified and completed.`, 'incident_completed');
   await createAuditLog({ action: 'incident_completed_by_secretary', performedBy: req.user._id, resourceType: 'Incident', resourceId: incident._id, details: { inspectionId: inspection._id } });
   res.json({ success: true, data: incident });

@@ -89,7 +89,9 @@ exports.createNotification = async (notificationData) => {
     if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY && notification.recipient) {
       try {
         const recipient = await User.findById(notification.recipient).select('deviceTokens');
-        const playerIds = (recipient?.deviceTokens || []).map((device) => device.token).filter(Boolean);
+        const playerIds = [...new Set((recipient?.deviceTokens || [])
+          .map((device) => device.token)
+          .filter(Boolean))];
         if (playerIds.length) {
           await exports.sendPushNotification(
             playerIds,
@@ -275,6 +277,19 @@ exports.notificationTemplates = {
     type: 'incident_validated',
     title: 'Report Validated',
     message: `Your incident report ${reportNumber} has been validated and approved.`
+  }),
+
+  incidentSubmittedForBarangay: (reportNumber) => ({
+    type: 'incident_submitted',
+    title: 'New incident in your barangay',
+    message: `Incident ${reportNumber} was submitted in your assigned barangay and is ready for validation.`
+  }),
+
+  incidentClarificationRequested: (reportNumber, reason) => ({
+    type: 'incident_clarification_requested',
+    title: 'Incident returned for clarification',
+    message: `Incident ${reportNumber} was returned for clarification${reason ? `: ${reason}` : '.'}`,
+    priority: 'high'
   }),
 
   incidentRejected: (reportNumber, reason) => ({

@@ -16,6 +16,7 @@ const {
   canConfirmJurisdiction,
   canRouteIncident,
   defaultJurisdictionFor,
+  getIncidentBarangay,
   normalizeText,
   RESPONSIBLE_ROLES
 } = require('../services/jurisdictionService');
@@ -33,6 +34,13 @@ const {
   canonicalizeDagupanCity
 } = require('../data/dagupanBarangays');
 const { getReportingRestriction, reportingBlockedResponse } = require('../services/reportingRestrictionService');
+const {
+  DAILY_REPORT_LIMIT_CODE,
+  DAILY_REPORT_LIMIT_MESSAGE,
+  getDailyReportAllowance,
+  reserveDailyReportSlot,
+  releaseDailyReportSlot
+} = require('../services/dailyReportLimitService');
 
 const clampUnit = (value) => {
   const numericValue = Number(value);
@@ -386,13 +394,25 @@ exports.createIncident = asyncHandler(async (req, res) => {
   const files = getUploadedEvidenceFiles(req);
   const privacyAcknowledged = req.body.privacyAcknowledged === true || req.body.privacyAcknowledged === 'true';
   let uploadedImages = [];
-
-  const possibleDuplicateCandidates = await findPossibleDuplicateCandidates({
-    category,
-    coordinates
-  });
+  let dailyReservation;
+  let incidentCreated = false;
 
   try {
+    dailyReservation = await reserveDailyReportSlot({ reporterId: req.user._id });
+    if (!dailyReservation.allowed) {
+      return res.status(429).json({
+        success: false,
+        code: DAILY_REPORT_LIMIT_CODE,
+        message: DAILY_REPORT_LIMIT_MESSAGE,
+        data: { dailyReportLimit: dailyReservation }
+      });
+    }
+
+    const possibleDuplicateCandidates = await findPossibleDuplicateCandidates({
+      category,
+      coordinates
+    });
+
     let images = normalizeLegacyImages(req.body.images, privacyAcknowledged);
     let aiAnalysis;
 
@@ -440,6 +460,7 @@ exports.createIncident = asyncHandler(async (req, res) => {
         notes: 'Incident reported'
       }]
     });
+    incidentCreated = true;
 
     await createAuditLog({
       action: 'incident_created',
@@ -460,8 +481,18 @@ exports.createIncident = asyncHandler(async (req, res) => {
     await notifySafely({
       recipient: incident.reporter,
       ...notificationTemplates.incidentSubmitted(incident.reportNumber),
+      idempotencyKey: `incident:${incident._id}:recipient:${incident.reporter}:type:incident_submitted`,
       data: { incidentId: incident._id, link: `/incidents/${incident._id}` }
     });
+
+    const barangayTemplate = notificationTemplates.incidentSubmittedForBarangay
+      ? notificationTemplates.incidentSubmittedForBarangay(incident.reportNumber)
+      : {
+          type: 'incident_submitted',
+          title: 'New incident in your barangay',
+          message: `Incident ${incident.reportNumber} is ready for validation.`
+        };
+    await notifyBarangayOfficials(incident, barangayTemplate);
 
     if (uploadedImages.length) {
       await createAuditLog({
@@ -508,6 +539,20 @@ exports.createIncident = asyncHandler(async (req, res) => {
       data: await serializeIncidentForCitizen(incident)
     });
   } catch (error) {
+    if (dailyReservation?.allowed && !incidentCreated) {
+      try {
+        await releaseDailyReportSlot({
+          reporterId: req.user._id,
+          dayKey: dailyReservation.reservation?.dayKey
+        });
+      } catch (releaseError) {
+        logger.error('Failed to release daily report reservation', {
+          reporterId: req.user._id,
+          dayKey: dailyReservation.reservation?.dayKey,
+          error: releaseError.message
+        });
+      }
+    }
     // If database persistence fails after storage succeeds, remove the
     // private objects rather than leaving orphaned citizen evidence behind.
     if (uploadedImages.length) {
@@ -515,6 +560,14 @@ exports.createIncident = asyncHandler(async (req, res) => {
     }
     throw error;
   }
+});
+
+// @desc    Get the current citizen's daily report allowance
+// @route   GET /api/v1/incidents/daily-limit
+// @access  Private (Citizen)
+exports.getDailyReportLimit = asyncHandler(async (req, res) => {
+  const dailyReportLimit = await getDailyReportAllowance({ reporterId: req.user._id });
+  res.status(200).json({ success: true, data: { dailyReportLimit } });
 });
 
 // @desc    Get canonical Dagupan barangays for authenticated client selection
@@ -719,25 +772,55 @@ const notifySafely = async (notification) => {
   }
 };
 
+const findActiveUsers = async (criteria) => {
+  const query = User.find({
+    ...criteria,
+    isActive: true,
+    isArchived: { $ne: true }
+  });
+  // A missing query in an isolated controller test behaves like an empty
+  // recipient queue; the real Mongoose model always returns a query.
+  return query?.select ? query.select('_id') : [];
+};
+
+const notifyBarangayOfficials = async (incident, template) => {
+  const barangay = getIncidentBarangay(incident);
+  if (!barangay) return;
+  try {
+    const recipients = await findActiveUsers({ role: 'barangay_official', barangay });
+    await Promise.all(recipients.map((recipient) => notifySafely({
+      recipient: recipient._id,
+      ...template,
+      idempotencyKey: `incident:${incident._id}:recipient:${recipient._id}:type:${template.type}`,
+      data: { incidentId: incident._id, link: `/validation-routing/${incident._id}` }
+    })));
+  } catch (error) {
+    // Do not turn a committed incident decision into a failed workflow
+    // response when recipient lookup or optional delivery is unavailable.
+    logger.warn(`Could not identify barangay notification recipients: ${error.message}`);
+  }
+};
+
 const notifyRoutingOfficials = async (incident) => {
   const routing = incident.routing || {};
   if (routing.responsibleRole !== 'utility_provider' || !routing.responsibleOrganization) return;
-  const criteria = {
-    role: 'utility_provider',
-    utilityCompany: routing.responsibleOrganization,
-    isActive: true,
-    isArchived: { $ne: true }
-  };
-
-  const recipients = await User.find(criteria).select('_id');
-  await Promise.all(recipients.map((recipient) => notifySafely({
-    recipient: recipient._id,
-    type: 'incident_routed',
-    title: 'Incident routed to your organization',
-    message: `Incident ${incident.reportNumber} requires review by ${routing.responsibleOrganization}.`,
-    data: { incidentId: incident._id, link: `/incidents/${incident._id}` },
-    priority: incident.priority === 'critical' ? 'urgent' : incident.priority
-  })));
+  try {
+    const recipients = await findActiveUsers({
+      role: 'utility_provider',
+      utilityCompany: routing.responsibleOrganization
+    });
+    await Promise.all(recipients.map((recipient) => notifySafely({
+      recipient: recipient._id,
+      type: 'incident_routed',
+      title: 'Incident routed to your organization',
+      message: `Incident ${incident.reportNumber} requires review by ${routing.responsibleOrganization}.`,
+      idempotencyKey: `incident:${incident._id}:recipient:${recipient._id}:type:incident_routed`,
+      data: { incidentId: incident._id, link: `/incidents/${incident._id}` },
+      priority: incident.priority === 'critical' ? 'urgent' : incident.priority
+    })));
+  } catch (error) {
+    logger.warn(`Could not identify provider notification recipients: ${error.message}`);
+  }
 };
 
 const recordOfficialAction = async ({ action, incident, req, details, changes }) => {
@@ -940,7 +1023,7 @@ exports.getIncidentSLA = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/incidents/:id/validate
 exports.validateIncident = asyncHandler(async (req, res) => {
   if (req.user.role !== 'barangay_official') {
-    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official may perform initial validation' });
+    return res.status(403).json({ success: false, message: 'Only the assigned Infrastructure Committee member may perform initial validation' });
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
@@ -990,13 +1073,14 @@ exports.validateIncident = asyncHandler(async (req, res) => {
   await notifySafely({
     recipient: updated.reporter,
     ...notificationTemplates.incidentValidated(updated.reportNumber),
+    idempotencyKey: `incident:${updated._id}:recipient:${updated.reporter}:type:incident_validated`,
     data: { incidentId: updated._id, link: `/incidents/${updated._id}` },
     priority: 'medium'
   });
 
   res.status(200).json({
     success: true,
-    message: 'Incident validated by the Barangay Official; select priority and provider',
+    message: 'Incident validated by the Infrastructure Committee; select priority and provider',
     data: await serializeIncidentForOfficial(updated, { includeCandidates: true })
   });
 });
@@ -1073,8 +1157,13 @@ exports.requestIncidentClarification = asyncHandler(async (req, res) => {
     details: { reason, returnTo: 'barangay_official' },
     changes: { before: { status: 'barangay_validated' }, after: { status: 'clarification_required' } }
   });
+  const clarificationTemplate = notificationTemplates.incidentClarificationRequested
+    ? notificationTemplates.incidentClarificationRequested(updated.reportNumber, reason)
+    : { type: 'status_update', title: 'More information is needed', message: `Incident ${updated.reportNumber} was returned for clarification: ${reason}` };
+  await notifyBarangayOfficials(updated, clarificationTemplate);
   await notifySafely({
     recipient: updated.reporter, type: 'status_update', title: 'More information is needed',
+    idempotencyKey: `incident:${updated._id}:recipient:${updated.reporter}:type:clarification`,
     message: `City Engineering returned incident ${updated.reportNumber} for clarification: ${reason}`,
     data: { incidentId: updated._id, link: `/incidents/${updated._id}` }
   });
@@ -1237,7 +1326,7 @@ exports.updateIncidentPriority = asyncHandler(async (req, res) => {
           changedBy: req.user._id,
           actorRole: req.user.role,
           changedAt: now,
-          notes: `Barangay Official assigned ${priority} priority and calculated the SLA deadline`,
+          notes: `Infrastructure Committee assigned ${priority} priority and calculated the SLA deadline`,
           metadata: { priority, targetResolutionTime: initializeIncidentSLA(priority, now).targetResolutionTime }
         }
       }
@@ -1307,7 +1396,7 @@ exports.updateIncidentJurisdiction = asyncHandler(async (req, res) => {
 // @route   POST /api/v1/incidents/:id/route
 exports.routeIncident = asyncHandler(async (req, res) => {
   if (req.user.role !== 'barangay_official') {
-    return res.status(403).json({ success: false, message: 'Only the assigned Barangay Official may route a report' });
+    return res.status(403).json({ success: false, message: 'Only the assigned Infrastructure Committee member may route a report' });
   }
   const before = await findScopedIncident(req);
   if (!before) return respondNotFound(res);
@@ -1346,7 +1435,7 @@ exports.routeIncident = asyncHandler(async (req, res) => {
       responsibleRole: 'utility_provider', jurisdiction, priority: before.priority, createdBy: req.user._id,
       status: 'pending', assignmentState: 'unassigned', progressPercent: 0, progressStage: 'assigned', sla,
       history: [{ type: 'created', actor: req.user._id, actorRole: req.user.role, status: 'pending',
-        notes: 'Work order created when the Barangay Official assigned the Utility Provider', createdAt: now }] });
+        notes: 'Work order created when the Infrastructure Committee assigned the Utility Provider', createdAt: now }] });
   } catch (error) {
     if (error.code === 11000) return respondConflict(res);
     throw error;

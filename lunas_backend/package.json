@@ -20,7 +20,8 @@
     "seed:presentation": "node scripts/seed-presentation-data.js",
     "seed:barangay-presentation": "node scripts/seed-barangay-presentation.js",
     "seed:full-presentation": "node scripts/seed-full-presentation.js",
-    "migrate:tanod-workflow": "node scripts/migrate-tanod-workflow.js"
+    "migrate:tanod-workflow": "node scripts/migrate-tanod-workflow.js",
+    "migrate:role-terminology": "node scripts/migrate-role-terminology.js"
   },
   "keywords": [
     "infrastructure",

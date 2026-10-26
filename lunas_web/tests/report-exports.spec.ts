@@ -26,6 +26,7 @@ test.describe("workspace report exports", () => {
         const reports = token.includes("empty") ? [] : Array.from({ length: 101 }, (_, index) => ({
           _id: String(index + 1).padStart(24, "0"), reportNumber: `${role === "utility_provider" ? "AGENCY" : "BARANGAY"}-${index + 1}`,
           category: "road", status: index === 0 ? "closed" : "submitted", agencyStatus: "work_in_progress",
+          sla: index === 0 ? { state: "met" } : index === 1 ? { state: "active" } : index === 2 ? { state: "overdue", isOverdue: true } : undefined,
           description: index === 0 ? '=HYPERLINK("https://example.test")' : index === 1 ? '<script>window.exportInjected=true</script> & "quoted"\nNext line' : `Report details ${index + 1}`,
           createdAt: "2026-10-21T00:00:00.000Z", location: { address: { street: "Sample Street", barangay: "Pantal", city: "Dagupan City" } },
         }));
@@ -71,6 +72,13 @@ test.describe("workspace report exports", () => {
       expect(workbook.getWorksheet("Summary")!.getCell("B5").value).toBe(101);
       await page.goto(`${basePath}/export?period=monthly&format=print`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(role === "utility_provider" ? "Agency Activity Report" : "Barangay Incident Report");
+      await expect(page.getByRole("heading", { name: "Graphical Analysis", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Incident Status Distribution", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Incident Reports by Category", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: /Incident Submission Trends/ })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "SLA Compliance", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Incident Reports by Barangay", exact: true })).toBeVisible();
+      await expect(page.locator("svg.chart-svg")).toHaveCount(5);
       await expect(page.getByRole("cell", { name: `${prefix}-101`, exact: true })).toBeVisible();
       await expect(page.getByRole("cell", { name: /<script>window.exportInjected/ })).toBeVisible();
       expect(await page.evaluate(() => "exportInjected" in window)).toBe(false);
@@ -93,6 +101,7 @@ test.describe("workspace report exports", () => {
     }
     await page.goto("/validation-routing/reports/export?format=print&period=daily");
     await expect(page.getByRole("cell", { name: "No reports matched this reporting period." })).toBeVisible();
+    await expect(page.locator(".chart-empty")).toHaveCount(5);
   });
 
   test("export formats preserve workspace access restrictions", async ({ context, baseURL }) => {

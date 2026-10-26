@@ -9,6 +9,7 @@ import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_dra
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_selection.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/evidence_analysis.dart';
 import 'package:lunas_mobile/features/reporting/presentation/screens/report_review_screen.dart';
+import 'package:lunas_mobile/features/reporting/data/models/daily_report_limit.dart';
 
 void main() {
   CitizenReportDraft draft({bool mismatch = false}) => CitizenReportDraft(
@@ -60,6 +61,13 @@ void main() {
           home: ReportReviewScreen(
             draft: draft(),
             policyLoader: () async => const LocationPolicy(),
+            dailyLimitLoader: () async => const DailyReportLimit(
+              limit: 3,
+              submitted: 0,
+              remaining: 3,
+              dayKey: '2026-10-26',
+              resetsAt: null,
+            ),
             submitReport: (value) async {
               submitted = value;
               throw StateError('isolated submission fixture');
@@ -105,6 +113,13 @@ void main() {
           home: ReportReviewScreen(
             draft: draft(mismatch: true),
             policyLoader: () async => const LocationPolicy(),
+            dailyLimitLoader: () async => const DailyReportLimit(
+              limit: 3,
+              submitted: 0,
+              remaining: 3,
+              dayKey: '2026-10-26',
+              resetsAt: null,
+            ),
             submitReport: (value) async {
               submitted = value;
               throw StateError('isolated submission fixture');
@@ -150,4 +165,38 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  testWidgets('shows the daily limit and disables exhausted submission', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportReviewScreen(
+          draft: draft(),
+          policyLoader: () async => const LocationPolicy(),
+          dailyLimitLoader: () async => const DailyReportLimit(
+            limit: 3,
+            submitted: 3,
+            remaining: 0,
+            dayKey: '2026-10-26',
+            resetsAt: null,
+          ),
+          submitReport: (_) async => throw StateError('must not submit'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 of 3 reports remaining today'), findsOneWidget);
+    expect(
+      find.text(
+        'Reporting becomes available again at 12:00 AM Philippine time.',
+      ),
+      findsOneWidget,
+    );
+    final submitButton = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'Submit Report'),
+    );
+    expect(submitButton.onPressed, isNull);
+  });
 }

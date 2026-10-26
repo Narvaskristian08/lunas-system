@@ -4,6 +4,7 @@ import 'package:lunas_mobile/features/maps/domain/models/location_integrity.dart
 import 'package:http_parser/http_parser.dart';
 import 'package:lunas_mobile/core/network/api_client.dart';
 import 'package:lunas_mobile/features/reporting/data/models/incident_report.dart';
+import 'package:lunas_mobile/features/reporting/data/models/daily_report_limit.dart';
 import 'package:lunas_mobile/features/reporting/domain/models/citizen_report_draft.dart';
 import 'package:lunas_mobile/features/reporting/data/models/reporting_appeal.dart';
 
@@ -34,6 +35,15 @@ class ReportService {
 
   Future<List<IncidentReport>> getMyReports({int limit = 20}) async =>
       (await getMyReportsPage(limit: limit)).items;
+
+  Future<DailyReportLimit> getDailyReportLimit() async {
+    final payload = await _apiClient.get('/incidents/daily-limit');
+    final data = payload['data'];
+    final raw = data is Map ? data['dailyReportLimit'] : null;
+    return DailyReportLimit.fromJson(
+      raw is Map ? Map<String, dynamic>.from(raw) : null,
+    );
+  }
 
   Future<CitizenReportPage> getMyReportsPage({
     int page = 1,

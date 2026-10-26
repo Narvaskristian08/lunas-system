@@ -69,7 +69,7 @@ class _TanodHomeScreenState extends State<TanodHomeScreen> {
     return RepairPage(
       appBar: RepairAppBar(
         title: 'LUNAS',
-        subtitle: 'Utility Personnel / Barangay Tanod',
+        subtitle: 'Utility Personnel / Committee Staff',
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,
@@ -175,7 +175,7 @@ class _TanodHomeScreenState extends State<TanodHomeScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 const LunasCard(
                   child: Text(
-                    'Visit the citizen report location, record your findings, attach a photo, and send it to the Barangay Secretary. The Secretary decides whether the report is accepted and routed to the responsible agency.',
+                    'Visit the citizen report location, record your findings, attach a photo, and send it to the Barangay Infrastructure Committee. The Infrastructure Committee decides whether the report is accepted and routed to the responsible agency.',
                   ),
                 ),
               ],

@@ -18,6 +18,21 @@ jest.mock('../services/evidenceService', () => ({
   processAndUploadEvidence: jest.fn()
 }));
 jest.mock('../services/storageService', () => ({ getEvidenceUrl: jest.fn() }));
+jest.mock('../services/dailyReportLimitService', () => ({
+  DAILY_REPORT_LIMIT_CODE: 'DAILY_REPORT_LIMIT_REACHED',
+  DAILY_REPORT_LIMIT_MESSAGE: 'You have reached the daily limit of 3 reports. You can submit another report tomorrow.',
+  getDailyReportAllowance: jest.fn(),
+  reserveDailyReportSlot: jest.fn().mockResolvedValue({
+    allowed: true,
+    reservation: { dayKey: '2026-08-11' },
+    limit: 3,
+    submitted: 1,
+    remaining: 2,
+    dayKey: '2026-08-11',
+    resetsAt: new Date('2026-08-12T00:00:00Z')
+  }),
+  releaseDailyReportSlot: jest.fn().mockResolvedValue()
+}));
 jest.mock('../services/notificationService', () => ({
   createNotification: jest.fn().mockResolvedValue(null),
   notificationTemplates: {
@@ -30,11 +45,15 @@ jest.mock('../services/notificationService', () => ({
 }));
 
 const Incident = require('../models/Incident');
+const User = require('../models/User');
 const { createAuditLog } = require('../utils/auditLogger');
+const { createNotification } = require('../services/notificationService');
 const { findPossibleDuplicateCandidates } = require('../services/duplicateDetectionService');
 const evidenceService = require('../services/evidenceService');
+const dailyReportLimitService = require('../services/dailyReportLimitService');
 const {
   createIncident,
+  getDailyReportLimit,
   getBarangays,
   getIncident,
   getIncidentHistory,
@@ -71,6 +90,7 @@ describe('citizen incident reporting', () => {
   test('blocks a reporter before duplicate detection or evidence processing', async () => {
     const req = {
       body: {
+        locationIntegrity: { confirmed: true, pinSource: 'manual' },
         category: 'road',
         description: 'A large pothole is causing a hazard for motorists.',
         location: {
@@ -105,6 +125,90 @@ describe('citizen incident reporting', () => {
     expect(Incident.create).not.toHaveBeenCalled();
   });
 
+  test('rejects a fourth report with the structured daily limit response', async () => {
+    dailyReportLimitService.reserveDailyReportSlot.mockResolvedValueOnce({
+      allowed: false,
+      limit: 3,
+      submitted: 3,
+      remaining: 0,
+      dayKey: '2026-08-11',
+      resetsAt: new Date('2026-08-12T00:00:00Z')
+    });
+    const response = createResponse();
+
+    await createIncident({
+      body: {
+        locationIntegrity: { confirmed: true, pinSource: 'manual' },
+        category: 'road',
+        description: 'A large pothole is causing a hazard for motorists.',
+        location: {
+          coordinates: ['120.3387', '16.0433'],
+          address: { barangay: 'Pantal', city: 'Dagupan City' }
+        }
+      },
+      files: {},
+      user: { _id: '507f191e810c19729de860aa', role: 'citizen' },
+      headers: {}
+    }, response, jest.fn());
+
+    expect(response.status).toHaveBeenCalledWith(429);
+    expect(response.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: false,
+      code: 'DAILY_REPORT_LIMIT_REACHED',
+      data: { dailyReportLimit: expect.objectContaining({ remaining: 0 }) }
+    }));
+    expect(Incident.create).not.toHaveBeenCalled();
+    expect(findPossibleDuplicateCandidates).not.toHaveBeenCalled();
+  });
+
+  test('releases a reserved slot when incident creation fails', async () => {
+    dailyReportLimitService.reserveDailyReportSlot.mockResolvedValueOnce({
+      allowed: true,
+      reservation: { dayKey: '2026-08-11' }
+    });
+    Incident.create.mockRejectedValueOnce(new Error('write failed'));
+    const next = jest.fn();
+
+    await createIncident({
+      body: {
+        locationIntegrity: { confirmed: true, pinSource: 'manual' },
+        category: 'road',
+        description: 'A large pothole is causing a hazard for motorists.',
+        location: {
+          coordinates: ['120.3387', '16.0433'],
+          address: { barangay: 'Pantal', city: 'Dagupan City' }
+        }
+      },
+      files: {},
+      user: { _id: '507f191e810c19729de860aa', role: 'citizen' },
+      headers: {}
+    }, createResponse(), next);
+
+    expect(dailyReportLimitService.releaseDailyReportSlot).toHaveBeenCalledWith({
+      reporterId: '507f191e810c19729de860aa',
+      dayKey: '2026-08-11'
+    });
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  test('returns only the authenticated citizen daily allowance', async () => {
+    const allowance = {
+      limit: 3,
+      submitted: 2,
+      remaining: 1,
+      dayKey: '2026-08-11',
+      resetsAt: new Date('2026-08-12T00:00:00Z')
+    };
+    dailyReportLimitService.getDailyReportAllowance.mockResolvedValueOnce(allowance);
+    const response = createResponse();
+
+    await getDailyReportLimit({ user: { _id: 'citizen-a', role: 'citizen' } }, response);
+
+    expect(dailyReportLimitService.getDailyReportAllowance).toHaveBeenCalledWith({ reporterId: 'citizen-a' });
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith({ success: true, data: { dailyReportLimit: allowance } });
+  });
+
   test('creates a submitted, owned report and ignores citizen-provided priority', async () => {
     const possibleDuplicate = {
       incident: '507f191e810c19729de860eb',
@@ -113,6 +217,9 @@ describe('citizen incident reporting', () => {
       score: 91
     };
     findPossibleDuplicateCandidates.mockResolvedValue([possibleDuplicate]);
+    User.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue([{ _id: '507f191e810c19729de860ec' }])
+    });
 
     let payload;
     Incident.create.mockImplementation(async (document) => {
@@ -182,6 +289,11 @@ describe('citizen incident reporting', () => {
       possibleDuplicateCandidateCount: 1
     }));
     expect(res.json.mock.calls[0][0].data).not.toHaveProperty('duplicateCandidates');
+    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({
+      recipient: '507f191e810c19729de860ec',
+      type: 'incident_submitted',
+      data: expect.objectContaining({ incidentId: '507f191e810c19729de860ea', link: '/validation-routing/507f191e810c19729de860ea' })
+    }));
   });
 
   test('returns the canonical barangay options used by incident validation', () => {

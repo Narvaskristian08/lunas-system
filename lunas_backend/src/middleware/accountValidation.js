@@ -32,7 +32,7 @@ const profileRules = [
   text('utilityCompany', 160, true), text('repairOrganization', 160, true), text('repairTeam', 120, true),
   text('approvalAuthority', 160), text('approvalReference', 500),
   body().custom(value => {
-    if (value.role === 'barangay_official' && !value.barangay) throw new Error('Barangay officials require an assigned barangay');
+    if (value.role === 'barangay_official' && !value.barangay) throw new Error('Infrastructure Committee members require an assigned barangay');
     if (value.role === 'utility_personnel' && !value.barangay) throw new Error('Utility Personnel require an assigned barangay');
     if (value.role === 'utility_provider' && !value.utilityCompany) throw new Error('Utility providers require an assigned utility company');
     if (!['barangay_official', 'utility_personnel'].includes(value.role) && value.barangay) throw new Error('This role uses city or organization scope, not a barangay assignment');

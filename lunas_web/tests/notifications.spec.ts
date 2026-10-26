@@ -100,6 +100,15 @@ test.describe("notification inbox state and responsive layout", () => {
     await expect(page.getByText("6 unread notifications need your attention.")).toBeVisible();
   });
 
+  test("focus refreshes the open inbox and header unread badge", async ({ page }) => {
+    await page.goto("/notifications");
+    await expect(page.getByRole("link", { name: "Notifications, 6 unread" })).toBeVisible();
+    items[0].isRead = true;
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await expect(page.getByRole("link", { name: "Notifications, 5 unread" })).toBeVisible();
+    await expect(page.getByText("5 unread notifications need your attention.")).toBeVisible();
+  });
+
   test("phone filters collapse and metadata uses readable references", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/notifications");

@@ -12,6 +12,12 @@ const PASSWORD = process.env.DAGUPAN_SEED_PASSWORD || 'LunasLocal2026!';
 const categoryFor = org => org.expertise[0];
 const subcategoryFor = category => ({ road: 'pothole', drainage: 'blockage', water: 'leak' }[category] || 'damage');
 const dateDaysAgo = days => { const date = new Date(); date.setDate(date.getDate() - days); date.setHours(10, 0, 0, 0); return date; };
+function syncSeededDisplayMetadata(account, definition, migrateEmail) {
+  for (const field of ['firstName', 'lastName', 'organization', 'position']) {
+    if (definition[field] !== undefined) account[field] = definition[field];
+  }
+  if (migrateEmail) account.email = definition.email;
+}
 
 function seedEnvironment() {
   if (process.env.ALLOW_PRESENTATION_AWS_SEED === 'true') {
@@ -57,7 +63,12 @@ async function seed() {
       let account = await User.findOne({ email: definition.email });
       if (!account && legacyEmail) account = await User.findOne({ email: legacyEmail });
       if (!account) { await User.create(definition); accountsCreated++; }
-      else if (replace || account.email === legacyEmail) { account.set(definition); account.set({ refreshTokens: [] }); await account.save(); }
+      else if (replace || account.email === legacyEmail) {
+        // Refresh only synthetic display metadata. Preserve credentials,
+        // sessions, permissions, assignments and account lifecycle fields.
+        syncSeededDisplayMetadata(account, definition, account.email === legacyEmail);
+        await account.save({ validateModifiedOnly: true });
+      }
     }
     const citizen = await User.findOne({ email: 'dagupan.citizen@lunas.test' }).select('_id').lean();
     if (!citizen) throw new Error('Citizen seed account was not created.');
@@ -67,4 +78,4 @@ async function seed() {
   } finally { await mongoose.disconnect(); }
 }
 if (require.main === module) seed().catch(error => { console.error(error.message); process.exitCode = 1; });
-module.exports = { reportDefinitions, seed };
+module.exports = { reportDefinitions, seed, syncSeededDisplayMetadata };

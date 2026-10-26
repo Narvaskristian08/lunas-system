@@ -99,7 +99,7 @@ export function FalseReportReview({ incidentId, status, role }: { incidentId: st
               <summary className="cursor-pointer px-4 py-3 font-semibold text-slate-800">View review history ({data.review.history.length})</summary>
               <div className="space-y-3 border-t border-slate-200 p-4">{data.review.history.map((entry, index) => <div key={`${entry.reviewedAt}-${index}`} className="rounded-lg border border-slate-200 bg-white p-3"><p className="font-semibold text-slate-900">{entry.finding === "corrected" ? "Finding Corrected" : "Documented Finding"} · {entry.reviewedAt}</p><p className="mt-1 text-slate-700">{entry.reason}</p><p className="mt-1 text-xs text-slate-600">Evidence/reference: {entry.evidenceReference}</p></div>)}</div>
             </details> : null}
-            {!canOpen ? <p className="text-slate-600">{correcting ? "Only City Engineering or Admin can correct an active finding." : status === "rejected" ? "Only the assigned Barangay Official can record the initial finding." : "A finding can only be recorded after a separate rejection decision."}</p> : null}
+            {!canOpen ? <p className="text-slate-600">{correcting ? "Only City Engineering or Admin can correct an active finding." : status === "rejected" ? "Only the assigned Infrastructure Committee member can record the initial finding." : "A finding can only be recorded after a separate rejection decision."}</p> : null}
           </>}
         </div>
       </Card>

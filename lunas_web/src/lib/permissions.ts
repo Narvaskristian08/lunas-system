@@ -4,7 +4,7 @@ export const roleLabels: Record<BackendUserRole, UserRole> = {
   citizen: "Citizen",
   utility_personnel: "Utility Personnel",
   repair_personnel: "Utility Personnel",
-  barangay_official: "Barangay Official",
+  barangay_official: "Infrastructure Committee",
   city_engineer: "City Engineer",
   utility_provider: "Utility Provider",
   admin: "Admin",
@@ -14,7 +14,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
   Citizen: [],
   "Utility Personnel": [],
   Admin: ["users.manage", "audit.view", "notifications.view", "profile.manage", "support.create", "support.manage"],
-  "Barangay Official": [
+  "Infrastructure Committee": [
     "dashboard.view",
     "reports.view",
     "reports.validate",

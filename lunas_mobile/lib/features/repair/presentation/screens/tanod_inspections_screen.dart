@@ -287,7 +287,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                       builder: (dialogContext) => AlertDialog(
                         title: const Text('Submit Work Verification?'),
                         content: const Text(
-                          'Are you sure these findings and the attached photo are accurate? This will send the verification to the Barangay Secretary for review.',
+                          'Are you sure these findings and the attached photo are accurate? This will send the verification to the Barangay Infrastructure Committee for review.',
                         ),
                         actions: [
                           TextButton(
@@ -377,7 +377,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
   Widget build(BuildContext context) => RepairPage(
     appBar: const RepairAppBar(
       title: 'Utility Personnel',
-      subtitle: 'Barangay Tanod inspections',
+      subtitle: 'Committee Staff inspections',
     ),
     selectedNavigationIndex: 1,
     child: _loading
@@ -395,7 +395,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                   ButtonSegment(value: 'completion', label: Text('Final')),
                   ButtonSegment(
                     value: 'submitted',
-                    label: Text('Sent to Secretary'),
+                    label: Text('Sent to Infrastructure Committee'),
                   ),
                 ],
                 selected: {_filter},
@@ -436,7 +436,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                           ReportStatusHeader(
                             title: item.category ?? 'Citizen report',
                             status: item.status == 'submitted'
-                                ? 'Sent to Secretary'
+                                ? 'Sent to Infrastructure Committee'
                                 : 'Needs verification',
                             leading: Icon(
                               categoryIcon(item.category ?? ''),
@@ -466,7 +466,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
                             const SizedBox(height: 12),
                             FilledButton.icon(
                               onPressed: () => _openInspection(item),
-                              icon: const Icon(Icons.camera_alt_outlined),
+                              icon: const Icon(Icons.assignment_outlined),
                               label: const Text('Open Work Verification'),
                             ),
                           ],
@@ -503,7 +503,7 @@ class _TanodInspectionsScreenState extends State<TanodInspectionsScreen> {
       return 'No current final reports need verification.';
     }
     if (_filter == 'submitted') {
-      return 'No work verifications have been sent to the Secretary.';
+      return 'No work verifications have been sent to the Infrastructure Committee.';
     }
     return 'No current initial reports need verification.';
   }

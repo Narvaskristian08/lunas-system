@@ -456,7 +456,7 @@ class AuditTimeline extends StatelessWidget {
       ('Report submitted', 'Today, 9:42 AM', true),
       (
         'AI triage suggestion ready',
-        'A Barangay official will validate the suggestion.',
+        'The Infrastructure Committee will validate the suggestion.',
         true,
       ),
       ('Official validation', 'Waiting for assignment.', false),

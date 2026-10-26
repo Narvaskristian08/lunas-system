@@ -150,10 +150,10 @@ export function ValidationQueue({
     <div className="mx-auto max-w-[1680px]">
       {!embedded ? <PageHeader
         eyebrow={`${viewer.organization} · Official Workflow`}
-        title={isCityEngineering ? "City Engineering Review" : "Barangay Report Review"}
+        title={isCityEngineering ? "City Engineering Review" : "Infrastructure Committee Report Review"}
         description={isCityEngineering
-          ? "Review incidents forwarded by Barangay Officials, then confirm, request clarification, assign priority, and route to a Utility Provider."
-          : "Review citizen reports in your assigned Barangay, inspect their evidence and location, then validate or reject with a reason."}
+          ? "Review incidents forwarded by the Infrastructure Committee, then confirm, request clarification, assign priority, and route to a Utility Provider."
+          : "Review citizen reports in your assigned barangay, inspect their evidence and location, then validate or reject with a reason."}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Validation" }]}
         actions={<span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-600"><ShieldCheck className="size-4 text-brand-700" aria-hidden="true" /> Authorized Scope</span>}
       /> : null}
@@ -175,10 +175,10 @@ export function ValidationQueue({
       <Card className="overflow-hidden">
         <CardHeader
           action={embedded ? <Link href="/work-orders?view=orders" className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">All Work Orders</Link> : undefined}
-          title={isPriorityRoutingQueue ? "Priority & Routing" : isCityEngineering ? "Barangay-Validated Incident Queue" : "Citizen Report Queue"}
+          title={isPriorityRoutingQueue ? "Priority & Routing" : isCityEngineering ? "Infrastructure Committee-Validated Incident Queue" : "Citizen Report Queue"}
           description={isPriorityRoutingQueue ? "Set report priority and assign a Utility Provider." : isCityEngineering
-            ? "Only incidents forwarded by Barangay review are returned for City Engineering decisions."
-            : "Search and filters are applied by the server; reports outside your assigned Barangay are never returned."}
+            ? "Only incidents forwarded by Infrastructure Committee review are returned for City Engineering decisions."
+            : "Search and filters are applied by the server; reports outside your assigned barangay are never returned."}
         />
         <form onSubmit={submitFilters} noValidate>
           <div className="border-b border-slate-200 p-4">
@@ -226,7 +226,7 @@ export function ValidationQueue({
         {queue.incidents.length ? (
           <>
             <DataTable
-              caption={isCityEngineering ? "Barangay-validated incidents awaiting City Engineering" : "Citizen reports awaiting Barangay review"}
+              caption={isCityEngineering ? "Infrastructure Committee-validated incidents awaiting City Engineering" : "Citizen reports awaiting Infrastructure Committee review"}
               columns={[
                 { key: "reference", label: "Reference" },
                 ...(!confirmed ? [{ key: "evidence", label: "Evidence" }] : []),
@@ -254,7 +254,7 @@ export function ValidationQueue({
             <Pagination page={queue.pagination.page} pages={queue.pagination.pages} total={queue.pagination.total} pageSize={queue.pagination.limit} onPageChange={(page) => navigate({ page })} />
           </>
         ) : (
-          <EmptyState icon="records" title={hasFilters ? "No reports match these filters" : "No reports awaiting your review"} description={hasFilters ? "Try another filter or search term." : isCityEngineering ? "Barangay-validated reports will appear here for City Engineering review." : "Submitted citizen reports in your assigned Barangay will appear here for initial review."} action={hasFilters ? { label: "Clear Filters", onClick: clearFilters } : undefined} />
+          <EmptyState icon="records" title={hasFilters ? "No reports match these filters" : "No reports awaiting your review"} description={hasFilters ? "Try another filter or search term." : isCityEngineering ? "Infrastructure Committee-validated reports will appear here for City Engineering review." : "Submitted citizen reports in your assigned barangay will appear here for initial review."} action={hasFilters ? { label: "Clear Filters", onClick: clearFilters } : undefined} />
         )}
       </Card>
     </div>

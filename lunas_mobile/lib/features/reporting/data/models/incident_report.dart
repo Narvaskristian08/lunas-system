@@ -461,7 +461,7 @@ class ReportStatusEvent {
     if (status == 'verified') return 'Repair Verified by Responsible Provider';
     if (status == 'resolved' || status == 'closed') return 'Resolved';
     if (progressPercent == 100) return 'Repair Progress Reached 100%';
-    if (status == 'barangay_validated') return 'Validated by Barangay Official';
+    if (status == 'barangay_validated') return 'Validated by Infrastructure Committee';
     if (status == 'city_confirmed') return 'Confirmed by City Engineering';
     if (status == 'provider_assigned') return 'Assigned to Utility Provider';
     if (status == 'repair_assigned') return 'Utility Personnel Assigned';

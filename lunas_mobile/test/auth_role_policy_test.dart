@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lunas_mobile/features/auth/domain/auth_role_policy.dart';
 
 void main() {
-  test('Utility Personnel use the Tanod workspace with a distinct role', () {
+  test('Utility Personnel use the Committee Staff workspace with a distinct role', () {
     expect(isSupportedMobileRole('utility_personnel'), isTrue);
     expect(isUtilityPersonnelRole('utility_personnel'), isTrue);
     expect(mobileWorkspaceHome('utility_personnel'), '/repair');

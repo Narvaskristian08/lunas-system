@@ -13,17 +13,29 @@ export function NotificationHeaderLink() {
   useEffect(() => {
     if (!viewer.permissions.includes("notifications.view")) return;
     let active = true;
-    const refresh = () => { void listNotificationsAction({ limit: 1 })
-      .then((notifications) => {
-        if (active) setUnread(notifications.unreadCount);
-      })
-      .catch(() => {
-        if (active) setUnread(0);
-      });
+    const refreshIfVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void listNotificationsAction({ limit: 1 })
+        .then((notifications) => {
+          if (active) setUnread(notifications.unreadCount);
+        })
+        .catch(() => {
+          // Keep the last known count. A transient backend failure must not
+          // make the bell claim that the account is caught up.
+        });
     };
-    refresh();
-    window.addEventListener("lunas-notifications-read", refresh);
-    return () => { active = false; window.removeEventListener("lunas-notifications-read", refresh); };
+    refreshIfVisible();
+    const timer = window.setInterval(refreshIfVisible, 30_000);
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    window.addEventListener("lunas-notifications-read", refreshIfVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.removeEventListener("lunas-notifications-read", refreshIfVisible);
+    };
   }, [viewer.permissions]);
 
   if (!viewer.permissions.includes("notifications.view")) return null;

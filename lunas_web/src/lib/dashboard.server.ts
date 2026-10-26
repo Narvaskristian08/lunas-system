@@ -213,7 +213,7 @@ async function reviewQueueDashboard(accessToken: string, role: "barangay_officia
       reportingAppeals,
       reviewPagination: { page, pages, total: queue.total, pageSize },
       records: incidents.map(recordFromIncident),
-      emptyTitle: "No reports awaiting Barangay review",
+      emptyTitle: "No reports awaiting Infrastructure Committee review",
       emptyDescription: "New reports in your assigned Barangay will appear here.",
     };
   }

@@ -2,7 +2,7 @@
 
 These are local synthetic accounts using real organization and barangay names. They are not official identities, employee records, or production credentials. `.test` addresses do not deliver email.
 
-Default local password: `LunasLocal2026!`. Override with `DAGUPAN_SEED_PASSWORD` when seeding. Ordinary reruns preserve passwords; `--replace` resets seeded accounts to the configured password.
+Default local password is configured by the existing local seed setup; override with `DAGUPAN_SEED_PASSWORD` when seeding. Ordinary reruns and `--replace` preserve existing password hashes, refresh tokens, IDs and account lifecycle fields; `--replace` only refreshes synthetic fixtures and display metadata.
 
 ## Organization coverage
 
@@ -15,19 +15,19 @@ The City Engineering provider uses `utility_provider`; the separate legacy City 
 
 Sources: [DECORP](https://decorp.com.ph/), [DCWD/Pamana FAQs](https://dcwd.gov.ph/services/faqs/), [Dagupan drainage coordination](https://www.dagupan.gov.ph/category/press-release/). Barangays come from `lunas_backend/src/data/dagupanBarangays.js`.
 
-The current seed creates 68 accounts: Admin, citizen, 31 barangay officials, 31 Utility Personnel (Tanods) and four agency providers. It never creates repair personnel or the legacy engineer account. Tanod logins are `dagupan.tanod-<barangay-slug>@lunas.test`, using each barangay suffix listed below. Their stored role is `utility_personnel`. The Docker Oeste fixture was found with the stale `repair_personnel` role on 2026-10-20 and corrected in place to `utility_personnel`, retaining its ID, password and barangay and clearing its refresh tokens. Android-platform API login then returned 200 with the correct role. This check does not verify the stored roles of the other 30 Tanods.
+The current seed creates 68 accounts: Admin, citizen, 31 Infrastructure Committee accounts, 31 Committee Staff / Utility Personnel accounts and four agency providers. It never creates repair personnel or the legacy engineer account. Committee Staff logins are `dagupan.tanod-<barangay-slug>@lunas.test`, using each barangay suffix listed below. Their stored role is `utility_personnel`. The Docker Oeste fixture was found with the stale `repair_personnel` role on 2026-10-20 and corrected in place to `utility_personnel`, retaining its ID, password and barangay and clearing its refresh tokens. Android-platform API login then returned 200 with the correct role. This check does not verify the stored roles of the other 30 Committee Staff accounts.
 
 ## Login identifiers
 
-Current seed definitions contain **68 accounts**: one citizen, one administrator, 31 Secretaries, 31 barangay Tanods, and four agency logins. Existing Docker data may include an additional legacy agency fixture. Tanods use the `utility_personnel` API role and their assigned barangay; the mobile app deliberately rejects `repair_personnel`. Ordinary seed reruns preserve existing accounts, so they do not repair a stale role automatically.
+Current seed definitions contain **68 accounts**: one citizen, one administrator, 31 Infrastructure Committee accounts, 31 Barangay Committee Staff accounts, and four agency logins. Existing Docker data may include an additional legacy agency fixture. Committee Staff use the `utility_personnel` API role and their assigned barangay; the mobile app deliberately rejects `repair_personnel`. Ordinary seed reruns preserve existing accounts, so the terminology migration is the separate safe operation for old display metadata.
 
-For one continuous test, use **Poblacion Oeste** for the citizen report, its Secretary, and its Tanod. Road/drainage/streetlight reports currently route to City Engineering; water routes to DCWD/Pamana and electrical to DECORP in the current local source configuration. These mappings are test configuration, not verified institutional jurisdiction.
+For one continuous test, use **Poblacion Oeste** for the citizen report, its Infrastructure Committee account, and its Committee Staff account. Road/drainage/streetlight reports currently route to City Engineering; water routes to DCWD/Pamana and electrical to DECORP in the current local source configuration. These mappings are test configuration, not verified institutional jurisdiction.
 
 | Workspace | Assignment | Email |
 | --- | --- | --- |
 | admin | Citywide test account | dagupan.admin@lunas.test |
 | citizen | Citywide test account | dagupan.citizen@lunas.test |
-| barangay_official | Bacayao Norte | dagupan.barangay-bacayao-norte@lunas.test |
+| barangay_official (Infrastructure Committee) | Bacayao Norte | dagupan.barangay-bacayao-norte@lunas.test |
 | barangay_official | Bacayao Sur | dagupan.barangay-bacayao-sur@lunas.test |
 | barangay_official | Barangay II | dagupan.barangay-barangay-ii@lunas.test |
 | barangay_official | Barangay IV | dagupan.barangay-barangay-iv@lunas.test |

@@ -1,7 +1,7 @@
 ﻿# LUNAS Mobile
 
 The LUNAS mobile app is the Flutter client for citizen reporting and the
-Utility Personnel (Tanod) verification workflow.
+Utility Personnel / Committee Staff verification workflow.
 It uses the LUNAS backend as the source of truth: it does not generate demo
 incidents, make local workflow decisions, or bypass backend role and
 jurisdiction checks.
@@ -37,11 +37,11 @@ do not have operational screens in the Flutter mobile app:
 
 | Role | Mobile access | Web access |
 | --- | --- | --- |
-| `barangay_official` | Web-only message | Allowed |
+| `barangay_official` | Infrastructure Committee — web-only message | Allowed |
 | City Engineering (`utility_provider`) | Web-only message | Organization-scoped provider workspace |
 | `utility_provider` | Web-only message | Allowed |
 | `admin` | Web-only message | Allowed |
-| `utility_personnel` | Tanod verification workspace | Mobile only |
+| `utility_personnel` | Committee Staff verification workspace | Mobile only |
 | `repair_personnel` | Unavailable (retired mobile workspace) | Backend policy |
 | Other roles | Unavailable | Backend policy |
 
@@ -49,9 +49,9 @@ Validation, routing, assignment, SLA, verification, and administration remain
 backend/web responsibilities. The mobile client intentionally does not expose
 their queues, dashboards, decisions, or deep links.
 
-### Utility Personnel / Tanod verification
+### Utility Personnel / Committee Staff verification
 
-The `utility_personnel` role uses the Tanod home, initial/final inspection queue, notifications and profile. It can start assigned inspections and submit findings/evidence for Secretary review. Existing `/repair` and `/repair/work-orders` URLs are compatibility paths for these inspection screens, not repair work-order management.
+The `utility_personnel` role uses the Committee Staff home, initial/final inspection queue, notifications and profile. It can start assigned inspections and submit findings/evidence for Infrastructure Committee review. Existing `/repair` and `/repair/work-orders` URLs are compatibility paths for these inspection screens, not repair work-order management.
 
 Legacy `repair_personnel` accounts no longer have mobile access. The repair dashboard, assigned work-order list, work-order details, progress/evidence submission and work-location screens and routes were removed on 2026-10-20. The shared profile was retained as `utility_personnel_profile_screen.dart`. Citizen reporting and citizen repair-status transparency remain.
 
@@ -68,7 +68,7 @@ lib/
     auth/                               Citizen authentication and role policy
     reporting/                          Citizen report creation and report history
     maps/                               Map picker, GPS, and reverse geocoding
-    repair/                             Tanod screens and shared legacy-named helpers
+    repair/                             Committee Staff screens and shared legacy-named helpers
 test/                                   Unit and widget tests
 ```
 
@@ -191,7 +191,7 @@ configuration. Do not include service secrets in a mobile build.
 
 ## Utility Personnel workflow
 
-Provision `utility_personnel` accounts with their assigned barangay through the approved account process. Personnel view their assigned inspections, start verification and submit findings/evidence; the Secretary reviews submissions separately. Agency maintenance actions remain outside this mobile workspace.
+Provision `utility_personnel` accounts with their assigned barangay through the approved account process. Personnel view their assigned inspections, start verification and submit findings/evidence; the Infrastructure Committee reviews submissions separately. Agency maintenance actions remain outside this mobile workspace.
 
 ## API and security
 
@@ -267,7 +267,7 @@ storage environment before signing off the applicable mobile work.
       becomes a `citizen`, never an official. Confirm no authenticated session
       exists before the code succeeds.
 - [ ] Sign in as a citizen and verify the app opens `/citizen`.
-- [ ] Sign in as a Barangay Official, City Engineering, Utility Provider, or
+- [ ] Sign in as an Infrastructure Committee, City Engineering, Utility Provider, or
   Administrator account and verify the clear Web Command Center message appears.
 - [ ] Verify no web-only role is redirected to a citizen or repair route.
 - [ ] Verify an unsupported role also fails closed to the role-unavailable
@@ -311,9 +311,9 @@ storage environment before signing off the applicable mobile work.
 
 ### Utility Personnel verification
 
-- [ ] Sign in as `utility_personnel` and verify the Tanod home and inspection queue.
+- [ ] Sign in as `utility_personnel` and verify the Committee Staff home and inspection queue.
 - [ ] Confirm only assigned inspections from the account's barangay appear.
-- [ ] Start an inspection, submit findings/evidence and verify separate Secretary review.
+- [ ] Start an inspection, submit findings/evidence and verify separate Infrastructure Committee review.
 - [ ] Verify inspection notification links open the verification queue.
 - [ ] Verify legacy work-order detail/progress/location URLs do not open repair screens.
 - [ ] Verify `repair_personnel` login and restored sessions are rejected.
@@ -358,7 +358,7 @@ backend remains authoritative for evidence acceptance and access control.
 
 ## Current limits and deferred mobile work
 
-- Utility Provider, Barangay Official, City Engineering, and Administrator
+- Utility Provider, Infrastructure Committee, City Engineering, and Administrator
   operational workspaces are intentionally web-only in this mobile client.
 - Formal repair verification, approval, closure, reassignment management, and
   operational escalation remain outside the 75% mobile workflow.

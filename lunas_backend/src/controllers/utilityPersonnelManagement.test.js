@@ -31,7 +31,7 @@ test('stale edits are rejected', async () => {
   User.findById.mockResolvedValue(target()); const res = response(); await invoke(controller.updateRepairPersonnel, req({ version: 1 }), res);
   expect(res.status).toHaveBeenCalledWith(409); expect(User.findOneAndUpdate).not.toHaveBeenCalled();
 });
-test('Secretary can resend a pending invitation with cooldown', async () => {
+test('Infrastructure Committee can resend a pending invitation with cooldown', async () => {
   User.findById.mockResolvedValue(target()); User.findOneAndUpdate.mockResolvedValue(target());
   createActivation.mockReturnValue({ tokenHash: 'hash', expiresAt: new Date() }); deliverActivation.mockResolvedValue({ delivered: true });
   await invoke(controller.resendAccountActivation, req(), response());

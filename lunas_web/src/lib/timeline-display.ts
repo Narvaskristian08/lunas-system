@@ -18,10 +18,10 @@ export function distinctTimelineEvents<T>(
 /** Short milestone labels for the visible report timeline. */
 export function timelineMilestoneLabel(status: string): string | undefined {
   return ({
-    tanod_assigned: "Tanod Inspection Assigned",
-    tanod_in_progress: "Tanod Inspection In Progress",
-    tanod_verified: "Tanod Verification Submitted",
-    tanod_rejected: "Tanod Verification Rejected",
+    tanod_assigned: "Committee Staff Inspection Assigned",
+    tanod_in_progress: "Committee Staff Inspection In Progress",
+    tanod_verified: "Committee Staff Verification Submitted",
+    tanod_rejected: "Committee Staff Verification Rejected",
     pending_budget: "Pending Agency Budget",
     pending_procurement: "Pending Agency Procurement / Bidding",
     work_in_progress: "Agency Work In Progress",
@@ -54,15 +54,15 @@ export function timelineEventLabel(value: string): string {
 export function timelineNoteLabel(value: string): string {
   const automaticNotes: Record<string, string> = {
     "incident reported": "Incident Reported",
-    "barangay validation completed; forwarded to city engineering": "Barangay Validation Completed; Forwarded to City Engineering",
+    "barangay validation completed; forwarded to city engineering": "Infrastructure Committee Validation Completed; Forwarded to City Engineering",
     "city engineering confirmed the incident": "City Engineering Confirmed the Incident",
     "jurisdiction confirmed": "Jurisdiction Confirmed",
     "work order created from validated incident": "Work Order Created from Validated Incident",
     "repair personnel assigned": "Utility Personnel Assigned",
-    "tanod inspection assigned": "Tanod Inspection Assigned",
-    "tanod started inspection": "Tanod Inspection Started",
-    "tanod submitted inspection findings": "Tanod Submitted Inspection Findings",
-    "secretary approved verification; report automatically routed to agency": "Secretary Approved Verification; Report Routed to Agency",
+    "tanod inspection assigned": "Committee Staff Inspection Assigned",
+    "tanod started inspection": "Committee Staff Inspection Started",
+    "tanod submitted inspection findings": "Committee Staff Submitted Inspection Findings",
+    "secretary approved verification; report automatically routed to agency": "Infrastructure Committee Approved Verification; Report Routed to Agency",
     "agency reported work completed": "Agency Reported Work Completed",
     "repair assignment reassigned": "Repair Assignment Reassigned",
     "repair assignment declined; awaiting reassignment": "Repair Assignment Declined; Awaiting Reassignment",

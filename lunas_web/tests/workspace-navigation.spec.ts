@@ -42,7 +42,7 @@ test.describe("workspace redirects and operational layouts", () => {
   });
   test.afterAll(async () => { await new Promise<void>(resolve => server.close(() => resolve())); });
 
-  test("Secretary dashboard paginates all review reports and bounds invalid pages", async ({ page, context, baseURL }) => {
+  test("Infrastructure Committee dashboard paginates all review reports and bounds invalid pages", async ({ page, context, baseURL }) => {
     await context.addCookies([{ name: SESSION_COOKIE_NAME, value: createSessionValue({ accessToken: "ui-barangay_official" }), url: baseURL!, httpOnly: true }]);
     await page.goto("/dashboard");
     const pagination = page.getByRole("navigation", { name: "Reports awaiting review pagination" });

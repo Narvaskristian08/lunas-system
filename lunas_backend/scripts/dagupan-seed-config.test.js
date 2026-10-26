@@ -8,6 +8,9 @@ test('local accounts cover barangays and agencies without retired demo accounts'
   expect(accounts.some(account => /(?:repair-|engineer@)/.test(account.email))).toBe(false);
   expect(accounts.filter(account => account.role === 'barangay_official').map(account => account.barangay)).toEqual(DAGUPAN_BARANGAYS);
   expect(accounts.filter(account => account.role === 'utility_personnel').map(account => account.barangay)).toEqual(DAGUPAN_BARANGAYS);
+  expect(accounts.filter(account => account.role === 'barangay_official').every(account => account.firstName === 'Infrastructure Committee' && account.position === 'Barangay Infrastructure Committee')).toBe(true);
+  expect(accounts.filter(account => account.role === 'utility_personnel').every(account => account.firstName.startsWith('Committee Staff ') && account.position === 'Barangay Committee Staff / Utility Personnel')).toBe(true);
+  expect(accounts.filter(account => ['barangay_official', 'utility_personnel'].includes(account.role)).some(account => /secretary|tanod/i.test(`${account.firstName} ${account.lastName} ${account.position}`))).toBe(false);
   for (const org of ORGANIZATIONS) {
     const provider = accounts.find(account => account.utilityCompany === org.name);
     expect(provider.role).toBe('utility_provider');

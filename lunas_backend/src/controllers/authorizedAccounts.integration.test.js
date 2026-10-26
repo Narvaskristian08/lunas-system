@@ -116,7 +116,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     }).expect(404);
     expect(await User.countDocuments({ email: 'retired@example.test' })).toBe(0);
   });
-  test('admin provisions Utility Personnel; Secretary directory stays barangay scoped', async () => {
+  test('admin provisions Utility Personnel; Infrastructure Committee directory stays barangay scoped', async () => {
     const payload = { ...approved, role: 'utility_personnel', email: 'tanod@example.test' };
     const result = await call('post', '/users/authorized').send(payload).expect(201);
     expect(result.body.data.account).toMatchObject({ role: 'utility_personnel', barangay: 'Pantal', accountStatus: 'pending_activation' });
@@ -170,7 +170,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     await activate(replacement);
     await request(app).post('/auth/activate-account').send({ token: replacement, password }).expect(400);
   });
-  test('9–10: activated Barangay Official stays jurisdiction-scoped and cannot use account administration', async () => {
+  test('9–10: activated Infrastructure Committee member stays jurisdiction-scoped and cannot use account administration', async () => {
     const { account, token } = await provision(); await activate(token);
     const user = await User.findById(account.id).select('+tokenVersion');
     const access = createAccessToken(user);
@@ -271,7 +271,7 @@ integration('authorized personnel provisioning: real MongoDB and HTTP authorizat
     expect(canAccessIncident(refreshed, incident)).toBe(false);
     expect(await Incident.countDocuments({ _id: incident.id })).toBe(1);
   });
-  test('Tanod verification, agency progress and current final inspection preserve role and scope gates', async () => {
+  test('Committee Staff verification, agency progress and current final inspection preserve role and scope gates', async () => {
     const Inspection = require('../models/Inspection');
     const citizen = await actor('citizen');
     const secretary = await actor('barangay_official', { barangay: 'Pantal' });

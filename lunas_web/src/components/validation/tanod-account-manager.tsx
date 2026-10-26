@@ -14,15 +14,15 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
   return <div className="space-y-6">
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="text-sm font-semibold text-brand-700">Barangay Official</p>
-        <h1 className="mt-1 text-3xl font-bold text-slate-950">Tanod Accounts</h1>
+        <p className="text-sm font-semibold text-brand-700">Infrastructure Committee</p>
+        <h1 className="mt-1 text-3xl font-bold text-slate-950">Committee Staff Accounts</h1>
         <p className="mt-2 text-slate-600">Utility Personnel assigned to {barangay}.</p>
       </div>
     </div>
     {message ? <p role={error ? "alert" : "status"} className={`rounded-xl border p-4 text-sm ${error ? "border-red-200 bg-red-50 text-red-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</p> : null}
     <div className="grid items-start gap-6 xl:grid-cols-2">
     <Card className="min-w-0 overflow-hidden">
-      <CardHeader title={`${tanods.length} Tanod account${tanods.length === 1 ? "" : "s"}`} description="Personnel assigned to your barangay." />
+      <CardHeader title={`${tanods.length} Committee Staff account${tanods.length === 1 ? "" : "s"}`} description="Personnel assigned to your barangay." />
       {tanods.length ? <div className="divide-y divide-slate-200">
         {tanods.map((tanod) => <div key={tanod.id} className="flex items-start gap-3 p-5">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><UserRound className="size-5" aria-hidden="true" /></div>
@@ -37,12 +37,12 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
             </div>
           </div>
         </div>)}
-      </div> : <div className="p-6 text-center"><UserRound className="mx-auto mb-3 size-8 text-slate-400" aria-hidden="true" /><p className="font-medium text-slate-800">No Tanod accounts yet</p><p className="mt-1 text-sm text-slate-500">Add your first Tanod using the account form.</p></div>}
+      </div> : <div className="p-6 text-center"><UserRound className="mx-auto mb-3 size-8 text-slate-400" aria-hidden="true" /><p className="font-medium text-slate-800">No Committee Staff accounts yet</p><p className="mt-1 text-sm text-slate-500">Add your first Committee Staff member using the account form.</p></div>}
     </Card>
 
     <Card className="min-w-0 overflow-hidden">
-      <CardHeader title="Create Barangay Tanod" description="Add personnel assigned to your barangay." />
-      <form action={createTanodAction} aria-label="Create Barangay Tanod" className="space-y-5 p-5 sm:p-6">
+      <CardHeader title="Create Barangay Committee Staff" description="Add personnel assigned to your barangay." />
+      <form action={createTanodAction} aria-label="Create Barangay Committee Staff" className="space-y-5 p-5 sm:p-6">
         <div className="flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50 p-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-700 shadow-sm">
             <ShieldCheck className="size-5" aria-hidden="true" />
@@ -56,7 +56,7 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
 
         <fieldset className="min-w-0">
           <legend className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-950"><UserRound className="size-4 text-brand-700" aria-hidden="true" />Personal details</legend>
-          <p className="mb-4 text-xs leading-5 text-slate-500">Enter the Tanod’s name. Fields marked <span className="text-red-600">*</span> are required.</p>
+          <p className="mb-4 text-xs leading-5 text-slate-500">Enter the Committee Staff member’s name. Fields marked <span className="text-red-600">*</span> are required.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>First name <span className="text-red-600" aria-hidden="true">*</span>
               <input name="firstName" autoComplete="given-name" required maxLength={80} placeholder="e.g. Juan" className={inputClass} />
@@ -78,7 +78,7 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>Email address <span className="text-red-600" aria-hidden="true">*</span>
               <input name="email" type="email" autoComplete="email" required maxLength={254} placeholder="name@example.com" className={inputClass} aria-describedby="tanod-email-help" />
-              <span id="tanod-email-help" className="mt-2 block text-xs font-normal leading-5 text-slate-500">Use an email the Tanod can access.</span>
+              <span id="tanod-email-help" className="mt-2 block text-xs font-normal leading-5 text-slate-500">Use an email the Committee Staff member can access.</span>
             </label>
             <label className={labelClass}>Contact number <span className="text-red-600" aria-hidden="true">*</span>
               <input name="phone" type="tel" autoComplete="tel" inputMode="tel" required pattern="^(\+639|09)\d{9}$" placeholder="09XXXXXXXXX" className={inputClass} aria-describedby="tanod-phone-help" />
@@ -89,7 +89,7 @@ export function TanodAccountManager({ tanods, barangay, message, error }: { tano
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-end">
           <Button type="reset" variant="secondary">Clear form</Button>
-          <Button type="submit"><Plus className="size-4" aria-hidden="true" />Create Tanod Account</Button>
+          <Button type="submit"><Plus className="size-4" aria-hidden="true" />Create Committee Staff Account</Button>
         </div>
       </form>
     </Card>

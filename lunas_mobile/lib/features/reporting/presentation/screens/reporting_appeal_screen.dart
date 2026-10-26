@@ -79,7 +79,7 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
       builder: (dialogContext) => LunasConfirmationDialog(
         title: const Text('Submit Appeal?'),
         content: const Text(
-          'Your explanation and supporting reference will be sent to your assigned Barangay Official for review. You cannot edit the appeal while it is pending.',
+          'Your explanation and supporting reference will be sent to your assigned Infrastructure Committee for review. You cannot edit the appeal while it is pending.',
         ),
         actions: [
           TextButton(
@@ -198,10 +198,10 @@ class _ReportingAppealScreenState extends State<ReportingAppealScreen> {
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           appeal.status == 'pending'
-                              ? 'A Barangay Official will review your explanation and supporting reference.'
+                              ? 'The Infrastructure Committee will review your explanation and supporting reference.'
                               : appeal.status == 'approved'
                               ? 'Report submission available. Your reporting access has been restored.'
-                              : 'Your reporting access remains paused. The assigned Barangay Official may review a new appeal.',
+                              : 'Your reporting access remains paused. The assigned Infrastructure Committee may review a new appeal.',
                         ),
                       ],
                     ),
