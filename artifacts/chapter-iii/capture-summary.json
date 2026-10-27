@@ -1,0 +1,17 @@
+{
+  "total": 168,
+  "staff": 16,
+  "supplementary": 62,
+  "seeded": 114,
+  "counts": {
+    "01_Citizen_Mobile": 23,
+    "02_Infrastructure_Committee_Web": 10,
+    "03_Committee_Staff_Mobile": 16,
+    "04_Agencies_Web": 18,
+    "05_End_to_End_Incident_Workflow": 33,
+    "06_AI_Security_SLA_Analytics": 6,
+    "07_Other_Screens": 62
+  },
+  "original_preserved": 45,
+  "excluded_duplicates": 26
+}

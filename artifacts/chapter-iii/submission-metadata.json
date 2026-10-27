@@ -1,0 +1,98 @@
+{
+  "rows": [
+    {
+      "filename": "CIT_LIVE_Native_Submission_Received_01.png",
+      "folder": "05_End_to_End_Incident_Workflow",
+      "role": "Infrastructure Committee",
+      "feature": "Native Submission Received",
+      "route": "/validation-routing/6ae1184ec5597e7577ea5391",
+      "incident": "LUNAS-202610-000058",
+      "seeded": "No",
+      "accountRole": "barangay_official",
+      "sequence": 1,
+      "section": 0,
+      "width": 1440,
+      "height": 900,
+      "subsection": "A. System Requirements and Features",
+      "caption": "LUNAS Native Submission Received interface for a synthetic local account.",
+      "timestamp": "2026-10-27T21:33:41.533Z",
+      "status": "Captured",
+      "notes": "New synthetic report actually submitted through native citizen UI on 2026-10-28. Existing synthetic committee account; no validation decision performed for this report. Test-card evidence is not a real incident photograph."
+    },
+    {
+      "filename": "CIT_LIVE_Native_Submission_Received_02.png",
+      "folder": "05_End_to_End_Incident_Workflow",
+      "role": "Infrastructure Committee",
+      "feature": "Native Submission Received",
+      "route": "/validation-routing/6ae1184ec5597e7577ea5391",
+      "incident": "LUNAS-202610-000058",
+      "seeded": "No",
+      "accountRole": "barangay_official",
+      "sequence": 2,
+      "section": 774,
+      "width": 1440,
+      "height": 900,
+      "subsection": "A. System Requirements and Features",
+      "caption": "LUNAS Native Submission Received interface for a synthetic local account.",
+      "timestamp": "2026-10-27T21:33:41.630Z",
+      "status": "Captured",
+      "notes": "New synthetic report actually submitted through native citizen UI on 2026-10-28. Existing synthetic committee account; no validation decision performed for this report. Test-card evidence is not a real incident photograph."
+    },
+    {
+      "filename": "CIT_LIVE_Native_Submission_Received_03.png",
+      "folder": "05_End_to_End_Incident_Workflow",
+      "role": "Infrastructure Committee",
+      "feature": "Native Submission Received",
+      "route": "/validation-routing/6ae1184ec5597e7577ea5391",
+      "incident": "LUNAS-202610-000058",
+      "seeded": "No",
+      "accountRole": "barangay_official",
+      "sequence": 3,
+      "section": 1548,
+      "width": 1440,
+      "height": 900,
+      "subsection": "A. System Requirements and Features",
+      "caption": "LUNAS Native Submission Received interface for a synthetic local account.",
+      "timestamp": "2026-10-27T21:33:41.733Z",
+      "status": "Captured",
+      "notes": "New synthetic report actually submitted through native citizen UI on 2026-10-28. Existing synthetic committee account; no validation decision performed for this report. Test-card evidence is not a real incident photograph."
+    },
+    {
+      "filename": "CIT_LIVE_Native_Submission_Received_04.png",
+      "folder": "05_End_to_End_Incident_Workflow",
+      "role": "Infrastructure Committee",
+      "feature": "Native Submission Received",
+      "route": "/validation-routing/6ae1184ec5597e7577ea5391",
+      "incident": "LUNAS-202610-000058",
+      "seeded": "No",
+      "accountRole": "barangay_official",
+      "sequence": 4,
+      "section": 1748,
+      "width": 1440,
+      "height": 900,
+      "subsection": "A. System Requirements and Features",
+      "caption": "LUNAS Native Submission Received interface for a synthetic local account.",
+      "timestamp": "2026-10-27T21:33:41.838Z",
+      "status": "Captured",
+      "notes": "New synthetic report actually submitted through native citizen UI on 2026-10-28. Existing synthetic committee account; no validation decision performed for this report. Test-card evidence is not a real incident photograph."
+    }
+  ],
+  "inventory": [
+    {
+      "role": "Infrastructure Committee",
+      "platform": "Web",
+      "screen": "Native_Submission_Received",
+      "route": "/validation-routing/6ae1184ec5597e7577ea5391",
+      "implemented": "Yes",
+      "captured": "Yes",
+      "files": [
+        "CIT_LIVE_Native_Submission_Received_01.png",
+        "CIT_LIVE_Native_Submission_Received_02.png",
+        "CIT_LIVE_Native_Submission_Received_03.png",
+        "CIT_LIVE_Native_Submission_Received_04.png"
+      ],
+      "seeded": "Yes",
+      "reason": ""
+    }
+  ]
+}
