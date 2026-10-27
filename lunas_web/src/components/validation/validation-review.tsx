@@ -104,7 +104,7 @@ function AiAssistance({ incident }: { incident: ValidationIncident }) {
   );
 }
 
-function Coordinates({ incident }: { incident: ValidationIncident }) {
+function Coordinates({ incident, showReporter = false }: { incident: ValidationIncident; showReporter?: boolean }) {
   const [longitude, latitude] = incident.location.coordinates;
   const coordinateText = typeof longitude === "number" && typeof latitude === "number"
     ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
@@ -114,7 +114,23 @@ function Coordinates({ incident }: { incident: ValidationIncident }) {
     : undefined;
   return (
     <Card className="overflow-hidden">
-      <CardHeader title="Location Review" description="Citizen-confirmed pin; geographic jurisdiction is unverified. Human verification is required." />
+      <CardHeader title={showReporter ? "Report Details" : "Location Review"} />
+      {showReporter ? (
+              <dl className="grid gap-4 p-5 text-sm sm:grid-cols-2">
+                <div className="min-w-0">
+                  <dt className="text-slate-500">Submitted by</dt>
+                  <dd className="mt-1 break-words font-semibold text-slate-950">{[incident.reporter?.firstName, incident.reporter?.lastName].map((name) => name?.trim()).filter(Boolean).join(" ") || "Reporter unavailable"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Date submitted</dt>
+                  <dd className="mt-1 font-semibold text-slate-950">{incident.createdAt ? formatDateTime(incident.createdAt) : "Date unavailable"}</dd>
+                </div>
+              </dl>
+      ) : null}
+      <div className={showReporter ? "border-t border-slate-200 px-5 pt-5" : "px-5 pt-5"}>
+        <h3 className="text-sm font-semibold text-slate-950">Location Review</h3>
+        <p className="mt-1 text-sm text-slate-600">Citizen-confirmed pin; geographic jurisdiction is unverified. Human verification is required.</p>
+      </div>
       <div className="space-y-2 px-5 pt-5 text-sm">
         <p className="font-semibold">{incident.locationIntegrity?.comparison === "discrepancy" ? "Location Differs from Current GPS — Verification Required"
           : incident.locationIntegrity?.comparison === "consistent" ? "No Significant Discrepancy Detected"
@@ -372,7 +388,11 @@ export function ValidationReview({ viewer, incident, utilityProviders = [], tano
   return (
     <div className="mx-auto max-w-[1480px]">
       <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div><p className="text-sm font-semibold text-brand-700">{isBarangay ? `Infrastructure Committee Review · ${viewer.organization}` : `City Engineering · ${viewer.organization}`}</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{incident.reportNumber}</h1><p className="mt-2 max-w-3xl text-slate-600">Review citizen evidence and location before making the decision assigned to your role.</p></div>
+        <div>
+          <p className="text-sm font-semibold text-brand-700">{isBarangay ? `Infrastructure Committee Review · ${viewer.organization}` : `City Engineering · ${viewer.organization}`}</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{incident.reportNumber}</h1>
+          <p className="mt-2 max-w-3xl text-slate-600">Review citizen evidence and location before making the decision assigned to your role.</p>
+        </div>
         <StatusBadge tone={statusTone(incident.status)}>{titleCase(incident.status)}</StatusBadge>
       </div>
       <WorkflowProgress incident={incident} />
@@ -383,9 +403,9 @@ export function ValidationReview({ viewer, incident, utilityProviders = [], tano
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-6">
+          <Coordinates incident={incident} showReporter={isBarangay} />
           <Evidence incident={incident} />
           <AiAssistance incident={incident} />
-          <Coordinates incident={incident} />
           {isBarangay ? <FalseReportReview incidentId={incident.id} status={incident.status} role={viewer.backendRole} /> : null}
           <ValidationRoutingSummary incident={incident} />
           <Timeline incident={incident} />
