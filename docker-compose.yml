@@ -125,6 +125,11 @@ services:
       AI_SERVICE_URL: ${AI_SERVICE_URL:-http://lunas-ai:5001}
       AI_SERVICE_TIMEOUT: ${AI_SERVICE_TIMEOUT:-30000}
       AI_SERVICE_ENABLED: ${AI_SERVICE_ENABLED:-false}
+      # Optional pretrained text-model advice; never exposed to the web client.
+      SLA_AI_ENABLED: ${SLA_AI_ENABLED:-false}
+      SLA_AI_FREE_TIER_CONFIRMED: ${SLA_AI_FREE_TIER_CONFIRMED:-false}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SLA_AI_TIMEOUT_MS: ${SLA_AI_TIMEOUT_MS:-45000}
       AI_EVIDENCE_ANALYSIS_ENABLED: ${AI_EVIDENCE_ANALYSIS_ENABLED:-false}
       PRIVACY_REDACTION_ENABLED: ${PRIVACY_REDACTION_ENABLED:-false}
       

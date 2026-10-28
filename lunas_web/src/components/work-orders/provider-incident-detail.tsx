@@ -7,7 +7,8 @@ import { categoryLabel } from "@/lib/category-label";
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ArrowLeft, Building2, ExternalLink, MapPin } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, LockKeyhole, MapPin } from "lucide-react";
+import { AgencySlaRecommendation } from "@/components/work-orders/agency-sla-recommendation";
 import { updateAgencyStatusAction } from "@/app/actions/tanod-workflow";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button, buttonStyles } from "@/components/ui/button";
@@ -165,7 +166,21 @@ export function ProviderIncidentDetail({ incident }: { incident: ProviderRoutedI
                   <label className="block text-sm font-semibold text-slate-900">Agency priority<select value={agencyPriority} onChange={(event) => setAgencyPriority(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required><option value="">Select priority</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
                   <p className="mt-2 text-xs leading-5 text-slate-500">The agency sets priority during Ready for Work. The Infrastructure Committee does not set it.</p>
                 </div> : <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"><p className="font-semibold text-slate-900">Ready for Work details</p><p className="mt-1 text-slate-700">Agency priority: <span className="font-semibold">{agencyPriority ? titleCase(agencyPriority) : "Not recorded"}</span></p><p className="mt-1 text-xs text-slate-500">This priority was recorded during the first step.</p></div>}
-                {selectedStatus === "pending_procurement" || selectedStatus === "work_in_progress" || selectedStatus === "work_completed" ? <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"><label className="block font-semibold text-slate-900">Agency SLA deadline (Philippine time)<input type="datetime-local" value={slaDeadline} onChange={(event) => setSlaDeadline(event.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm" required readOnly={deadlineLocked} disabled={deadlineLocked} /></label><p className="mt-2 text-xs text-slate-500">{deadlineLocked ? "This deadline was recorded during Pending Procurement/Bidding and can no longer be changed." : "Enter the deadline manually. LUNAS will save the date you provide before moving to the next step."}</p>{incident.sla.deadline && !slaDeadline ? <p className="mt-1 text-slate-700">Saved deadline: <span className="font-semibold">{formatDateTime(incident.sla.deadline)}</span></p> : null}{incident.sla.targetResolutionTime ? <p className="mt-1 text-xs text-slate-500">Target: {incident.sla.targetResolutionTime} hours</p> : null}</div> : null}
+                <AgencySlaRecommendation key={`${incident.id}:${agencyPriority}`} incidentId={incident.id} priority={agencyPriority} locked={deadlineLocked} policyReferenceHours={incident.sla.targetResolutionTime} />
+                {selectedStatus === "pending_procurement" || selectedStatus === "work_in_progress" || selectedStatus === "work_completed" ? (
+                  <section aria-label="SLA guidance and agency deadline" className="mt-4 min-w-0 space-y-3">
+                    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label htmlFor="agency-sla-deadline" className="text-sm font-semibold text-slate-950">Agency-recorded deadline</label>
+                        {deadlineLocked ? <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500"><LockKeyhole className="size-3.5" aria-hidden="true" />Locked</span> : null}
+                      </div>
+                      <p id="agency-sla-timezone" className="mt-1 text-xs text-slate-500">Philippine time (UTC+8)</p>
+                      <input id="agency-sla-deadline" type="datetime-local" value={slaDeadline} onChange={(event) => setSlaDeadline(event.target.value)} aria-describedby="agency-sla-timezone agency-sla-help" className="mt-3 min-h-11 w-full min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-700 disabled:opacity-100" required readOnly={deadlineLocked} disabled={deadlineLocked} />
+                      <p id="agency-sla-help" className="mt-2 text-xs leading-5 text-slate-600">{deadlineLocked ? "Recorded during Pending Procurement/Bidding. Deadline changes are now locked." : "Enter the deadline your agency commits to. The LUNAS suggestion does not fill or save this field."}</p>
+                      {incident.sla.deadline && !slaDeadline ? <p className="mt-2 text-sm text-slate-700">Saved deadline: <span className="font-semibold">{formatDateTime(incident.sla.deadline)}</span></p> : null}
+                    </div>
+                  </section>
+                ) : null}
                 <div className="mt-2 space-y-1 text-xs">
                   <p className="font-semibold text-brand-700">Current step: {currentStatus.label}</p>
                   <p className="font-semibold text-slate-600">Next step: {nextStepLabel}</p>

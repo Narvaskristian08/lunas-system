@@ -1,5 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
+const slaRecommendation = require('../controllers/slaRecommendationController');
+const slaRecommendationLimit = rateLimit({
+  windowMs: 60000, max: 5, standardHeaders: true, legacyHeaders: false,
+  keyGenerator: req => String(req.user._id),
+  message: { success: false, message: 'Too many AI recommendation requests. Try again in a minute.' }
+});
 const { query } = require('express-validator');
 const {
   createIncident,
@@ -116,6 +123,9 @@ router.post('/:id/tanod-inspections', protect, authorize('barangay_official'), m
   body('tanodId').isMongoId(), validate, tanodWorkflow.assignInitialInspection);
 router.post('/:id/completion-inspections', protect, authorize('barangay_official'), mongoIdValidation,
   body('tanodId').isMongoId(), validate, tanodWorkflow.assignCompletionInspection);
+router.post('/:id/sla-recommendation', protect, authorize('utility_provider'), mongoIdValidation,
+  body('priority').optional().isIn(['critical', 'high', 'medium', 'low']), validate,
+  slaRecommendationLimit, slaRecommendation.getRecommendation);
 router.patch('/:id/agency-status', protect, authorize('utility_provider'), mongoIdValidation,
   body('status').isIn(['ready_for_work', 'pending_procurement', 'work_in_progress', 'work_completed']),
   body('priority').optional().isIn(['critical', 'high', 'medium', 'low']),
