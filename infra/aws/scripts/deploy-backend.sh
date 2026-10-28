@@ -13,6 +13,7 @@ build_log="/tmp/lunas-backend-build-${release}.log"
 candidate_name="backend-candidate-${release}"
 previous_name="backend-previous-${release}"
 runtime_env="/tmp/lunas-backend-runtime-${release}.env"
+backend_runtime_parameter="${BACKEND_RUNTIME_PARAMETER:-}"
 
 # Reuse the currently working runtime configuration when an existing backend
 # container is present. This keeps staging on the same database and storage
@@ -24,6 +25,38 @@ else
   cp /opt/lunas/backend.env "$runtime_env"
 fi
 chmod 600 "$runtime_env"
+
+# Merge deployment-controlled backend settings from SSM even when a previous
+# container exists. This is required for newly introduced optional providers
+# (for example Gemini) whose values are intentionally absent from old images.
+if [[ -n "$backend_runtime_parameter" ]]; then
+  aws ssm get-parameter --name "$backend_runtime_parameter" --with-decryption --output json | python3 -c '
+import json,sys
+parameter=json.load(sys.stdin)["Parameter"]["Value"]
+if parameter.lstrip().startswith("{"):
+    values=json.loads(parameter)
+else:
+    values={}
+    for line in parameter.splitlines():
+        line=line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key,value=line.split("=",1)
+        values[key.strip()]=value.strip().strip(chr(34)+chr(39))
+allowed={
+    "SLA_AI_ENABLED", "SLA_AI_FREE_TIER_CONFIRMED", "GEMINI_API_KEY",
+    "GEMINI_MODEL", "SLA_AI_TIMEOUT_MS", "EMAIL_PROVIDER", "SMTP_HOST",
+    "SMTP_PORT", "SMTP_SECURE", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM",
+}
+with open(sys.argv[1], "a") as runtime:
+    for key,value in values.items():
+        if key not in allowed:
+            continue
+        if "\n" in str(value) or "\r" in str(value):
+            raise ValueError("Invalid runtime configuration value")
+        runtime.write(f"{key}={value}\n")
+' "$runtime_env"
+fi
 
 # Merge optional email configuration on the host without exposing credentials
 # in the deployment command or build logs.

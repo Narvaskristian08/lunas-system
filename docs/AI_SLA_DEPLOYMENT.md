@@ -1,6 +1,6 @@
 # Free-tier AI SLA advice: deployer handoff
 
-LUNAS uses Google's pretrained `gemini-2.5-flash-lite` via its hosted GenerateContent API. No model training, local model download or GPU server is required. The integration has no paid provider/model fallback. Recommendations are optional planning estimates; they are not validated repair-duration predictions or government SLA policy.
+LUNAS uses Google's pretrained `gemini-3.5-flash-lite` via its hosted GenerateContent API. No model training, local model download or GPU server is required. The integration has no paid provider/model fallback. Recommendations are optional planning estimates; they are not validated repair-duration predictions or government SLA policy.
 
 ## Keep usage free
 

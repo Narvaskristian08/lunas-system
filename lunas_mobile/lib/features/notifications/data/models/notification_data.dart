@@ -74,18 +74,33 @@ NotificationKind _kindFor(String type) {
     'sla_overdue',
     'sla_reminder',
     'sla_escalation',
+    'incident_clarification_requested',
     'incident_rejected',
     'repair_rejected',
+    'agency_correction_requested',
     'duplicate_detected',
     'work_order_declined',
   }.contains(type)) {
     return NotificationKind.alert;
   }
   if ({
+    'incident_submitted',
     'incident_validated',
+    'incident_routed',
+    'verification_update',
+    'inspection_assigned',
+    'inspection_submitted',
+    'agency_report_routed',
+    'agency_work_completed',
+    'completion_inspection_assigned',
+    'incident_completed',
     'work_order_assigned',
     'work_order_reassigned',
     'work_order_accepted',
+    'work_order_in_progress',
+    'work_order_progress',
+    'work_order_completed',
+    'repair_verified',
     'system_announcement',
     'status_update',
   }.contains(type)) {

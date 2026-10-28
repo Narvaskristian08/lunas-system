@@ -63,7 +63,6 @@ const safeAiFinding = (finding) => {
   if (normalizedBox.x2 < normalizedBox.x1 || normalizedBox.y2 < normalizedBox.y1) return null;
   return {
     label,
-    confidence: clampUnit(finding.confidence) ?? 0,
     bbox: normalizedBox,
     ...(finding.confidenceStatus === 'production' || finding.confidence_status === 'production'
       ? { confidenceStatus: 'production' }
@@ -106,7 +105,6 @@ const safeAiAnalysis = (analysis, evidenceFindings = []) => {
     hazardType: status === 'completed' && typeof analysis.hazardType === 'string'
       ? analysis.hazardType.slice(0, 100)
       : null,
-    confidence: status === 'completed' ? clampUnit(analysis.confidence) ?? 0 : 0,
     findingsCount: Number.isFinite(storedFindingsCount)
       ? Math.max(0, Math.round(storedFindingsCount))
       : Math.max(findings.length, evidenceFindingsCount),
@@ -277,7 +275,6 @@ const serializeIncidentForOfficial = async (incident, { includeHistory = true, i
         ? aiAnalysis.classificationStatus
         : undefined,
       hazardType: aiAnalysis.hazardType || null,
-      confidence: hasConfidence ? aiAnalysis.confidence : 0,
       category: typeof aiAnalysis.category === 'string' ? aiAnalysis.category : undefined,
       ...(typeof aiAnalysis.model === 'string' && aiAnalysis.model.trim()
         ? { model: aiAnalysis.model.trim().slice(0, 80) }

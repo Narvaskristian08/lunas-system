@@ -52,8 +52,8 @@ exports.getNotifications = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, isRead, kind, category, search, dateRange, sort } = req.query;
   const filter = { recipient: req.user._id };
   if (isRead !== undefined) filter.isRead = isRead === 'true';
-  const alerts = ['sla_approaching', 'sla_overdue', 'sla_reminder', 'sla_escalation', 'incident_rejected', 'repair_rejected', 'duplicate_detected', 'work_order_declined'];
-  const activity = ['incident_validated', 'work_order_assigned', 'work_order_reassigned', 'work_order_accepted', 'status_update', 'system_announcement'];
+  const alerts = ['sla_approaching', 'sla_overdue', 'sla_reminder', 'sla_escalation', 'incident_clarification_requested', 'incident_rejected', 'repair_rejected', 'agency_correction_requested', 'duplicate_detected', 'work_order_declined'];
+  const activity = ['incident_submitted', 'incident_validated', 'incident_routed', 'verification_update', 'inspection_assigned', 'inspection_submitted', 'agency_report_routed', 'agency_work_completed', 'completion_inspection_assigned', 'incident_completed', 'work_order_assigned', 'work_order_reassigned', 'work_order_accepted', 'work_order_in_progress', 'work_order_progress', 'work_order_completed', 'repair_verified', 'status_update', 'system_announcement'];
   if (kind === 'alert') filter.type = { $in: alerts };
   if (kind === 'activity') filter.type = { $in: activity };
   if (kind === 'update') filter.type = { $nin: [...alerts, ...activity] };

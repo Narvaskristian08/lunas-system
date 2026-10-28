@@ -4,17 +4,17 @@ const { recommendSla } = require('./slaRecommendationService');
 const env = { SLA_AI_ENABLED: 'true', SLA_AI_FREE_TIER_CONFIRMED: 'true', GEMINI_API_KEY: 'test-only-key' };
 const incident = { category: 'road', reporter: { email: 'private@example.test' }, description: 'Private citizen description', location: { coordinates: [120, 16] }, aiAnalysis: { analysisStatus: 'completed', detected: true, hazardType: 'pothole', requiresManualReview: true }, sla: { deadline: '2027-01-01T00:00:00.000Z' } };
 const output = { durationHours: 72, explanation: 'Inspect scope and crew availability before accepting this estimate.', assumptions: ['No measurements or crew capacity provided.', 'Procurement excluded.'] };
-const response = value => ({ data: { modelVersion: 'gemini-2.5-flash-lite', candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(value) }] } }] } });
+const response = value => ({ data: { modelVersion: 'gemini-3.5-flash-lite', candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(value) }] } }] } });
 beforeEach(() => jest.clearAllMocks());
 
 test('uses real provider output rather than the fixed target or deadline difference, with no SLA mutation', async () => {
   axios.post.mockResolvedValue(response(output));
   const before = JSON.stringify(incident);
   const result = await recommendSla(incident, 'low', 336, env, new Date('2026-10-28T00:00:00Z'));
-  expect(result).toMatchObject({ source: 'ai_model', model: 'gemini-2.5-flash-lite', durationHours: 72, policyReferenceHours: 336, advisoryOnly: true, referenceDeadline: '2026-10-31T00:00:00.000Z' });
+  expect(result).toMatchObject({ source: 'ai_model', model: 'gemini-3.5-flash-lite', durationHours: 72, policyReferenceHours: 336, advisoryOnly: true, referenceDeadline: '2026-10-31T00:00:00.000Z' });
   expect(JSON.stringify(incident)).toBe(before);
   const [url, payload, config] = axios.post.mock.calls[0];
-  expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent');
+  expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
   expect(payload).toMatchObject({ generationConfig: { responseMimeType: 'application/json', responseJsonSchema: { type: 'object' } } });
   expect(config.headers['x-goog-api-key']).toBe('test-only-key');
   expect(JSON.stringify(payload)).not.toMatch(/private@example|Private citizen|coordinates|2027-01-01/);

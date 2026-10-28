@@ -23,7 +23,7 @@ async function recommendSla(incident, priority, referenceHours, env = process.en
   // Intentionally one hosted free-tier-capable model; no paid provider fallback.
   // Account billing tier is controlled by Google, not detectable from an API key.
   if (env.SLA_AI_FREE_TIER_CONFIRMED !== 'true') throw unavailable();
-  const model = 'gemini-2.5-flash-lite';
+  const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const apiKey = env.GEMINI_API_KEY;
   if (!apiKey) throw unavailable();
   const messages = [

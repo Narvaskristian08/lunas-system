@@ -62,7 +62,6 @@ export type ValidationAiAnalysisStatus = "completed" | "unavailable" | "failed";
 
 export interface ValidationAiFinding {
   label: string;
-  confidence: number;
   bbox: { x1: number; y1: number; x2: number; y2: number };
   confidenceStatus?: "production" | "manual_review";
   productionThreshold?: number;
@@ -106,7 +105,6 @@ export interface ValidationIncident {
     manualReviewOnly?: boolean;
     detected?: boolean;
     hazardType?: string;
-    confidence?: number;
     findingsCount?: number;
     findings?: ValidationAiFinding[];
     detections?: {
@@ -206,7 +204,6 @@ function normalizeFinding(value: unknown): ValidationAiFinding | null {
   if (normalized.x2 < normalized.x1 || normalized.y2 < normalized.y1) return null;
   return {
     label: label.slice(0, 100),
-    confidence: clamp(asNumber(source.confidence) ?? 0),
     bbox: normalized,
     ...(source.confidenceStatus === "production" || source.confidence_status === "production"
       ? { confidenceStatus: "production" as const }
@@ -381,7 +378,6 @@ function normalizeIncident(value: unknown): ValidationIncident | null {
       manualReviewOnly: aiAnalysis.manualReviewOnly === true,
       detected: aiAnalysis.detected === true,
       hazardType: asString(aiAnalysis.hazardType),
-      confidence: asNumber(aiAnalysis.confidence),
       findingsCount: asNumber(aiAnalysis.findingsCount),
       findings: asArray(aiAnalysis.findings)
         .map(normalizeFinding)
