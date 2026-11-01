@@ -75,7 +75,7 @@ function sessionExpired(request: NextRequest, reason: "expired" | "invalid" | "r
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const needsSession = path === "/" || protectedPrefixes.some(
+  const needsSession = protectedPrefixes.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
   if (needsSession && process.env.LUNAS_MAINTENANCE_MODE === "full") {
@@ -163,7 +163,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
     "/repair-personnel/:path*",
     "/dashboard/:path*",
     "/notifications/:path*",

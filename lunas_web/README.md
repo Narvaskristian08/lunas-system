@@ -4,6 +4,18 @@ Browser workspace for **Admin, Barangay Official, City Engineer, and Utility
 Provider**. The current role authority and workflow are defined in the
 [project scope](../LUNAS_PROJECT_SCOPE.md).
 
+## Public capstone website
+
+The public home page is at /, with /research, /about, and /demo pages in the marketing route group. They share a responsive public navigation and footer. The /privacy page contains a visitor-facing notice scoped to the public website. The existing /login route remains the sign-in link. In src/proxy.ts, / is no longer intercepted as a protected route; all existing protected-route matchers remain configured.
+
+The marketing presentation reuses the existing brand tokens and LunasMark component. Screenshots in public/images/landing are copies of synthetic local product captures from the root Chapter III screenshot package. Captions identify them as synthetic. The site presents the revised eight-stage lifecycle as the proposed capstone workflow and describes it as human-led. Detailed source-level workflow findings remain in the developer handoff, not visitor-facing copy.
+
+Visitor-facing content update (2026-11-02): replaced the Research page's manuscript placeholders with verified technical evaluation methods, replaced the public privacy draft with a concise notice for the landing site, and changed Demo from a non-submitting personal-data form to a static walkthrough with synthetic screenshots. Internal workflow discrepancy lists were removed from marketing copy; the proposed human-led sequence remains clear. Existing LUNAS colors and verified project details remain in place.
+
+The Demo page is a static guided walkthrough and does not request visitor details. The Website Privacy page covers only the public showcase site; it does not describe the separately authenticated operational application.
+
+Public-site checks on 2026-11-02: after the content update, ESLint and the production build passed, and tests/public-marketing.spec.ts passed 4/4 cases covering public routes, mobile navigation, responsive width, the static Demo walkthrough, and the protected /dashboard redirect. Desktop and mobile pages were visually reviewed. The site was not deployed.
+
 ## Run locally
 
 ```bash

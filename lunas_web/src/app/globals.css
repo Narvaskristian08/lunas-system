@@ -139,6 +139,59 @@ button:disabled {
   box-shadow: var(--shadow-sm);
 }
 
+.marketing-city-hero {
+  isolation: isolate;
+  background: linear-gradient(125deg, var(--brand-dark), var(--brand));
+}
+
+.marketing-page-hero {
+  background:
+    radial-gradient(ellipse at 92% 12%, color-mix(in srgb, var(--brand) 11%, transparent), transparent 36%),
+    linear-gradient(120deg, var(--surface) 12%, var(--brand-soft) 100%);
+}
+
+.marketing-page-hero-card {
+  border: 1px solid color-mix(in srgb, var(--brand) 15%, white);
+  background: color-mix(in srgb, white 88%, var(--brand-soft));
+  box-shadow: var(--shadow-md);
+}
+
+.marketing-card-hover {
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.marketing-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand) 28%, var(--border));
+  box-shadow: var(--shadow-md);
+}
+
+.marketing-hero-overlay {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--brand-dark) 98%, transparent) 0%, color-mix(in srgb, var(--brand-dark) 91%, transparent) 48%, color-mix(in srgb, var(--brand) 68%, transparent) 100%),
+    linear-gradient(0deg, color-mix(in srgb, var(--brand-dark) 35%, transparent), transparent 72%);
+}
+
+.marketing-dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--brand) 13%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.marketing-enter {
+  animation: marketing-entry 520ms ease-out both;
+}
+
+@keyframes marketing-entry {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .skeleton {
   position: relative;
   overflow: hidden;
